@@ -1,0 +1,97 @@
+# Flutter
+build/
+.DS_Store
+
+# Android
+android/app/build/
+android/app/.gradle/
+android/.gradle/
+android/local.properties
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcshareddata/
+ios/Flutter/App.framework/
+ios/Flutter/Flutter.framework/
+
+# macOS
+macos/Flutter/ephemeral/
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Web
+web/*.dart.js
+web/*.dart.js.map
+web/assets/
+
+# Linux
+linux/flutter/ephemeral/
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugin_registrant.h
+
+# Windows
+windows/flutter/ephemeral/
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Packages
+.packages
+.pub-cache/
+.pub/
+
+# Build artifacts
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+
+# Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# Localizations
+lib/l10n/
+
+# Generated files
+lib/generated/
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Flutter packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Pub
+.pub/
+.pub-cache/
+.packages
+
+# IntelliJ
+.idea/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db

@@ -1,0 +1,303 @@
+online_store_guliston/
+├── lib/
+│   ├── main.dart
+│   ├── app_router.dart (GoRouter konfiguratsiyasi)
+│   ├── config/ (Firebase va API kalitlari)
+│   │   └── firebase_options.dart
+│   ├── core/
+│   │   ├── constants/
+│   │   │   ├── app_constants.dart
+│   │   │   └── app_colors.dart
+│   │   ├── models/ (Ma'lumotlar modellari)
+│   │   │   ├── category.dart
+│   │   │   ├── shop.dart
+│   │   │   ├── product.dart
+│   │   │   ├── order.dart
+│   │   │   └── order_item.dart
+│   │   ├── providers/ (Riverpod provayderlari)
+│   │   │   ├── auth_provider.dart
+│   │   │   ├── shop_provider.dart
+│   │   │   ├── product_provider.dart
+│   │   │   └── order_provider.dart
+│   │   └── services/ (Firebase bilan aloqa)
+│   │       ├── auth_service.dart
+│   │       ├── firestore_service.dart
+│   │       └── storage_service.dart
+│   ├── features/
+│   │   ├── auth/ (Admin kirish)
+│   │   │   ├── presentation/
+│   │   │   │   ├── pages/
+│   │   │   │   │   └── admin_login_screen.dart
+│   │   │   │   └── widgets/
+│   │   ├── customer/ (Oddiy foydalanuvchi qismi)
+│   │   │   ├── presentation/
+│   │   │   │   ├── pages/
+│   │   │   │   │   ├── splash_screen.dart
+│   │   │   │   │   ├── home_screen.dart
+│   │   │   │   │   ├── shop_detail_screen.dart
+│   │   │   │   │   ├── product_detail_screen.dart
+│   │   │   │   │   ├── cart_screen.dart
+│   │   │   │   │   └── checkout_screen.dart
+│   │   │   │   └── widgets/
+│   │   ├── admin/ (Admin panel)
+│   │   │   ├── presentation/
+│   │   │   │   ├── pages/
+│   │   │   │   │   ├── admin_dashboard_screen.dart
+│   │   │   │   │   ├── admin_shops_screen.dart
+│   │   │   │   │   ├── admin_products_screen.dart
+│   │   │   │   │   └── admin_orders_screen.dart
+│   │   │   │   └── widgets/
+│   ├── shared/ (Umumiy komponentlar)
+│   │   ├── widgets/
+│   │   │   ├── custom_button.dart
+│   │   │   ├── custom_text_field.dart
+│   │   │   └── loading_indicator.dart
+│   │   └── utils/
+│   │       └── validators.dart
+├── pubspec.yaml
+├── README.md
+
+
+
+
+## Master Ideal MVP Prompt: "Online Store Guliston" Mobil Ilovasi
+
+**Loyiha nomi:** Online Store Guliston
+**Maqsad:** Guliston va Yangi Yer shaharlarida joylashgan do'konlarning mahsulotlarini onlayn ko'rish, buyurtma qilish va yetkazib berish xizmatini taqdim etuvchi mobil ilova.
+**Target auditoriya:** Oddiy foydalanuvchilar (xaridorlar) va Do'kon administratorlari (adminlar).
+**Platformalar:** iOS va Android (Flutter/Dart).
+**Backend:** Firebase (Firestore, Authentication, Storage).
+**Ma'lumotlar kiritish usuli:** Barcha boshlang'ich ma'lumotlar (do'konlar, mahsulotlar, kategoriyalar) admin panel orqali qo'lda kiritiladi.
+
+---
+
+### **1. Loyihaning umumiy konsepti (Core Concept):**
+
+Foydalanuvchi ilovaga kiradi, ro'yxatdan o'tmaydi. O'zining hududini (Yangi Yer yoki Guliston) tanlaydi. Xaritadan yoki ro'yxatdan do'konlarni topadi, mahsulotlarni ko'radi, savatga qo'shadi va ism-telefon raqamini kiritib buyurtma beradi. To'lov kuryerga naqd pulda amalga oshiriladi.
+Admin esa ilovaga kirib, do'konlar, mahsulotlar, kategoriyalar va buyurtmalarni to'liq boshqaradi. Admin har bir buyurtmaning holatini o'zgartira oladi.
+
+---
+
+### **2. Foydalanuvchi qismi (Customer App - MVP):**
+
+**2.1. Splash Screen & Hudud tanlash (Start-up):**
+*   **Vazifasi:** Ilova ochilganda loyiha logotipini ko'rsatish va foydalanuvchiga qaysi shahar (Yangi Yer yoki Guliston) do'konlarini ko'rishni tanlash imkonini berish.
+*   **Elementlar:**
+    *   Ilova logotipi (o'rtada).
+    *   "Yangi Yer" va "Guliston" tugmalari (tanlash uchun).
+    *   Tanlovdan so'ng, tanlangan hudud `SharedPreferences` orqali saqlanadi va keyingi safar ilova ochilganda to'g'ridan-to'g'ri Home Screen'ga o'tiladi (agar oldin tanlangan bo'lsa).
+*   **Navigatsiya:** Tanlovdan so'ng `/home` ekraniga o'tiladi.
+
+**2.2. Bosh ekran (Home Screen - `/home`):**
+*   **Vazifasi:** Tanlangan hududdagi do'konlar va kategoriyalarni ko'rsatish. Foydalanuvchi mahsulot yoki do'konlarni qidirishi mumkin.
+*   **Elementlar:**
+    *   **AppBar:**
+        *   Chapda: Joriy tanlangan shahar nomi (masalan, "Yangi Yer").
+        *   O'rtada: "Online Store Guliston" logotipi/nomi.
+        *   O'ngda: Qidiruv ikonasi.
+    *   **Qidiruv paneli:** "Mahsulot yoki do'kon nomini qidirish..." (Placeholder matn).
+    *   **Kategoriyalar (Horizontal Scroll):** Admin panelidan kelgan kategoriyalar ro'yxati (rasm/ikonka va nomi bilan).
+        *   Misol: "Non", "Go'sht", "Sut mahsulotlari", "Qurilish mollari", "Dorixonalar".
+        *   Har bir kategoriyani bosish tegishli mahsulotlarni filtrlash imkonini beradi (MVPda, shunchaki xabar chiqarishi yoki kelajakda filtrlash uchun tayyor bo'lishi mumkin).
+    *   **"Yaqin atrofdagi do'konlar" (Ro'yxat ko'rinishi):** Tanlangan shahardagi barcha aktiv do'konlar ro'yxati.
+        *   Har bir do'kon uchun: kichik rasm, nomi, manzili, ish vaqti.
+        *   Do'kon ustiga bosilganda `/shop/:shopId` ekraniga o'tiladi.
+*   **Ma'lumotlar:** `FirestoreService` orqali `shops` va `categories` kolleksiyalaridan ma'lumotlar yuklanadi.
+*   **UX:** Har bir do'kon elementi bosiladigan va keyingi ekranga o'tadigan bo'lishi shart.
+
+**2.3. Do'kon sahifasi (Shop Detail Screen - `/shop/:shopId`):**
+*   **Vazifasi:** Tanlangan do'kon haqida batafsil ma'lumot va uning mahsulotlarini ko'rsatish.
+*   **Elementlar:**
+    *   **AppBar:** Do'kon nomi, orqaga tugmasi.
+    *   **Do'kon ma'lumotlari:**
+        *   Do'konning katta rasmi.
+        *   Nomi, manzili, ish vaqti (masalan, "09:00 - 21:00").
+        *   Telefon raqami (bosilganda qo'ng'iroq qilish imkoniyati).
+        *   (MVPda reyting ixtiyoriy, shunchaki 5 yulduzcha ko'rsatilishi mumkin).
+    *   **Mahsulotlar ro'yxati (Vertical Scroll):** Shu do'konga tegishli barcha aktiv mahsulotlar.
+        *   Har bir mahsulot uchun: rasm, nomi, narxi, birligi (dona/kg), "Savatga qo'shish" tugmasi.
+        *   "Savatga qo'shish" tugmasi bosilganda, miqdor tanlash imkoniyati (popup/bottom sheet) va savatga qo'shish.
+        *   Mahsulot ustiga bosilganda `/shop/:shopId/product/:productId` ekraniga o'tiladi.
+*   **Ma'lumotlar:** `FirestoreService` orqali `shops` kolleksiyasidan do'kon ma'lumoti va `products` sub-kolleksiyasidan mahsulotlar yuklanadi.
+*   **Navigatsiya:** Har bir mahsulotni bosish Product Detail Screen'ga o'tish imkoniyatini beradi. Bottom Navigation Bar'da "Savat" ikonasi aktiv bo'ladi va savatdagi mahsulotlar sonini ko'rsatadi.
+
+**2.4. Mahsulot kartochkasi (Product Detail Screen - `/shop/:shopId/product/:productId`):**
+*   **Vazifasi:** Mahsulot haqida batafsil ma'lumotni ko'rsatish va uni savatga qo'shish imkoniyatini berish.
+*   **Elementlar:**
+    *   **AppBar:** Mahsulot nomi, orqaga tugmasi.
+    *   **Mahsulot rasmlari:** Bir nechta rasmni ko'rsatish uchun slider (agar mavjud bo'lsa, aks holda bitta rasm).
+    *   **Mahsulot ma'lumotlari:**
+        *   Nomi, to'liq tavsifi.
+        *   Narxi va o'lchov birligi (masalan, "15 000 so'm / kg").
+        *   Mavjudligi ("Mavjud" / "Tugagan").
+    *   **Miqdor tanlash:** (+/-) tugmalari yordamida mahsulot sonini (yoki og'irligini) tanlash.
+    *   **"Savatga qo'shish" tugmasi:** Bosilganda tanlangan miqdordagi mahsulot savatga qo'shiladi va foydalanuvchiga "Savatga qo'shildi!" degan xabar ko'rsatiladi.
+*   **Ma'lumotlar:** `FirestoreService` orqali `products` kolleksiyasidan mahsulot ma'lumoti yuklanadi.
+
+**2.5. Savat ekrani (Cart Screen - `/cart`):**
+*   **Vazifasi:** Foydalanuvchi tanlagan barcha mahsulotlarni ko'rish, miqdorini o'zgartirish, olib tashlash va buyurtmani rasmiylashtirish.
+*   **Elementlar:**
+    *   **AppBar:** "Savat", orqaga tugmasi.
+    *   **Savatdagi mahsulotlar ro'yxati:**
+        *   Har bir mahsulot uchun: kichik rasm, nomi, soni, birligi, umumiy narxi.
+        *   Har bir mahsulot yonida: miqdorini (+/-) tugmalar orqali o'zgartirish.
+        *   Mahsulotni savatdan olib tashlash uchun "X" yoki "Trash" ikonasi.
+    *   **Jami summa:** Barcha mahsulotlar uchun umumiy narx.
+    *   **"Buyurtma berish" tugmasi:** Bosilganda `/checkout` ekraniga o'tiladi.
+*   **Ma'lumotlar:** `CartProvider` (Riverpod) orqali boshqariladi.
+*   **UX:** Agar savat bo'sh bo'lsa, "Savat bo'sh. Mahsulot qo'shish uchun do'konlarga o'ting" kabi xabar ko'rsatiladi.
+
+**2.6. Buyurtma berish ekrani (Checkout Screen - `/checkout`):**
+*   **Vazifasi:** Buyurtmani tasdiqlash uchun foydalanuvchidan kerakli ma'lumotlarni (ism, telefon) olish.
+*   **Elementlar:**
+    *   **AppBar:** "Buyurtmani rasmiylashtirish", orqaga tugmasi.
+    *   **Savatdagi mahsulotlar qisqacha ro'yxati:** (faqat nomi va miqdori ko'rsatiladi).
+    *   **Jami summa.**
+    *   **Forma maydonlari:**
+        *   **Ism:** `TextFormField` (majburiy).
+        *   **Telefon raqami:** `TextFormField` (majburiy, +998XXXXXXXXX formatida validatsiya).
+        *   **Yetkazib berish manzili:** `TextFormField` (ixtiyoriy, kelajakda xarita integratsiyasi uchun tayyor).
+        *   **Izoh:** `TextFormField` (ixtiyoriy, masalan: "Eshik tagida qoldiring").
+    *   **"Buyurtmani tasdiqlash" tugmasi:** Bosilganda `OrderService` orqali buyurtma Firebasega yuboriladi.
+*   **Ma'lumotlar:** `CartProvider` dan savat ma'lumotlari, forma ma'lumotlari `OrderService` ga yuboriladi.
+*   **Navigatsiya:** Buyurtma muvaffaqiyatli yuborilsa `/order-success/:orderId` ekraniga o'tiladi.
+
+**2.7. Buyurtma muvaffaqiyatli ekrani (Order Success Screen - `/order-success/:orderId`):**
+*   **Vazifasi:** Buyurtma muvaffaqiyatli qabul qilinganligini tasdiqlash.
+*   **Elementlar:**
+    *   "✅ Buyurtmangiz qabul qilindi!" matni.
+    *   Buyurtma raqami (masalan: "#12345").
+    *   "Tez orada kuryer siz bilan bog'lanadi." matni.
+    *   "Bosh ekranga qaytish" tugmasi (bosilganda `/home` ekraniga o'tiladi).
+*   **Ma'lumotlar:** `/checkout` ekranidan o'tkazilgan `orderId` orqali ko'rsatiladi.
+
+---
+
+### **3. Admin qismi (Admin Panel - MVP):**
+
+**3.1. Admin Login ekrani (`/admin/login`):**
+*   **Vazifasi:** Faqat adminlarning email va parol orqali kirishini ta'minlash.
+*   **Elementlar:**
+    *   Ilova logotipi.
+    *   Email `TextFormField`.
+    *   Parol `TextFormField`.
+    *   "Kirish" tugmasi.
+    *   Xato xabarlari (masalan, "Noto'g'ri email yoki parol").
+*   **Ma'lumotlar:** `FirebaseAuth` orqali autentifikatsiya.
+*   **Navigatsiya:** Muvaffaqiyatli kirishdan so'ng `/admin/dashboard` ekraniga o'tiladi.
+
+**3.2. Admin Dashboard (Boshqaruv paneli - `/admin/dashboard`):**
+*   **Vazifasi:** Admin panelining asosiy sahifasi bo'lib, umumiy ma'lumotlar va navigatsiya tugmalarini ko'rsatish.
+*   **Elementlar:**
+    *   **AppBar:** "Admin Dashboard", o'ngda "Chiqish" tugmasi.
+    *   **Statistika kartochkalari:**
+        *   "Bugungi buyurtmalar soni": jami_buyurtmalar_soni.
+        *   "Yangi buyurtmalar": statusi "new" bo'lgan buyurtmalar soni.
+    *   **Navigatsiya tugmalari:**
+        *   "Do'konlar boshqaruvi" (bosilganda `/admin/shops` ga o'tadi).
+        *   "Buyurtmalar ro'yxati" (bosilganda `/admin/orders` ga o'tadi).
+        *   (MVPda mahsulotlar boshqaruvi do'kon ichidan amalga oshiriladi).
+*   **Ma'lumotlar:** `FirestoreService` orqali buyurtmalar soni hisoblanadi.
+
+**3.3. Admin Do'konlar boshqaruvi (Admin Shops Screen - `/admin/shops`):**
+*   **Vazifasi:** Do'konlarni qo'shish, tahrirlash va o'chirish.
+*   **Elementlar:**
+    *   **AppBar:** "Do'konlar", orqaga tugmasi, o'ngda "Do'kon qo'shish" tugmasi.
+    *   **Do'konlar ro'yxati:**
+        *   Har bir do'kon uchun: nomi, manzili, rasmi.
+        *   Do'kon yonida: "Tahrirlash" va "O'chirish" ikonkalari.
+        *   Do'kon ustiga bosilganda `/admin/products/:shopId` ekraniga o'tiladi (shu do'konning mahsulotlarini boshqarish uchun).
+*   **"Do'kon qo'shish" tugmasi/dialogi:** Yangi do'kon yaratish uchun quyidagi maydonlar bilan forma:
+    *   Nomi, Manzili, Shahar (Dropdown: Yangi Yer/Guliston), Rasm yuklash (ImagePicker yordamida), Ish vaqti (startTime, endTime), Telefon raqami, Lat/Lng (MVPda qo'lda kiritiladi), Aktiv/Nofaol (Switch).
+*   **"Tahrirlash" dialogi:** Mavjud do'kon ma'lumotlarini o'zgartirish.
+*   **"O'chirish" dialogi:** Tasdiqlash so'rovi bilan do'konni o'chirish.
+*   **Ma'lumotlar:** `FirestoreService` va `StorageService` orqali `shops` kolleksiyasini boshqarish.
+
+**3.4. Admin Mahsulotlar boshqaruvi (Admin Products Screen - `/admin/products/:shopId`):**
+*   **Vazifasi:** Tanlangan do'kon uchun mahsulotlarni qo'shish, tahrirlash va o'chirish.
+*   **Elementlar:**
+    *   **AppBar:** "Mahsulotlar", orqaga tugmasi, o'ngda "Mahsulot qo'shish" tugmasi.
+    *   **Mahsulotlar ro'yxati:**
+        *   Har bir mahsulot uchun: nomi, narxi, rasmi, mavjudligi.
+        *   Mahsulot yonida: "Tahrirlash" va "O'chirish" ikonkalari.
+*   **"Mahsulot qo'shish" tugmasi/dialogi:** Yangi mahsulot yaratish uchun forma:
+    *   Nomi, Tavsifi, Narxi, Birligi (Dropdown: dona/kg/litr/paket), Rasm yuklash (bir nechta rasm bo'lishi mumkin), Kategoriya (Dropdown: admin kiritgan kategoriyalar), Mavjud (Switch).
+*   **"Tahrirlash" dialogi:** Mavjud mahsulot ma'lumotlarini o'zgartirish.
+*   **"O'chirish" dialogi:** Tasdiqlash so'rovi bilan mahsulotni o'chirish.
+*   **Ma'lumotlar:** `FirestoreService` va `StorageService` orqali `shops/{shopId}/products` sub-kolleksiyasini boshqarish.
+
+**3.5. Admin Buyurtmalar ro'yxati (Admin Orders Screen - `/admin/orders`):**
+*   **Vazifasi:** Barcha yangi va mavjud buyurtmalarni ko'rish va ularning holatini o'zgartirish.
+*   **Elementlar:**
+    *   **AppBar:** "Buyurtmalar", orqaga tugmasi.
+    *   **Buyurtmalar ro'yxati:**
+        *   Har bir buyurtma uchun: Buyurtma raqami, Buyurtmachi ismi, Telefon raqami, Do'kon nomi, Jami summa, Holati (ranglar bilan ajratilgan: Yangi-qizil, Qabul qilindi-sariq, Yo'lda-ko'k, Yetkazildi-yashil).
+        *   Telefon raqamiga bosilganda to'g'ridan-to'g'ri qo'ng'iroq qilish imkoniyati.
+        *   Buyurtma ustiga bosilganda buyurtmaning to'liq tarkibi (mahsulotlar ro'yxati), manzil va izoh ko'rsatiladi.
+        *   **Holatni o'zgartirish:** Buyurtma tafsilotlari sahifasida yoki ro'yxat elementida `Dropdown` yordami
+
+
+        online_store_guliston/
+├── lib/
+│   ├── main.dart
+│   ├── app.dart (MaterialApp/CupertinoApp)
+│   ├── app_router.dart
+│   ├── config/ (App konfiglar, constants)
+│   │   ├── app_constants.dart
+│   │   ├── app_colors.dart
+│   │   └── firebase_options.dart
+│   ├── core/ (Umumiy kod, barcha featur'lar ishlatishi mumkin)
+│   │   ├── error/
+│   │   │   └── failures.dart
+│   │   ├── providers/ (Global Riverpod providers)
+│   │   │   └── app_providers.dart
+│   │   ├── services/ (Global services: Logger, Connectivity)
+│   │   └── utils/ (Global utilities: Validators, Helpers)
+│   ├── data/ (Ma'lumotlar manbasi, repository implementatsiyalari)
+│   │   ├── datasources/ (Firebase, API)
+│   │   │   ├── auth_datasource.dart
+│   │   │   ├── firestore_datasource.dart
+│   │   │   └── storage_datasource.dart
+│   │   ├── models/ (Firebase'dan kelgan ma'lumotlar uchun DTOs)
+│   │   ├── repositories/ (Repository interfeyslarini implementatsiyasi)
+│   ├── domain/ (Biznes logikasi, entitetlar, repository interfeyslari)
+│   │   ├── entities/ (Ma'lumotlar modellari - Category, Shop, Product, Order, AdminUser)
+│   │   ├── repositories/ (Abstract Repositories)
+│   │   │   ├── auth_repository.dart
+│   │   │   ├── shop_repository.dart
+│   │   │   └── order_repository.dart
+│   │   ├── usecases/ (Biznes-logika uchun Use Cases)
+│   │   │   ├── auth/
+│   │   │   ├── shop/
+│   │   │   └── order/
+│   ├── presentation/ (UI qismi, widgetlar, pages, viewmodels)
+│   │   ├── common_widgets/
+│   │   ├── features/ (Har bir feature uchun UI)
+│   │   │   ├── auth/
+│   │   │   │   ├── pages/
+│   │   │   │   ├── providers/ (Feature specific Riverpod providers)
+│   │   │   │   └── widgets/
+│   │   │   ├── customer/
+│   │   │   │   ├── pages/
+│   │   │   │   ├── providers/
+│   │   │   │   └── widgets/
+│   │   │   ├── admin/
+│   │   │   │   ├── pages/
+│   │   │   │   ├── providers/
+│   │   │   │   └── widgets/
+│   │   ├── layouts/ (Responsive layoutlar uchun)
+│   │   │   ├── mobile_layout.dart
+│   │   │   ├── tablet_layout.dart
+│   │   │   └── desktop_layout.dart
+├── assets/
+│   ├── images/
+│   ├── icons/
+│   └── lottie_animations/
+├── web/
+├── android/
+├── ios/
+├── windows/
+├── linux/
+├── macos/
+├── pubspec.yaml
+├── README.md
