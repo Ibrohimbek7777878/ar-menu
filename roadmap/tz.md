@@ -19,7 +19,7 @@ Asosiy manzil: O'zbekiston, Sirdaryo viloyati, Yangi Yer shahri va Guliston
 
 2. FOYDALANUVCHILAR ROLLARI
 2.1 Oddiy foydalanuvchi (Guest/Buyer)
-
+  
 Ilovaga kiradi, ro'yxatdan o'tmaydi (registration yo'q)
 Xaritada do'konlarni ko'radi va izlaydi
 Do'konni tanlaydi, mahsulotlarini ko'radi

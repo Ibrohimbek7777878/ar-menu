@@ -1,0 +1,974 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Online Store Guliston — Master Roadmap</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Inter,sans-serif;
+    }
+
+    body{
+      background:#050816;
+      color:#fff;
+      line-height:1.7;
+      overflow-x:hidden;
+    }
+
+    .container{
+      width:95%;
+      max-width:1400px;
+      margin:auto;
+      padding:40px 0;
+    }
+
+    .hero{
+      text-align:center;
+      padding:80px 20px;
+      background:linear-gradient(135deg,#0f172a,#111827,#1e293b);
+      border-radius:30px;
+      margin-bottom:40px;
+      border:1px solid rgba(255,255,255,0.1);
+      box-shadow:0 0 50px rgba(0,255,255,0.08);
+    }
+
+    .hero h1{
+      font-size:64px;
+      font-weight:800;
+      background:linear-gradient(to right,#00e5ff,#4ade80);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      margin-bottom:20px;
+    }
+
+    .hero p{
+      max-width:900px;
+      margin:auto;
+      color:#cbd5e1;
+      font-size:20px;
+    }
+
+    .section{
+      margin-top:50px;
+      background:#0f172a;
+      border-radius:24px;
+      padding:40px;
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .section h2{
+      font-size:40px;
+      margin-bottom:25px;
+      color:#38bdf8;
+    }
+
+    .section h3{
+      margin-top:25px;
+      margin-bottom:15px;
+      color:#4ade80;
+      font-size:26px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:20px;
+      margin-top:25px;
+    }
+
+    .card{
+      background:#111827;
+      border-radius:20px;
+      padding:25px;
+      border:1px solid rgba(255,255,255,0.06);
+      transition:0.3s;
+    }
+
+    .card:hover{
+      transform:translateY(-5px);
+      box-shadow:0 0 30px rgba(0,255,255,0.08);
+    }
+
+    .card h4{
+      color:#22d3ee;
+      margin-bottom:15px;
+      font-size:22px;
+    }
+
+    ul{
+      padding-left:20px;
+    }
+
+    li{
+      margin-bottom:8px;
+      color:#d1d5db;
+    }
+
+    .flow{
+      background:#020617;
+      padding:25px;
+      border-radius:20px;
+      margin-top:20px;
+      border:1px solid rgba(255,255,255,0.05);
+      overflow:auto;
+    }
+
+    .flow code{
+      color:#4ade80;
+      font-size:18px;
+      white-space:pre-wrap;
+    }
+
+    .tag{
+      display:inline-block;
+      padding:8px 14px;
+      border-radius:999px;
+      background:#0ea5e9;
+      margin:5px;
+      font-size:14px;
+      color:#fff;
+    }
+
+    .footer{
+      text-align:center;
+      padding:50px 20px;
+      color:#94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>ONLINE STORE GULISTON</h1>
+    <p>
+      Hyperlocal Offline-First Marketplace Ecosystem for Guliston and Yangi Yer.
+      Daily household products ordering system with map integration, smart caching,
+      offline mode and scalable marketplace infrastructure.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>PROJECT VISION</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h4>Main Goal</h4>
+        <ul>
+          <li>Find nearby stores</li>
+          <li>Compare product prices</li>
+          <li>Order from home</li>
+          <li>Offline + online support</li>
+          <li>Daily essentials automation</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>Main Region</h4>
+        <ul>
+          <li>Uzbekistan</li>
+          <li>Guliston</li>
+          <li>Yangi Yer</li>
+          <li>Mahalla based system</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>Main USP</h4>
+        <ul>
+          <li>Offline-first marketplace</li>
+          <li>No user registration</li>
+          <li>Hyperlocal delivery</li>
+          <li>Fast daily ordering</li>
+          <li>Low-end phone optimized</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>CORE SYSTEM FLOW</h2>
+
+    <div class="flow">
+      <code>
+USER → LOCATION → NEARBY STORES → PRODUCTS → CART → ORDER → TELEGRAM → STORE → DELIVERY → ANALYTICS
+      </code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>VERTICAL ROADMAP</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h4>LEVEL 1 — FOUNDATION</h4>
+        <ul>
+          <li>PWA setup</li>
+          <li>Firebase setup</li>
+          <li>Routing system</li>
+          <li>Theme system</li>
+          <li>Responsive layout</li>
+          <li>Offline architecture</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 2 — STORE SYSTEM</h4>
+        <ul>
+          <li>Store collection</li>
+          <li>Store cards</li>
+          <li>Store pages</li>
+          <li>Open/close logic</li>
+          <li>Delivery support</li>
+          <li>Store maps</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 3 — PRODUCT SYSTEM</h4>
+        <ul>
+          <li>Product cards</li>
+          <li>Product details</li>
+          <li>Price system</li>
+          <li>Stock status</li>
+          <li>Categories</li>
+          <li>Search indexing</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 4 — SEARCH ENGINE</h4>
+        <ul>
+          <li>Realtime search</li>
+          <li>Typo tolerance</li>
+          <li>Nearest search</li>
+          <li>Cheapest search</li>
+          <li>Search suggestions</li>
+          <li>Offline search</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 5 — MAP SYSTEM</h4>
+        <ul>
+          <li>Google Maps</li>
+          <li>Yandex Maps</li>
+          <li>Store markers</li>
+          <li>Distance logic</li>
+          <li>Route navigation</li>
+          <li>Nearby stores</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 6 — CART SYSTEM</h4>
+        <ul>
+          <li>Add to cart</li>
+          <li>Offline cart</li>
+          <li>Persistent cart</li>
+          <li>Quantity updates</li>
+          <li>Local cache</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 7 — ORDER SYSTEM</h4>
+        <ul>
+          <li>Checkout</li>
+          <li>Order creation</li>
+          <li>Status updates</li>
+          <li>Telegram send</li>
+          <li>Realtime updates</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 8 — OFFLINE FIRST</h4>
+        <ul>
+          <li>IndexedDB cache</li>
+          <li>Service worker</li>
+          <li>Offline browsing</li>
+          <li>Auto sync</li>
+          <li>7-10 day cache</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 9 — DAILY ENGINE</h4>
+        <ul>
+          <li>Quick order buttons</li>
+          <li>Weekly basket</li>
+          <li>Repeat orders</li>
+          <li>Household packages</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>LEVEL 10 — ANALYTICS</h4>
+        <ul>
+          <li>Popular products</li>
+          <li>User heatmaps</li>
+          <li>Peak hours</li>
+          <li>Store performance</li>
+          <li>Sales analytics</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>HORIZONTAL ROADMAP</h2>
+
+    <div class="grid">
+
+      <div class="card">
+        <h4>DISCOVERY LAYER</h4>
+        <ul>
+          <li>Splash screen</li>
+          <li>Location detect</li>
+          <li>Nearby stores</li>
+          <li>Trending products</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>SEARCH LAYER</h4>
+        <ul>
+          <li>Fast search</li>
+          <li>Filters</li>
+          <li>Suggestions</li>
+          <li>Categories</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>SHOPPING LAYER</h4>
+        <ul>
+          <li>Product details</li>
+          <li>Cart system</li>
+          <li>Checkout</li>
+          <li>Repeat order</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>DELIVERY LAYER</h4>
+        <ul>
+          <li>Order statuses</li>
+          <li>Delivery routes</li>
+          <li>Notifications</li>
+          <li>Tracking system</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h4>RETENTION LAYER</h4>
+        <ul>
+          <li>Recommendations</li>
+          <li>Weekly basket</li>
+          <li>Loyalty system</li>
+          <li>Repeat orders</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>FIREBASE STRUCTURE</h2>
+
+    <div class="flow">
+      <code>
+stores/
+products/
+categories/
+orders/
+analytics/
+notifications/
+promotions/
+searches/
+users/
+      </code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>OFFLINE FLOW</h2>
+
+    <div class="flow">
+      <code>
+INTERNET ON:
+- fetch firestore data
+- cache locally
+- sync realtime
+
+INTERNET OFF:
+- load cached stores
+- load cached products
+- offline cart works
+- queue requests
+
+INTERNET RETURNS:
+- sync queue
+- refresh cache
+- update firestore
+      </code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>MAIN FEATURES</h2>
+
+    <span class="tag">Offline First</span>
+    <span class="tag">PWA</span>
+    <span class="tag">APK Ready</span>
+    <span class="tag">Telegram Integration</span>
+    <span class="tag">Realtime Orders</span>
+    <span class="tag">Smart Search</span>
+    <span class="tag">Weekly Basket</span>
+    <span class="tag">Repeat Orders</span>
+    <span class="tag">Nearby Stores</span>
+    <span class="tag">Daily Essentials</span>
+
+  </div>
+
+  <div class="section">
+    <h2>SCALABILITY ROADMAP</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h4>STAGE 1</h4>
+        <p>Yangi Yer only</p>
+      </div>
+
+      <div class="card">
+        <h4>STAGE 2</h4>
+        <p>Full Guliston coverage</p>
+      </div>
+
+      <div class="card">
+        <h4>STAGE 3</h4>
+        <p>Sirdaryo region</p>
+      </div>
+
+      <div class="card">
+        <h4>STAGE 4</h4>
+        <p>Uzbekistan hyperlocal ecosystem</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>FINAL VISION</h2>
+
+    <p>
+      Online Store Guliston — bu oddiy marketplace emas.
+      Bu Guliston va Yangi Yer uchun qurilayotgan local operating system.
+      Asosiy maqsad:
+      odamlarni har kuni non, tuxum, sut, choy kabi kundalik mahsulotlar uchun appga qayta olib kirish.
+    </p>
+  </div>
+
+  <div class="footer">
+    ONLINE STORE GULISTON — HYPERLOCAL MARKETPLACE ECOSYSTEM
+  </div>
+
+</div>
+
+
+
+<div class="container">
+
+  <div class="section">
+    <h2>LEVEL CONNECTION SYSTEM</h2>
+
+    <div class="flow">
+      <code>
+LEVEL 1 → FOUNDATION
+↓
+LEVEL 2 → DATABASE STRUCTURE
+↓
+LEVEL 3 → AUTH SYSTEM
+↓
+LEVEL 4 → STORE SYSTEM
+↓
+LEVEL 5 → PRODUCT SYSTEM
+↓
+LEVEL 6 → SEARCH ENGINE
+↓
+LEVEL 7 → MAP SYSTEM
+↓
+LEVEL 8 → CART SYSTEM
+↓
+LEVEL 9 → ORDER SYSTEM
+↓
+LEVEL 10 → OFFLINE SYSTEM
+↓
+LEVEL 11 → TELEGRAM SYSTEM
+↓
+LEVEL 12 → ADMIN DASHBOARD
+↓
+LEVEL 13 → ANALYTICS SYSTEM
+↓
+LEVEL 14 → GROWTH SYSTEM
+      </code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 1 — FOUNDATION SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Projectning asosiy skeleton va architecture qismini qurish.</p>
+
+    <h3>Build Order</h3>
+    <ul>
+      <li>Create project</li>
+      <li>Install dependencies</li>
+      <li>Setup routing</li>
+      <li>Setup layouts</li>
+      <li>Setup theme system</li>
+      <li>Setup responsive system</li>
+      <li>Setup folder structure</li>
+    </ul>
+
+    <h3>Folder Structure</h3>
+
+    <div class="flow">
+      <code>
+/src
+/components
+/pages
+/layouts
+/services
+/firebase
+/store
+/hooks
+/utils
+/styles
+      </code>
+    </div>
+
+    <h3>Result</h3>
+    <p>Appning asosiy ishlaydigan bazasi tayyor bo‘ladi.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 2 — DATABASE STRUCTURE</h2>
+
+    <h3>Main Goal</h3>
+    <p>Firestore collections va data architecture yaratish.</p>
+
+    <h3>Collections</h3>
+
+    <div class="flow">
+      <code>
+stores
+products
+categories
+orders
+analytics
+notifications
+searches
+users
+banners
+promotions
+      </code>
+    </div>
+
+    <h3>Store Structure</h3>
+
+    <div class="flow">
+      <code>
+store:
+- id
+- title
+- logo
+- banner
+- address
+- geo
+- workHours
+- deliveryEnabled
+      </code>
+    </div>
+
+    <h3>Result</h3>
+    <p>Barcha levelar ishlaydigan database tayyor bo‘ladi.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 3 — AUTH SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Faqat admin va store owner authentication.</p>
+
+    <h3>Logic</h3>
+    <ul>
+      <li>User registration yo‘q</li>
+      <li>Admin login mavjud</li>
+      <li>Store owner login mavjud</li>
+      <li>Firebase Auth ishlatiladi</li>
+      <li>Role based access</li>
+    </ul>
+
+    <h3>Roles</h3>
+
+    <div class="flow">
+      <code>
+admin
+store_owner
+customer_guest
+      </code>
+    </div>
+
+    <h3>Result</h3>
+    <p>Dashboard va admin routes himoyalanadi.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 4 — STORE SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Do‘konlarni tizimga ulash.</p>
+
+    <h3>Flow</h3>
+
+    <div class="flow">
+      <code>
+Admin creates store
+↓
+Store saved in Firestore
+↓
+Store appears on homepage
+↓
+Store visible on map
+↓
+User opens store
+      </code>
+    </div>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Store cards</li>
+      <li>Store details page</li>
+      <li>Store categories</li>
+      <li>Open/close logic</li>
+      <li>Delivery support</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 1 + LEVEL 2 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 5 — PRODUCT SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Mahsulotlarni store ichiga bog‘lash.</p>
+
+    <h3>Flow</h3>
+
+    <div class="flow">
+      <code>
+Admin adds product
+↓
+Product linked to storeId
+↓
+Product shown in store page
+↓
+Product searchable
+↓
+Product added to cart
+      </code>
+    </div>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Product cards</li>
+      <li>Product details</li>
+      <li>Product pricing</li>
+      <li>Stock status</li>
+      <li>Categories</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 4 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 6 — SEARCH ENGINE</h2>
+
+    <h3>Main Goal</h3>
+    <p>Realtime intelligent search system.</p>
+
+    <h3>Search Logic</h3>
+
+    <div class="flow">
+      <code>
+User types text
+↓
+Search products
+↓
+Search stores
+↓
+Sort nearest
+↓
+Sort cheapest
+↓
+Return results
+      </code>
+    </div>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Realtime search</li>
+      <li>Suggestions</li>
+      <li>Typo tolerance</li>
+      <li>Cached search</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 5 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 7 — MAP SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Nearby hyperlocal marketplace map.</p>
+
+    <h3>Flow</h3>
+
+    <div class="flow">
+      <code>
+Get user location
+↓
+Find nearest stores
+↓
+Show markers
+↓
+Calculate distance
+↓
+Build route
+      </code>
+    </div>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Google Maps</li>
+      <li>Yandex Maps</li>
+      <li>Markers</li>
+      <li>Routes</li>
+      <li>Delivery radius</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 4 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 8 — CART SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Persistent offline shopping cart.</p>
+
+    <h3>Flow</h3>
+
+    <div class="flow">
+      <code>
+User selects product
+↓
+Product added to cart
+↓
+Cart cached locally
+↓
+Quantity editable
+↓
+Checkout available
+      </code>
+    </div>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 5 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 9 — ORDER SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Real ordering infrastructure.</p>
+
+    <h3>Order Flow</h3>
+
+    <div class="flow">
+      <code>
+Cart
+↓
+Checkout form
+↓
+Create order
+↓
+Save firestore
+↓
+Send telegram
+↓
+Admin receives order
+↓
+Store receives order
+      </code>
+    </div>
+
+    <h3>Order Statuses</h3>
+
+    <div class="flow">
+      <code>
+new
+accepted
+preparing
+delivering
+delivered
+cancelled
+      </code>
+    </div>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 8 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 10 — OFFLINE SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Internet bo‘lmasa ham app ishlashi.</p>
+
+    <h3>Offline Flow</h3>
+
+    <div class="flow">
+      <code>
+Internet ON
+↓
+Cache products/stores
+↓
+Internet OFF
+↓
+Load local cache
+↓
+Queue actions
+↓
+Internet RETURNS
+↓
+Sync firestore
+      </code>
+    </div>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>IndexedDB</li>
+      <li>Service Worker</li>
+      <li>Offline images</li>
+      <li>Offline cart</li>
+      <li>Auto sync</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 9 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 11 — TELEGRAM SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Realtime order notification system.</p>
+
+    <h3>Flow</h3>
+
+    <div class="flow">
+      <code>
+Order created
+↓
+Cloud Function triggered
+↓
+Telegram bot API
+↓
+Admin receives message
+↓
+Store owner receives order
+      </code>
+    </div>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 9 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 12 — ADMIN DASHBOARD</h2>
+
+    <h3>Main Goal</h3>
+    <p>Platformani to‘liq boshqarish.</p>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Store management</li>
+      <li>Product management</li>
+      <li>Orders management</li>
+      <li>Categories</li>
+      <li>Banners</li>
+      <li>Promotions</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 3 + LEVEL 9 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 13 — ANALYTICS SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>Marketplace intelligence system.</p>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Popular products</li>
+      <li>User heatmaps</li>
+      <li>Store analytics</li>
+      <li>Search analytics</li>
+      <li>Peak hours</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>LEVEL 12 required.</p>
+  </div>
+
+  <div class="section">
+    <h2>LEVEL 14 — GROWTH SYSTEM</h2>
+
+    <h3>Main Goal</h3>
+    <p>User retention va growth engine.</p>
+
+    <h3>Modules</h3>
+    <ul>
+      <li>Repeat orders</li>
+      <li>Recommendations</li>
+      <li>Weekly basket</li>
+      <li>Loyalty system</li>
+      <li>Push notifications</li>
+    </ul>
+
+    <h3>Dependency</h3>
+    <p>All previous levels required.</p>
+  </div>
+
+</div>
+
+</body>
+</html>
+```
