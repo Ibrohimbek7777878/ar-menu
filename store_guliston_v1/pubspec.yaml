@@ -1,16 +1,25 @@
-name: store_guliston_v1
-description: A skeleton stage implementation for the Online Store Guliston app.
-publish_to: 'none'
-version: 0.1.0+1
+name: store_guliston
+description: Yangiyer city local delivery app
+version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.10.0'
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  google_fonts: ^6.1.0
   provider: ^6.1.2
+  google_maps_flutter: ^2.5.0
+  yandex_mapkit: ^4.0.0
+  geolocator: ^10.0.0
+  geocoding: ^3.0.0
+  http: ^1.1.0
+  shared_preferences: ^2.2.0
+  intl: ^0.19.0
+  url_launcher: ^6.2.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +28,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+  

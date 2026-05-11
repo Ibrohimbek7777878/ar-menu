@@ -25,6 +25,10 @@ dependencies:
   shared_preferences: ^2.2.2
   equatable: ^2.0.5
   dartz: ^0.10.1
+  intl: ^0.18.1
+  geolocator: ^10.4.0
+  google_maps_flutter: ^2.4.0
+  yandex_mapkit: ^0.6.0
   
   # UI components
   flutter_svg: ^2.0.10

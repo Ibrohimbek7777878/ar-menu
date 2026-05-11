@@ -1,17 +1,17 @@
-# store_guliston_v1
+# store_guliston
 
-This folder contains the first version scaffold for the Online Store Guliston project.
+A new Flutter project.
 
-Status: skeleton stage.
+## Getting Started
 
-Based on the existing `roadmap` folder files:
-- `roadmap/strategy.html`
-- `roadmap/roadmap.md`
+This project is a starting point for a Flutter application.
 
-Current focus:
-- execute the Skeleton stage only
-- create stage completion docs
-- do not build extra unrelated features
+A few resources to get you started if this is your first Flutter project:
 
-Next step after review:
-- move to Core stage only when Skeleton is fully tested and verified
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
