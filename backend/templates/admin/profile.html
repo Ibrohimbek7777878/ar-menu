@@ -1,0 +1,131 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Profil - Store Admin{% endblock %}
+{% block page_title %}Profil{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="card overflow-hidden">
+        <div class="p-8">
+            <div class="flex items-center gap-5 mb-8">
+                <div class="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center shrink-0">
+                    <span class="text-brand-700 dark:text-brand-400 font-display font-bold text-xl">{{ user.username|first|upper }}</span>
+                </div>
+                <div>
+                    <h2 class="font-display text-2xl font-semibold">{{ user.get_full_name|default:user.username }}</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ user.get_role_display }}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 text-sm">
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.username }}</p>
+                    <p class="font-medium">{{ user.username }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.email_label }}</p>
+                    <p class="font-medium">{{ user.email|default:"—" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.phone }}</p>
+                    <p class="font-medium">{{ user.phone|default:"—" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.telegram_label }}</p>
+                    <p class="font-medium">{% if user.telegram_username %}<span class="inline-flex items-center gap-1.5"><span class="material-icons-outlined !text-base text-sky-500">send</span>@{{ user.telegram_username }}</span>{% else %}<span class="text-gray-400">—</span><span class="ml-2 pill bg-amber-50 text-amber-700 text-xs">Bot admin uchun qo'shing</span>{% endif %}</p>
+                    {% if not user.telegram_username %}<p class="text-xs text-gray-400 mt-1">{{ t.profile_edit_desc }}</p>{% endif %}
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.status_label }}</p>
+                    {% if user.is_approved %}
+                    <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.approved }}</span>
+                    {% else %}
+                    <span class="pill text-amber-700 bg-amber-50"><span class="size-1.5 rounded-full bg-amber-500"></span>{{ t.not_approved }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profil tahriri -->
+            <div class="mt-8 pt-6 border-t border-gray-100 dark:border-neutral-900">
+                <h3 class="font-display text-lg font-semibold mb-4">{{ t.profile_info }}</h3>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.first_name }}</label>
+                            <input type="text" name="first_name" value="{{ user.first_name|default:'' }}"
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.last_name }}</label>
+                            <input type="text" name="last_name" value="{{ user.last_name|default:'' }}"
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.email_label }}</label>
+                            <input type="email" name="email" value="{{ user.email|default:'' }}"
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.phone }}</label>
+                            <input type="tel" name="phone" value="{{ user.phone|default:'' }}"
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.telegram_label }}</label>
+                            <div class="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10">
+                                <span class="text-gray-400 mr-1">@</span>
+                                <input type="text" name="telegram_username" value="{{ user.telegram_username|default:'' }}"
+                                    class="outline-none w-full bg-transparent" placeholder="username">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700">
+                            <span class="material-icons-outlined !text-base">save</span>
+                            Saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Parol o'zgartirish -->
+            <div class="mt-8 pt-6 border-t border-gray-100 dark:border-neutral-900">
+                <h3 class="font-display text-lg font-semibold mb-4">{{ t.change_password }}</h3>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.old_password }}</label>
+                            <input type="password" name="old_password" required
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.new_password }}</label>
+                            <input type="password" name="new_password" required
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.confirm_password }}</label>
+                            <input type="password" name="new_password_confirm" required
+                                class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700">
+                            <span class="material-icons-outlined !text-base">lock_reset</span>
+                            Parolni yangilash
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-100 dark:border-neutral-900">
+                <a href="{% url 'web_logout' %}" class="inline-flex items-center gap-2 text-red-600 hover:text-red-700 text-sm font-medium transition">
+                    <span class="material-icons !text-lg">logout</span>
+                    Chiqish
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

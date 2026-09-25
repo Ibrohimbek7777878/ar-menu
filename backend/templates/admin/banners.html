@@ -1,0 +1,79 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Bannerlar - Store Admin{% endblock %}
+{% block page_title %}Bannerlar{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div>
+        <p class="eyebrow mb-1">{{ t.marketing_channel }}</p>
+        <h1 class="font-display text-2xl font-semibold text-ink">{{ t.banners }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ banners|length }} ta banner</p>
+    </div>
+    <a href="{% url 'admin_banner_create' %}" class="btn btn-primary shadow-soft">
+        <span class="material-icons-outlined !text-lg">add</span>
+        Yangi banner
+    </a>
+</div>
+
+<div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="tbl w-full min-w-[560px]">
+            <thead>
+                <tr>
+                    <th>{{ t.shop_image }}</th>
+                    <th>{{ t.shop_name }}</th>
+                    <th>{{ t.status_label }}</th>
+                    <th>{{ t.order_label }}</th>
+                    <th class="!text-right">{{ t.actions }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for banner in banners %}
+                <tr class="group hover:!bg-brand-50/30 transition-colors">
+                    <td>
+                        {% if banner.image %}
+                        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="w-24 h-12 rounded-xl object-cover border border-gray-100 group-hover:border-brand-100 transition-colors">
+                        {% else %}
+                        <div class="w-24 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                            <span class="material-icons-outlined !text-lg text-gray-300">image</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="font-semibold text-ink">{{ banner.title }}</span>
+                        {% if banner.link %}<p class="text-xs text-gray-400 truncate max-w-[240px]">{{ banner.link }}</p>{% endif %}
+                    </td>
+                    <td>
+                        {% if banner.is_active %}
+                        <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.active }}</span>
+                        {% else %}
+                        <span class="pill text-gray-500 bg-gray-100"><span class="size-1.5 rounded-full bg-gray-400"></span>{{ t.inactive }}</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="pill bg-gray-50 text-gray-600 border border-gray-100">{{ banner.sort_order }}</span></td>
+                    <td class="!text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{% url 'admin_banner_edit' banner.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-brand-700 hover:bg-brand-50 transition" title="Tahrirlash">
+                                <span class="material-icons-outlined !text-lg">edit</span>
+                            </a>
+                            <a href="{% url 'admin_banner_delete' banner.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="O'chirish" onclick="return confirm('Bannerni o\'chirishni tasdiqlaysizmi?')">
+                                <span class="material-icons-outlined !text-lg">delete</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="py-14 text-center">
+                        <span class="grid size-14 place-items-center mx-auto rounded-2xl bg-gray-50 text-gray-300 mb-3">
+                            <span class="material-icons-outlined !text-3xl">image</span>
+                        </span>
+                        <p class="text-sm font-medium text-gray-500">{{ t.banners_not_found }}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

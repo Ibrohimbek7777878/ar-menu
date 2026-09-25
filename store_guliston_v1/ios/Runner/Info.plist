@@ -66,5 +66,30 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- ====== iOS RUXSATLAR ====== -->
+	
+	<!-- Lokatsiya ruxsati (ilova ishlatayotganda) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Yetkazish manzilini aniqlash uchun lokatsiya kerak</string>
+	
+	<!-- Lokatsiya ruxsati (doimiy) -->
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Yaqin do'konlarni topish uchun lokatsiya kerak</string>
+	
+	<!-- Lokatsiya ruxsati (iOS 13+ uchun) -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Xarita va yetkazish xizmatlari uchun lokatsiya kerak</string>
+	
+	<!-- Kamera ruxsati (mahsulot rasmini tortish) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Mahsulot rasmini tortish uchun kamera kerak</string>
+	
+	<!-- Galereya ruxsati (rasm o'qish) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mahsulot rasmini yuklash uchun galereya kerak</string>
+	
+	<!-- Galereya ruxsati (rasm saqlash) -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Rasmlarni saqlash uchun galereya kerak</string>
 </dict>
 </plist>

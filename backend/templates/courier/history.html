@@ -1,0 +1,54 @@
+{% extends "courier/base_courier.html" %}
+{% load uznum %}
+{% block title %}Yetkazish tarixi - Kuryer paneli{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <p class="eyebrow mb-1">Tarix</p>
+    <h1 class="font-display text-2xl sm:text-3xl font-semibold text-ink dark:text-white mb-8">Yetkazish tarixi</h1>
+
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="tbl w-full">
+                <thead>
+                    <tr>
+                        <th>Sana</th>
+                        <th>Buyurtma</th>
+                        <th>{{ t.customer_label }}</th>
+                        <th>{{ t.sum_label }}</th>
+                        <th>Holat</th>
+                        <th class="!text-right">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="text-gray-500 dark:text-gray-400">{{ order.delivered_at|default:order.created_at|date:"d.m.Y H:i" }}</td>
+                        <td class="font-medium text-ink dark:text-white">#{{ order.order_number }}</td>
+                        <td class="text-gray-600 dark:text-gray-300">{{ order.customer_name }}</td>
+                        <td class="font-medium text-ink dark:text-white">{{ order.final_amount|uznum }} {{ t.catalog_som }}</td>
+                        <td>
+                            {% if order.status == 'delivered' %}
+                            <span class="pill text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-400">Yetkazilgan</span>
+                            {% else %}
+                            <span class="pill text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-400">Bekor qilingan</span>
+                            {% endif %}
+                        </td>
+                        <td class="!text-right">
+                            <a href="{% url 'courier_order_detail' order.pk %}" class="btn btn-outline !py-2 !px-3 !text-xs">Batafsil</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-16">
+                            <span class="material-icons !text-5xl text-gray-300 dark:text-neutral-700 mx-auto block mb-3">history</span>
+                            <p class="text-base text-gray-500 dark:text-gray-400">{{ t.no_history }}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

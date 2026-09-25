@@ -1,0 +1,448 @@
+/* ARMENU — yagona rang tizimi. Hard-code rang YOZILMAYDI. */
+:root {
+  /* Brend (restoran o'zgartirishi mumkin) */
+  --brand:        #E85D2A;
+  --brand-hover:  #D14E1F;
+  --brand-light:  #FFF0EA;
+  --brand-glow:   rgba(232, 93, 42, 0.35);
+  --on-brand:     #FFFFFF;
+
+  /* Neytral — LIGHT */
+  --bg:           #FAFAFC;
+  --bg-soft:      #F0F1F5;
+  --bg-card:      #FFFFFF;
+  --border:       #E2E4E9;
+  --border-light: rgba(0, 0, 0, 0.05);
+  --text:         #111217;
+  --text-soft:    #5E6272;
+  --text-muted:   #9296A5;
+  --overlay:      rgba(10, 12, 20, 0.55);
+
+  /* Glassmorphism */
+  --glass-bg:     rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-dock:   rgba(255, 255, 255, 0.9);
+  --glass-blur:   blur(20px);
+
+  /* Semantik */
+  --success: #10B981;
+  --success-glow: rgba(16, 185, 129, 0.35);
+  --warning: #F59E0B;
+  --danger:  #EF4444;
+  --info:    #3B82F6;
+
+  /* Stol holati */
+  --st-free: #10B981; --st-occupied: #3B82F6; --st-waiting: #F59E0B;
+  --st-ready: #EF4444; --st-bill: #8B5CF6;
+
+  /* O'lchamlar */
+  --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-8: 48px;
+
+  --shadow-sm: 0 2px 4px rgba(0,0,0,.03);
+  --shadow-md: 0 8px 24px -4px rgba(0,0,0,.07), 0 2px 6px -1px rgba(0,0,0,.04);
+  --shadow-lg: 0 16px 36px -6px rgba(0,0,0,.12), 0 4px 12px -2px rgba(0,0,0,.06);
+  --shadow-glow: 0 10px 25px -5px var(--brand-glow);
+
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: 12px; --fs-sm: 14px; --fs-base: 16px; --fs-lg: 18px;
+  --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 32px;
+}
+
+/* DARK — tizim sozlamasi (foydalanuvchi light tanlamagan bo'lsa) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #0A0C14;
+    --bg-soft:   #131726;
+    --bg-card:   #181D30;
+    --border:    rgba(255, 255, 255, 0.08);
+    --border-light: rgba(255, 255, 255, 0.04);
+    --text:      #F4F5F8;
+    --text-soft: #A2A7B8;
+    --text-muted:#6B7286;
+    --brand-light: rgba(232, 93, 42, 0.15);
+    --glass-bg:  rgba(24, 29, 48, 0.82);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-dock: rgba(19, 23, 38, 0.92);
+    --overlay:   rgba(0, 0, 0, 0.75);
+    --shadow-sm: 0 2px 4px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 24px -4px rgba(0,0,0,.5);
+    --shadow-lg: 0 16px 36px -6px rgba(0,0,0,.6);
+  }
+}
+
+/* DARK — qo'lda tanlangan (tizimdan ustun) */
+:root[data-theme="dark"] {
+  --bg:        #0A0C14;
+  --bg-soft:   #131726;
+  --bg-card:   #181D30;
+  --border:    rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --text:      #F4F5F8;
+  --text-soft: #A2A7B8;
+  --text-muted:#6B7286;
+  --brand-light: rgba(232, 93, 42, 0.15);
+  --glass-bg:  rgba(24, 29, 48, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-dock: rgba(19, 23, 38, 0.92);
+  --overlay:   rgba(0, 0, 0, 0.75);
+  --shadow-sm: 0 2px 4px rgba(0,0,0,.4);
+  --shadow-md: 0 8px 24px -4px rgba(0,0,0,.5);
+  --shadow-lg: 0 16px 36px -6px rgba(0,0,0,.6);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  background: var(--bg);
+  color: var(--text);
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+/* --- Tugmalar (min 44×44 tegish maydoni) --- */
+.btn {
+  min-height: 44px; padding: 0 var(--sp-4);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  border: 1px solid transparent; border-radius: var(--r-md);
+  font: inherit; font-weight: 600; cursor: pointer;
+  transition: transform .1s, background .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn--primary { background: var(--brand); color: var(--on-brand); }
+.btn--primary:hover { background: var(--brand-hover); }
+.btn--ghost { background: var(--bg-soft); color: var(--text); border-color: var(--border); }
+.btn--danger { background: var(--danger); color: var(--on-brand); }
+.btn--block { width: 100%; }
+.btn--sm { min-height: 36px; font-size: var(--fs-sm); padding: 0 var(--sp-3); }
+.btn--ar {
+  position: absolute; right: var(--sp-3); bottom: var(--sp-3);
+  background: var(--brand); color: var(--on-brand); box-shadow: var(--shadow-md);
+}
+
+.icon-btn {
+  min-width: 44px; min-height: 44px; display: inline-grid; place-items: center;
+  background: transparent; border: 0; color: var(--text);
+  font-size: var(--fs-lg); cursor: pointer; border-radius: var(--r-md);
+}
+.icon-btn:focus-visible, .btn:focus-visible {
+  outline: 2px solid var(--brand); outline-offset: 2px;
+}
+
+.input {
+  width: 100%; min-height: 44px; padding: 0 var(--sp-3);
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  font: inherit;
+}
+.input::placeholder { color: var(--text-muted); }
+
+/* --- Chip / badge --- */
+.chip {
+  min-height: 36px; padding: 0 var(--sp-3);
+  background: var(--bg-soft); color: var(--text-soft);
+  border: 1px solid var(--border); border-radius: 999px;
+  font-size: var(--fs-sm); cursor: pointer;
+}
+.chip.is-on { background: var(--brand-light); color: var(--brand); border-color: var(--brand); }
+.badge {
+  padding: 2px var(--sp-2); border-radius: var(--r-sm);
+  font-size: var(--fs-xs); font-weight: 700;
+}
+.badge--hit { background: var(--warning); color: var(--on-brand); }
+.badge--new { background: var(--info);    color: var(--on-brand); }
+.badge--out { background: var(--bg-soft); color: var(--text-muted); }
+
+/* --- Skeleton --- */
+.skeleton-grid > * , .skel {
+  background: linear-gradient(90deg, var(--bg-soft) 25%, var(--border) 37%, var(--bg-soft) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: var(--r-md);
+}
+@keyframes shimmer { 0% { background-position: 100% 0 } 100% { background-position: 0 0 } }
+
+/* --- Toast --- */
+.toasts {
+  position: fixed; left: var(--sp-4); right: var(--sp-4);
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: var(--sp-2); z-index: 90;
+}
+.toast {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border-radius: var(--r-md);
+  background: var(--bg-card); color: var(--text);
+  border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+  animation: slideUp .25s ease;
+}
+.toast--success { border-left: 4px solid var(--success); }
+.toast--error   { border-left: 4px solid var(--danger); }
+.toast--info    { border-left: 4px solid var(--info); }
+.toast__img  { border-radius: var(--r-sm); object-fit: cover; }
+.toast__body { flex: 1; min-width: 0; }
+.toast__sub  { font-size: var(--fs-sm); color: var(--text-soft); }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0 } }
+
+/* --- Bottom sheet --- */
+.sheet-backdrop {
+  position: fixed; inset: 0; background: var(--overlay); z-index: 100;
+  display: flex; align-items: flex-end;
+}
+.sheet {
+  width: 100%; max-height: 92dvh; overflow-y: auto;
+  background: var(--bg-card); color: var(--text);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: var(--sp-5) var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom));
+  animation: sheetIn .25s ease;
+}
+@keyframes sheetIn { from { transform: translateY(100%) } }
+
+@media (min-width: 768px) {
+  .sheet-backdrop { align-items: center; justify-content: center; }
+  .sheet { max-width: 560px; border-radius: var(--r-xl); }
+}
+
+/* --- Stepper (−/qty/+) — min 44×44px hit targets --- */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--bg-soft);
+  border-radius: var(--r-md);
+  padding: var(--sp-1);
+  border: 1px solid var(--border);
+}
+.stepper__btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform .1s, background .15s;
+}
+.stepper__btn:active { transform: scale(.95); }
+.stepper__val {
+  min-width: 32px;
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* --- Progress bar / steps (M-08) --- */
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: var(--sp-4) 0;
+  position: relative;
+}
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: 1;
+  position: relative;
+  text-align: center;
+}
+.progress-step__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 3px solid var(--bg-card);
+  z-index: 2;
+  transition: background .3s, transform .3s;
+}
+.progress-step.is-done .progress-step__dot {
+  background: var(--brand);
+}
+.progress-step.is-current .progress-step__dot {
+  background: var(--brand);
+  box-shadow: 0 0 0 4px var(--brand-light);
+  transform: scale(1.15);
+  animation: pulseBrand 1.5s infinite;
+}
+.progress-step__line {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  z-index: 1;
+}
+.progress-step:last-child .progress-step__line {
+  display: none;
+}
+.progress-step.is-done .progress-step__line {
+  background: var(--brand);
+}
+.progress-step__label {
+  font-size: var(--fs-xs);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.progress-step.is-current .progress-step__label {
+  color: var(--brand);
+  font-weight: 700;
+}
+@keyframes pulseBrand {
+  0%, 100% { box-shadow: 0 0 0 3px var(--brand-light); }
+  50% { box-shadow: 0 0 0 8px var(--brand-light); }
+}
+
+/* --- Empty state --- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--text-soft);
+}
+.empty-state__icon {
+  font-size: 56px;
+  margin-bottom: var(--sp-3);
+  line-height: 1;
+}
+.empty-state__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 var(--sp-2);
+}
+.empty-state__desc {
+  font-size: var(--fs-sm);
+  color: var(--text-soft);
+  max-width: 320px;
+  margin: 0 0 var(--sp-4);
+}
+
+/* --- Rating (5 yulduz, min 44×44px tegish) --- */
+.rating {
+  display: inline-flex;
+  gap: var(--sp-2);
+}
+.rating__star {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  cursor: pointer;
+  color: var(--border);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  transition: transform .1s, color .15s;
+}
+.rating__star.is-active,
+.rating__star:hover {
+  color: var(--warning);
+}
+.rating__star:active {
+  transform: scale(.88);
+}
+
+/* --- Dish placeholder --- */
+.dish-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-soft);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+}
+.dish-ph svg {
+  width: 44px;
+  height: 44px;
+  opacity: .85;
+}
+
+/* --- Flying to cart animation (Parabolic Curve) --- */
+.flying-badge {
+  position: fixed;
+  z-index: 9999;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand-hover));
+  color: var(--on-brand);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  pointer-events: none;
+  box-shadow: 0 4px 16px var(--brand-glow), 0 0 10px rgba(255,255,255,0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  transition: transform .48s cubic-bezier(0.18, 0.89, 0.32, 1.15), opacity .45s ease;
+}
+
+@keyframes cartBounce {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.22); box-shadow: 0 0 25px var(--brand-glow); }
+  50% { transform: scale(0.92); }
+  75% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.cart-bounce {
+  animation: cartBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 4px 22px rgba(16, 185, 129, 0.8); transform: translateY(-1px); }
+}
+
+/* --- Checkmark animation (600ms SVG stroke) --- */
+.checkmark {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 3;
+  stroke: var(--success);
+  stroke-miterlimit: 10;
+  margin: var(--sp-4) auto;
+  box-shadow: inset 0px 0px 0px var(--success);
+}
+.checkmark__circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke-miterlimit: 10;
+  stroke: var(--success);
+  fill: none;
+  animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.checkmark__check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: strokeCheck 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+}
+@keyframes strokeCircle { 100% { stroke-dashoffset: 0; } }
+@keyframes strokeCheck { 100% { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

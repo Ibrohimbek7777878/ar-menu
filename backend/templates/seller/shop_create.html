@@ -1,0 +1,50 @@
+{% extends "seller/base_seller.html" %}
+{% block title %}Do'kon yaratish{% endblock %}
+{% block page_title %}Do'kon yaratish{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <div class="card p-6 sm:p-8">
+        <div class="text-center mb-6">
+            <div class="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="material-icons-outlined text-brand-600 text-2xl">storefront</span>
+            </div>
+            <h2 class="font-display text-xl font-semibold text-ink">Do'koningizni yarating</h2>
+            <p class="text-sm text-gray-500 mt-1">Sotuvni boshlash uchun birinchi do'koningizni yarating</p>
+        </div>
+
+        {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for message in messages %}
+            <div class="msg {% if message.tags == 'success' %}msg-success{% elif message.tags == 'error' %}msg-error{% else %}msg-info{% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="field">Do'kon nomi *</label>
+                <input type="text" name="name" required placeholder="masalan: Guliston Non Savdosi" autofocus>
+            </div>
+            <div>
+                <label class="field">Biznes turi * (shu bo'yicha tayyor preset o'rnatiladi — keyin qo'lda o'zgartiriladi)</label>
+                <select name="store_type" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm">
+                    {% for val, label in business_types %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="field">{{ t.address_label }}</label>
+                <input type="text" name="address" placeholder="Guliston shahri, Navoiy ko'chasi 12">
+            </div>
+            <div>
+                <label class="field">{{ t.phone }}</label>
+                <input type="tel" name="phone" placeholder="+998 90 123 45 67" value="{{ request.user.phone }}">
+            </div>
+            <button type="submit" class="btn btn-primary w-full !py-3">Yaratish va davom etish</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

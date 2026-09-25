@@ -1,0 +1,244 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}Online Store Guliston — Telegram Mini App{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Search Bar */
+    .tma-search-box {
+        margin-bottom: 16px;
+    }
+    .tma-search-input {
+        width: 100%;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 12px 16px 12px 40px;
+        border-radius: var(--radius-md);
+        font-size: 14px;
+        color: var(--text-color);
+        outline: none;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+        background-repeat: no-repeat;
+        background-position: 14px center;
+    }
+
+    /* Categories Horizontal Scroll */
+    .tma-section-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .tma-categories-scroll {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
+        scrollbar-width: none;
+    }
+    .tma-categories-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    .tma-cat-chip {
+        flex: 0 0 auto;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-color);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* AR 3D Banner */
+    .tma-ar-banner {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: #ffffff;
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 8px 20px rgba(5, 150, 105, 0.25);
+    }
+    .tma-ar-banner h3 {
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+    .tma-ar-banner p {
+        font-size: 12px;
+        opacity: 0.9;
+        margin-bottom: 8px;
+    }
+    .tma-ar-btn {
+        display: inline-block;
+        background: #ffffff;
+        color: #059669;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    /* Product Grid */
+    .tma-product-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    .tma-prod-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    .tma-prod-img {
+        width: 100%;
+        height: 125px;
+        object-fit: cover;
+        background: #f1f5f9;
+    }
+    .tma-prod-body {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        justify-content: space-between;
+    }
+    .tma-prod-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 4px;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .tma-prod-shop {
+        font-size: 11px;
+        color: var(--hint-color);
+        margin-bottom: 8px;
+    }
+    .tma-prod-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: auto;
+    }
+    .tma-prod-price {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+    .tma-add-btn {
+        background: var(--primary);
+        color: #ffffff;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .tma-add-btn:active {
+        transform: scale(0.9);
+    }
+    .tma-3d-badge {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(15, 23, 42, 0.8);
+        color: #ffffff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        backdrop-filter: blur(4px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Search Form -->
+    <form action="{% url 'tma_catalog' %}" method="GET" class="tma-search-box">
+        <input type="text" name="q" class="tma-search-input" placeholder="Mahsulot yoki taom qidirish...">
+    </form>
+
+    <!-- AR 3D Banner -->
+    <div class="tma-ar-banner">
+        <div>
+            <h3>🥽 3D & AR Menyu</h3>
+            <p>Taomlarni stolingiz ustida 3D ko'ring</p>
+            <a href="/ar/" class="tma-ar-btn">Ko'rish ✨</a>
+        </div>
+        <div style="font-size: 42px;">🍲</div>
+    </div>
+
+    <!-- Categories -->
+    <div class="tma-section-title">
+        <span>Kategoriyalar</span>
+        <a href="{% url 'tma_catalog' %}" style="font-size: 12px; color: var(--primary); text-decoration: none;">Barchasi &rarr;</a>
+    </div>
+    <div class="tma-categories-scroll">
+        <a href="{% url 'tma_catalog' %}" class="tma-cat-chip">🔥 Barchasi</a>
+        {% for cat in categories %}
+            <a href="{% url 'tma_catalog' %}?category={{ cat.id }}" class="tma-cat-chip">
+                {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Featured Products -->
+    <div class="tma-section-title">
+        <span>Ommabop Mahsulotlar</span>
+    </div>
+    <div class="tma-product-grid">
+        {% for prod in featured_products %}
+            <div class="tma-prod-card">
+                {% if prod.has_3d %}
+                    <span class="tma-3d-badge">🥽 3D AR</span>
+                {% endif %}
+                {% if prod.image %}
+                    <img src="{{ prod.image.url }}" alt="{{ prod.name }}" class="tma-prod-img" loading="lazy">
+                {% else %}
+                    <div class="tma-prod-img" style="display:flex;align-items:center;justify-content:center;font-size:28px;">🛒</div>
+                {% endif %}
+                <div class="tma-prod-body">
+                    <div>
+                        <div class="tma-prod-title">{{ prod.name }}</div>
+                        <div class="tma-prod-shop">{{ prod.shop.name }}</div>
+                    </div>
+                    <div class="tma-prod-footer">
+                        <div class="tma-prod-price">{{ prod.price|floatformat:0 }} so'm</div>
+                        <button class="tma-add-btn" onclick="tmaAddToCart('{{ prod.id }}')">+</button>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--hint-color);">
+                Hozircha mahsulotlar mavjud emas
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

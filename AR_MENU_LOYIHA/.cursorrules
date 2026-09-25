@@ -1,0 +1,195 @@
+# ARMENU — CURSOR QOIDALARI
+
+> Bu fayl har yangi chatda avtomatik yuklanadi.
+> Sen — bu loyihaning **kod yozuvchisisan**. Arxitektura va tahlil boshqa AI tomonidan qilingan.
+
+---
+
+## 🎯 SENING ROLING
+
+| Sen QILASAN | Sen QILMAYSAN |
+|---|---|
+| ✅ Roadmap'dagi vazifalarni kod bilan bajarasan | ❌ Arxitekturani o'zgartirmaysan |
+| ✅ Test yozasan va ishga tushirasan | ❌ Yangi funksiya o'ylab topmaysan |
+| ✅ Handoff faylni to'ldirasan | ❌ Vazifa tartibini buzmaysan |
+| ✅ Xato bo'lsa tuzatasan | ❌ TZ dan chetga chiqmaysan |
+
+**Muammo yoki noaniqlik chiqsa** → handoff faylga yozasan, o'zing hal qilmaysan.
+
+---
+
+## 🚀 ISHNI BOSHLASH
+
+Har yangi chatda birinchi ish:
+
+```bash
+cat ROADMAP/START.md
+python3 ROADMAP/03_HOLAT/update_progress.py --status
+```
+
+Keyin `PROGRESS.md` ko'rsatgan fazadan davom et.
+
+---
+
+## ⛔ 12 TA QAT'IY TAQIQ
+
+| # | Taqiq | Nima uchun |
+|---|---|---|
+| 1 | ⛔ `mebelcity_platform` papkasiga **TEGMA** | Alohida loyiha. Sening ish joying: `/home/user/armenu/` |
+| 2 | ⛔ Port `8040`, `8041` **ISHLATMA** | Band. Seniki: `8060`, `8061` |
+| 3 | ⛔ Redis `db=0..4` **ISHLATMA** | Band. Seniki: `db=5`, `db=6` |
+| 4 | ⛔ `bittada-*` servislarga **TEGMA** | Seniki: `armenu-*` |
+| 5 | ⛔ **`# TODO`, `# FIXME`, `...`, "shu yerga yozing" YOZMA** | Kod to'liq bo'lishi shart |
+| 6 | ⛔ **Vazifa tartibini buzma** | V-043 dan oldin V-042 |
+| 7 | ⛔ **Test o'tmasa keyingi vazifaga o'tma** | Sifat |
+| 8 | ⛔ **`TZ_MASTER/` ni to'liq o'qima** | 260 KB. Faqat `grep` bilan kerakli qismini |
+| 9 | ⛔ **Narxni frontenddan olma** | Har doim serverda hisobla |
+| 10 | ⛔ **Hard-code rang yozma** | Faqat `var(--bg)`, `var(--text)` |
+| 11 | ⛔ **Hard-code matn yozma** | Faqat `t('kalit')` yoki `{% trans %}` |
+| 12 | ⛔ **Uzoq ishni web so'rovda qilma** | `enqueue(...)` → worker |
+
+---
+
+## ✅ 10 TA MAJBURIY QOIDA
+
+| # | Qoida | Kod |
+|---|---|---|
+| 1 | Har tenant modeli `restaurant` FK bilan | `class X(TenantModel)` |
+| 2 | Har ViewSet tenant-scoped | `class XViewSet(TenantScopedMixin, ModelViewSet)` |
+| 3 | Miqdor butun son | `Math.ceil()` / `math.ceil()` |
+| 4 | 3 til: uz, ru, en | `name_uz`, `name_ru`, `name_en` |
+| 5 | Dark + Light | `var(--bg-card)` |
+| 6 | Idempotency (POST) | `X-Idempotency-Key` |
+| 7 | WS guruh restoran-scoped | `rest_<id>_kds` |
+| 8 | Tashqi API → circuit breaker | `breaker.call(fn, fallback=...)` |
+| 9 | N+1 yo'q | `select_related` / `prefetch_related` |
+| 10 | Post-commit hook | `transaction.on_commit(lambda: ...)` |
+
+---
+
+## 🔁 ISH SIKLI (har vazifa uchun)
+
+```
+1. Vazifani o'qi:
+   grep -A 60 "## V-043" ROADMAP/01_FAZALAR/FAZA_02_MENYU.md
+
+2. Kodni yoz (fayl yo'li va kod vazifada berilgan)
+
+3. Test:
+   pytest tests/ -x -q
+   ❌ → tuzat, 2-qadamga qayt
+   ✅ → 4-qadam
+
+4. Commit + progress:
+   git add -A && git commit -m "V-043: menyu API keshi"
+   python3 ROADMAP/03_HOLAT/update_progress.py V-043 ok
+
+5. Keyingi vazifaga o't (1-qadam)
+```
+
+**Faza tugagach** → `HANDOFF/FAZA_XX_HANDOFF.md` ni to'ldir (shablon: `HANDOFF/HANDOFF_TEMPLATE.md`).
+
+---
+
+## 🔍 SAVOL TUG'ILSA
+
+```bash
+# 1. Indeksdan qara
+grep -i "izlagan_narsang" ROADMAP/02_MALUMOTNOMA/INDEKS.md
+
+# 2. Tez yordam
+cat ROADMAP/02_MALUMOTNOMA/TEZ_YORDAM.md
+
+# 3. TZ dan faqat kerakli qism
+grep -A 45 "class Order" "TZ_MASTER/04_DATA_MODEL_VA_API.md"
+```
+
+⛔ **Hech qachon:** `cat TZ_MASTER/*.md` (260 KB, foydasiz token)
+
+---
+
+## 📝 HANDOFF FAYLGA NIMA YOZILADI
+
+Har faza oxirida **halol** yoz:
+
+- ✅ Nima qilindi (vazifa-vazifa)
+- 📁 Qaysi fayllar yaratildi/o'zgartirildi
+- 🤔 Qanday qarorlar qabul qilindi (TZ da yo'q bo'lsa)
+- ⚠️ **Nima ishlamadi / chetlab o'tildi** ← eng muhim, yashirma
+- 🧪 Testlar holati (nechta o'tdi, nechta yiqildi)
+- ➡️ Keyingi fazaga eslatma
+
+**Halol bo'l.** Bajarilmagan narsani "bajarildi" deb yozma — arxitektor AI tekshiradi va topadi.
+
+---
+
+## 🛠 STACK
+
+```
+Backend    Django 5 + DRF + Channels
+DB         PostgreSQL (armenu_db) + pgvector
+Cache/WS   Redis db=5 (cache), db=6 (channels)
+Frontend   PWA — vanilla JS (framework YO'Q)
+AR/3D      <model-viewer> · iOS: USDZ · Android: GLB
+To'lov     paytechuz (Payme/Click/Uzum)
+Test       pytest + pytest-django
+Port       8060 (web), 8061 (ws)
+Ish joyi   /home/user/armenu/
+```
+
+---
+
+## ⚡ AR — 5 TA QONUN (FAZA 6)
+
+| # | Qonun |
+|---|---|
+| 1 | `ar-scale="fixed"` — `auto` EMAS |
+| 2 | Model **metrda** (32 sm = `0.32`) |
+| 3 | Model tagi **Y=0** da |
+| 4 | GLB ≤ 3 MB, USDZ ≤ 5 MB |
+| 5 | Generatsiya **worker'da**, web so'rovda emas |
+
+`verify_scale()` o'tmasa model CDN'ga chiqmaydi.
+
+---
+
+## 🧪 5 TA MAJBURIY TEST
+
+Bular yiqilsa — **ishni davom ettirma**:
+
+```bash
+pytest tests/test_tenant_isolation.py       # cross-tenant sizish
+pytest tests/test_i18n_completeness.py      # 3 til to'liq
+pytest tests/test_order_state.py            # holat mashinasi
+pytest tests/test_price_calculation.py      # narx serverda
+pytest tests/test_payment_idempotency.py    # dublikat to'lov yo'q
+```
+
+---
+
+## 💬 KOD USLUBI
+
+```python
+# Nom: snake_case (funksiya), PascalCase (klass), UPPER_SNAKE (konstanta)
+# Izoh: o'zbek tilida, faqat "nima uchun" (nima qilishini kod ko'rsatadi)
+# Uzunlik: 100 belgi
+# Format: black + ruff
+```
+
+```javascript
+// Nom: camelCase (funksiya), kebab-case (fayl, CSS klass)
+// Tarjima: t('dish.add_to_cart') — hard-code YO'Q
+// Rang: var(--brand) — hex YO'Q
+```
+
+---
+
+## 🚨 QACHON TO'XTASH
+
+| Holat | Nima qilish |
+|---|---|
+| Test 3 marta o'tmadi | To'xta, handoff'ga yoz, foydalanuvchiga ayt |
+| API kaliti yo'q (`.env` bo'sh) | Vazifani `skip`, keyingisiga o't, handoff'ga yoz |
+| TZ noaniq | Eng oddiy variantni tanla, handoff'ga **albatta** yoz |
+| Migratsiya konflikti | `makemigrations --merge`, handoff'ga yoz |
+| Faza tugadi | Qabul checklistini tekshir → handoff to'ldir → to'xta |

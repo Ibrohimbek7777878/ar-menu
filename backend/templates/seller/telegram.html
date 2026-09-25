@@ -1,0 +1,274 @@
+{% extends "seller/base_seller.html" %}
+{% load uznum %}
+{% block title %}Telegram Bot{% endblock %}
+{% block page_title %}Telegram Bot{% endblock %}
+
+{% block content %}
+<style>
+    :root { --sp: {{ shop.color_primary|default:'#16a34a' }}; --ac: {{ shop.color_accent|default:'#1a1a2e' }}; }
+    .tg-hero {
+        background: linear-gradient(135deg, #0088cc, color-mix(in srgb, #0088cc 55%, var(--ac)));
+        border-radius:1.25rem; padding:1.75rem 2rem 1.5rem; color:#fff; position:relative; overflow:hidden;
+    }
+    .tg-hero::before { content:''; position:absolute; top:-50%; right:-12%; width:300px; height:300px; background:radial-gradient(circle,rgba(255,255,255,.10) 0%,transparent 70%); border-radius:50%; }
+    .s-pill { display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.6rem .9rem; background:rgba(255,255,255,.13); border-radius:.75rem; backdrop-filter:blur(6px); min-width:68px; }
+    .s-num { font-size:1.15rem; font-weight:800; line-height:1; }
+    .s-lbl { font-size:.6rem; opacity:.72; font-weight:500; text-transform:uppercase; letter-spacing:.04em; }
+
+    .tab-btn { padding:.5rem 1rem; border-radius:.75rem; font-size:.8rem; font-weight:600; color:#6b7280; background:transparent; border:none; cursor:pointer; transition:all .15s; }
+    .tab-btn:hover { background:#f3f4f6; color:#374151; }
+    .tab-btn.on { background:#0088cc; color:#fff; }
+
+    /* Bot message card */
+    .bot-msg { background:#fff; border:1px solid #f3f4f6; border-radius:.875rem; padding:.85rem 1.15rem; transition:all .15s; }
+    .bot-msg:hover { border-color:#e5e7eb; box-shadow:0 4px 12px rgba(0,0,0,.04); }
+    .bot-incoming { border-left:3px solid #0088cc; }
+    .bot-command { border-left:3px solid #f59e0b; }
+    .bot-response { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.625rem; padding:.6rem .85rem; margin-top:.5rem; font-size:.8rem; color:#166534; }
+
+    /* Log card */
+    .log-card { background:#fff; border:1px solid #f3f4f6; border-radius:.875rem; padding:.85rem 1.15rem; transition:all .15s; }
+    .log-card:hover { border-color:#e5e7eb; box-shadow:0 4px 12px rgba(0,0,0,.04); }
+    .log-ok { border-left:3px solid #22c55e; }
+    .log-fail { border-left:3px solid #ef4444; }
+
+    .send-area { background:#f8fafc; border:1.5px solid #e5e7eb; border-radius:1rem; padding:1.25rem; }
+    .send-area:focus-within { border-color:#0088cc; box-shadow:0 0 0 3px rgba(0,136,204,.1); }
+    .send-input { width:100%; border:none; background:transparent; font-size:.875rem; outline:none; resize:none; min-height:80px; }
+    .send-btn { background:#0088cc; color:#fff; border:none; border-radius:.75rem; padding:.6rem 1.5rem; font-size:.8rem; font-weight:700; cursor:pointer; transition:all .15s; }
+    .send-btn:hover { opacity:.9; }
+
+    .sub-row { display:flex; align-items:center; gap:.75rem; padding:.6rem .875rem; border-radius:.75rem; transition:background .15s; }
+    .sub-row:hover { background:#f9fafb; }
+
+    /* Filter bar */
+    .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; background:#f8fafc; border:1.5px solid #e5e7eb; border-radius:.875rem; padding:.75rem 1rem; }
+    .filter-input { border:1.5px solid #e5e7eb; border-radius:.5rem; padding:.4rem .7rem; font-size:.78rem; background:#fff; outline:none; transition:border-color .15s; }
+    .filter-input:focus { border-color:#0088cc; }
+    .filter-chip { padding:.35rem .75rem; border-radius:999px; font-size:.72rem; font-weight:600; border:1.5px solid #e5e7eb; background:#fff; color:#6b7280; cursor:pointer; transition:all .15s; text-decoration:none; white-space:nowrap; }
+    .filter-chip:hover { border-color:#0088cc; color:#0088cc; }
+    .filter-chip.on { background:#0088cc; border-color:#0088cc; color:#fff; }
+</style>
+
+<div>
+    <!-- Hero -->
+    <div class="tg-hero mb-5">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-xs opacity-70 font-medium tracking-wide uppercase">Telegram Bot</p>
+                <h2 class="text-xl font-bold mt-0.5">Bot boshqaruvi</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if bot_token %}
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
+                    <span class="w-2 h-2 rounded-full bg-green-400"></span> Faol
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-red-500/30 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
+                    <span class="w-2 h-2 rounded-full bg-red-400"></span> O'chirilgan
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="relative z-10 flex gap-2.5 mt-4 flex-wrap">
+            <div class="s-pill"><span class="s-num">{{ total_bot_msgs }}</span><span class="s-lbl">Bot xabarlar</span></div>
+            <div class="s-pill"><span class="s-num">{{ command_count }}</span><span class="s-lbl">Buyruqlar</span></div>
+            <div class="s-pill"><span class="s-num">{{ text_count }}</span><span class="s-lbl">Oddiy</span></div>
+            <div class="s-pill"><span class="s-num">{{ sent_ok }}</span><span class="s-lbl">Yuborilgan</span></div>
+            <div class="s-pill"><span class="s-num">{{ sent_fail }}</span><span class="s-lbl">Xatolik</span></div>
+            <div class="s-pill"><span class="s-num">{{ subscribers|length }}</span><span class="s-lbl">Obunachilar</span></div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1.5 mb-5 bg-gray-50 p-1 rounded-xl w-fit overflow-x-auto">
+        <button class="tab-btn on" onclick="showTab('botmsgs')">Bot xabarlari</button>
+        <button class="tab-btn" onclick="showTab('send')">Xabar yuborish</button>
+        <button class="tab-btn" onclick="showTab('logs')">Yuborilgan</button>
+        <button class="tab-btn" onclick="showTab('subs')">Obunachilar</button>
+        <button class="tab-btn" onclick="showTab('settings')">Sozlamalar</button>
+    </div>
+
+    <!-- Tab: Bot Messages -->
+    <div id="tab-botmsgs">
+        <!-- Filtr -->
+        <form method="get" class="filter-bar mb-4">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+
+            <a href="{% url 'seller_telegram_web' %}" class="filter-chip {% if not msg_type %}on{% endif %}">Barchasi</a>
+            <a href="{% url 'seller_telegram_web' %}?type=command" class="filter-chip {% if msg_type == 'command' %}on{% endif %}">Buyruqlar</a>
+            <a href="{% url 'seller_telegram_web' %}?type=text" class="filter-chip {% if msg_type == 'text' %}on{% endif %}">Oddiy xabarlar</a>
+
+            <span class="text-gray-300 mx-1">|</span>
+
+            <input type="text" name="q" value="{{ msg_search }}" placeholder="Qidirish..." class="filter-input" style="width:160px">
+            <input type="date" name="from" value="{{ date_from }}" class="filter-input" title="Dan">
+            <input type="date" name="to" value="{{ date_to }}" class="filter-input" title="Gacha">
+            <button type="submit" class="filter-chip on">Qidirish</button>
+        </form>
+
+        {% if bot_msgs %}
+        <div class="space-y-2.5">
+            {% for msg in bot_msgs %}
+            <div class="bot-msg {% if msg.is_command %}bot-command{% else %}bot-incoming{% endif %}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="grid size-9 place-items-center rounded-full text-xs font-bold shrink-0 {% if msg.is_command %}bg-amber-50 text-amber-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                            {% if msg.is_command %}CMD{% else %}{{ msg.first_name|slice:":1"|upper|default:"?" }}{% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-sm font-semibold text-gray-900">{{ msg.first_name|default:"Noma'lum" }}</span>
+                                {% if msg.username %}<span class="text-[11px] text-gray-400">@{{ msg.username }}</span>{% endif %}
+                                {% if msg.is_command %}
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">BUYRUQ</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm text-gray-700">{{ msg.text }}</p>
+                            {% if msg.response %}
+                            <div class="bot-response">
+                                <span class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Javob:</span>
+                                {{ msg.response|truncatechars:200 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <span class="text-[10px] text-gray-400">{{ msg.created_at|date:"d.m H:i" }}</span>
+                        <p class="text-[10px] text-gray-300 mt-0.5">ID: {{ msg.chat_id }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-gray-400">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            <p class="text-sm">Hali xabarlar yo'q</p>
+            <p class="text-xs mt-1">Mijozlar botga xabar yozganda shu yerda ko'rinadi</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab: Send -->
+    <div id="tab-send" style="display:none">
+        <div class="send-area">
+            <div class="flex items-center gap-2 mb-3">
+                <svg class="w-5 h-5 text-[#0088cc]" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.504-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                <span class="font-semibold text-sm text-gray-700">Telegram guruhiga xabar yuborish</span>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="send_broadcast">
+                <textarea name="text" class="send-input" placeholder="Xabar matnini kiriting..." required></textarea>
+                <div class="flex items-center justify-between mt-3">
+                    <span class="text-xs text-gray-400">HTML: &lt;b&gt;qalin&lt;/b&gt; &lt;i&gt;qiyshiq&lt;/i&gt;</span>
+                    <button type="submit" class="send-btn">Yuborish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tab: Logs -->
+    <div id="tab-logs" style="display:none">
+        <!-- Filtr -->
+        <form method="get" class="filter-bar mb-4">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <a href="{% url 'seller_telegram_web' %}?type={{ msg_type }}" class="filter-chip {% if not msg_status %}on{% endif %}">Barchasi</a>
+            <a href="{% url 'seller_telegram_web' %}?status=success" class="filter-chip {% if msg_status == 'success' %}on{% endif %}">Muvaffaqiyatli</a>
+            <a href="{% url 'seller_telegram_web' %}?status=fail" class="filter-chip {% if msg_status == 'fail' %}on{% endif %}">Xatolik</a>
+        </form>
+
+        {% if logs %}
+        <div class="space-y-2.5">
+            {% for log in logs %}
+            <div class="log-card {% if log.success %}log-ok{% else %}log-fail{% endif %}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            {% if log.success %}
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">✓ Yuborildi</span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">✗ Xato</span>
+                            {% endif %}
+                            {% if log.order %}
+                            <span class="text-[10px] text-gray-400">#{{ log.order.order_number }}</span>
+                            {% endif %}
+                            <span class="text-[10px] text-gray-400">→ {{ log.recipient }}</span>
+                        </div>
+                        <p class="text-sm text-gray-700 line-clamp-2">{{ log.message|truncatechars:150 }}</p>
+                        {% if log.error_message %}
+                        <p class="text-xs text-red-500 mt-1">Xato: {{ log.error_message }}</p>
+                        {% endif %}
+                    </div>
+                    <span class="text-[10px] text-gray-400 whitespace-nowrap shrink-0">{{ log.sent_at|date:"d.m H:i" }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-gray-400">
+            <p class="text-sm">Hali xabar yuborilmagan</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab: Subscribers -->
+    <div id="tab-subs" style="display:none">
+        {% if subscribers %}
+        <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
+            {% for sub in subscribers %}
+            <div class="sub-row {% if not forloop.last %}border-b border-gray-50{% endif %}">
+                <div class="grid size-8 place-items-center rounded-full bg-blue-50 text-blue-600 text-xs font-bold">
+                    {{ sub.first_name|slice:":1"|default:sub.username|slice:":1" }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 truncate">{{ sub.first_name|default:"Noma'lum" }}</p>
+                    <p class="text-[11px] text-gray-400">@{{ sub.username|default:sub.chat_id }}</p>
+                </div>
+                <span class="text-[10px] text-gray-400">{{ sub.last_seen|date:"d.m H:i" }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-gray-400">
+            <p class="text-sm">Obunachilar yo'q</p>
+            <p class="text-xs mt-1">Botga /start yuboring</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab: Settings -->
+    <div id="tab-settings" style="display:none">
+        <div class="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Bot Token</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" value="{{ bot_token|default:'Yoq' }}" readonly class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono">
+                    {% if bot_token %}<span class="text-green-600 text-xs font-semibold">Faol</span>{% else %}<span class="text-red-500 text-xs font-semibold">O'chirilgan</span>{% endif %}
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Chat ID</label>
+                <input type="text" value="{{ chat_id|default:'Yoq' }}" readonly class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Bot buyruqlari</label>
+                <div class="bg-gray-50 rounded-lg p-3 text-sm space-y-1 font-mono text-gray-600">
+                    <p>/start — Botni ishga tushirish</p>
+                    <p>/order GLS-XXXX — Buyurtmani tekshirish</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(name) {
+    document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+    document.getElementById('tab-' + name).style.display = '';
+    event.target.classList.add('on');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.profile }} — {{ t.site_name }}{% endblock %}
+{% block content %}
+
+<section class="mx-auto max-w-2xl px-4 sm:px-5 py-8 sm:py-12">
+    <!-- Header -->
+    <div class="flex items-center gap-4 mb-8">
+        <div class="w-16 h-16 rounded-full bg-accent flex items-center justify-center border-2 border-primary/20">
+            {% if customer %}
+            <span class="text-2xl font-display font-semibold text-primary">{{ customer.name|first|upper }}</span>
+            {% else %}
+            <span class="material-icons-outlined text-3xl text-primary">person</span>
+            {% endif %}
+        </div>
+        <div>
+            {% if customer %}
+            <h1 class="font-display text-2xl font-semibold">{{ customer.name }}</h1>
+            <p class="text-sm text-muted">{{ customer.phone }}</p>
+            {% else %}
+            <h1 class="font-display text-2xl font-semibold">{{ t.profile_guest }}</h1>
+            <p class="text-sm text-muted">{{ t.profile_login_register }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Til tanlash (hamma uchun — header'dagi switcher mobilda yashirilgan) -->
+    <div class="card-surface p-5 mb-6 sm:hidden">
+        <h2 class="eyebrow mb-3">{{ t.language|default:"Til" }} / Language</h2>
+        <div class="flex items-center gap-2">
+            <a href="{% lang_url 'uz' %}" class="flex-1 rounded-xl border px-3 py-2.5 text-sm text-center font-medium transition-colors {% if language == 'uz' %}border-primary bg-accent text-primary font-bold{% else %}border-border text-muted hover:text-foreground{% endif %}">O'zbekcha</a>
+            <a href="{% lang_url 'ru' %}" class="flex-1 rounded-xl border px-3 py-2.5 text-sm text-center font-medium transition-colors {% if language == 'ru' %}border-primary bg-accent text-primary font-bold{% else %}border-border text-muted hover:text-foreground{% endif %}">Русский</a>
+            <a href="{% lang_url 'en' %}" class="flex-1 rounded-xl border px-3 py-2.5 text-sm text-center font-medium transition-colors {% if language == 'en' %}border-primary bg-accent text-primary font-bold{% else %}border-border text-muted hover:text-foreground{% endif %}">English</a>
+        </div>
+    </div>
+
+    {% if customer %}
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-3 mb-8">
+        <div class="card-surface p-4 text-center">
+            <p class="font-display text-2xl font-semibold text-primary">{{ stats.total_orders }}</p>
+            <p class="text-[11px] text-muted mt-1">{{ t.profile_orders }}</p>
+        </div>
+        <div class="card-surface p-4 text-center">
+            <p class="font-display text-2xl font-semibold text-primary">{{ stats.total_spent|uznum }}</p>
+            <p class="text-[11px] text-muted mt-1">{{ t.profile_spent }}</p>
+        </div>
+        <div class="card-surface p-4 text-center">
+            <p class="font-display text-2xl font-semibold text-primary">{{ stats.joined|date:"d.m.y" }}</p>
+            <p class="text-[11px] text-muted mt-1">{{ t.profile_joined }}</p>
+        </div>
+    </div>
+
+    <!-- Profile Form -->
+    <div class="card-surface p-6 mb-6">
+        <h2 class="eyebrow mb-4">{{ t.profile_personal_info }}</h2>
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.cart_your_name }}</label>
+                <input type="text" name="name" value="{{ customer.name }}" required
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.phone }}</label>
+                <input type="tel" value="{{ customer.phone }}" disabled
+                    class="rounded-xl border border-border bg-sand px-4 py-2.5 text-sm text-muted w-full cursor-not-allowed">
+                <p class="text-[11px] text-muted mt-1">{{ t.profile_phone_disabled }}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.email|default:"Email" }}</label>
+                <input type="email" name="email" value="{{ customer.email|default:'' }}"
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full"
+                    placeholder="example@mail.com">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.address }}</label>
+                <textarea name="address" rows="2" placeholder="{{ t.cart_address_placeholder }}"
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full resize-none">{{ customer.address }}</textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.language|default:"Til" }}</label>
+                <select name="language"
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full">
+                    <option value="uz" {% if current_lang == 'uz' %}selected{% endif %}>O'zbekcha</option>
+                    <option value="ru" {% if current_lang == 'ru' %}selected{% endif %}>Русский</option>
+                    <option value="en" {% if current_lang == 'en' %}selected{% endif %}>English</option>
+                </select>
+            </div>
+            <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
+                <span class="material-icons-outlined text-lg">save</span>
+                {{ t.profile_save }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="card-surface p-6 mb-6">
+        <h2 class="eyebrow mb-4">{{ t.profile_change_password|default:"Parolni o'zgartirish" }}</h2>
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.profile_old_password|default:"Eski parol" }}</label>
+                <input type="password" name="old_password" required
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.profile_new_password|default:"Yangi parol" }}</label>
+                <input type="password" name="new_password" required
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full">
+                <p class="text-[11px] text-muted mt-1">{{ t.profile_password_hint|default:"Kamida 6 belgi" }}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.profile_confirm_password|default:"Yangi parolni tasdiqlang" }}</label>
+                <input type="password" name="new_password_confirm" required
+                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full">
+            </div>
+            <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
+                <span class="material-icons-outlined text-lg">lock_reset</span>
+                {{ t.profile_update_password|default:"Parolni yangilash" }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card-surface p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="eyebrow">{{ t.profile_recent_orders }}</h2>
+            <a href="{% url 'customer_orders' %}" class="text-xs font-semibold text-primary hover:underline">{{ t.profile_all }} →</a>
+        </div>
+        {% if orders %}
+        <div class="space-y-3">
+            {% for order in orders %}
+            <a href="{% url 'customer_order_tracking' order.pk %}" class="flex items-center justify-between p-3 rounded-xl border border-border hover:border-primary/30 transition-colors">
+                <div>
+                    <p class="text-sm font-semibold">#{{ order.order_number }}</p>
+                    <p class="text-[11px] text-muted">{{ order.created_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-semibold text-primary">{{ order.final_amount|uznum }} {{ t.catalog_som }}</p>
+                    <span class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold
+                        {% if order.status == 'delivered' %}bg-green-50 text-green-600
+                        {% elif order.status == 'cancelled' %}bg-red-50 text-red-600
+                        {% elif order.status == 'delivering' %}bg-blue-50 text-blue-600
+                        {% else %}bg-amber-50 text-amber-600{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted text-center py-6">{{ t.profile_no_orders }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-3">
+        <a href="{% url 'customer_orders' %}" class="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 transition-colors">
+            <span class="material-icons-outlined text-primary">receipt_long</span>
+            <span class="text-sm font-semibold">{{ t.order_my }}</span>
+            <span class="material-icons-outlined text-muted ml-auto">chevron_right</span>
+        </a>
+        <a href="{% url 'customer_cart' %}" class="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 transition-colors">
+            <span class="material-icons-outlined text-primary">shopping_cart</span>
+            <span class="text-sm font-semibold">{{ t.cart_title }}</span>
+            <span class="material-icons-outlined text-muted ml-auto">chevron_right</span>
+        </a>
+    </div>
+    {% else %}
+    <!-- Guest CTA -->
+    <div class="text-center py-12">
+        <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-accent flex items-center justify-center">
+            <span class="material-icons-outlined text-3xl text-primary">person_add</span>
+        </div>
+        <h2 class="font-display text-2xl font-semibold mb-2">{{ t.profile_guest }}</h2>
+        <p class="text-sm text-muted mb-6">{{ t.profile_login_register }}</p>
+        <div class="flex items-center justify-center gap-3">
+            <a href="{% url 'customer_login' %}" class="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.login }}</a>
+            <a href="{% url 'customer_register' %}" class="rounded-full border border-border px-6 py-3 text-sm font-medium hover:bg-secondary transition">{{ t.register }}</a>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

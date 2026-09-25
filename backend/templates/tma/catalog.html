@@ -1,0 +1,134 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}Katalog — Telegram Mini App{% endblock %}
+
+{% block extra_head %}
+<style>
+    .tma-filter-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        scrollbar-width: none;
+    }
+    .tma-filter-strip::-webkit-scrollbar { display: none; }
+    .tma-filter-pill {
+        flex: 0 0 auto;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+    }
+    .tma-filter-pill.active {
+        background: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+    }
+    .tma-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    .tma-card-item {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    .tma-card-img {
+        width: 100%;
+        height: 125px;
+        object-fit: cover;
+        background: #f1f5f9;
+    }
+    .tma-card-body {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        justify-content: space-between;
+    }
+    .tma-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .tma-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 8px;
+    }
+    .tma-card-price {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+    .tma-btn-icon {
+        background: var(--primary);
+        color: #ffffff;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Search Form -->
+    <form action="{% url 'tma_catalog' %}" method="GET" style="margin-bottom: 12px;">
+        <input type="text" name="q" value="{{ q }}" class="tma-search-input" style="width:100%;padding:12px;border-radius:14px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);" placeholder="Qidirish...">
+    </form>
+
+    <!-- Filters -->
+    <div class="tma-filter-strip">
+        <a href="{% url 'tma_catalog' %}" class="tma-filter-pill {% if not selected_category and not has_3d %}active{% endif %}">Barchasi</a>
+        <a href="{% url 'tma_catalog' %}?has_3d=1" class="tma-filter-pill {% if has_3d %}active{% endif %}">🥽 3D AR</a>
+        {% for cat in categories %}
+            <a href="{% url 'tma_catalog' %}?category={{ cat.id }}" class="tma-filter-pill {% if selected_category == cat.id %}active{% endif %}">{{ cat.name }}</a>
+        {% endfor %}
+    </div>
+
+    <!-- Products Grid -->
+    <div class="tma-grid">
+        {% for prod in products %}
+            <div class="tma-card-item">
+                {% if prod.has_3d %}
+                    <span style="position:absolute;top:8px;left:8px;background:rgba(15,23,42,0.8);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">🥽 3D</span>
+                {% endif %}
+                {% if prod.image %}
+                    <img src="{{ prod.image.url }}" alt="{{ prod.name }}" class="tma-card-img" loading="lazy">
+                {% else %}
+                    <div class="tma-card-img" style="display:flex;align-items:center;justify-content:center;font-size:24px;">🛒</div>
+                {% endif %}
+                <div class="tma-card-body">
+                    <div class="tma-card-title">{{ prod.name }}</div>
+                    <div style="font-size:11px;color:var(--hint-color);">{{ prod.shop.name }}</div>
+                    <div class="tma-card-footer">
+                        <div class="tma-card-price">{{ prod.price|floatformat:0 }} so'm</div>
+                        <button class="tma-btn-icon" onclick="tmaAddToCart('{{ prod.id }}')">+</button>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--hint-color);">
+                Mahsulotlar topilmadi 🔍
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

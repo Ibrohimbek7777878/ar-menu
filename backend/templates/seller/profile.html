@@ -1,0 +1,253 @@
+{% extends "seller/base_seller.html" %}
+{% block title %}Profil - Store Admin{% endblock %}
+{% block page_title %}Profil{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-6">
+    <!-- Tepa promo banner — do'kon yaratish -->
+    <div class="card overflow-hidden border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+        <div class="p-6">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 shadow-soft">
+                    <span class="material-icons-outlined text-white text-2xl">storefront</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    {% if shop %}
+                    <h3 class="font-display text-lg font-semibold text-ink">Do'koningiz tayyor — {{ shop.name }} 🎉</h3>
+                    <p class="text-sm text-gray-600 mt-1">Mahsulotlaringiz ham global marketplace da, ham <a href="{% url 'customer_shop_detail' shop.slug %}" class="font-medium text-brand-700 hover:underline">o'z do'koningizda</a> ko'rinmoqda.</p>
+                    {% else %}
+                    <h3 class="font-display text-lg font-semibold text-ink">O'z do'koningizni yarating — 1 daqiqada! 🎉</h3>
+                    <p class="text-sm text-gray-600 mt-1">Kodsiz, faqat yozish orqali — logotip, nom, dizayn.</p>
+                    {% endif %}
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="flex gap-2 bg-white rounded-xl p-3 border border-amber-100">
+                            <span class="w-6 h-6 rounded-full bg-amber-500 text-white grid place-items-center text-xs font-bold shrink-0">1</span>
+                            <span><b>Nom & Logo</b><br><span class="text-gray-500">Do'kon nomi, tavsifi va rasmini kiriting</span></span>
+                        </div>
+                        <div class="flex gap-2 bg-white rounded-xl p-3 border border-amber-100">
+                            <span class="w-6 h-6 rounded-full bg-amber-500 text-white grid place-items-center text-xs font-bold shrink-0">2</span>
+                            <span><b>{{ t.products_label }}</b><br><span class="text-gray-500">Avtomatik ikki joyda chiqadi</span></span>
+                        </div>
+                        <div class="flex gap-2 bg-white rounded-xl p-3 border border-amber-100">
+                            <span class="w-6 h-6 rounded-full bg-amber-500 text-white grid place-items-center text-xs font-bold shrink-0">3</span>
+                            <span><b>Nashr</b><br><span class="text-gray-500">Saqlang — darhol jonli</span></span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        {% if shop %}
+                        <a href="{% url 'seller_shop_web' %}" class="btn btn-primary shadow-soft">
+                            <span class="material-icons-outlined !text-base">palette</span>
+                            Do'konni bezash
+                        </a>
+                        <a href="{% url 'customer_shop_detail' shop.slug %}" target="_blank" class="btn btn-outline ml-2">Do'konni ko'rish</a>
+                        {% else %}
+                        <a href="{% url 'seller_shop_web' %}" class="btn btn-primary shadow-soft">
+                            <span class="material-icons-outlined !text-base">add_business</span>
+                            Do'kon yaratish — bepul
+                        </a>
+                        <span class="text-xs text-gray-500 ml-3">Majburiy emas, istalgan vaqtda</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card overflow-hidden">
+        <div class="p-8">
+            <div class="flex items-center gap-5 mb-8">
+                <div class="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center shrink-0">
+                    <span class="text-brand-700 dark:text-brand-400 font-display font-bold text-xl">{{ user.username|first|upper }}</span>
+                </div>
+                <div>
+                    <h2 class="font-display text-2xl font-semibold">{{ user.get_full_name|default:user.username }}</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ user.get_role_display }}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 text-sm">
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.username }}</p>
+                    <p class="font-medium">{{ user.username }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.email_label }}</p>
+                    <p class="font-medium">{{ user.email|default:"—" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.phone }}</p>
+                    <p class="font-medium">{{ user.phone|default:"—" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.telegram_label }}</p>
+                    <p class="font-medium">{% if user.telegram_username %}<span class="inline-flex items-center gap-1.5"><span class="material-icons-outlined !text-base text-sky-500">send</span>@{{ user.telegram_username }}</span>{% else %}<span class="text-gray-400">—</span><span class="ml-2 pill bg-amber-50 text-amber-700 text-xs">Bot admin uchun qo'shing</span>{% endif %}</p>
+                    {% if not user.telegram_username %}<p class="text-xs text-gray-400 mt-1">{{ t.profile_edit_desc }}</p>{% endif %}
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.status_label }}</p>
+                    {% if user.is_approved %}
+                    <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.approved }}</span>
+                    {% else %}
+                    <span class="pill text-amber-700 bg-amber-50"><span class="size-1.5 rounded-full bg-amber-500"></span>{{ t.not_approved }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-gray-100 dark:border-neutral-900">
+                <a href="{% url 'web_logout' %}" class="inline-flex items-center gap-2 text-red-600 hover:text-red-700 text-sm font-medium transition">
+                    <span class="material-icons !text-lg">logout</span>
+                    Chiqish
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profil tahriri -->
+    <div class="card overflow-hidden">
+        <div class="p-8">
+            <h2 class="font-display text-xl font-semibold mb-6">{{ t.profile_info }}</h2>
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.first_name }}</label>
+                        <input type="text" name="first_name" value="{{ user.first_name|default:'' }}"
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.last_name }}</label>
+                        <input type="text" name="last_name" value="{{ user.last_name|default:'' }}"
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.username }}</label>
+                        <input type="text" value="{{ user.username }}" disabled
+                            class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-400 w-full cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.phone }}</label>
+                        <input type="tel" name="phone" value="{{ user.phone|default:'' }}"
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.email_label }}</label>
+                        <input type="email" name="email" value="{{ user.email|default:'' }}"
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.telegram_label }}</label>
+                        <div class="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10">
+                            <span class="text-gray-400 mr-1">@</span>
+                            <input type="text" name="telegram_username" value="{{ user.telegram_username|default:'' }}"
+                                class="outline-none w-full bg-transparent" placeholder="username">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700">
+                        <span class="material-icons-outlined !text-base">save</span>
+                        Saqlash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Parol o'zgartirish -->
+    <div class="card overflow-hidden">
+        <div class="p-8">
+            <h2 class="font-display text-xl font-semibold mb-6">{{ t.change_password }}</h2>
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="change_password">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.old_password }}</label>
+                        <input type="password" name="old_password" required
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.new_password }}</label>
+                        <input type="password" name="new_password" required
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.confirm_password }}</label>
+                        <input type="password" name="new_password_confirm" required
+                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700">
+                        <span class="material-icons-outlined !text-base">lock_reset</span>
+                        Parolni yangilash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if shop_stats %}
+    <!-- Do'kon statistikasi -->
+    <div class="card overflow-hidden">
+        <div class="p-8">
+            <h2 class="font-display text-xl font-semibold mb-6">Do'kon statistikasi</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="rounded-2xl bg-brand-50 p-4 text-center">
+                    <p class="font-display text-2xl font-bold text-brand-700">{{ shop_stats.products }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ t.products_label }}</p>
+                </div>
+                <div class="rounded-2xl bg-brand-50 p-4 text-center">
+                    <p class="font-display text-2xl font-bold text-brand-700">{{ shop_stats.orders }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ t.orders_count }}</p>
+                </div>
+                <div class="rounded-2xl bg-brand-50 p-4 text-center">
+                    <p class="font-display text-2xl font-bold text-brand-700">{{ shop_stats.revenue|floatformat:0 }} {{ t.catalog_som }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Daromad</p>
+                </div>
+                <div class="rounded-2xl bg-brand-50 p-4 text-center">
+                    <p class="font-display text-2xl font-bold text-brand-700">{% if shop_stats.is_open %}Ochiq{% else %}Yopiq{% endif %}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ t.status_label }}</p>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{% url 'seller_shop_web' %}" class="btn btn-primary">
+                    <span class="material-icons-outlined !text-base">settings</span> Do'kon sozlamalari
+                </a>
+                <a href="{% url 'customer_shop_detail' shop_stats.slug %}" target="_blank" class="btn btn-outline">Do'konni ko'rish</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pastki promo banner -->
+    {% if not shop %}
+    <div class="card p-5 bg-gradient-to-r from-brand-50 to-emerald-50 border-brand-100">
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+            <div class="flex-1">
+                <h4 class="font-semibold text-ink flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-brand-600 text-white grid place-items-center"><span class="material-icons-outlined !text-base">lightbulb</span></span>
+                    Do'konsiz ham ishlayveradi
+                </h4>
+                <p class="text-sm text-gray-600 mt-1">Hozircha faqat o'z mahsulotlaringiz va profilingiz yetarli. Do'konni istalgan vaqtda — 1 daqiqada — yaratishingiz mumkin. Mahsulotlaringiz baribir marketplace da ko'rinadi.</p>
+            </div>
+            <a href="{% url 'seller_shop_web' %}" class="btn btn-outline bg-white whitespace-nowrap">
+                Qo'llanmani ko'rish
+                <span class="material-icons-outlined !text-base">arrow_forward</span>
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card p-5 bg-white border-gray-100">
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+            <div class="flex-1">
+                <h4 class="font-semibold text-ink">Yana mahsulot qo'shmoqchimisiz?</h4>
+                <p class="text-sm text-gray-500 mt-1">Yangi mahsulot — avtomatik ham globalda, ham do'koningizda chiqadi. Dinamik, bir zumda.</p>
+            </div>
+            <a href="{% url 'seller_products_web' %}" class="btn btn-primary whitespace-nowrap">
+                <span class="material-icons-outlined !text-base">add</span>
+                Mahsulot qo'shish
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

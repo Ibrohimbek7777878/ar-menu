@@ -1,0 +1,141 @@
+{
+  "common": {
+    "back": "Orqaga", "close": "Yopish", "save": "Saqlash",
+    "cancel": "Bekor qilish", "confirm": "Tasdiqlash", "delete": "O'chirish",
+    "edit": "Tahrirlash", "add": "Qo'shish", "search": "Qidirish",
+    "loading": "Yuklanmoqda...", "error": "Xatolik", "retry": "Qayta urinish",
+    "yes": "Ha", "no": "Yo'q", "all": "Hammasi", "sum": "so'm",
+    "min": "daqiqa", "gram": "g", "pcs": "ta", "offline": "Ulanish yo'q"
+  },
+  "menu": {
+    "title": "Menyu", "search_placeholder": "Taom qidirish...",
+    "no_results": "Hech narsa topilmadi", "category_all": "Hammasi",
+    "sold_out": "Tugagan", "hit": "Ommabop", "new": "Yangi",
+    "cook_time": "{n} daqiqa", "weight": "{n} g", "calories": "{n} kkal",
+    "empty_title": "Menyu bo'sh", "search_empty_title": "Taom topilmadi",
+    "search_empty_desc": "Boshqa so'z bilan qidirib ko'ring"
+  },
+  "dish": {
+    "ingredients": "Tarkibi", "allergens": "Allergenlar",
+    "no_allergens": "Allergen yo'q", "modifiers": "Qo'shimchalar",
+    "note_placeholder": "Izoh (masalan: achchiq qilmang)",
+    "add_to_cart": "Savatga qo'shish", "view_ar": "AR'da ko'rish",
+    "view_3d": "3D ko'rish", "rating": "{n} ({cnt} ta baho)",
+    "added": "Savatga qo'shildi"
+  },
+  "ar": {
+    "button": "📱 Stolga qo'yib ko'rish",
+    "loading": "3D model yuklanmoqda...",
+    "not_supported": "Qurilmangiz AR'ni qo'llab-quvvatlamaydi",
+    "not_supported_hint": "3D ko'rinishda aylantirib ko'rishingiz mumkin",
+    "error": "3D model yuklanmadi",
+    "instruction": "Telefoningizni stolga qarating",
+    "real_size": "Haqiqiy o'lchamda",
+    "preparing": "3D model tayyorlanmoqda..."
+  },
+  "cart": {
+    "title": "Savat", "empty": "Savat bo'sh",
+    "empty_hint": "Menyudan taom tanlang",
+    "subtotal": "Taomlar", "service_fee": "Xizmat ({pct}%)",
+    "discount": "Chegirma", "total": "JAMI",
+    "note_placeholder": "Umumiy izoh",
+    "submit": "Buyurtma berish", "cross_sell": "Bularni ham oling",
+    "remove_confirm": "Savatdan olib tashlansinmi?",
+    "sending": "Yuborilmoqda...",
+    "added": "Savatga qo'shildi"
+  },
+  "order": {
+    "created": "Buyurtmangiz qabul qilindi!",
+    "number": "Buyurtma {n}", "table": "Stol {n}",
+    "status_new": "Yuborildi", "status_accepted": "Qabul qilindi",
+    "status_cooking": "Tayyorlanmoqda", "status_ready": "Tayyor",
+    "status_served": "Berildi", "status_paid": "To'landi",
+    "eta": "Taxminan {n} daqiqa qoldi",
+    "ready_title": "🎉 Buyurtmangiz tayyor!",
+    "add_more": "Yana buyurtma", "request_bill": "Hisob so'rash",
+    "unavailable": "{dish} tugadi. Ofitsiant keladi."
+  },
+  "call": {
+    "title": "Nima kerak?", "waiter": "Ofitsiant", "bill": "Hisob",
+    "water": "Suv", "clean": "Tozalash",
+    "sent": "Ofitsiant chaqirildi ✓",
+    "cooldown": "Iltimos, biroz kuting",
+    "resolved": "Ofitsiant keldi",
+    "btn": "Chaqirish",
+    "sending": "Yuborilmoqda...",
+    "done": "Ofitsiant kelyapti!",
+    "error": "Xato yuz berdi",
+    "wait_seconds": "Iltimos, {n}s kutib turing"
+  },
+  "payment": {
+    "title": "To'lov", "method": "To'lov usuli", "cash": "Naqd (ofitsiantga)",
+    "payme": "Payme", "click": "Click", "uzum": "Uzum",
+    "use_bonus": "Bonusdan foydalanish", "pay": "To'lash — {amount}",
+    "success": "✅ To'lov qabul qilindi", "failed": "To'lov amalga oshmadi",
+    "split": "Hisobni bo'lish", "receipt": "Chek"
+  },
+  "tips": {
+    "title": "Xizmat yoqdimi?", "waiter_label": "Sizning ofitsiantingiz",
+    "give": "💝 Choychaqa berish", "skip": "O'tkazib yuborish",
+    "custom": "Boshqa summa", "thanks": "Rahmat! 🎉"
+  },
+  "review": {
+    "title": "Bizni baholang", "food": "Taom", "service": "Xizmat",
+    "ambience": "Muhit", "comment_placeholder": "Izohingiz...",
+    "submit": "Yuborish", "thanks": "Rahmat! 🎉",
+    "google_prompt": "Google'da ham baholaysizmi?",
+    "google_button": "Google'ga o'tish",
+    "sorry": "Uzr so'raymiz. Nima yoqmadi?"
+  },
+  "chat": {
+    "title": "Yordamchi", "greeting": "Salom! Menyu bo'yicha savolingiz bormi?",
+    "placeholder": "Savolingizni yozing...", "thinking": "O'ylayapman...",
+    "error": "Kechirasiz, hozir javob bera olmayman. Ofitsiantni chaqiring.",
+    "view_dish": "Ko'rish", "order_dish": "Buyurtma"
+  },
+  "errors": {
+    "qr_invalid": "QR kod yaroqsiz. Ofitsiantga murojaat qiling.",
+    "restaurant_inactive": "Restoran vaqtincha xizmat ko'rsatmayapti",
+    "table_inactive": "Bu stol vaqtincha ishlamayapti",
+    "dish_unavailable": "Bu taom hozir mavjud emas",
+    "price_changed": "Narxlar yangilandi. Savatni tekshiring.",
+    "network": "Ulanish yo'q. Qayta urinilmoqda...",
+    "server": "Xatolik yuz berdi. Ofitsiantni chaqiring.",
+    "rate_limited": "Juda ko'p so'rov. Biroz kuting.",
+    "not_found": "Sahifa topilmadi. Qidirilayotgan sahifa mavjud emas.",
+    "maintenance": "Texnik profilaktika olib borilmoqda. Tez orada qaytamiz.",
+    "retry": "Qayta yuklash"
+  },
+  "staff": {
+    "login": "Xodim kirishi", "pin": "PIN kod", "wrong_pin": "PIN noto'g'ri",
+    "blocked": "Bloklandi. {n} daqiqadan keyin urinib ko'ring.",
+    "new_orders": "Yangi buyurtmalar", "my_tables": "Mening stollarim",
+    "hall": "Zal", "calls": "Chaqiruvlar", "stats": "Statistika",
+    "accept": "✅ Qabul qildim", "serve": "🍽 Olib bordim",
+    "shift_start": "Smena boshlash", "shift_end": "Smena tugatish",
+    "today": "Bugun", "tables_served": "{n} stol", "tips_earned": "Choychaqa"
+  },
+  "kds": {
+    "title": "Oshxona", "new": "YANGI", "cooking": "TAYYORLANMOQDA",
+    "ready": "TAYYOR", "start": "BOSHLASH", "mark_ready": "TAYYOR ✓",
+    "served": "BERILDI", "late": "KECHIKDI", "avg_time": "O'rtacha"
+  },
+  "admin": {
+    "dashboard": "Dashboard", "menu": "Menyu", "tables": "Stollar",
+    "orders": "Buyurtmalar", "staff": "Xodimlar", "reports": "Hisobotlar",
+    "ar_models": "3D/AR modellar", "settings": "Sozlamalar",
+    "today_revenue": "Bugungi savdo", "orders_count": "Buyurtma",
+    "avg_check": "O'rtacha chek", "tables_busy": "Band stollar",
+    "ar_views": "AR ko'rish"
+  },
+  "diet": {
+    "halal": "Halol", "vegetarian": "Vegetarian", "vegan": "Vegan",
+    "spicy": "Achchiq", "no_spicy": "Achchiq emas",
+    "lactose_free": "Laktozasiz", "gluten_free": "Glutensiz"
+  },
+  "allergen": {
+    "nuts": "Yong'oq", "gluten": "Gluten", "dairy": "Sut mahsulotlari",
+    "eggs": "Tuxum", "fish": "Baliq", "shellfish": "Dengiz mahsulotlari",
+    "soy": "Soya", "sesame": "Kunjut"
+  }
+}

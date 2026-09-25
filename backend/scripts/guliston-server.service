@@ -1,0 +1,16 @@
+[Unit]
+Description=Online Store Guliston Laptop Background Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ibrohim/Desktop/client_baza/online store_guliston
+ExecStart=/home/ibrohim/Desktop/client_baza/online store_guliston/backend/venv/bin/python "/home/ibrohim/Desktop/client_baza/online store_guliston/backend/scripts/laptop_server_daemon.py"
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=10
+
+[Install]
+WantedBy=default.target

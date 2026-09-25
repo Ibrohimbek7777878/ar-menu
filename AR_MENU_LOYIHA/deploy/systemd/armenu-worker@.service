@@ -1,0 +1,16 @@
+[Unit]
+Description=ARMENU Worker (%i)
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=armenu
+Group=armenu
+WorkingDirectory=/opt/armenu
+ExecStart=/opt/armenu/venv/bin/python manage.py run_worker --queue=%i
+Restart=always
+RestartSec=5
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+
+[Install]
+WantedBy=multi-user.target

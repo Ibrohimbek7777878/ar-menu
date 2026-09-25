@@ -1,0 +1,16 @@
+[Unit]
+Description=ARMENU Web Socket (:8060)
+PartOf=armenu-web.service
+
+[Socket]
+ListenStream=127.0.0.1:8060
+NoDelay=true
+ReusePort=true
+Backlog=2048
+Accept=no
+SocketUser=armenu
+SocketGroup=armenu
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

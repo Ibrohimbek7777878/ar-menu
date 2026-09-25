@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';
@@ -51,11 +52,19 @@ class LocationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      final serviceEnabled = await _locationService.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _error = "Lokatsiya xizmati yoqilgan. Iltimos, telefon sozlamalariga o'ting.";
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
       final hasPermission = await checkLocationPermission();
       if (!hasPermission) {
         final granted = await requestLocationPermission();
         if (!granted) {
-          _error = 'Location permission denied';
+          _error = 'Joylashuv ruxsati rad etildi.';
           _isLoading = false;
           notifyListeners();
           return false;
@@ -69,7 +78,7 @@ class LocationProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _error = 'Could not get location';
+        _error = 'Joylashuv olinmadi.';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -116,7 +125,7 @@ class LocationProvider with ChangeNotifier {
 
   void clearError() {
     _error = null;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   // Set demo location for Yangiyer
@@ -135,6 +144,6 @@ class LocationProvider with ChangeNotifier {
       isMocked: true,
     );
     _locationPermissionGranted = true;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 }

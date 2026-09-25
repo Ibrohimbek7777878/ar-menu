@@ -1,0 +1,557 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ product.name }} — {{ t.site_name }}{% endblock %}
+
+{% block extra_head %}
+{% if product.asset_3d or product.ar_model %}
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+{% endif %}
+<style>
+    .ruler-overlay {
+        position: absolute; bottom: 12px; left: 12px; z-index: 10;
+        background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+        color: #f8fafc; font-size: 11px; font-weight: 600;
+        padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18);
+        display: flex; align-items: center; gap: 6px; font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .qr-popover {
+        position: absolute; top: 48px; right: 0; z-index: 30;
+        background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px);
+        border-radius: 14px; padding: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+        border: 1px solid #e2e8f0; text-align: center;
+    }
+    .color-chip {
+        width: 22px; height: 22px; border-radius: 9999px; cursor: pointer;
+        border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.25); transition: transform .15s;
+    }
+    .color-chip:hover { transform: scale(1.22); }
+</style>
+<script>
+function changeModelColor(r, g, b) {
+    const mv = document.querySelector('model-viewer');
+    if (mv && mv.model && mv.model.materials && mv.model.materials.length > 0) {
+        mv.model.materials[0].pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1.0]);
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+{% with cfg=product.get_clean_design_config %}
+<div class="w-full {% if cfg.bg_theme == 'dark' %}bg-slate-950 text-slate-100 min-h-screen py-4{% endif %}" style="--primary: {{ cfg.accent_color }};">
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10" x-data="{ quantity: 1, active: 0, view3d: {% if product.design_template == 'ar_hero' %}true{% else %}false{% endif %}, showVideo: false, selectedVariants: { {% for variant in product.variants %}'{{ variant.name }}': '{{ variant.options.0 }}'{% if not forloop.last %}, {% endif %}{% endfor %} } }">
+    <!-- Breadcrumb -->
+    <nav class="flex flex-wrap items-center gap-2 text-sm {% if cfg.bg_theme == 'dark' %}text-slate-400{% else %}text-muted{% endif %} mb-6">
+        <a href="{% url 'customer_home' %}" class="hover:text-primary transition">{{ t.product_breadcrumb_home }}</a>
+        <span>/</span>
+        <a href="{% url 'customer_catalog' %}" class="hover:text-primary transition">{{ t.product_breadcrumb_catalog }}</a>
+        {% if product.category %}
+        <span>/</span>
+        <a href="{% url 'customer_catalog' %}?category={{ product.category.id }}" class="hover:text-primary transition">{{ product.category.name }}</a>
+        {% endif %}
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-14">
+        <!-- Images -->
+        <div class="space-y-3">
+            <!-- 3D/AR Viewer & Video Gallery -->
+            {% if product.asset_3d or product.ar_model %}
+            <div class="card-surface aspect-square flex flex-col items-center justify-center p-4 overflow-hidden {% if cfg.bg_theme == 'dark' %}bg-slate-900 border-slate-800{% else %}bg-card{% endif %}" style="position:relative;">
+                <template x-if="!view3d && !showVideo">
+                    <div class="w-full h-full flex flex-col items-center justify-center gap-4">
+                        <img src="{% if product.asset_3d.poster_image %}{{ product.asset_3d.poster_image.url }}{% elif product.image %}{{ product.image.url }}{% endif %}" alt="{{ product.name }}" class="max-w-full max-h-full object-contain rounded-xl">
+                        <button @click="view3d = true" class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 shadow-md" style="background:var(--primary, #16a34a);">
+                            <span class="material-icons-outlined text-lg">view_in_ar</span>
+                            {{ t.ar_view|default:"3D / AR ko'rish" }}
+                        </button>
+                    </div>
+                </template>
+                <template x-if="showVideo && !view3d">
+                    <div class="relative w-full h-full flex items-center justify-center bg-black rounded-2xl overflow-hidden">
+                        {% if product.video %}
+                        <video src="{{ product.video.url }}" controls autoplay loop playsinline class="w-full h-full object-cover"></video>
+                        {% endif %}
+                        <button @click="showVideo = false" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 shadow flex items-center justify-center hover:bg-white z-10 text-gray-800">
+                            ✕
+                        </button>
+                    </div>
+                </template>
+                <template x-if="view3d">
+                    <div class="relative w-full overflow-hidden rounded-2xl bg-neutral-900/10" style="aspect-ratio: 1 / 1; max-height: 72vh;">
+                        <model-viewer
+                            src="{% if product.asset_3d.glb_file %}{{ product.asset_3d.glb_file.url }}{% elif product.ar_model %}{{ product.ar_model }}{% endif %}"
+                            ios-src="{% if product.asset_3d.usdz_file %}{{ product.asset_3d.usdz_file.url }}{% endif %}"
+                            poster="{% if product.asset_3d.poster_image %}{{ product.asset_3d.poster_image.url }}{% elif product.image %}{{ product.image.url }}{% endif %}"
+                            alt="{{ product.name }}"
+                            ar
+                            ar-modes="webxr scene-viewer quick-look"
+                            camera-controls
+                            auto-rotate
+                            auto-rotate-delay="1000"
+                            shadow-intensity="0.8"
+                            shadow-softness="0.5"
+                            exposure="1.15"
+                            environment-image="neutral"
+                            touch-action="pan-y"
+                            class="w-full h-full"
+                            style="background: transparent;"
+                        >
+                            <button slot="ar-button" class="hidden">{{ t.ar_open }}</button>
+                        </model-viewer>
+
+                        <!-- Dimension Ruler Overlay -->
+                        {% if product.get_dimensions_display %}
+                        <div class="ruler-overlay">
+                            <span class="text-amber-400">📐</span>
+                            <span>{{ product.get_dimensions_display }}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Real-time 3D Color Switcher -->
+                        {% if cfg.show_color_picker %}
+                        <div class="absolute top-3 left-3 z-20 flex items-center gap-1.5 bg-black/75 backdrop-blur px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
+                            <span class="text-[10px] text-white/90 font-bold uppercase tracking-wider mr-0.5">3D:</span>
+                            <button type="button" class="color-chip" style="background:#ffffff" onclick="changeModelColor(1, 1, 1)" title="Asl rang"></button>
+                            <button type="button" class="color-chip" style="background:#0f172a" onclick="changeModelColor(0.08, 0.12, 0.18)" title="Qora"></button>
+                            <button type="button" class="color-chip" style="background:#dc2626" onclick="changeModelColor(0.85, 0.15, 0.15)" title="Qizil"></button>
+                            <button type="button" class="color-chip" style="background:#16a34a" onclick="changeModelColor(0.09, 0.64, 0.29)" title="Yashil"></button>
+                            <button type="button" class="color-chip" style="background:#f59e0b" onclick="changeModelColor(0.96, 0.62, 0.04)" title="Oltin"></button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Desktop-to-Mobile AR QR Code Quick Launcher -->
+                        <div class="absolute top-3 right-14 z-20" x-data="{ openQr: false }">
+                            <button @click="openQr = !openQr" class="h-9 px-3 rounded-full bg-white/90 backdrop-blur shadow text-xs font-bold text-gray-800 hover:bg-white flex items-center gap-1.5 transition">
+                                <span class="material-icons-outlined !text-sm">qr_code_2</span>
+                                <span>AR QR</span>
+                            </button>
+                            <div x-show="openQr" @click.away="openQr = false" class="qr-popover w-52" x-transition>
+                                <p class="text-[11px] font-bold text-gray-800 mb-1.5">Mobil kamerangizni qarating:</p>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={{ request.build_absolute_uri|urlencode }}" class="w-32 h-32 mx-auto rounded-lg shadow-inner mb-1.5" alt="AR QR">
+                                <p class="text-[10px] text-gray-500">Mahsulotni uyingizda real hajmda ko'ring</p>
+                            </div>
+                        </div>
+
+                        <!-- Close 3D View -->
+                        <button @click="view3d = false" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition z-10 text-gray-700">
+                            <span class="material-icons-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </template>
+            </div>
+            {% else %}
+            <!-- Oddiy rasmlar -->
+            <div class="card-surface aspect-square flex items-center justify-center p-8 overflow-hidden {% if cfg.bg_theme == 'dark' %}bg-slate-900 border-slate-800{% else %}bg-card{% endif %}">
+                <template x-if="showVideo">
+                    <div class="relative w-full h-full flex items-center justify-center bg-black rounded-2xl overflow-hidden">
+                        {% if product.video %}
+                        <video src="{{ product.video.url }}" controls autoplay loop playsinline class="w-full h-full object-cover"></video>
+                        {% endif %}
+                        <button @click="showVideo = false" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 shadow flex items-center justify-center hover:bg-white z-10 text-gray-800">
+                            ✕
+                        </button>
+                    </div>
+                </template>
+                <div x-show="!showVideo" class="w-full h-full flex items-center justify-center">
+                    <img x-show="active === 0" src="{% if product.image %}{{ product.image.url }}{% endif %}" alt="{{ product.name }}" x-transition class="max-w-full max-h-full object-contain">
+                    {% if product.image2 %}
+                    <img x-show="active === 1" src="{{ product.image2.url }}" alt="{{ product.name }}" x-transition class="max-w-full max-h-full object-contain">
+                    {% endif %}
+                    {% if product.image3 %}
+                    <img x-show="active === 2" src="{{ product.image3.url }}" alt="{{ product.name }}" x-transition class="max-w-full max-h-full object-contain">
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Thumbnails: 3D + Video + Rasmlar -->
+            <div class="flex gap-2 items-center flex-wrap">
+                {% if product.asset_3d or product.ar_model %}
+                <button @click="view3d = true; showVideo = false;" :class="view3d ? 'border-primary ring-2 ring-primary/20 bg-primary/10' : 'border-border bg-card'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all">
+                    <span class="material-icons-outlined text-primary text-xl">view_in_ar</span>
+                    <span class="text-[10px] font-bold text-primary mt-0.5">3D / AR</span>
+                </button>
+                {% endif %}
+
+                {% if product.video %}
+                <button @click="showVideo = true; view3d = false;" :class="showVideo ? 'border-pink-500 ring-2 ring-pink-500/20 bg-pink-50' : 'border-border bg-card'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 flex flex-col items-center justify-center transition-all">
+                    <span class="material-icons-outlined text-pink-600 text-xl">play_circle</span>
+                    <span class="text-[10px] font-bold text-pink-600 mt-0.5">Video</span>
+                </button>
+                {% endif %}
+
+                <button @click="active = 0; view3d = false; showVideo = false;" :class="!view3d && !showVideo && active === 0 ? 'border-primary ring-2 ring-primary/10' : 'border-transparent'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 overflow-hidden bg-card p-1.5 transition-all">
+                    <img src="{% if product.image %}{{ product.image.url }}{% endif %}" alt="" class="w-full h-full object-contain">
+                </button>
+                {% if product.image2 %}
+                <button @click="active = 1; view3d = false; showVideo = false;" :class="!view3d && !showVideo && active === 1 ? 'border-primary ring-2 ring-primary/10' : 'border-transparent'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 overflow-hidden bg-card p-1.5 transition-all">
+                    <img src="{{ product.image2.url }}" alt="" class="w-full h-full object-contain">
+                </button>
+                {% endif %}
+                {% if product.image3 %}
+                <button @click="active = 2; view3d = false; showVideo = false;" :class="!view3d && !showVideo && active === 2 ? 'border-primary ring-2 ring-primary/10' : 'border-transparent'" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 overflow-hidden bg-card p-1.5 transition-all">
+                    <img src="{{ product.image3.url }}" alt="" class="w-full h-full object-contain">
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div>
+            {% if cfg.badge_text %}
+            <div class="mb-2">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider shadow-sm"
+                      style="background:color-mix(in srgb, {{ cfg.accent_color }} 18%, transparent); color:{{ cfg.accent_color }}; border:1.5px solid color-mix(in srgb, {{ cfg.accent_color }} 35%, transparent);">
+                    ✨ {{ cfg.badge_text }}
+                </span>
+            </div>
+            {% endif %}
+
+            <div class="flex items-center gap-3 mb-3">
+                {% if product.is_organic %}<span class="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary border border-primary/20">{{ t.product_organic }}</span>{% endif %}
+                {% if product.is_halal %}<span class="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary border border-primary/20">{{ t.product_halal }}</span>{% endif %}
+                {% if product.brand %}<span class="text-xs text-muted uppercase tracking-widest">{{ product.brand }}</span>{% endif %}
+            </div>
+
+            <h1 class="font-display text-3xl sm:text-4xl font-semibold tracking-tight mb-3">{{ product.name }}</h1>
+
+            <!-- Rating -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex items-center gap-0.5">
+                    {% for i in "12345" %}
+                    <svg class="w-4 h-4 {% if forloop.counter <= product.rating|default:0 %}fill-primary text-primary{% else %}fill-border text-border{% endif %}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294-.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                    {% endfor %}
+                </div>
+                <span class="text-sm text-muted">{{ product.rating|default:"0" }} · {{ product.reviews_count }} {{ t.product_reviews_count }}</span>
+            </div>
+
+            <!-- Price -->
+            <div class="flex items-baseline gap-3 mb-8">
+                <span class="font-display text-4xl font-semibold text-primary">{{ product.price|uznum }}</span>
+                <span class="text-muted font-medium">so'm</span>
+                {% if product.old_price %}
+                <span class="text-base text-muted line-through">{{ product.old_price|uznum }} {{ t.catalog_som }}</span>
+                <span class="rounded-full bg-red-50 text-red-600 text-xs font-bold px-2.5 py-1">-{{ product.discount_percent }}%</span>
+                {% endif %}
+            </div>
+
+            <!-- Availability -->
+            <div class="mb-6">
+                {% if product.is_available %}
+                <span class="inline-flex items-center gap-1.5 text-sm text-primary font-medium">
+                    <span class="w-2 h-2 rounded-full bg-primary"></span>
+                    {% if product.stock > 10 %}{{ t.product_available }}{% elif product.stock > 0 %}{{ t.product_low_stock }} ({{ product.stock }} {{ t.product_pieces }}){% else %}{{ t.product_available }}{% endif %}
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 text-sm text-red-500 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    {{ t.product_out_of_stock }}
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Texnik Matritsa (Specs Shablon) -->
+            {% if cfg.show_specs_table or product.design_template == 'specs' %}
+            <div class="p-4 rounded-xl border mb-6 {% if cfg.bg_theme == 'dark' %}bg-slate-900 border-slate-800 text-slate-200{% else %}bg-slate-50 border-slate-200 text-slate-800{% endif %}">
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 text-blue-500">
+                    <span class="material-icons-outlined text-sm">tune</span> Texnik Matritsa & Xususiyatlar
+                </h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    {% if product.get_dimensions_display %}
+                    <div class="p-2 rounded bg-black/5 dark:bg-white/5">
+                        <span class="text-muted block text-[10px]">O'lchamlari (K×B×Ch):</span>
+                        <span class="font-bold">{{ product.get_dimensions_display }}</span>
+                    </div>
+                    {% endif %}
+                    {% if product.weight %}
+                    <div class="p-2 rounded bg-black/5 dark:bg-white/5">
+                        <span class="text-muted block text-[10px]">Vazni:</span>
+                        <span class="font-bold">{{ product.weight }} kg</span>
+                    </div>
+                    {% endif %}
+                    {% if product.unit %}
+                    <div class="p-2 rounded bg-black/5 dark:bg-white/5">
+                        <span class="text-muted block text-[10px]">O'lchov birligi:</span>
+                        <span class="font-bold">{{ product.unit }}</span>
+                    </div>
+                    {% endif %}
+                    {% if product.brand %}
+                    <div class="p-2 rounded bg-black/5 dark:bg-white/5">
+                        <span class="text-muted block text-[10px]">Brend:</span>
+                        <span class="font-bold">{{ product.brand }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Variants — Uzum/Yandex/Alibaba kabi -->
+            {% if product.variants %}
+            <div class="mb-6 space-y-4">
+                {% for variant in product.variants %}
+                <div>
+                    <p class="text-sm font-semibold mb-2.5 flex items-center gap-2">
+                        {{ variant.name }}:
+                        <span class="text-xs font-normal text-muted" x-text="selectedVariants['{{ variant.name }}'] || '{{ variant.options.0 }}'"></span>
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for option in variant.options %}
+                        <button type="button"
+                                @click="selectedVariants['{{ variant.name }}'] = '{{ option }}'"
+                                :class="selectedVariants['{{ variant.name }}'] === '{{ option }}' || (!selectedVariants['{{ variant.name }}'] && '{{ forloop.first }}' === 'True') ? 'bg-ink text-white border-ink' : 'bg-card border-border hover:border-ink text-ink'"
+                                class="rounded-full border px-4 py-2 text-sm font-medium transition-colors">
+                            {{ option }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Wishlist (♥) -->
+            <form method="POST" action="{% url 'customer_wishlist_toggle' %}" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-medium hover:border-red-300 hover:text-red-500 transition active:scale-95">
+                    <span class="material-icons-outlined !text-[18px]">favorite_border</span>
+                    {{ t.add_to_wishlist|default:"Sevimlilarga qo'shish" }}
+                </button>
+            </form>
+
+            <!-- Add to cart -->
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="flex items-center gap-3 mb-8" @submit.prevent="let f=$el; if(Object.keys(selectedVariants).length) { let inp=document.createElement('input'); inp.type='hidden'; inp.name='variants'; inp.value=JSON.stringify(selectedVariants); f.appendChild(inp); } f.submit();">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <div class="flex items-center border border-border rounded-xl overflow-hidden bg-card">
+                    <button type="button" @click="quantity = Math.max(1, quantity - 1)" class="w-11 h-12 flex items-center justify-center text-muted hover:text-primary transition">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+                    </button>
+                    <span class="w-10 text-center font-semibold text-lg" x-text="quantity"></span>
+                    <button type="button" @click="quantity++" class="w-11 h-12 flex items-center justify-center text-muted hover:text-primary transition">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                </div>
+                <input type="hidden" name="quantity" :value="quantity">
+                <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
+                    {{ t.cart_add }}
+                </button>
+            </form>
+
+            {% if cfg.quick_buy or product.design_template == 'clean' %}
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="mb-4">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <input type="hidden" name="next" value="{% url 'customer_checkout' %}">
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-95 active:scale-98" style="background:linear-gradient(135deg, {{ cfg.accent_color }}, color-mix(in srgb, {{ cfg.accent_color }} 75%, black));">
+                    <span class="material-icons-outlined text-lg">bolt</span>
+                    1-klikda tezkor xarid
+                </button>
+            </form>
+            {% endif %}
+
+            <a href="{% url 'customer_product_ar' product.slug %}" class="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-accent px-5 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-white">
+                <span class="material-icons-outlined text-[20px]">view_in_ar</span>
+                {{ t.ar_open }}
+            </a>
+
+            <!-- Shop -->
+            {% if product.shop %}
+            <a href="{% url 'customer_shop_detail' product.shop.slug %}" class="flex items-center justify-between p-4 rounded-xl border border-border bg-card mb-6 transition-shadow hover:shadow-soft">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                        <span class="material-icons-outlined text-primary text-xl">storefront</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold">{{ product.shop.name }}</p>
+                        {% if product.shop.is_open %}
+                        <p class="text-[11px] text-primary flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>{{ t.product_open_now }}</p>
+                        {% else %}
+                        <p class="text-[11px] text-muted flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-border"></span>{{ t.product_closed }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="text-sm font-semibold text-primary">{{ t.product_go_to_store }} →</span>
+            </a>
+            {% endif %}
+
+            <!-- Description -->
+            {% if product.description %}
+            <div class="mb-6">
+                <h3 class="eyebrow mb-2">{{ t.description }}</h3>
+                <p class="text-[15px] text-muted leading-relaxed">{{ product.description }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Product Details -->
+            <div class="card-surface p-5 mb-6">
+                <h3 class="eyebrow mb-3">{{ t.product_about }}</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    {% if product.brand %}
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-outlined text-muted text-base">business</span>
+                        <span class="text-muted">{{ t.product_brand }}</span>
+                        <span class="font-medium">{{ product.brand }}</span>
+                    </div>
+                    {% endif %}
+                    {% if product.country_of_origin %}
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-outlined text-muted text-base">public</span>
+                        <span class="text-muted">{{ t.product_country }}</span>
+                        <span class="font-medium">{{ product.country_of_origin }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-outlined text-muted text-base">scale</span>
+                        <span class="text-muted">{{ t.product_unit }}</span>
+                        <span class="font-medium">{{ product.unit|default:"dona" }}</span>
+                    </div>
+                    {% if product.weight %}
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-outlined text-muted text-base">fitness_center</span>
+                        <span class="text-muted">{{ t.product_weight }}</span>
+                        <span class="font-medium">{{ product.weight }} kg</span>
+                    </div>
+                    {% endif %}
+                    {% if product.volume %}
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-outlined text-muted text-base">water_drop</span>
+                        <span class="text-muted">{{ t.product_volume }}</span>
+                        <span class="font-medium">{{ product.volume }} L</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Nutrition -->
+            {% if product.calories or product.protein or product.fat or product.carbs %}
+            <div class="card-surface p-5 mb-6">
+                <h3 class="eyebrow mb-3">{{ t.product_nutrition }}</h3>
+                <div class="flex gap-4">
+                    {% if product.calories %}
+                    <div class="text-center">
+                        <p class="font-display text-xl font-semibold text-primary">{{ product.calories }}</p>
+                        <p class="text-[11px] text-muted">kkal</p>
+                    </div>
+                    {% endif %}
+                    {% if product.protein %}
+                    <div class="text-center">
+                        <p class="font-display text-xl font-semibold text-blue-600">{{ product.protein }}g</p>
+                        <p class="text-[11px] text-muted">{{ t.product_protein }}</p>
+                    </div>
+                    {% endif %}
+                    {% if product.fat %}
+                    <div class="text-center">
+                        <p class="font-display text-xl font-semibold text-amber-600">{{ product.fat }}g</p>
+                        <p class="text-[11px] text-muted">{{ t.product_fat }}</p>
+                    </div>
+                    {% endif %}
+                    {% if product.carbs %}
+                    <div class="text-center">
+                        <p class="font-display text-xl font-semibold text-green-600">{{ product.carbs }}g</p>
+                        <p class="text-[11px] text-muted">{{ t.product_carbs }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Ingredients -->
+            {% if product.ingredients %}
+            <div class="card-surface p-5 mb-6">
+                <h3 class="eyebrow mb-2">{{ t.product_ingredients }}</h3>
+                <p class="text-sm text-muted leading-relaxed">{{ product.ingredients }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Tags -->
+            {% if product.tags %}
+            <div class="flex flex-wrap gap-2 mb-6">
+                {% for tag in product.tags_list %}
+                <span class="rounded-full border border-border px-3 py-1 text-xs text-muted">{{ tag }}</span>
+                {% empty %}
+                <span class="rounded-full border border-border px-3 py-1 text-xs text-muted">{{ product.tags }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Reviews -->
+    <section class="max-w-3xl">
+        <div class="flex items-end justify-between mb-6">
+            <div>
+                <p class="eyebrow">{{ t.product_reviews_section }}</p>
+                <h2 class="mt-2 font-display text-2xl font-semibold">{{ t.product_reviews_title }} <span class="text-muted">({{ product.reviews_count }})</span></h2>
+            </div>
+        </div>
+
+        <div class="card-surface p-6 mb-8">
+            <h3 class="font-semibold text-base mb-4">{{ t.product_leave_review }}</h3>
+            <form method="POST" action="{% url 'customer_review_add' product.slug %}" class="space-y-4">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.product_your_name }}</label>
+                        <input type="text" name="name" required placeholder="{{ t.name }}" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.product_phone }}</label>
+                        <input type="tel" name="phone" required placeholder="+998 __ ___ __ __" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.product_rate }}</label>
+                    <div class="flex gap-1" x-data="{ rating: 5 }">
+                        {% for i in "12345" %}
+                        <button type="button" @click="rating = {{ forloop.counter }}" class="p-1" title="{{ forloop.counter }} yulduz">
+                            <svg :class="rating >= {{ forloop.counter }} ? 'fill-primary text-primary' : 'fill-border text-border'" class="w-7 h-7 transition-colors" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294-.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                        </button>
+                        {% endfor %}
+                        <input type="hidden" name="rating" :value="rating">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.product_your_opinion }}</label>
+                    <textarea name="comment" rows="3" placeholder="{{ t.product_opinion_placeholder }}" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-none"></textarea>
+                </div>
+                <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.product_submit_review }}</button>
+            </form>
+        </div>
+
+        {% if reviews %}
+        <div class="space-y-4">
+            {% for review in reviews %}
+            <div class="card-surface p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
+                            <span class="text-sm font-semibold text-primary">{{ review.customer.name|first|upper }}</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold">{{ review.customer.name }}</p>
+                            <div class="flex items-center gap-0.5 mt-0.5">
+                                {% for i in "12345" %}
+                                <svg class="w-3 h-3 {% if forloop.counter <= review.rating %}fill-primary text-primary{% else %}fill-border text-border{% endif %}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294-.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs text-muted">{{ review.created_at|date:"d.m.Y" }}</span>
+                </div>
+                {% if review.comment %}<p class="text-sm text-muted leading-relaxed">{{ review.comment }}</p>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-14 card-surface">
+            <p class="text-sm text-muted">{{ t.product_no_reviews }}</p>
+        </div>
+        {% endif %}
+    </section>
+</section>
+</div>
+{% endwith %}
+{% endblock %}

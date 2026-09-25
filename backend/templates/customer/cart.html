@@ -1,0 +1,245 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.cart_title }} — {{ t.site_name }}{% endblock %}
+{% block content %}
+
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <p class="eyebrow">{{ t.cart_title }}</p>
+    <h1 class="mt-2 text-3xl font-semibold sm:text-4xl">{{ t.cart_your_order }}</h1>
+
+    {% if cart_items %}
+    <div class="flex flex-col lg:flex-row gap-8 mt-8">
+
+        <!-- Cart Items — grouped by shop -->
+        <div class="flex-1" x-data="{
+            updateQuantity(itemId, qty) {
+                fetch('{% url 'customer_cart_update' %}', {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+                    body: JSON.stringify({item_id: itemId, quantity: qty})
+                }).then(r => r.json()).then(d => { if(d.redirect) window.location.reload(); });
+            },
+            removeItem(itemId) {
+                fetch('{% url 'customer_cart_remove' %}', {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+                    body: JSON.stringify({item_id: itemId})
+                }).then(r => r.json()).then(d => { if(d.redirect) window.location.reload(); });
+            }
+        }">
+            {% regroup cart_items by product.shop as shop_groups %}
+            {% for shop_group in shop_groups %}
+            <div class="card-surface overflow-hidden mb-4">
+                <div class="flex items-center gap-3 px-5 py-3 bg-sand/50 border-b border-border">
+                    <span class="material-icons-outlined text-primary text-lg">storefront</span>
+                    <span class="text-sm font-semibold">{{ shop_group.grouper.name }}</span>
+                </div>
+                <div class="divide-y divide-border">
+                    {% for item in shop_group.list %}
+                    <div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 fade-in">
+                        <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div class="w-14 h-14 sm:w-20 sm:h-20 shrink-0 bg-sand rounded-xl overflow-hidden flex items-center justify-center p-1.5">
+                                {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-contain">
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <a href="{% url 'customer_product' item.product.slug %}" class="text-sm font-semibold hover:text-primary transition line-clamp-1 block">{{ item.product.name }}</a>
+                                <p class="text-sm font-semibold text-primary mt-1">{{ item.product.price|uznum }} {{ t.catalog_som }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
+                            <div class="flex items-center border border-border rounded-lg overflow-hidden shrink-0 bg-card">
+                                <button @click="if({{ item.quantity }} > 1) updateQuantity({{ item.id }}, {{ item.quantity }} - 1)" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-muted hover:text-primary transition">
+                                    <svg class="size-3.5 sm:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+                                </button>
+                                <span class="w-8 sm:w-10 text-center text-xs sm:text-sm font-semibold">{{ item.quantity }}</span>
+                                <button @click="updateQuantity({{ item.id }}, {{ item.quantity }} + 1)" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-muted hover:text-primary transition">
+                                    <svg class="size-3.5 sm:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                </button>
+                            </div>
+                            <div class="text-right shrink-0 min-w-[76px] sm:w-24">
+                                <p class="font-display text-sm sm:text-base font-semibold">{{ item.subtotal|uznum }} <span class="text-[10px] sm:text-xs text-muted font-sans">so'm</span></p>
+                                <button @click="removeItem({{ item.id }})" class="text-xs text-red-500 hover:text-red-600 mt-0.5 sm:mt-1 transition">{{ t.delete }}</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Summary + Checkout -->
+        <div class="w-full lg:w-96 shrink-0 space-y-4">
+            <div class="card-surface p-6">
+                <h2 class="font-semibold text-base mb-5">{{ t.cart_order_summary }}</h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-muted">{{ t.cart_products_count }} ({{ cart_items|length }})</span>
+                        <span class="font-medium">{{ total|uznum }} {{ t.catalog_som }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted">{{ t.cart_delivery_fee }}</span>
+                        {% if delivery_fee > 0 %}
+                        <span class="font-medium">{{ delivery_fee|uznum }} {{ t.catalog_som }}</span>
+                        {% else %}
+                        <span class="text-primary font-semibold">{{ t.cart_free }}</span>
+                        {% endif %}
+                    </div>
+                    {% if discount > 0 %}
+                    <div class="flex justify-between text-primary">
+                        <span>{{ t.cart_discount }}</span>
+                        <span class="font-medium">-{{ discount|uznum }} {{ t.catalog_som }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="border-t border-border pt-3 mt-1 flex justify-between items-baseline">
+                        <span class="font-semibold">{{ t.cart_grand_total_label }}</span>
+                        <span class="font-display text-xl font-semibold text-primary">{{ total|add:delivery_fee|uznum }} {{ t.catalog_som }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'customer_checkout' %}" class="card-surface p-6 space-y-4">
+                {% csrf_token %}
+                <div class="flex items-center justify-between">
+                    <h2 class="font-semibold text-base">{{ t.cart_delivery_info }}</h2>
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Tezkor yetkazish</span>
+                </div>
+
+                <!-- Javobgarlik va Taksi xizmati eslatmasi -->
+                <div class="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-2">
+                    <div class="flex items-start gap-2">
+                        <span class="text-base leading-none">ℹ️</span>
+                        <p class="leading-relaxed">
+                            <b>Muhim eslatma:</b> Taomlar va mahsulotlarning sifati, yangiligi va tayyorlanishiga ovqatlanish maskani / sotuvchi xodimining o'zi to'liq javobgar.
+                        </p>
+                    </div>
+                    <div class="pt-2 border-t border-amber-500/15">
+                        <span class="font-semibold block text-[11px] text-amber-800 dark:text-amber-300 mb-1.5">Tezkor Guliston Taksi Xizmatlari:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <a href="tel:+998672250000" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-card border border-border text-xs font-semibold text-foreground hover:border-primary transition">
+                                <span>🚕 Taxi Plus:</span> <b>(67) 225-00-00</b>
+                            </a>
+                            <a href="tel:+998915000000" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-card border border-border text-xs font-semibold text-foreground hover:border-primary transition">
+                                <span>📞</span> <b>(91) 500-00-00</b>
+                            </a>
+                            <a href="tel:+998672261054" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-card border border-border text-xs font-semibold text-foreground hover:border-primary transition">
+                                <span>🚕 1054:</span> <b>(67) 226-10-54</b>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.cart_your_name }}</label>
+                    <input type="text" name="name" required placeholder="{{ t.cart_name_placeholder }}" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.cart_phone_number }}</label>
+                    <input type="tel" name="phone" required placeholder="+998 XX XXX XX XX" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.cart_address }}</label>
+                    <textarea name="address" id="order-address" required rows="2" placeholder="{{ t.cart_address_placeholder }}" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-none"></textarea>
+                </div>
+                <div class="rounded-xl border border-border bg-card p-4">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <label class="text-xs font-semibold text-muted uppercase tracking-wider">📍 Joylashuv (aniq manzil)</label>
+                        <span id="geo-acc" class="hidden text-[11px] font-bold rounded-full px-2 py-0.5"></span>
+                    </div>
+                    <input type="hidden" name="lat" id="order-lat">
+                    <input type="hidden" name="lng" id="order-lng">
+                    <input type="hidden" name="accuracy" id="order-accuracy">
+                    <div class="flex gap-2">
+                        <button type="button" id="geo-btn" class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 active:scale-95 disabled:opacity-50">
+                            <span class="material-icons-outlined text-base">my_location</span>
+                            <span id="geo-btn-text">Joylashuvni aniqlash</span>
+                        </button>
+                        <button type="button" id="geo-map-toggle" class="inline-flex items-center justify-center gap-1 rounded-xl border border-border px-3 py-2.5 text-sm text-muted transition hover:text-primary hover:border-primary/40" title="Xaritada belgilash">
+                            <span class="material-icons-outlined text-base">map</span>
+                        </button>
+                    </div>
+                    <p id="geo-status" class="mt-2 text-xs text-muted">Kuryer adashmasligi uchun GPS orqali aniq manzilni yuboring.</p>
+                    <div id="geo-map" class="hidden mt-2 h-48 rounded-xl overflow-hidden border border-border z-0"></div>
+                </div>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                <script>
+                (function(){
+                    var btn=document.getElementById('geo-btn'),btnText=document.getElementById('geo-btn-text'),
+                        status=document.getElementById('geo-status'),acc=document.getElementById('geo-acc'),
+                        mapBox=document.getElementById('geo-map'),mapToggle=document.getElementById('geo-map-toggle'),
+                        inLat=document.getElementById('order-lat'),inLng=document.getElementById('order-lng'),
+                        inAcc=document.getElementById('order-accuracy'),addr=document.getElementById('order-address'),
+                        map=null,marker=null,DEF=[40.4775,66.8435];
+                    function setStatus(msg,ok){status.textContent=msg;status.className='mt-2 text-xs '+(ok===true?'text-primary font-semibold':ok===false?'text-red-500 font-semibold':'text-muted');}
+                    function setAcc(m){if(m==null||m===''){acc.classList.add('hidden');return;}m=Math.round(m);acc.classList.remove('hidden');acc.textContent='±'+m+' m';acc.className='text-[11px] font-bold rounded-full px-2 py-0.5 '+(m<=30?'bg-accent text-primary':m<=100?'bg-amber-100 text-amber-800':'bg-red-100 text-red-600');}
+                    function ensureMap(lat,lng){mapBox.classList.remove('hidden');if(!map){map=L.map('geo-map').setView([lat,lng],16);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);marker=L.marker([lat,lng],{draggable:true}).addTo(map);marker.on('dragend',function(){var p=marker.getLatLng();apply(p.lat,p.lng,null,true);});map.on('click',function(e){marker.setLatLng(e.latlng);apply(e.latlng.lat,e.latlng.lng,null,true);});setTimeout(function(){map.invalidateSize();},100);}else{map.setView([lat,lng],16);marker.setLatLng([lat,lng]);setTimeout(function(){map.invalidateSize();},100);}}
+                    function reverse(lat,lng){fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&zoom=18&addressdetails=1',{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(d){if(d&&d.display_name&&addr&&!addr.value.trim())addr.value=d.display_name;}).catch(function(){});}
+                    function apply(lat,lng,accuracy,manual){inLat.value=lat.toFixed(6);inLng.value=lng.toFixed(6);inAcc.value=(accuracy==null?'':Math.round(accuracy));setAcc(accuracy);ensureMap(lat,lng);reverse(lat,lng);
+                        if(manual){setStatus('✅ Xaritada belgilandi — kuryer shu nuqtaga keladi.',true);btnText.textContent='Qayta aniqlash';}
+                        else if(accuracy!=null&&accuracy<=30){setStatus('✅ Joylashuv aniq topildi (±'+Math.round(accuracy)+' m).',true);btnText.textContent='Qayta aniqlash';}
+                        else if(accuracy!=null){setStatus('⚠️ Aniqlik past (±'+Math.round(accuracy)+' m) — ochiq havoga chiqing yoki xaritada to\'g\'rilang.',false);btnText.textContent='Qayta urinish';}
+                        btn.disabled=false;}
+                    btn.addEventListener('click',function(){
+                        if(!navigator.geolocation){setStatus('❌ Qurilmangiz GPS ni qo\'llamaydi — xaritada belgilang.',false);ensureMap(DEF[0],DEF[1]);return;}
+                        btn.disabled=true;btnText.textContent='Aniqlanmoqda...';setStatus('📡 GPS sun\'iy yo\'ldoshlarga ulanmoqda (10 soniyagacha)...');
+                        navigator.geolocation.getCurrentPosition(
+                            function(pos){apply(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy,false);},
+                            function(err){btn.disabled=false;btnText.textContent='Qayta urinish';
+                                if(err.code===1)setStatus('❌ Joylashuvga ruxsat berilmadi — brauzer sozlamasidan yoqing yoki xaritada belgilang.',false);
+                                else if(err.code===3)setStatus('⏱ Vaqt tugadi — ochiq havoda qayta urining yoki xaritada belgilang.',false);
+                                else setStatus('❌ Joylashuv aniqlanmadi — xaritada belgilang.',false);
+                                ensureMap(DEF[0],DEF[1]);},
+                            {enableHighAccuracy:true,timeout:12000,maximumAge:0});
+                    });
+                    mapToggle.addEventListener('click',function(){mapBox.classList.toggle('hidden');if(!mapBox.classList.contains('hidden')){var la=parseFloat(inLat.value),ln=parseFloat(inLng.value);ensureMap(isNaN(la)?DEF[0]:la,isNaN(ln)?DEF[1]:ln);}});
+                })();
+                </script>
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{{ t.cart_notes }}</label>
+                    <textarea name="notes" rows="2" placeholder="{{ t.cart_notes_placeholder }}" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">{{ t.cart_payment_method }}</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                            <input type="radio" name="payment_method" value="cash" checked class="accent-primary">
+                            <span>💵 {{ t.cart_cash_delivery }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                            <input type="radio" name="payment_method" value="click" class="accent-primary">
+                            <span>🟡 Click</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                            <input type="radio" name="payment_method" value="payme" class="accent-primary">
+                            <span>🟣 Payme</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                            <input type="radio" name="payment_method" value="uzcard" class="accent-primary">
+                            <span>💳 UzCard</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                            <input type="radio" name="payment_method" value="mock" class="accent-primary">
+                            <span>🧪 Test (mock)</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="w-full rounded-full bg-primary px-6 py-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.cart_checkout }}</button>
+            </form>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-24">
+        <div class="w-20 h-20 mx-auto mb-5 rounded-2xl bg-accent flex items-center justify-center">
+            <svg class="size-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
+        </div>
+        <h2 class="font-display text-2xl font-semibold mb-2">{{ t.cart_empty_title }}</h2>
+        <p class="text-sm text-muted mb-6">{{ t.cart_empty_desc_short }}</p>
+        <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.cart_go_catalog }}</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

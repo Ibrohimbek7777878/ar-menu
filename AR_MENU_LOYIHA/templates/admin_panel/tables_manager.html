@@ -1,0 +1,115 @@
+{% extends "admin_panel/base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Stollar va QR Kodlar" %}{% endblock %}
+{% block heading %}🪑 {% trans "Stollar va QR Kodlar Boshqaruvi" %}{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <button class="btn btn-primary" onclick="openAddTableModal()">➕ {% trans "Yangi Stol Ochish" %}</button>
+    <button class="btn btn-ghost" onclick="window.print()">🖨 {% trans "QR Kodlarni Chop Etish" %}</button>
+  </div>
+  <div class="muted">
+    Jami stollar: <b>{{ tables|length }} ta</b>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
+  {% for t in tables %}
+    <div class="card" style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center;">
+      <div style="font-size:24px; font-weight:800; color:#E85D2A; margin-bottom:4px;">
+        Stol #{{ t.number }}
+      </div>
+      <div class="muted" style="font-size:12px; margin-bottom:14px;">
+        Sig'imi: {{ t.capacity }} kishi · {{ t.hall.name|default:"Umumiy zal" }}
+      </div>
+
+      <!-- QR Kod Tasviri -->
+      <div style="background:#fff; padding:12px; border-radius:10px; display:inline-block; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={{ base_url }}/t/{{ t.qr_token }}" alt="QR Stol #{{ t.number }}" style="display:block; width:130px; height:130px;">
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <a href="/t/{{ t.qr_token }}" target="_blank" class="btn btn-sm btn-ghost" style="flex:1;">
+          📱 {% trans "Ochish" %}
+        </a>
+        <a href="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data={{ base_url }}/t/{{ t.qr_token }}" download="QR_Stol_{{ t.number }}.png" target="_blank" class="btn btn-sm btn-primary" style="flex:1;">
+          ⬇️ {% trans "PNG" %}
+        </a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ➕ Yangi Stol Qo'shish Modali -->
+<div id="addTableModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:400px; padding:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0;">➕ {% trans "Yangi Stol Qo'shish" %}</h3>
+      <button onclick="closeAddTableModal()" class="btn btn-ghost" style="font-size:18px;">✕</button>
+    </div>
+
+    <form id="addTableForm">
+      <div style="margin-bottom:14px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Stol Raqami yoki Nomi:" %}</label>
+        <input type="text" id="tblNumber" class="input" style="width:100%;" placeholder="Masalan: 12 yoki VIP-1" required>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "O'rindiqlar soni (sig'imi):" %}</label>
+        <input type="number" id="tblCapacity" value="4" min="1" max="50" class="input" style="width:100%;" required>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" onclick="closeAddTableModal()" class="btn btn-ghost">{% trans "Bekor qilish" %}</button>
+        <button type="submit" id="btnSubmitTable" class="btn btn-primary">💾 {% trans "Yaratish" %}</button>
+      </div>
+      <div id="tableStatus" style="margin-top:10px; font-weight:600; font-size:13px;"></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAddTableModal() {
+  document.getElementById('addTableModal').style.display = 'flex';
+}
+function closeAddTableModal() {
+  document.getElementById('addTableModal').style.display = 'none';
+}
+
+document.getElementById('addTableForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('tableStatus');
+  const btn = document.getElementById('btnSubmitTable');
+  btn.disabled = true;
+  statusEl.textContent = 'Yaratilmoqda...';
+
+  try {
+    const res = await fetch('/v1/admin/tables/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        number: document.getElementById('tblNumber').value,
+        capacity: document.getElementById('tblCapacity').value
+      })
+    });
+    if (res.ok) {
+      statusEl.textContent = '✅ Stol yaratildi!';
+      statusEl.style.color = '#22c55e';
+      setTimeout(() => location.reload(), 800);
+    } else {
+      const err = await res.json();
+      statusEl.textContent = '❌ Xato: ' + JSON.stringify(err);
+      statusEl.style.color = '#EF4444';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Tarmoq xatosi';
+    statusEl.style.color = '#EF4444';
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}

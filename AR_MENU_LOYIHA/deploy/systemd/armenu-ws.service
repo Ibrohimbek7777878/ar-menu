@@ -1,0 +1,16 @@
+[Unit]
+Description=ARMENU WebSocket (Daphne)
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=armenu
+Group=armenu
+WorkingDirectory=/opt/armenu
+ExecStart=/opt/armenu/venv/bin/daphne -b 0.0.0.0 -p 8061 config.asgi:application
+Restart=always
+RestartSec=5
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+
+[Install]
+WantedBy=multi-user.target

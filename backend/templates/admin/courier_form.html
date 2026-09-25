@@ -1,0 +1,49 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if courier %}Kuryerni tahrirlash{% else %}Yangi kuryer{% endif %} - Store Admin{% endblock %}
+{% block page_title %}{% if courier %}Kuryerni tahrirlash{% else %}Yangi kuryer{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">{{ t.profile }}</p>
+                <h2 class="font-display text-base font-semibold">{{ t.courier_info }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label class="field">{{ t.first_name }} *</label>
+                    <input type="text" name="name" value="{{ courier.name|default:'' }}" required placeholder="Kuryer ismi">
+                </div>
+                <div>
+                    <label class="field">{{ t.phone }} *</label>
+                    <input type="text" name="phone" value="{{ courier.phone|default:'' }}" required placeholder="+998 XX XXX XX XX">
+                </div>
+                <div>
+                    <label class="field">{{ t.status_label }}</label>
+                    <select name="status">
+                        <option value="active" {% if courier.status == 'active' %}selected{% endif %}>{{ t.active }}</option>
+                        <option value="busy" {% if courier.status == 'busy' %}selected{% endif %}>{{ t.busy }}</option>
+                        <option value="offline" {% if courier.status == 'offline' %}selected{% endif %}>{{ t.offline }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field">{{ t.transport_type }}</label>
+                    <input type="text" name="vehicle_type" value="{{ courier.vehicle_type|default:'' }}" placeholder="Velosiped / Moto / Avtomobil">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.password }}</label>
+                    <input type="text" name="password" value="{{ courier.password|default:'' }}" placeholder="{% if courier %}Yangi parol kiriting (bo'sh qolsa o'zgarmaydi){% else %}Kuryer uchun parol{% endif %}">
+                    <p class="text-xs text-gray-400 mt-1">{{ t.courier_desc }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3">
+            <a href="{% url 'admin_couriers' %}" class="btn btn-outline !py-2.5 !text-sm">{{ t.cancel }}</a>
+            <button type="submit" class="btn btn-primary !py-2.5 !text-sm">{% if courier %}Saqlash{% else %}Yaratish{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

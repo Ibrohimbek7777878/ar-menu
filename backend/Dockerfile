@@ -1,43 +1,19 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
-COPY src ./src
+COPY . .
 
-# Build TypeScript
-RUN npm install -g typescript
-RUN npm run build
+RUN python manage.py collectstatic --noinput || true
 
-# Production stage
-FROM node:20-alpine
+EXPOSE 8000
 
-WORKDIR /app
-
-# Install production dependencies
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-
-# Create uploads directory
-RUN mkdir -p uploads
-
-# Expose port
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Start application
-CMD ["node", "dist/server.js"]
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

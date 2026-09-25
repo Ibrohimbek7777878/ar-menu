@@ -1,0 +1,20 @@
+<div x-data="{ open: false }" class="relative">
+    <button type="button" @click="open = !open" @click.outside="open = false"
+            class="flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground hover:border-primary/30"
+            aria-label="Tilni o'zgartirish">
+        <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M3.6 9h16.8M3.6 15h16.8"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg>
+        <span>{{ current_language|upper }}</span>
+        <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div x-show="open" x-transition.opacity
+         class="absolute right-0 z-50 mt-2 min-w-[9rem] overflow-hidden rounded-2xl border border-border bg-white py-1 shadow-lift">
+        {% load i18n_tags %}
+        {% for code, label in languages %}
+            <a href="{% lang_url code %}" @click="open = false"
+               class="flex items-center justify-between px-4 py-2 text-sm transition-colors hover:bg-accent {% if code == current_language %}font-semibold text-primary{% else %}text-foreground{% endif %}">
+                <span>{{ label }}</span>
+                {% if code == current_language %}<svg class="size-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m20 6-11 11-5-5"/></svg>{% endif %}
+            </a>
+        {% endfor %}
+    </div>
+</div>

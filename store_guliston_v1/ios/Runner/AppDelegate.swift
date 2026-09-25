@@ -1,16 +1,18 @@
-import Flutter
 import UIKit
+import Flutter
+import GoogleMaps  // ← Google Maps uchun
 
-@main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+@UIApplicationMain
+@objc class AppDelegate: FlutterAppDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
+    // Google Maps API Key ni o'rnatish
+    // MUHIM: "YOUR_API_KEY" ni Google Cloud dan olgan API Key bilan almashtiring!
+    GMSServices.provideAPIKey("YOUR_API_KEY")
 
-  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

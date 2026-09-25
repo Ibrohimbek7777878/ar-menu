@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ofitsiant — Buyurtmalar</title>
+<link rel="stylesheet" href="{% static 'staff/css/orders.css' %}?v=1">
+</head>
+<body>
+<div id="staff-app">
+  <!-- Login screen -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <h2>🔒 Kirish</h2>
+      <p>PIN kodni kiriting</p>
+      <div class="pin-input" id="pin-display">____</div>
+      <div class="pin-pad">
+        <button class="pin-btn" data-num="1">1</button>
+        <button class="pin-btn" data-num="2">2</button>
+        <button class="pin-btn" data-num="3">3</button>
+        <button class="pin-btn" data-num="4">4</button>
+        <button class="pin-btn" data-num="5">5</button>
+        <button class="pin-btn" data-num="6">6</button>
+        <button class="pin-btn" data-num="7">7</button>
+        <button class="pin-btn" data-num="8">8</button>
+        <button class="pin-btn" data-num="9">9</button>
+        <button class="pin-btn pin-clear" data-num="C">C</button>
+        <button class="pin-btn" data-num="0">0</button>
+        <button class="pin-btn pin-ok" data-num="OK">✓</button>
+      </div>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- Main app (hidden until login) -->
+  <div id="main-app" class="hidden">
+    <header class="staff-header">
+      <h1>Buyurtmalar</h1>
+      <div class="staff-stats">
+        <span id="s-sum">0 UZS</span>
+        <span id="s-tables">0 stol</span>
+        <span id="s-tips">0 tips</span>
+      </div>
+      <button class="btn-logout" id="btn-logout">Chiqish</button>
+    </header>
+
+    <nav class="staff-tabs">
+      <button class="tab active" data-filter="open">Ochiq</button>
+      <button class="tab" data-filter="new">Yangi</button>
+      <button class="tab" data-filter="cooking">Tayyorlanmoqda</button>
+      <button class="tab" data-filter="ready">Tayyor</button>
+    </nav>
+
+    <main class="staff-orders" id="orders-list">
+      <div class="empty-msg" id="empty-msg">Buyurtmalar yo'q</div>
+    </main>
+  </div>
+</div>
+
+<script>
+window.STAFF = {
+  restaurantId: {{ restaurant.id|default:0 }},
+  wsScheme: '{{ ws_scheme|default:"ws" }}',
+  host: location.hostname,
+};
+</script>
+<script src="{% static 'staff/js/orders.js' %}?v=1"></script>
+</body>
+</html>

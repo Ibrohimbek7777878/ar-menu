@@ -110,7 +110,7 @@ class _OrderListWidgetState extends State<OrderListWidget> {
                                           children: [
                                             const Icon(Icons.phone, size: 16, color: Colors.grey),
                                             const SizedBox(width: 8),
-                                            Text(order.customerPhone ?? ''),
+                                            Text(order.customerPhones.isNotEmpty ? order.customerPhones.first : ''),
                                           ],
                                         ),
                                         const SizedBox(height: 8),

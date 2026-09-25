@@ -1,0 +1,160 @@
+{% extends "admin_panel/base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Brending va Ranglar" %}{% endblock %}
+{% block heading %}🎨 {% trans "Brending va Ranglar Sozlamasi" %}{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+  <!-- 1. Ranglar sozlamasi -->
+  <div class="card" style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px;">
+    <h3 style="margin-top:0; color:var(--text);">🎨 {% trans "Brend Ranglari" %}</h3>
+    <p class="muted" style="font-size:13px;">{% trans "Tanlagan ranglaringiz mehmon menyusi, tugmalar va barcha elementlarda avtomatik aks etadi." %}</p>
+    
+    <form id="brandingForm">
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Asosiy Rang (Primary Color - Tugmalar, Header, Vurg'ular):" %}</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="color" id="colorPrimary" value="{{ restaurant.color_primary|default:'#E85D2A' }}" style="width:50px; height:40px; border:none; border-radius:8px; cursor:pointer;">
+          <input type="text" id="colorPrimaryText" value="{{ restaurant.color_primary|default:'#E85D2A' }}" class="input" style="width:120px; font-family:monospace; text-transform:uppercase;" maxlength="7">
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Urg'u Rangi (Accent Color - Fon, Qorong'i elementlar):" %}</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="color" id="colorAccent" value="{{ restaurant.color_accent|default:'#1A1A2E' }}" style="width:50px; height:40px; border:none; border-radius:8px; cursor:pointer;">
+          <input type="text" id="colorAccentText" value="{{ restaurant.color_accent|default:'#1A1A2E' }}" class="input" style="width:120px; font-family:monospace; text-transform:uppercase;" maxlength="7">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="btnSaveColors" style="padding:10px 20px; font-weight:700;">
+        💾 {% trans "Ranglarni Saqlash" %}
+      </button>
+      <span id="saveStatus" style="margin-left:12px; font-weight:600; font-size:14px;"></span>
+    </form>
+  </div>
+
+  <!-- 2. Logo yuklash -->
+  <div class="card" style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px;">
+    <h3 style="margin-top:0; color:var(--text);">🖼 {% trans "Restoran Logotipi" %}</h3>
+    <div style="display:flex; align-items:center; gap:16px; margin: 16px 0;">
+      <div id="logoBox" style="width:80px; height:80px; border-radius:12px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--surface-2);">
+        {% if restaurant.logo %}
+          <img id="logoImg" src="{{ restaurant.logo.url }}" alt="Logo" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}
+          <span id="noLogoText" style="font-size:32px;">🍽</span>
+        {% endif %}
+      </div>
+      <div>
+        <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" style="margin-bottom:6px;">
+        <div class="muted" style="font-size:12px;">PNG, JPEG, WEBP (Maks 4 MB)</div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" id="btnUploadLogo" style="padding:8px 16px;">
+      ⬆️ {% trans "Logoni Yangilash" %}
+    </button>
+    <span id="logoStatus" style="margin-left:12px; font-size:14px;"></span>
+  </div>
+
+  <!-- 3. Jonli Menyuni Ko'rish (Live Preview) -->
+  <div class="card" style="grid-column: 1 / -1; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0;">👁 {% trans "Jonli Mehmon Menyusi Ko'rinishi" %}</h3>
+      <a href="/m/{{ restaurant.slug }}/" target="_blank" class="btn btn-ghost">↗ Yangi oynada to'liq ochish</a>
+    </div>
+    <div style="border:1px solid var(--border); border-radius:12px; overflow:hidden; height:450px; background:#000;">
+      <iframe src="/m/{{ restaurant.slug }}/" style="width:100%; height:100%; border:none;" id="previewIframe"></iframe>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const colorPrimary = document.getElementById('colorPrimary');
+  const colorPrimaryText = document.getElementById('colorPrimaryText');
+  const colorAccent = document.getElementById('colorAccent');
+  const colorAccentText = document.getElementById('colorAccentText');
+  const brandingForm = document.getElementById('brandingForm');
+  const saveStatus = document.getElementById('saveStatus');
+  const previewIframe = document.getElementById('previewIframe');
+
+  colorPrimary.addEventListener('input', () => colorPrimaryText.value = colorPrimary.value);
+  colorPrimaryText.addEventListener('input', () => colorPrimary.value = colorPrimaryText.value);
+  colorAccent.addEventListener('input', () => colorAccentText.value = colorAccent.value);
+  colorAccentText.addEventListener('input', () => colorAccent.value = colorAccentText.value);
+
+  brandingForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    saveStatus.textContent = 'Saqlanmoqda...';
+    saveStatus.style.color = '#F59E0B';
+
+    try {
+      const res = await fetch('/v1/admin/branding/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          color_primary: colorPrimary.value,
+          color_accent: colorAccent.value
+        })
+      });
+      if (res.ok) {
+        saveStatus.textContent = '✅ Saqlandi!';
+        saveStatus.style.color = '#22C55E';
+        previewIframe.src = previewIframe.src; // refresh preview
+      } else {
+        const err = await res.json();
+        saveStatus.textContent = '❌ Xato: ' + JSON.stringify(err);
+        saveStatus.style.color = '#EF4444';
+      }
+    } catch (e) {
+      saveStatus.textContent = '❌ Tarmoq xatosi';
+      saveStatus.style.color = '#EF4444';
+    }
+  });
+
+  const btnUploadLogo = document.getElementById('btnUploadLogo');
+  const logoFile = document.getElementById('logoFile');
+  const logoStatus = document.getElementById('logoStatus');
+
+  btnUploadLogo.addEventListener('click', async () => {
+    if (!logoFile.files.length) {
+      alert('Iltimos, rasm faylini tanlang!');
+      return;
+    }
+    logoStatus.textContent = 'Yuklanmoqda...';
+    logoStatus.style.color = '#F59E0B';
+
+    const formData = new FormData();
+    formData.append('file', logoFile.files[0]);
+
+    try {
+      const res = await fetch('/v1/admin/branding/logo/', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        logoStatus.textContent = '✅ Logo yuklandi!';
+        logoStatus.style.color = '#22C55E';
+        const img = document.getElementById('logoImg') || document.createElement('img');
+        img.id = 'logoImg';
+        img.src = data.logo;
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+        const box = document.getElementById('logoBox');
+        box.innerHTML = '';
+        box.appendChild(img);
+        previewIframe.src = previewIframe.src;
+      } else {
+        logoStatus.textContent = '❌ Xato: ' + (data.file || 'Yuklanmadi');
+        logoStatus.style.color = '#EF4444';
+      }
+    } catch (e) {
+      logoStatus.textContent = '❌ Tarmoq xatosi';
+      logoStatus.style.color = '#EF4444';
+    }
+  });
+});
+</script>
+{% endblock %}

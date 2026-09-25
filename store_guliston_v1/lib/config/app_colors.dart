@@ -1,29 +1,39 @@
 import 'package:flutter/material.dart';
 
-/// App color definitions based on the design system
-/// Primary Green: #327F60, Text Black: #39424C, Background: #FFFFFF, Accent Orange: #F7676D
+/// Uzum Market style design system
+/// Primary Green: #16a34a, Light Green: #dcfce7
+/// Background: #f8fafc, Shadow: rgba(22,163,74,0.08)
 
 class AppColors {
-  // Primary colors
-  static const Color primaryGreen = Color(0xFF327F60);
-  static const Color primaryGreenLight = Color(0xFF53C488);
-  static const Color primaryGreenDark = Color(0xFF28664D);
+  // Primary colors — Uzum Market style
+  static const Color primary = Color(0xFF16A34A);
+  static const Color primaryLight = Color(0xFF22C55E);
+  static const Color primaryDark = Color(0xFF15803D);
+  static const Color primarySurface = Color(0xFFDCFCE7);
+
+  static const Color primaryGreen = primary;
+  static const Color primaryGreenLight = primaryLight;
+  static const Color primaryGreenDark = primaryDark;
 
   // Text colors
-  static const Color textBlack = Color(0xFF39424C);
-  static const Color textGray = Color(0xFF6B7280);
-  static const Color textLight = Color(0xFF9CA3AF);
+  static const Color textBlack = Color(0xFF0F172A);
+  static const Color textGray = Color(0xFF64748B);
+  static const Color textLight = Color(0xFFBDBDBD);
   static const Color textWhite = Colors.white;
 
   // Background colors
-  static const Color background = Color(0xFFFFFFFF);
-  static const Color backgroundGray = Color(0xFFF5F5F5);
+  static const Color background = Color(0xFFF8FAFC);
+  static const Color backgroundGray = Color(0xFFF1F5F9);
   static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceVariant = Color(0xFFF0FDF4);
 
   // Accent colors
-  static const Color accentOrange = Color(0xFFF7676D);
-  static const Color accentOrangeLight = Color(0xFFFF9B9E);
-  static const Color accentYellow = Color(0xFFF3B54A);
+  static const Color accent = Color(0xFFFF6F00);
+  static const Color accentLight = Color(0xFFFF9E40);
+  static const Color accentDark = Color(0xFFC43E00);
+  static const Color accentOrange = accent;
+  static const Color accentOrangeLight = accentLight;
+  static const Color accentYellow = Color(0xFFFFA726);
 
   // Status colors
   static const Color success = Color(0xFF4CAF50);
@@ -33,7 +43,7 @@ class AppColors {
 
   // UI element colors
   static const Color divider = Color(0xFFE5E7EB);
-  static const Color shadow = Color(0x1A000000); // 10% black for soft shadows
+  static const Color shadow = Color(0x14FF0000); // ~8% opacity black
 
   // Order status colors
   static const Color statusPending = Color(0xFFFF9800);
@@ -46,55 +56,38 @@ class AppColors {
 
   // Gradient definitions
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primaryGreen, primaryGreenLight],
+    colors: [primary, primaryLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient warmGradient = LinearGradient(
-    colors: [accentOrange, accentYellow],
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [accent, accentLight],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Uzum-style light green gradient for banners
+  static const LinearGradient leafGradient = LinearGradient(
+    colors: [primary, primaryDark],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 }
 
-/// Extension for soft shadow box decoration
-extension AppShadows on BoxDecoration {
-  static BoxDecoration softShadow({
-    Color color = AppColors.shadow,
-    double blurRadius = 10,
-    Offset offset = const Offset(0, 4),
-  }) {
-    return BoxDecoration(
-      boxShadow: [
-        BoxShadow(
-          color: color,
-          blurRadius: blurRadius,
-          offset: offset,
-        ),
-      ],
-    );
-  }
-
-  static BoxDecoration cardShadow() {
-    return softShadow(
-      blurRadius: 16,
-      offset: const Offset(0, 4),
-    );
-  }
-}
-
-/// Border radius constants for rounded widgets
+/// Border radius constants for Uzum-style rounded widgets
 class AppRadius {
   static const double small = 8.0;
   static const double medium = 12.0;
   static const double large = 16.0;
   static const double xlarge = 24.0;
+  static const double xxlarge = 32.0;
   static const double circular = 50.0;
 
   static BorderRadius get smallRadius => BorderRadius.circular(small);
   static BorderRadius get mediumRadius => BorderRadius.circular(medium);
   static BorderRadius get largeRadius => BorderRadius.circular(large);
   static BorderRadius get xlargeRadius => BorderRadius.circular(xlarge);
+  static BorderRadius get xxlargeRadius => BorderRadius.circular(xxlarge);
   static BorderRadius get circularRadius => BorderRadius.circular(circular);
 }

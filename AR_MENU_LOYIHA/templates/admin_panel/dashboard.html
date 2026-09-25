@@ -1,0 +1,61 @@
+{% extends "admin_panel/base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Dashboard" %}{% endblock %}
+{% block heading %}🏠 {% trans "Dashboard" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border);
+         border-radius: var(--radius); padding: 12px; }
+  .kpi .lbl { font-size: 11px; color: var(--fg-muted); text-transform: uppercase;
+              letter-spacing: .04em; }
+  .kpi .val { font-size: 24px; font-weight: 700; margin: 4px 0 2px; }
+  .kpi .dlt { font-size: 12px; }
+  .up   { color: var(--success); }
+  .down { color: var(--danger); }
+  .row2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 12px; }
+  .feed { max-height: 300px; overflow-y: auto; }
+  .feed div { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .feed .tm { color: var(--fg-muted); margin-right: 8px; }
+  .attn li { margin-bottom: 5px; font-size: 13px; }
+  .attn .danger { color: var(--danger); }
+  .attn .warning { color: var(--warning); }
+  @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, 1fr); }
+                               .row2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kpis">
+  <div class="kpi"><div class="lbl">{% trans "Bugun savdo" %}</div>
+    <div class="val" id="k-rev">—</div><div class="dlt" id="d-rev"></div></div>
+  <div class="kpi"><div class="lbl">{% trans "Buyurtma" %}</div>
+    <div class="val" id="k-ord">—</div><div class="dlt" id="d-ord"></div></div>
+  <div class="kpi"><div class="lbl">{% trans "O'rtacha chek" %}</div>
+    <div class="val" id="k-avg">—</div><div class="dlt" id="d-avg"></div></div>
+  <div class="kpi"><div class="lbl">{% trans "Band stollar" %}</div>
+    <div class="val" id="k-tbl">—</div><div class="dlt muted" id="d-tbl"></div></div>
+  <div class="kpi"><div class="lbl">{% trans "AR ko'rish" %}</div>
+    <div class="val" id="k-ar">—</div><div class="dlt" id="d-ar"></div></div>
+</div>
+
+<div class="row2">
+  <div class="card"><strong>📊 {% trans "Soatlik savdo" %}</strong>
+    <canvas id="ch-hourly" height="110"></canvas></div>
+  <div class="card"><strong>🍽 {% trans "TOP-5 taom" %}</strong>
+    <table class="grid"><tbody id="top-dishes"></tbody></table></div>
+</div>
+
+<div class="row2">
+  <div class="card"><strong>🔴 {% trans "Jonli oqim" %}</strong>
+    <div class="feed" id="feed"></div></div>
+  <div class="card"><strong>⚠️ {% trans "Diqqat" %}</strong>
+    <ul class="attn" id="attn"></ul></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script src="{% static 'admin/js/dashboard.js' %}?v=1"></script>
+{% endblock %}

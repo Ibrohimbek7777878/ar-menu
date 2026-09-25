@@ -1,0 +1,139 @@
+{% extends "admin/base_admin.html" %}
+{% load uznum %}
+{% block title %}Buyurtma #{{ order.order_number }} - Store Admin{% endblock %}
+{% block page_title %}Buyurtma #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+    {% if order.status == 'pending' %}
+    <span class="pill text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-400">{{ t.order_pending }}</span>
+    {% elif order.status == 'confirmed' %}
+    <span class="pill text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-400">{{ t.approved }}</span>
+    {% elif order.status == 'preparing' %}
+    <span class="pill text-indigo-700 bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400">{{ t.order_preparing }}</span>
+    {% elif order.status == 'ready' %}
+    <span class="pill text-cyan-700 bg-cyan-50 dark:bg-cyan-950 dark:text-cyan-400">{{ t.order_ready }}</span>
+    {% elif order.status == 'out_for_delivery' %}
+    <span class="pill text-purple-700 bg-purple-50 dark:bg-purple-950 dark:text-purple-400">{{ t.order_delivering }}</span>
+    {% elif order.status == 'delivered' %}
+    <span class="pill text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-400">{{ t.order_delivered }}</span>
+    {% elif order.status == 'cancelled' %}
+    <span class="pill text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-400">{{ t.order_cancelled }}</span>
+    {% endif %}
+    <span class="text-xs text-gray-400">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <h2 class="font-display text-base font-semibold">{{ t.order_info }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.customer_label }}</p>
+                    <p class="font-medium">{{ order.customer_name }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.phone }}</p>
+                    <p class="font-medium">{{ order.customer_phone_1 }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.shop_label }}</p>
+                    <p class="font-medium">{{ order.shop.name }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.courier_label }}</p>
+                    <p class="font-medium">{{ order.courier.name|default:"Biriktirilmagan" }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.address_label }}</p>
+                    <p class="font-medium">{{ order.delivery_address|default:"—" }}</p>
+                </div>
+                {% if order.notes %}
+                <div class="sm:col-span-2">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.note_label }}</p>
+                    <p class="font-medium">{{ order.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <h2 class="font-display text-base font-semibold">{{ t.products_label }}</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="tbl w-full">
+                    <thead>
+                        <tr>
+                            <th>{{ t.product_label }}</th>
+                            <th>{{ t.price_label }}</th>
+                            <th>{{ t.quantity_label }}</th>
+                            <th class="!text-right">{{ t.sum_label }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td class="font-medium">{{ item.product_name }}</td>
+                            <td>{{ item.price|uznum }} {{ t.catalog_som }}</td>
+                            <td>{{ item.quantity }} {{ item.unit }}</td>
+                            <td class="!text-right font-semibold">{{ item.total|uznum }} {{ t.catalog_som }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-gray-500">{{ t.products_total }}</td>
+                            <td class="!text-right">{{ order.total_amount|uznum }} {{ t.catalog_som }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-gray-500">{{ t.delivery_label }}</td>
+                            <td class="!text-right">{% if order.delivery_fee %}{{ order.delivery_fee|uznum }} {{ t.catalog_som }}{% else %}Bepul{% endif %}</td>
+                        </tr>
+                        <tr class="!bg-gray-50 dark:!bg-neutral-900">
+                            <td colspan="3" class="font-semibold">{{ t.total_label }}</td>
+                            <td class="!text-right font-display text-base font-semibold text-brand-700 dark:text-brand-400">{{ order.final_amount|uznum }} {{ t.catalog_som }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="card p-6">
+            <h2 class="font-display text-base font-semibold mb-4">{{ t.change_status }}</h2>
+            <form method="POST" action="{% url 'admin_order_status' order.pk %}" class="space-y-4">
+                {% csrf_token %}
+                <select name="status">
+                    {% for value, label in order.STATUS_CHOICES %}
+                    <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary w-full !py-2.5 !text-sm">{{ t.update }}</button>
+            </form>
+        </div>
+
+        <div class="card p-6">
+            <h2 class="font-display text-base font-semibold mb-4">{{ t.history_title }}</h2>
+            <div class="space-y-3">
+                {% for h in history %}
+                <div class="flex items-start justify-between gap-3 text-sm">
+                    <div>
+                        <p class="font-medium">{{ h.get_status_display|default:h.status }}</p>
+                        {% if h.note %}<p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{{ h.note }}</p>{% endif %}
+                    </div>
+                    <span class="text-xs text-gray-400 shrink-0">{{ h.created_at|date:"d.m H:i" }}</span>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500">{{ t.no_history }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <a href="{% url 'admin_orders' %}" class="btn btn-outline w-full !text-sm">← Buyurtmalar ro'yxatiga</a>
+    </div>
+</div>
+{% endblock %}

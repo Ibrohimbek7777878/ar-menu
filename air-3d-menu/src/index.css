@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+:root {
+  /* ── BREND ── */
+  --brand: #C75B39;
+  --brand-hover: #E07A52;
+  --brand-active: #A8452A;
+  --brand-tint: #FBEDE8;
+
+  --ceramic: #1B4B73;
+  --ceramic-light: #2E6FA3;
+  --ceramic-tint: #E8F0F7;
+
+  --gold: #C9A227;
+  --gold-light: #E3C158;
+
+  /* ── NEYTRAL (iliq) ── */
+  --bg: #FDFBF7;
+  --bg-soft: #F7F3ED;
+  --bg-card: #FFFFFF;
+  --border: #E8E2D9;
+  --text: #1A1714;
+  --text-soft: #6B6259;
+  --text-muted: #9B9186;
+
+  /* ── SEMANTIK ── */
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --info: #2E6FA3;
+
+  /* ── STOL HOLATI ── */
+  --st-free: #16A34A;
+  --st-occupied: #2E6FA3;
+  --st-waiting: #D97706;
+  --st-ready: #DC2626;
+  --st-bill: #7C3AED;
+
+  /* ── SOYA ── */
+  --shadow-xs: 0 1px 2px rgba(26,23,20,.04);
+  --shadow-sm: 0 2px 8px rgba(26,23,20,.06);
+  --shadow-md: 0 4px 16px rgba(26,23,20,.08);
+  --shadow-lg: 0 12px 32px rgba(26,23,20,.12);
+  --shadow-xl: 0 24px 64px rgba(26,23,20,.16);
+
+  /* ── SHRIFT ── */
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+}
+
+:root[data-theme="dark"],
+.dark {
+  --bg: #14110E;
+  --bg-soft: #1C1815;
+  --bg-card: #241F1B;
+  --border: #332C26;
+  --text: #F5F1EA;
+  --text-soft: #A89E92;
+  --text-muted: #6B6259;
+  --brand-tint: #2A1810;
+  --ceramic-tint: #111E2A;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,.5);
+  --shadow-xl: 0 24px 64px rgba(0,0,0,.6);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.num, .price, .timer {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 4% Islimiy naqsh fon */
+.pattern-bg {
+  position: relative;
+}
+
+.pattern-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23C75B39' stroke-width='1'%3E%3Cpath d='M60 10 L75 35 L105 40 L82 60 L88 90 L60 76 L32 90 L38 60 L15 40 L45 35 Z'/%3E%3Ccircle cx='60' cy='60' r='28'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* AR Button pulse animation */
+@keyframes ar-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.animate-ar-pulse {
+  animation: ar-pulse 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Shimmer animation for skeletons */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--bg-soft) 25%, var(--border) 50%, var(--bg-soft) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* KDS late pulsing */
+@keyframes pulse-late {
+  0%, 100% { opacity: 1; border-color: #DC2626; }
+  50% { opacity: 0.6; border-color: #EF4444; }
+}
+
+.animate-pulse-late {
+  animation: pulse-late 1.2s ease-in-out infinite;
+}
+
+/* 3D AIR Floating Animations */
+@keyframes air-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.8deg);
+  }
+}
+
+.animate-air-float {
+  animation: air-float 3.5s ease-in-out infinite;
+}
+
+@keyframes steam-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-24px) scale(1.4);
+  }
+}
+
+.animate-steam {
+  animation: steam-rise 2.5s ease-out infinite;
+}
+
+/* National Uzbek Decorative Border */
+.uzbek-border-ornament {
+  background-image: repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 2px, transparent 0, transparent 8px);
+}
+
+.uzbek-pattern-ribbon {
+  background: linear-gradient(90deg, #1B4B73 0%, #C75B39 50%, #C9A227 100%);
+}
+
+/* Accessible Mode for Grandparents (60+) and Children (4th grade) */
+.accessible-large {
+  font-size: 1.15rem;
+}
+
+.accessible-large button {
+  min-height: 52px;
+}
+
+.accessible-large .dish-title {
+  font-size: 1.35rem !important;
+  line-height: 1.3 !important;
+}
+
+.accessible-large .dish-price {
+  font-size: 1.45rem !important;
+}
+
+.accessible-large .dish-desc {
+  font-size: 0.98rem !important;
+  -webkit-line-clamp: 3 !important;
+  line-clamp: 3 !important;
+}
+
+/* 3D Perspective Card Tilt */
+.perspective-card {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease;
+}
+
+.perspective-card:hover {
+  transform: translateY(-4px) scale(1.01);
+}
+
+/* Interactive Button Click Ripple */
+button:active {
+  transform: scale(0.96);
+}
+

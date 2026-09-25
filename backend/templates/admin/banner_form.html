@@ -1,0 +1,57 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if banner %}Bannerni tahrirlash{% else %}Yangi banner{% endif %} - Store Admin{% endblock %}
+{% block page_title %}{% if banner %}Bannerni tahrirlash{% else %}Yangi banner{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">{{ t.ad }}</p>
+                <h2 class="font-display text-base font-semibold">{{ t.banner_info }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.field_title }} *</label>
+                    <input type="text" name="title" value="{{ banner.title|default:'' }}" required placeholder="Masalan: Yangi yil chegirmalari">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.link_label }}</label>
+                    <input type="text" name="link" value="{{ banner.link|default:'' }}" placeholder="Masalan: /catalog/?category=3">
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_label }}</label>
+                    <select name="shop">
+                        <option value="">{{ t.not_selected_general }}</option>
+                        {% for s in shops %}
+                        <option value="{{ s.pk }}" {% if banner.shop_id == s.pk %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_order_num }}</label>
+                    <input type="number" name="sort_order" value="{{ banner.sort_order|default:0 }}">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_image }} *</label>
+                    <input type="file" name="image" accept="image/*" {% if not banner %}required{% endif %}>
+                    {% if banner.image %}
+                    <p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ banner.image.name }}</p>
+                    {% endif %}
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                        <input type="checkbox" name="is_active" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if banner.is_active or not banner %}checked{% endif %}> Faol
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3">
+            <a href="{% url 'admin_banners' %}" class="btn btn-outline !py-2.5 !text-sm">{{ t.cancel }}</a>
+            <button type="submit" class="btn btn-primary !py-2.5 !text-sm">{% if banner %}Saqlash{% else %}Yaratish{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

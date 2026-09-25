@@ -1,0 +1,93 @@
+{% extends "admin/base_admin.html" %}
+{% load i18n_tags %}
+{% block title %}{{ t.categories }} - {{ t.admin_panel }}{% endblock %}
+{% block page_title %}{{ t.categories }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div>
+        <p class="eyebrow mb-1">{{ t.categories_management }}</p>
+        <h1 class="font-display text-2xl font-semibold text-ink">{{ t.categories }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ categories|length }} ta kategoriya</p>
+    </div>
+    <a href="{% url 'admin_category_create' %}" class="btn btn-primary shadow-soft">
+        <span class="material-icons-outlined !text-lg">add</span>
+        Yangi kategoriya
+    </a>
+</div>
+
+<div class="mb-6 max-w-md">
+    <form method="GET" class="relative">
+        <input type="text" name="search" value="{{ search|default:'' }}" placeholder="{{ t.search }}..." class="pl-10 !rounded-full">
+        <span class="material-icons-outlined text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 !text-lg">search</span>
+    </form>
+</div>
+
+<div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="tbl w-full min-w-[560px]">
+            <thead>
+                <tr>
+                    <th>{{ t.name }}</th>
+                    <th>{{ t.icon_label }}</th>
+                    <th>{{ t.color_label }}</th>
+                    <th>{{ t.order_label }}</th>
+                    <th>{{ t.active }}</th>
+                    <th class="!text-right">{{ t.actions }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr class="group hover:!bg-brand-50/30 transition-colors">
+                    <td class="font-semibold text-ink">{{ category.name }}</td>
+                    <td>
+                        {% if category.icon %}
+                        <span class="grid size-8 place-items-center rounded-lg bg-gray-50 border border-gray-100 text-lg">{{ category.icon }}</span>
+                        {% else %}
+                        <span class="text-gray-300">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if category.color %}
+                        <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full inline-block border border-gray-200 shadow-sm" style="background-color: {{ category.color }}"></span>
+                            <span class="text-sm font-medium text-gray-600">{{ category.color }}</span>
+                        </div>
+                        {% else %}
+                        <span class="text-gray-300">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-gray-600">{{ category.sort_order }}</td>
+                    <td>
+                        {% if category.is_active %}
+                        <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.active }}</span>
+                        {% else %}
+                        <span class="pill text-gray-500 bg-gray-100"><span class="size-1.5 rounded-full bg-gray-400"></span>{{ t.inactive }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="!text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{% url 'admin_category_edit' category.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-brand-700 hover:bg-brand-50 transition" title="{{ t.edit }}">
+                                <span class="material-icons-outlined !text-lg">edit</span>
+                            </a>
+                            <a href="{% url 'admin_category_delete' category.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="{{ t.delete }}" onclick="return confirm('{{ t.admin_delete_confirm }}')">
+                                <span class="material-icons-outlined !text-lg">delete</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-14 text-center">
+                        <span class="grid size-14 place-items-center mx-auto rounded-2xl bg-gray-50 text-gray-300 mb-3">
+                            <span class="material-icons-outlined !text-3xl">category</span>
+                        </span>
+                        <p class="text-sm font-medium text-gray-500">{{ t.categories_not_found }}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

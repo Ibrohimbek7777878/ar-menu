@@ -1,0 +1,6 @@
+{
+  "name": "AIR 3D MENU",
+  "description": "O'zbekiston va xalqaro mehmonlar uchun innovatsion AIR 3D & AR menyu, ofitsiant va oshxona tizimi",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

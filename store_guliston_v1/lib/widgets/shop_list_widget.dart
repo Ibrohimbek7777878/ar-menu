@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/shop_provider.dart';
 import '../providers/cart_provider.dart';
-import '../models/shop.dart';
 import 'shop_card_widget.dart';
 
 class ShopListWidget extends StatefulWidget {

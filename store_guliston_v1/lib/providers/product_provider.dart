@@ -1,23 +1,85 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../services/product_service.dart';
 
 class ProductProvider with ChangeNotifier {
+  final ProductService _productService = ProductService();
   final List<Product> _products = [];
   bool _isLoading = false;
+  String _searchQuery = '';
+  String? _selectedCategory;
 
   List<Product> get products => List.unmodifiable(_products);
   bool get isLoading => _isLoading;
+  String get searchQuery => _searchQuery;
+  String? get selectedCategory => _selectedCategory;
+
+  /// Returns products filtered by both category and search query
+  List<Product> get filteredProducts {
+    return _products.where((product) {
+      final matchesCategory = _selectedCategory == null ||
+          _selectedCategory!.isEmpty ||
+          product.category.toLowerCase().contains(_selectedCategory!.toLowerCase());
+      final matchesSearch = _searchQuery.isEmpty ||
+          product.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+  }
 
   List<Product> getProductsByShop(String shopId) {
     return _products.where((product) => product.shopId == shopId).toList();
   }
 
+  Future<void> loadAllProducts({String? categoryId, String? search}) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final list = await _productService.getAllProducts(categoryId: categoryId, search: search);
+      _products.clear();
+      _products.addAll(list);
+    } catch (e) {
+      debugPrint('ProductProvider loadAllProducts error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> loadProductsForShop(String shopId) async {
     _isLoading = true;
     notifyListeners();
-    await Future.delayed(const Duration(seconds: 1));
-    _isLoading = false;
-    notifyListeners();
+    try {
+      final list = await _productService.getProducts(shopId: shopId);
+      // Replace or append products for this shop
+      _products.removeWhere((p) => p.shopId == shopId);
+      _products.addAll(list);
+    } catch (e) {
+      debugPrint('ProductProvider loadProductsForShop error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    Future.microtask(() => notifyListeners());
+  }
+
+  void setCategory(String category) {
+    _selectedCategory = category == 'Barchasi' || category.isEmpty ? null : category;
+    Future.microtask(() => notifyListeners());
+  }
+
+  void filterByCategory(String? category) {
+    _selectedCategory = category;
+    Future.microtask(() => notifyListeners());
+  }
+
+  void clearFilters() {
+    _searchQuery = '';
+    _selectedCategory = null;
+    Future.microtask(() => notifyListeners());
   }
 
   void addProduct({
@@ -44,7 +106,7 @@ class ProductProvider with ChangeNotifier {
       stock: stock,
     );
     _products.add(product);
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   void updateProduct(
@@ -72,59 +134,13 @@ class ProductProvider with ChangeNotifier {
         isAvailable: isAvailable,
         stock: stock,
       );
-      notifyListeners();
+      Future.microtask(() => notifyListeners());
     }
   }
 
   void removeProduct(String id) {
     _products.removeWhere((p) => p.id == id);
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
-  Future<void> loadDemoData() async {
-    _isLoading = true;
-    notifyListeners();
-
-    _products.addAll([
-      Product(
-        id: 'prod_1',
-        name: 'Yangi Olmalar',
-        price: 12000,
-        imageUrl: 'https://via.placeholder.com/150',
-        unit: 'kg',
-        description: 'Shirin va sharbatli olmalar',
-        shopId: 'shop_1',
-        category: 'Meva',
-        isAvailable: true,
-        stock: 100,
-      ),
-      Product(
-        id: 'prod_2',
-        name: 'Sabzavotlar',
-        price: 8000,
-        imageUrl: 'https://via.placeholder.com/150',
-        unit: 'kg',
-        description: 'Yangi sabzavotlar',
-        shopId: 'shop_1',
-        category: 'Sabzavot',
-        isAvailable: true,
-        stock: 150,
-      ),
-      Product(
-        id: 'prod_3',
-        name: 'Kartoshka',
-        price: 5000,
-        imageUrl: 'https://via.placeholder.com/150',
-        unit: 'kg',
-        description: 'Sifatli kartoshka',
-        shopId: 'shop_2',
-        category: 'Sabzavot',
-        isAvailable: true,
-        stock: 200,
-      ),
-    ]);
-
-    _isLoading = false;
-    notifyListeners();
-  }
 }

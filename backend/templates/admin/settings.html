@@ -1,0 +1,53 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Sozlamalar - Store Admin{% endblock %}
+{% block page_title %}Sozlamalar{% endblock %}
+
+{% block content %}
+<form method="POST" action="{% url 'admin_settings' %}">
+    {% csrf_token %}
+
+    <div class="space-y-6">
+        {% for group_name, group_settings in settings.items %}
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">Sozlama</p>
+                <h2 class="font-display text-base font-semibold">
+                    {% if group_name == 'general' %}Umumiy sozlamalar
+                    {% elif group_name == 'delivery' %}Yetkazish sozlamalari
+                    {% elif group_name == 'notifications' %}Bildirishnomalar
+                    {% elif group_name == 'security' %}Xavfsizlik
+                    {% else %}{{ group_name|title }}
+                    {% endif %}
+                </h2>
+            </div>
+            <div class="divide-y divide-gray-100 dark:divide-neutral-900">
+                {% for setting in group_settings %}
+                <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex-1 min-w-0">
+                        <label class="block text-sm font-medium" for="set_{{ setting.key }}">{{ setting.key }}</label>
+                        {% if setting.description %}
+                        <p class="text-xs text-gray-400 mt-0.5">{{ setting.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="sm:w-80">
+                        {% if setting.value == 'True' or setting.value == 'False' %}
+                        <select name="setting_{{ setting.key }}" id="set_{{ setting.key }}" class="!py-2 !text-sm">
+                            <option value="True" {% if setting.value == 'True' %}selected{% endif %}>Ha</option>
+                            <option value="False" {% if setting.value == 'False' %}selected{% endif %}>Yo'q</option>
+                        </select>
+                        {% else %}
+                        <input type="text" name="setting_{{ setting.key }}" id="set_{{ setting.key }}" value="{{ setting.value }}" class="!py-2 !text-sm">
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6 flex justify-end">
+        <button type="submit" class="btn btn-primary !py-2.5 !text-sm">{{ t.save }}</button>
+    </div>
+</form>
+{% endblock %}

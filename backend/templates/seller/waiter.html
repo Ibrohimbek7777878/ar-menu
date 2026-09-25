@@ -1,0 +1,104 @@
+{% extends "customer/base_customer.html" %}
+{% load i18n_tags %}
+{% comment %} V14-R2: Ofitsiant paneli — mobil-first, buyurtmalar stol raqami bilan {% endcomment %}
+{% block title %}Ofitsiant — {{ shop.name }}{% endblock %}
+{% block content %}
+<div style="background:#0f172a;min-height:100vh;color:#f8fafc;">
+<div class="mx-auto max-w-3xl px-4 py-5">
+    <div class="flex items-center justify-between mb-5">
+        <div>
+            <p class="text-xs text-slate-400 uppercase">Ofitsiant paneli</p>
+            <h1 class="font-display text-xl font-bold">{{ shop.name }}</h1>
+        </div>
+        <span class="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full">{{ orders|length }} aktiv</span>
+    </div>
+
+    <!-- Stollar holati -->
+    <p class="text-sm font-bold text-slate-300 mb-2">Stollar</p>
+    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-6">
+        {% for t in tables %}
+        <form method="post" action="{% url 'waiter_table_status_web' t.pk %}">
+            {% csrf_token %}
+            <button class="w-full rounded-xl p-2.5 text-center border {% if t.status == 'free' %}bg-slate-800 border-slate-600{% else %}bg-amber-600 border-amber-500{% endif %}">
+                <p class="text-sm font-bold">{{ t.number }}</p>
+                <p class="text-[10px]">{{ t.get_status_display }}</p>
+            </button>
+        </form>
+        {% empty %}<p class="text-xs text-slate-400">Stollar qo'shilmagan</p>{% endfor %}
+    </div>
+    <p class="text-[11px] text-slate-400 mb-6">Stolga bosgangiz: Bo'sh ↔ Band almashadi (bosib o'zgartiring).</p>
+
+    <!-- Aktiv buyurtmalar -->
+    <p class="text-sm font-bold text-slate-300 mb-2">Buyurtmalar (stol raqami bilan)</p>
+    {% if orders %}
+    <div class="space-y-3">
+        {% for o in orders %}
+        <div class="bg-slate-800 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2">
+                <p class="font-bold text-lg">
+                    {% if o.table %}🍽️ STOL {{ o.table.number }}{% else %}📦 Yetkazish{% endif %}
+                </p>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if o.status == 'pending' %}bg-amber-500 text-white{% else %}bg-indigo-600 text-white{% endif %}">
+                    {% if o.status == 'pending' %}🆕 Yangi{% elif o.status == 'confirmed' %}✅ Qabul{% elif o.status == 'preparing' %}👨‍🍳 Tayyorlanmoqda{% else %}🛵 Yo'lda{% endif %}
+                </span>
+            </div>
+            <p class="text-xs text-slate-400 mb-2">{{ o.customer_name }} · {{ o.customer_phone_1 }} · #{{ o.order_number }}</p>
+            <ul class="text-sm space-y-1 mb-3">
+                {% for item in o.items.all %}<li>• {{ item.quantity }} × {{ item.product_name }}</li>{% endfor %}
+            </ul>
+            {% if o.status == 'pending' %}
+            <form method="post" action="{% url 'seller_kds_update_web' o.id %}">
+                {% csrf_token %}<input type="hidden" name="status" value="confirmed">
+                <button class="w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition">✅ Buyurtmani qabul qilish</button>
+            </form>
+            {% elif o.status == 'confirmed' or o.status == 'preparing' %}
+            <div class="grid grid-cols-2 gap-2">
+                <form method="post" action="{% url 'seller_kds_update_web' o.id %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="ready">
+                    <button class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition">🍲 Oshxona: Tayyor</button>
+                </form>
+                <form method="post" action="{% url 'seller_kds_update_web' o.id %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="delivered">
+                    <button class="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition">🍽️ Stolga yetkazildi</button>
+                </form>
+            </div>
+            {% elif o.status == 'ready' %}
+            <form method="post" action="{% url 'seller_kds_update_web' o.id %}">
+                {% csrf_token %}<input type="hidden" name="status" value="delivered">
+                <button class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition">🍽️ Stolga yetkazildi (Yakunlash)</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-slate-800 rounded-2xl p-10 text-center">
+        <p class="text-4xl mb-2">📋</p>
+        <p class="text-slate-400">Hozir aktiv buyurtma yo'q</p>
+    </div>
+    {% endif %}
+    <p class="text-center text-xs text-slate-500 mt-6 mb-4">Sahifa har 10 soniyada avtomatik yangilanadi</p>
+</div>
+</div>
+
+<script>
+    // Yangi buyurtma tushganda audio signal
+    const orderCount = {{ orders|length }};
+    const prevCount = parseInt(localStorage.getItem('waiter_last_count') || '0', 10);
+    if (orderCount > prevCount && prevCount >= 0) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+            setTimeout(() => osc.stop(), 600);
+        } catch(e) {}
+    }
+    localStorage.setItem('waiter_last_count', orderCount.toString());
+</script>
+<meta http-equiv="refresh" content="10">
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Sotuvchi — Ro'yxatdan o'tish{% endblock %}
+{% block extra_css %}
+<style>
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        border-radius: 1.25rem;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 36px -4px rgba(70, 45, 20, 0.12);
+    }
+    html.dark .card:hover {
+        box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.65), 0 0 20px rgba(199, 91, 57, 0.15);
+    }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .5rem 1rem; border-radius: .75rem; font-size: .875rem; font-weight: 600; transition: all .2s cubic-bezier(0.16, 1, 0.3, 1); }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: #16a34a; color: #fff; }
+    .btn-primary:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); }
+    .field { display: block; font-size: .8rem; font-weight: 600; color: var(--fg); margin-bottom: .375rem; }
+    input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
+        width: 100%; padding: .625rem .875rem; border: 1px solid var(--border); border-radius: .75rem;
+        font-size: .875rem; outline: none; background: rgba(248, 244, 237, 0.85); color: var(--fg);
+        transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    input:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.18); background: rgba(255, 255, 255, 0.95); }
+    html.dark input[type="text"], html.dark input[type="email"], html.dark input[type="password"], html.dark input[type="tel"] {
+        background: rgba(36, 30, 26, 0.82) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #F3EFE8 !important;
+    }
+    html.dark input:focus {
+        border-color: #22c55e !important;
+        background: rgba(44, 38, 33, 0.95) !important;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4 py-10 transition-colors duration-300">
+    <div class="w-full max-w-md">
+        <div class="card p-8 shadow-lift">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-soft">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                </div>
+                <p class="eyebrow mb-1">Sotuvchi paneli</p>
+                <h1 class="font-display text-2xl font-semibold tracking-tight">Do'kon ochish</h1>
+                <p class="text-sm text-gray-500 mt-2">Bir necha daqiqada sotuvni boshlang</p>
+            </div>
+
+            {% if messages %}
+            <div class="mb-5 space-y-2">
+                {% for message in messages %}
+                <div class="msg {% if message.tags == 'success' %}msg-success{% elif message.tags == 'error' %}msg-error{% else %}msg-info{% endif %}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="field">Do'kon nomi *</label>
+                    <input type="text" name="shop_name" required placeholder="masalan: Guliston Non">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="field">Username *</label>
+                        <input type="text" name="username" required placeholder="seller_ali">
+                    </div>
+                    <div>
+                        <label class="field">{{ t.phone }}</label>
+                        <input type="tel" name="phone" placeholder="+998 90 123 45 67">
+                    </div>
+                </div>
+                <div>
+                    <label class="field">{{ t.email_label }}</label>
+                    <input type="email" name="email" placeholder="ali@example.com">
+                </div>
+                <div>
+                    <label class="field">Parol *</label>
+                    <input type="password" name="password" required placeholder="Kamida 6 ta belgi">
+                </div>
+                <button type="submit" class="btn btn-primary w-full !py-3">Do'kon yaratish</button>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-gray-100 text-center">
+                <p class="text-sm text-gray-500">Hisobingiz bormi?
+                    <a href="{% url 'seller_login' %}" class="font-semibold text-brand-700 hover:text-brand-800 transition">Kirish</a>
+                </p>
+            </div>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-6">© 2026 Online Store Guliston — Sotuvchi</p>
+    </div>
+</div>
+{% endblock %}

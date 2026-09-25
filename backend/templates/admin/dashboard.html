@@ -1,0 +1,278 @@
+{% extends "admin/base_admin.html" %}
+{% load uznum %}
+{% block title %}Dashboard - Store Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Sarlavha -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-7">
+    <div class="min-w-0">
+        <p class="eyebrow mb-1">Boshqaruv markazi</p>
+        <h1 class="font-display text-2xl sm:text-[1.7rem] font-semibold text-ink leading-tight">
+            Xush kelibsiz, {{ request.user.first_name|default:request.user.username }} 👋
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">{{ now|date:"d M Y, H:i" }}</p>
+    </div>
+    <div class="flex items-center gap-2.5">
+        <a href="{% url 'admin_analytics' %}" class="btn btn-outline">
+            <span class="material-icons-outlined text-base">insights</span>
+            Analitika
+        </a>
+        <a href="{% url 'admin_product_create' %}" class="btn btn-primary shadow-soft">
+            <span class="material-icons-outlined text-base">add</span>
+            Mahsulot qo'shish
+        </a>
+    </div>
+</div>
+
+<!-- KPI kartalar -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Do'konlar</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none">{{ stats.total_shops }}</p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">storefront</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">{{ t.products_label }}</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none">{{ stats.total_products }}</p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">inventory_2</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">{{ t.orders_count }}</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none">{{ stats.total_orders }}</p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange-50 text-orange-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">receipt_long</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Mijozlar</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none">{{ stats.total_customers }}</p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">group</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group ring-1 ring-brand-100">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-semibold text-brand-700 truncate">Bugungi tushum</p>
+                <p class="font-display text-xl font-semibold mt-1.5 text-brand-700 leading-none">{{ stats.today_revenue|uznum }}</p>
+                <p class="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
+                    <span class="material-icons-outlined !text-[13px]">shopping_bag</span>
+                    {{ stats.today_orders }} ta buyurtma
+                </p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white shadow-soft transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">payments</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Haftalik tushum</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none">{{ stats.week_revenue|uznum }}</p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-teal-50 text-teal-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">trending_up</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">O'rtacha reyting</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none flex items-center gap-1.5">
+                    {{ stats.avg_rating }}
+                    <span class="material-icons text-amber-400 !text-xl">star</span>
+                </p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-500 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">star_rate</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Telegram obunachilar</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-ink leading-none">{{ stats.tg_subscribers }}</p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-sky-50 text-sky-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">send</span>
+            </div>
+        </div>
+    </div>
+
+    <a href="{% url 'admin_ar' %}" class="card card-hover p-5 group border-purple-100 hover:border-purple-300">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-purple-700 truncate font-semibold">AR / 3D Modellar</p>
+                <p class="font-display text-[1.65rem] font-semibold mt-1.5 text-purple-600 leading-none">{{ stats.total_ar_models|default:0 }}</p>
+                <p class="text-[11px] text-purple-500 mt-1 font-medium flex items-center gap-0.5">Boshqaruv konsoli <span class="material-icons-outlined !text-[12px]">arrow_forward</span></p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-purple-50 text-purple-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">view_in_ar</span>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- Daromad grafigi + Tezkor amallar -->
+<div class="grid gap-4 lg:grid-cols-3 mb-6">
+
+    <!-- Grafik -->
+    <div class="card p-5 sm:p-6 lg:col-span-2">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div>
+                <p class="eyebrow mb-1">Daromad dinamikasi</p>
+                <h2 class="font-display text-lg font-semibold text-ink">So'nggi 7 kun</h2>
+            </div>
+            <span class="inline-flex items-center gap-1.5 pill bg-brand-50 text-brand-700">
+                <span class="material-icons-outlined !text-sm">account_balance_wallet</span>
+                Jami: {{ stats.week_revenue|uznum }} {{ t.catalog_som }}
+            </span>
+        </div>
+        <div class="flex h-44 items-end gap-2 sm:gap-3 px-1">
+            {% for d in revenue_series %}
+            <div class="group flex h-full flex-1 flex-col items-center justify-end gap-2" title="{{ d.label }}: {{ d.rev|uznum }} {{ t.catalog_som }}">
+                <span class="text-[10px] font-semibold text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{% if d.rev %}{{ d.rev|uznum }}{% endif %}</span>
+                {% if d.pct > 0 %}
+                <div class="w-full max-w-[42px] rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400 group-hover:from-brand-700 group-hover:to-brand-500 transition-colors" style="height: {{ d.pct }}%; min-height: 8px;"></div>
+                {% else %}
+                <div class="w-full max-w-[42px] rounded-t-md bg-gray-100 group-hover:bg-gray-200 transition-colors" style="height: 6px;"></div>
+                {% endif %}
+                <span class="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wide">{{ d.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tezkor amallar -->
+    <div class="card p-5 sm:p-6">
+        <p class="eyebrow mb-4">Tezkor amallar</p>
+        <div class="grid grid-cols-2 gap-3">
+            {% for q in quick_links %}
+            <a href="{% url q.url %}" class="group flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-gray-100 bg-gray-50/60 p-4 text-center transition-all hover:border-brand-300 hover:bg-brand-50 hover:shadow-soft">
+                <span class="grid size-10 place-items-center rounded-xl bg-white border border-gray-100 text-brand-600 transition-all group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-600 group-hover:-translate-y-0.5">
+                    <span class="material-icons-outlined text-xl">{{ q.icon }}</span>
+                </span>
+                <span class="text-xs font-semibold leading-tight text-gray-700 group-hover:text-brand-800">{{ q.label }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- So'nggi buyurtmalar -->
+<div class="card overflow-hidden">
+    <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 bg-white">
+        <div class="flex items-center gap-3">
+            <span class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600">
+                <span class="material-icons-outlined text-lg">history</span>
+            </span>
+            <div>
+                <p class="eyebrow mb-0.5">Oxirgi faollik</p>
+                <h2 class="font-display text-base font-semibold text-ink">So'nggi buyurtmalar</h2>
+            </div>
+        </div>
+        <a href="{% url 'admin_orders' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:gap-2 transition-all">
+            Hammasi
+            <span class="material-icons-outlined !text-base">arrow_forward</span>
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="tbl w-full min-w-[680px]">
+            <thead>
+                <tr>
+                    <th>Buyurtma</th>
+                    <th>{{ t.customer_label }}</th>
+                    <th>{{ t.shop_label }}</th>
+                    <th>{{ t.sum_label }}</th>
+                    <th>{{ t.status_label }}</th>
+                    <th>{{ t.date }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr class="cursor-pointer transition-colors hover:!bg-brand-50/40" onclick="window.location.href='{% url 'admin_order_detail' order.pk %}'">
+                    <td>
+                        <span class="inline-flex items-center gap-2 font-semibold text-ink">
+                            <span class="material-icons-outlined !text-base text-gray-300">receipt</span>
+                            {{ order.order_number }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="inline-flex items-center gap-2 text-gray-600">
+                            <span class="grid size-6 place-items-center rounded-full bg-brand-50 text-brand-700 text-[10px] font-bold uppercase">{{ order.customer_name|slice:":1" }}</span>
+                            {{ order.customer_name }}
+                        </span>
+                    </td>
+                    <td class="text-gray-600">{{ order.shop.name }}</td>
+                    <td class="font-semibold text-ink whitespace-nowrap">{{ order.final_amount|uznum }} {{ t.catalog_som }}</td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                        <span class="pill text-amber-700 bg-amber-50"><span class="size-1.5 rounded-full bg-amber-500"></span>{{ t.order_pending }}</span>
+                        {% elif order.status == 'confirmed' %}
+                        <span class="pill text-blue-700 bg-blue-50"><span class="size-1.5 rounded-full bg-blue-500"></span>{{ t.approved }}</span>
+                        {% elif order.status == 'preparing' %}
+                        <span class="pill text-indigo-700 bg-indigo-50"><span class="size-1.5 rounded-full bg-indigo-500"></span>{{ t.order_preparing }}</span>
+                        {% elif order.status == 'ready' %}
+                        <span class="pill text-cyan-700 bg-cyan-50"><span class="size-1.5 rounded-full bg-cyan-500"></span>{{ t.order_ready }}</span>
+                        {% elif order.status == 'out_for_delivery' %}
+                        <span class="pill text-violet-700 bg-violet-50"><span class="size-1.5 rounded-full bg-violet-500"></span>{{ t.order_delivering }}</span>
+                        {% elif order.status == 'delivered' %}
+                        <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.order_delivered }}</span>
+                        {% elif order.status == 'cancelled' %}
+                        <span class="pill text-red-700 bg-red-50"><span class="size-1.5 rounded-full bg-red-500"></span>{{ t.order_cancelled }}</span>
+                        {% else %}
+                        <span class="pill text-gray-600 bg-gray-100">{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-gray-500 whitespace-nowrap">{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-14 text-center">
+                        <span class="grid size-14 place-items-center mx-auto rounded-2xl bg-gray-50 text-gray-300 mb-3">
+                            <span class="material-icons-outlined !text-3xl">inbox</span>
+                        </span>
+                        <p class="text-sm font-medium text-gray-500">Bu haftada buyurtmalar yo'q</p>
+                        <p class="text-xs text-gray-400 mt-1">Yangi buyurtmalar shu yerda paydo bo'ladi</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

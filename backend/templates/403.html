@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n_tags %}
+{% block title %}Ruxsat yo'q — Online Store Guliston{% endblock %}
+{% block content %}
+<style>
+    .err-box { max-width: 520px; margin: 4rem auto; padding: 2.5rem 1.5rem; text-align: center; font-family: system-ui, -apple-system, sans-serif; }
+    .err-icon { width: 72px; height: 72px; margin: 0 auto 1.5rem; background: #fef2f2; border-radius: 1.25rem; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #ef4444; }
+    .err-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: all 0.15s; margin: 0.35rem; }
+    .err-btn-primary { background: #16a34a; color: #fff; }
+    .err-btn-primary:hover { background: #15803d; }
+    .err-btn-outline { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+    .err-btn-outline:hover { background: #f3f4f6; }
+    .err-btn-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .err-btn-danger:hover { background: #fecaca; }
+</style>
+<section class="err-box">
+    <div class="err-icon">
+        🔒
+    </div>
+    <h1 style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">Ruxsat yo'q (403)</h1>
+    <p style="color: #6b7280; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem;">
+        Siz bu sahifaga kirish huquqiga ega emassiz. Ehtimol, hozirgi hisobingiz orqali boshqa rolga tegishli bo'limga o'tishga urindingiz.
+    </p>
+    <p style="color: #9ca3af; font-size: 0.85rem; margin-bottom: 1.75rem;">
+        Quyidagi tugmalardan o'zingizga tegishli bo'limni tanlang yoki boshqa hisob bilan kiring:
+    </p>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
+        <a href="/" class="err-btn err-btn-primary">
+            🏪 Xaridor bo'limi
+        </a>
+        <a href="/seller/" class="err-btn err-btn-outline">
+            📦 Sotuvchi paneli
+        </a>
+        <a href="/admin/login/?switch=1" class="err-btn err-btn-outline">
+            ⚙️ Admin sifatida kirish
+        </a>
+        <a href="/admin/login/?logout=1" class="err-btn err-btn-danger">
+            🚪 Hisobdan chiqish
+        </a>
+    </div>
+</section>
+{% endblock %}

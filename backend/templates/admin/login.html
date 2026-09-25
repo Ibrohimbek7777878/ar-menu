@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Kirish - Store Admin{% endblock %}
+{% block extra_css %}
+<style>
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .5rem 1rem; border-radius: .75rem; font-size: .875rem; font-weight: 600; transition: all .15s; }
+    .btn-primary { background: #16a34a; color: #fff; }
+    .btn-primary:hover { opacity: .9; }
+    .field { display: block; font-size: .8rem; font-weight: 600; color: #374151; margin-bottom: .375rem; }
+    input[type="text"], input[type="password"] {
+        width: 100%; padding: .625rem .875rem; border: 1px solid #e5e7eb; border-radius: .75rem;
+        font-size: .875rem; outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-sm">
+        <div class="card p-8">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lift border border-slate-700">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <p class="eyebrow mb-1 text-slate-500">Super Admin · Maxfiy</p>
+                <h1 class="font-display text-2xl font-semibold tracking-tight">Admin panel</h1>
+                <p class="text-xs text-amber-600 mt-2 inline-flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Faqat super-admin uchun</p>
+            </div>
+
+            {% if messages %}
+            <div class="mb-5 space-y-2">
+                {% for message in messages %}
+                <div class="msg {% if message.tags == 'success' %}msg-success{% elif message.tags == 'error' %}msg-error{% else %}msg-info{% endif %}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'web_login' %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="field">{{ t.username }}</label>
+                    <input type="text" name="username" required autofocus placeholder="Foydalanuvchi nomini kiriting">
+                </div>
+                <div>
+                    <label class="field">{{ t.password }}</label>
+                    <input type="password" name="password" required placeholder="Parolni kiriting">
+                </div>
+                <button type="submit" class="btn w-full !py-3 bg-slate-800 text-white hover:bg-slate-900">Kirish — Admin</button>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-gray-100 text-center space-y-2">
+                <p class="text-sm text-gray-500">Sotuvchimisiz?
+                    <a href="{% url 'seller_login' %}" class="font-semibold text-brand-700 hover:text-brand-800 transition">Sotuvchi kabineti →</a>
+                </p>
+                <p class="text-xs text-gray-400">Admin hisobi yo'qmi? Super-admin faqat mavjud akkauntlar bilan kiradi.</p>
+            </div>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-6">© 2026 Store Guliston · Boshqaruv paneli</p>
+    </div>
+</div>
+{% endblock %}

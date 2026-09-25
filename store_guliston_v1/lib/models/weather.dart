@@ -18,14 +18,17 @@ class Weather {
   });
 
   factory Weather.fromJson(Map<String, dynamic> json) {
+    final lastUpdatedValue = json['lastUpdated'];
     return Weather(
       city: json['city'],
-      temperature: json['temperature'],
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.0,
       description: json['description'],
       icon: json['icon'],
-      humidity: json['humidity'],
-      windSpeed: json['windSpeed'],
-      lastUpdated: DateTime.now(),
+      humidity: (json['humidity'] as num?)?.toInt() ?? 0,
+      windSpeed: (json['windSpeed'] as num?)?.toDouble() ?? 0.0,
+      lastUpdated: lastUpdatedValue is String
+          ? DateTime.tryParse(lastUpdatedValue) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 

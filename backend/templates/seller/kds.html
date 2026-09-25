@@ -1,0 +1,75 @@
+{% extends "seller/base_seller.html" %}
+{% load i18n_tags %}
+{% block title %}{{ t.kds_title }}{% endblock %}
+{% block page_title %}{{ t.kds_title }}{% endblock %}
+
+{% block content %}
+<!-- KDS: katta kartochkalar, avtomatik yangilanish (15s), ekranga to'liq -->
+<div class="flex items-center justify-between mb-4">
+    <p class="text-sm text-gray-500">Yangi buyurtmalar chapdan. Holatni o'zgartirsangiz — oshxona oqimi to'g'ri ishlaydi. Sahifa 15 soniyada yangilanadi.</p>
+    <a href="{% url 'seller_tables_web' %}" class="btn btn-outline">🍽️ {{ t.tables_title }}</a>
+</div>
+
+{% if orders %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    {% for o in orders %}
+    <div class="card p-4 {% if o.status == 'pending' %}ring-2 ring-amber-400{% elif o.status == 'preparing' %}ring-2 ring-blue-300{% endif %}">
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+                <p class="font-display font-bold text-lg">#{{ o.order_number }}</p>
+                {% if o.table %}
+                <span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-green-300">🍽️ Stol {{ o.table.number }}</span>
+                {% else %}
+                <span class="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full">🛵 Yetkazish</span>
+                {% endif %}
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if o.status == 'pending' %}bg-amber-100 text-amber-700{% elif o.status == 'confirmed' %}bg-blue-100 text-blue-700{% elif o.status == 'preparing' %}bg-indigo-100 text-indigo-700{% elif o.status == 'ready' %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                {% if o.status == 'pending' %}🆕 Yangi{% elif o.status == 'confirmed' %}✅ Tasdiqlandi{% elif o.status == 'preparing' %}👨‍🍳 Tayyorlanmoqda{% elif o.status == 'ready' %}🍲 Tayyor{% else %}🛵 Yo'lda{% endif %}
+            </span>
+        </div>
+        <p class="text-xs text-gray-400 mb-3">
+            {% if o.customer_name %}{{ o.customer_name }} · {% endif %}{{ o.created_at|date:"H:i" }}
+            {% if o.delivery_address %} · 📍 {{ o.delivery_address|truncatechars:35 }}{% endif %}
+        </p>
+        <ul class="space-y-1 mb-3">
+            {% for item in o.items.all %}
+            <li class="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5">
+                <span class="font-semibold">{{ item.quantity }} × {{ item.product_name }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="flex gap-2">
+            {% if o.status == 'pending' %}
+            <form method="post" action="{% url 'seller_kds_update_web' o.id %}" class="flex-1">
+                {% csrf_token %}<input type="hidden" name="status" value="confirmed">
+                <button class="w-full py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:opacity-90">✅ Tasdiqlash</button>
+            </form>
+            {% elif o.status == 'confirmed' %}
+            <form method="post" action="{% url 'seller_kds_update_web' o.id %}" class="flex-1">
+                {% csrf_token %}<input type="hidden" name="status" value="preparing">
+                <button class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:opacity-90">👨‍🍳 Tayyorlashga</button>
+            </form>
+            {% elif o.status == 'preparing' %}
+            <form method="post" action="{% url 'seller_kds_update_web' o.id %}" class="flex-1">
+                {% csrf_token %}<input type="hidden" name="status" value="ready">
+                <button class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:opacity-90">🍲 Tayyor (Olib ketishga)</button>
+            </form>
+            {% elif o.status == 'ready' %}
+            <form method="post" action="{% url 'seller_kds_update_web' o.id %}" class="flex-1">
+                {% csrf_token %}<input type="hidden" name="status" value="delivered">
+                <button class="w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:opacity-90">🍽️ Berildi / Yetkazildi</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<meta http-equiv="refresh" content="15">
+{% else %}
+<div class="card p-16 text-center">
+    <p class="text-5xl mb-4">🍳</p>
+    <p class="text-lg font-semibold text-gray-500">Hozir buyurtma yo'q — oshxona bo'sh</p>
+    <p class="text-sm text-gray-400 mt-1">Yangi buyurtma kelganda bu yerda avtomatik ko'rinadi</p>
+</div>
+{% endif %}
+{% endblock %}

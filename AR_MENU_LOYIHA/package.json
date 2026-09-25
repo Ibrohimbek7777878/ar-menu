@@ -1,0 +1,24 @@
+{
+  "name": "ar_menu_loyiha",
+  "version": "1.0.0",
+  "description": "> Restoran stolidagi QR ni skanerlagan mijoz taomni telefon kamerasida > **real o'lchamda 3D ko'radi**, buyurtma beradi; ofitsiant stol raqamini > darhol ko'radi; admin hammasini real vaqtda nazorat qiladi.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ibrohimbek7777878/AR_loyhas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Ibrohimbek7777878/AR_loyhas/issues"
+  },
+  "homepage": "https://github.com/Ibrohimbek7777878/AR_loyhas#readme",
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.0"
+  }
+}

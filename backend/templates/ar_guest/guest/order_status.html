@@ -1,0 +1,61 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#E85D2A">
+  <title>{{ restaurant.name }} — Buyurtma #{{ order.number }}</title>
+  <link rel="stylesheet" href="{% static 'guest/css/theme.css' %}?v={{ static_version }}">
+  <link rel="stylesheet" href="{% static 'guest/css/menu.css' %}?v={{ static_version }}">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="{% static 'favicon.ico' %}">
+</head>
+<body>
+<header class="hdr">
+  <div>
+    <div class="hdr__name" id="ordNumber">Buyurtma #{{ order.number }}</div>
+    {% if order.table %}<div class="hdr__table" id="ordTable">Stol {{ order.table.number }}</div>{% endif %}
+  </div>
+  <button class="icon-btn" id="btnTheme" aria-label="Theme">🌙</button>
+</header>
+
+<main class="statuspage" style="padding: 16px; max-width: 600px; margin: 0 auto;">
+  <ol class="steps" id="steps" style="display: flex; justify-content: space-between; list-style: none; padding: 0; margin: 20px 0;"></ol>
+  <div class="eta" id="eta" style="font-size: 18px; font-weight: 700; text-align: center; margin: 16px 0; color: #E85D2A;"></div>
+  <div class="orderitems" id="orderItems" style="margin: 20px 0;"></div>
+  <div class="totals" style="margin: 20px 0; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 12px;">
+    <div class="totals__row totals__row--big" style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 700;">
+      <span data-i18n="cart.total">Jami</span><b id="ordTotal">{{ order.total }}</b>
+    </div>
+  </div>
+  <div class="statuspage__actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;">
+    <a class="btn btn--ghost btn--block" href="/m/{{ restaurant.slug }}/?s={{ session_id }}" style="text-align: center; text-decoration: none;">
+      ➕ <span data-i18n="order.add_more">Yana taom qo'shish</span></a>
+    <button class="btn btn--ghost btn--block" id="btnCall">🔔 <span data-i18n="call.waiter">Ofitsiantni chaqirish</span></button>
+    <button class="btn btn--primary btn--block" id="btnBill">💳 <span data-i18n="call.bill">Hisobni so'rash</span></button>
+  </div>
+</main>
+
+<div id="modalRoot"></div>
+<div id="toastRoot" class="toasts" aria-live="polite"></div>
+
+<script>
+  window.ARMENU = {
+    slug: "{{ restaurant.slug }}",
+    orderId: {{ order.id }},
+    tableId: {{ order.table_id|default:"null" }},
+    sessionId: "{{ session_id }}",
+    lang: "{{ lang }}",
+    i18nVersion: {{ i18n_version }},
+    wsUrl: (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
+           + "/ws/guest/{{ session_id }}/"
+  };
+</script>
+<script src="{% static 'common/js/logger.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/i18n.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/toast.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/theme.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/call.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/ws.js' %}?v={{ static_version }}"></script>
+</body>
+</html>

@@ -1,105 +1,146 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/weather.dart';
 
 class WeatherService {
-  static const String _apiKey = 'your_openweather_api_key'; // Replace with actual API key
-  static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
+  static const String _weatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
+  static const String _forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast';
+  static const double _lat = 40.5966;
+  static const double _lon = 68.7786;
 
-  Future<Weather?> getCurrentWeather(String city) async {
+  Future<Weather?> getCurrentWeather(String apiKey) async {
+    if (apiKey.isEmpty) {
+      return _getCachedWeather();
+    }
+
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/weather?q=$city&appid=$_apiKey&units=metric&lang=uz'),
+        Uri.parse('$_weatherUrl?lat=$_lat&lon=$_lon&appid=$apiKey&units=metric&lang=uz'),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return Weather(
-          city: data['name'],
-          temperature: data['main']['temp'].toDouble(),
-          description: data['weather'][0]['description'],
-          icon: data['weather'][0]['icon'],
-          humidity: data['main']['humidity'],
-          windSpeed: data['wind']['speed'].toDouble(),
-          lastUpdated: DateTime.now(),
-        );
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final weather = _parseCurrentWeather(data);
+        await _saveCachedWeather(weather);
+        return weather;
       }
-    } catch (e) {
-      print('Weather API error: $e');
+    } catch (_) {
+      return _getCachedWeather();
     }
-    return _getDemoWeather(city);
+    return _getCachedWeather();
   }
 
-  Future<List<Weather>> getWeatherForecast(String city, int days) async {
+  Future<List<Weather>> getWeatherForecast(String apiKey, int days) async {
+    if (apiKey.isEmpty) {
+      return _getCachedForecast();
+    }
+
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/forecast?q=$city&appid=$_apiKey&units=metric&lang=uz&cnt=${days * 8}'),
+        Uri.parse('$_forecastUrl?lat=$_lat&lon=$_lon&appid=$apiKey&units=metric&lang=uz'),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final forecasts = data['list'] as List;
-
-        // Group by day and take first forecast per day
-        final dailyForecasts = <Weather>[];
-        final seenDates = <String>{};
-
-        for (var forecast in forecasts) {
-          final date = DateTime.fromMillisecondsSinceEpoch(forecast['dt'] * 1000);
-          final dateKey = '${date.year}-${date.month}-${date.day}';
-
-          if (!seenDates.contains(dateKey) && dailyForecasts.length < days) {
-            dailyForecasts.add(Weather(
-              city: data['city']['name'],
-              temperature: forecast['main']['temp'].toDouble(),
-              description: forecast['weather'][0]['description'],
-              icon: forecast['weather'][0]['icon'],
-              humidity: forecast['main']['humidity'],
-              windSpeed: forecast['wind']['speed'].toDouble(),
-              lastUpdated: date,
-            ));
-            seenDates.add(dateKey);
-          }
-        }
-
-        return dailyForecasts;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final forecast = _parseForecast(data, days);
+        await _saveCachedForecast(forecast);
+        return forecast;
       }
-    } catch (e) {
-      print('Weather forecast API error: $e');
+    } catch (_) {
+      return _getCachedForecast();
     }
-    return _getDemoForecast(city, days);
+    return _getCachedForecast();
   }
 
-  // Demo weather data for Yangiyer
-  Weather _getDemoWeather(String city) {
+  Weather _parseCurrentWeather(Map<String, dynamic> data) {
+    final main = data['main'] as Map<String, dynamic>? ?? {};
+    final weatherInfo = (data['weather'] as List<dynamic>?)?.first as Map<String, dynamic>? ?? {};
+    final wind = data['wind'] as Map<String, dynamic>? ?? {};
+
     return Weather(
-      city: 'Yangi Yer',
-      temperature: 25.0,
-      description: 'quyoshli',
-      icon: '01d',
-      humidity: 45,
-      windSpeed: 3.5,
+      city: data['name'] as String? ?? 'Yangi Yer',
+      temperature: (main['temp'] as num?)?.toDouble() ?? 0.0,
+      description: weatherInfo['description'] as String? ?? 'Nomalum',
+      icon: weatherInfo['icon'] as String? ?? '01d',
+      humidity: (main['humidity'] as num?)?.toInt() ?? 0,
+      windSpeed: (wind['speed'] as num?)?.toDouble() ?? 0.0,
       lastUpdated: DateTime.now(),
     );
   }
 
-  List<Weather> _getDemoForecast(String city, int days) {
-    final forecasts = <Weather>[];
-    final now = DateTime.now();
+  List<Weather> _parseForecast(Map<String, dynamic> data, int days) {
+    final list = data['list'] as List<dynamic>? ?? [];
+    final city = (data['city'] as Map<String, dynamic>?)?['name'] as String? ?? 'Yangi Yer';
+    final Map<String, Weather> daily = {};
 
-    for (int i = 0; i < days; i++) {
-      final date = now.add(Duration(days: i));
-      forecasts.add(Weather(
-        city: 'Yangi Yer',
-        temperature: 22.0 + (i * 2.0), // Varying temperature
-        description: i % 2 == 0 ? 'quyoshli' : 'bulutli',
-        icon: i % 2 == 0 ? '01d' : '02d',
-        humidity: 40 + (i * 5),
-        windSpeed: 2.0 + (i * 0.5),
+    for (final item in list.cast<Map<String, dynamic>>()) {
+      final timestamp = item['dt'] as int?;
+      if (timestamp == null) continue;
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+      final dayKey = DateTime(date.year, date.month, date.day).toIso8601String();
+      if (daily.containsKey(dayKey)) continue;
+
+      final main = item['main'] as Map<String, dynamic>? ?? {};
+      final weatherInfo = (item['weather'] as List<dynamic>?)?.first as Map<String, dynamic>? ?? {};
+      final wind = item['wind'] as Map<String, dynamic>? ?? {};
+
+      daily[dayKey] = Weather(
+        city: city,
+        temperature: (main['temp'] as num?)?.toDouble() ?? 0.0,
+        description: weatherInfo['description'] as String? ?? 'Nomalum',
+        icon: weatherInfo['icon'] as String? ?? '01d',
+        humidity: (main['humidity'] as num?)?.toInt() ?? 0,
+        windSpeed: (wind['speed'] as num?)?.toDouble() ?? 0.0,
         lastUpdated: date,
-      ));
+      );
+
+      if (daily.length >= days) {
+        break;
+      }
     }
 
-    return forecasts;
+    return daily.values.toList();
+  }
+
+  Future<void> _saveCachedWeather(Weather weather) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('cached_weather', jsonEncode(weather.toJson()));
+    await prefs.setInt('cached_weather_time', DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<void> _saveCachedForecast(List<Weather> forecast) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('cached_weather_forecast', jsonEncode(forecast.map((e) => e.toJson()).toList()));
+    await prefs.setInt('cached_weather_forecast_time', DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<Weather?> _getCachedWeather() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('cached_weather');
+    final cachedTime = prefs.getInt('cached_weather_time');
+
+    if (cached != null && cachedTime != null) {
+      final age = DateTime.now().millisecondsSinceEpoch - cachedTime;
+      if (age < 30 * 60 * 1000) {
+        return Weather.fromJson(jsonDecode(cached) as Map<String, dynamic>);
+      }
+    }
+    return null;
+  }
+
+  Future<List<Weather>> _getCachedForecast() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('cached_weather_forecast');
+    final cachedTime = prefs.getInt('cached_weather_forecast_time');
+
+    if (cached != null && cachedTime != null) {
+      final age = DateTime.now().millisecondsSinceEpoch - cachedTime;
+      if (age < 30 * 60 * 1000) {
+        final list = jsonDecode(cached) as List<dynamic>;
+        return list.map((item) => Weather.fromJson(item as Map<String, dynamic>)).toList();
+      }
+    }
+    return [];
   }
 }

@@ -1,0 +1,284 @@
+{% load static uznum i18n_tags %}
+<!DOCTYPE html>
+<html lang="{{ language|default:'uz' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}Online Store Guliston{% endblock %}</title>
+    <meta name="description" content="Guliston shahridagi do'konlardan yangi mahsulotlar: sabzavot, meva, non va sut mahsulotlari 60 daqiqada eshigingizda.">
+    <script>
+      // Eski brauzer va service worker keshlarini avtomatik tozalash
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) {
+            if (name !== 'guliston-v3') {
+              caches.delete(name);
+            }
+          });
+        });
+      }
+      // Tailwind CDN ogohlantirishini yashirish (dev da CDN ishlatiladi, production da build qilinadi)
+      (function(){var w=console.warn;console.warn=function(){var m=arguments[0];if(typeof m==='string'&&m.indexOf('cdn.tailwindcss.com')!==-1)return;return w.apply(console,arguments);};})();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        display: ['Fraunces', 'Georgia', 'serif'],
+                    },
+                    colors: {
+                        primary: { DEFAULT: '#16a34a', dark: '#15803d', foreground: '#ffffff' },
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac',
+                            400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d',
+                            800: '#166534', 900: '#14532d',
+                        },
+                        ink: '#241E1A',
+                        background: '#F6F3EE',
+                        foreground: '#241E1A',
+                        muted: '#756A5E',
+                        card: '#FEFBF6',
+                        border: '#E2D9CC',
+                        sand: '#EFE9DF',
+                        accent: '#dcfce7',
+                        accentOrange: '#f97316',
+                    },
+                    screens: {
+                        '3xl': '1920px',
+                        '4k': '2560px',
+                    },
+                    borderRadius: { xl: '1rem', '2xl': '1.5rem', '3xl': '2rem' },
+                    boxShadow: {
+                        soft: '0 2px 14px rgba(60, 45, 30, .06)',
+                        lift: '0 12px 32px rgba(60, 45, 30, .09)',
+                    },
+                }
+            }
+        }
+    </script>
+    <script>
+        // Kun/tun rejimi: sahifa chizilishidan OLDIN qo'llanadi (miltilash bo'lmasligi uchun)
+        (function(){try{var t=localStorage.getItem('guliston-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();
+        function toggleTheme(){
+            try{
+                var h=document.documentElement;
+                var d=h.classList.toggle('dark');
+                localStorage.setItem('guliston-theme',d?'dark':'light');
+                window.dispatchEvent(new CustomEvent('themeChanged', { detail: { isDark: d } }));
+                return d;
+            }catch(e){}
+        }
+        function setTheme(mode){
+            try{
+                var h=document.documentElement;
+                var isDark = (mode === 'dark');
+                if (isDark) { h.classList.add('dark'); } else { h.classList.remove('dark'); }
+                localStorage.setItem('guliston-theme', mode);
+                window.dispatchEvent(new CustomEvent('themeChanged', { detail: { isDark: isDark } }));
+                return isDark;
+            }catch(e){}
+        }
+    </script>
+    <style>
+        /* ─── EYE-COMFORT WARM GLASSMORPHISM & SMOOTH DESIGN SYSTEM ─── */
+        :root {
+            --bg: #F6F3EE;
+            --fg: #241E1A;
+            --card: rgba(254, 251, 246, 0.88);
+            --border: rgba(226, 217, 204, 0.75);
+            --muted: #756A5E;
+            --sand: rgba(239, 233, 223, 0.85);
+            --accent: #dcfce7;
+            --glass-bg: rgba(254, 251, 246, 0.80);
+            --glass-border: rgba(226, 217, 204, 0.75);
+        }
+        /* Tun rejimi — ko'zga qulay, issiq obsidian / tutunli shisha (qora emas, oq ham emas) */
+        html.dark {
+            --bg: #151210;
+            --fg: #F3EFE8;
+            --card: rgba(28, 24, 21, 0.82);
+            --border: rgba(255, 255, 255, 0.08);
+            --muted: #A39789;
+            --sand: rgba(36, 31, 27, 0.85);
+            --accent: rgba(22, 163, 74, 0.18);
+            --glass-bg: rgba(24, 20, 18, 0.80);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.011em;
+            background: var(--bg);
+            color: var(--fg);
+            transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+        }
+
+        .text-foreground { color: var(--fg); }
+        .text-muted { color: var(--muted); }
+        .bg-background { background-color: var(--bg); }
+        .bg-card { background-color: var(--card); }
+        .border-border { border-color: var(--border); }
+
+        /* Kunduzgi rejim: Ko'zga qulay yumshoq ipak/qog'oz fon (qoramtir oq emas) */
+        .bg-white {
+            background-color: rgba(254, 251, 246, 0.90) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .bg-gray-50, .bg-gray-50\/50, .bg-gray-50\/60, .bg-gray-50\/80 {
+            background-color: rgba(244, 239, 231, 0.75) !important;
+        }
+        .bg-gray-100 {
+            background-color: rgba(235, 229, 219, 0.85) !important;
+        }
+        .border-gray-100, .border-gray-200, .border-gray-200\/70, .border-gray-200\/80 {
+            border-color: rgba(226, 217, 204, 0.75) !important;
+        }
+
+        /* Tun rejimida ko'zga qulay tutunli shisha va obsidian */
+        html.dark body { background: var(--bg); color: var(--fg); }
+        html.dark .text-foreground { color: #F3EFE8 !important; }
+        html.dark .text-muted { color: #A39789 !important; }
+        html.dark .text-primary { color: #4ade80 !important; }
+        html.dark .text-ink { color: #F3EFE8 !important; }
+        html.dark .bg-card { background-color: var(--card) !important; }
+        html.dark .bg-sand { background-color: var(--sand) !important; }
+        html.dark .bg-background { background-color: var(--bg) !important; }
+        html.dark .bg-accent { background-color: rgba(22, 163, 74, 0.18) !important; }
+        html.dark .border-border { border-color: var(--border) !important; }
+
+        html.dark .bg-white,
+        html.dark .bg-neutral-900,
+        html.dark .bg-neutral-850,
+        html.dark .bg-neutral-800 {
+            background-color: rgba(28, 24, 21, 0.82) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        html.dark .bg-gray-50, html.dark .bg-gray-50\/50, html.dark .bg-gray-50\/60, html.dark .bg-gray-50\/80,
+        html.dark .bg-neutral-950, html.dark .bg-neutral-950\/40 {
+            background-color: rgba(19, 16, 14, 0.85) !important;
+        }
+        html.dark .bg-gray-100 {
+            background-color: rgba(36, 31, 27, 0.85) !important;
+        }
+        html.dark .border-gray-100, html.dark .border-gray-200, html.dark .border-neutral-800, html.dark .border-neutral-700 {
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        html.dark input, html.dark select, html.dark textarea {
+            background: rgba(36, 30, 26, 0.82) !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            color: #F3EFE8 !important;
+        }
+        html.dark input::placeholder, html.dark textarea::placeholder {
+            color: #8C8072 !important;
+        }
+
+        /* Glass va Card sirtlari */
+        .card-surface, .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+        }
+        .card-surface:hover, .card:hover, .card-hover:hover {
+            transform: translateY(-2.5px);
+            box-shadow: 0 14px 32px -4px rgba(70, 45, 20, 0.09);
+            border-color: rgba(199, 91, 57, 0.35);
+        }
+        html.dark .card-surface:hover, html.dark .card:hover, html.dark .card-hover:hover {
+            transform: translateY(-2.5px);
+            box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.65), 0 0 20px rgba(199, 91, 57, 0.15) !important;
+            border-color: rgba(199, 91, 57, 0.4) !important;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-color: var(--glass-border);
+        }
+
+        .font-display { font-family: 'Fraunces', Georgia, serif; }
+        .eyebrow { font-size: .7rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #16a34a; }
+        .neon { box-shadow: 0 0 0 1px rgba(22,163,74,.4), 0 0 22px rgba(22,163,74,.35); }
+
+        /* ─── ANIMATSIYALAR (SMOOTH ANIMATIONS) ─── */
+        button:active, a.btn:active, .btn-primary:active, .btn-outline:active {
+            transform: scale(0.97);
+        }
+        .btn, button, a {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-in { animation: fadeIn .32s cubic-bezier(.16,1,.3,1); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 6px rgba(22, 163, 74, 0.2)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 14px rgba(22, 163, 74, 0.4)); }
+        }
+        .glow-pulse { animation: glowPulse 2.8s ease-in-out infinite; }
+
+        /* Messages */
+        .msg { border-radius: .75rem; padding: .85rem 1.1rem; font-size: .9rem; font-weight: 500; }
+        .msg-success { background: rgba(240, 253, 244, 0.9); color: #166534; border: 1px solid #bbf7d0; }
+        .msg-error { background: rgba(254, 242, 242, 0.9); color: #991b1b; border: 1px solid #fecaca; }
+        .msg-info { background: rgba(240, 247, 255, 0.9); color: #1e40af; border: 1px solid #bfdbfe; }
+        html.dark .msg-success { background: rgba(22,163,74,.18); color: #86efac; border-color: rgba(22,163,74,.35); }
+        html.dark .msg-error { background: rgba(220,38,38,.18); color: #fca5a5; border-color: rgba(220,38,38,.35); }
+        html.dark .msg-info { background: rgba(59,130,246,.18); color: #93c5fd; border-color: rgba(59,130,246,.35); }
+
+        /* Skeleton loading */
+        .skeleton { background: linear-gradient(90deg, #ede8df 25%, #e2d9cd 50%, #ede8df 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: .75rem; }
+        html.dark .skeleton { background: linear-gradient(90deg, #1c1815 25%, #2a2420 50%, #1c1815 75%); background-size: 200% 100%; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        /* Offline banner */
+        .offline-banner { display: none; position: fixed; top: 0; left: 0; right: 0; background: #f59e0b; color: #fff; text-align: center; padding: 8px; font-size: .8rem; font-weight: 600; z-index: 9999; }
+        body.is-offline .offline-banner { display: block; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(180, 168, 150, 0.45); border-radius: 4px; }
+        html.dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); border-radius: 4px; }
+
+        [x-cloak] { display: none !important; }
+    </style>
+    {% block extra_head %}{% endblock %}
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen antialiased">
+    <div class="offline-banner">⚡ Internetga ulanish yo'q — offline rejimda ishlayapti</div>
+    {% block body %}{% endblock %}
+
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/js/sw.js?v=3').catch(() => {});
+    }
+    window.addEventListener('online', () => document.body.classList.remove('is-offline'));
+    window.addEventListener('offline', () => document.body.classList.add('is-offline'));
+    if (!navigator.onLine) document.body.classList.add('is-offline');
+    </script>
+    {% include 'components/ai_chat.html' %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

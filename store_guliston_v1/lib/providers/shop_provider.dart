@@ -11,20 +11,23 @@ class ShopProvider with ChangeNotifier {
   String? _error;
   String _searchQuery = '';
   String? _selectedCategory;
+  String _selectedStoreType = 'all';
 
   List<Shop> get shops => _filteredShops;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get searchQuery => _searchQuery;
   String? get selectedCategory => _selectedCategory;
+  String get selectedStoreType => _selectedStoreType;
 
-  Future<void> loadShops() async {
+  Future<void> loadShops({String? storeType}) async {
+    if (storeType != null) _selectedStoreType = storeType;
     _isLoading = true;
     _error = null;
     notifyListeners();
-
     try {
-      _shops = await _shopService.getShops();
+      final st = _selectedStoreType == 'all' ? null : _selectedStoreType;
+      _shops = await _shopService.getShops(storeType: st);
       _applyFilters();
       _isLoading = false;
       notifyListeners();
@@ -32,6 +35,16 @@ class ShopProvider with ChangeNotifier {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  void filterByStoreType(String storeType) {
+    _selectedStoreType = storeType;
+    if (storeType == 'all') {
+      _applyFilters();
+      Future.microtask(() => notifyListeners());
+    } else {
+      loadShops(storeType: storeType);
     }
   }
 
@@ -48,13 +61,23 @@ class ShopProvider with ChangeNotifier {
   void searchShops(String query) {
     _searchQuery = query;
     _applyFilters();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
+  }
+
+  void setSearchQuery(String query) {
+    searchShops(query);
   }
 
   void filterByCategory(String? category) {
     _selectedCategory = category;
     _applyFilters();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
+  }
+
+  void setCategory(String category) {
+    _selectedCategory = category == 'Barchasi' ? null : category;
+    _applyFilters();
+    Future.microtask(() => notifyListeners());
   }
 
   void _applyFilters() {
@@ -62,12 +85,53 @@ class ShopProvider with ChangeNotifier {
       final matchesSearch = _searchQuery.isEmpty ||
           shop.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           shop.address.toLowerCase().contains(_searchQuery.toLowerCase());
-
       final matchesCategory = _selectedCategory == null ||
-          shop.category == _selectedCategory;
-
-      return matchesSearch && matchesCategory;
+          _normalizeCategory(shop.category) == _normalizeCategory(_selectedCategory!);
+      final matchesStoreType = _selectedStoreType == 'all' || shop.storeType == _selectedStoreType;
+      return matchesSearch && matchesCategory && matchesStoreType;
     }).toList();
+  }
+
+  String _normalizeCategory(String category) {
+    final normalized = category.trim().toLowerCase();
+    switch (normalized) {
+      case 'cat_food':
+      case 'oziq-ovqat':
+        return 'oziq-ovqat';
+      case 'cat_drinks':
+      case 'ichimliklar':
+        return 'ichimliklar';
+      case 'cat_dairy':
+      case 'sut':
+      case 'sut mahsulotlari':
+        return 'sut mahsulotlari';
+      case 'cat_meat':
+      case 'go\'sht':
+        return 'go\'sht';
+      case 'cat_vegetables':
+      case 'sabzavotlar':
+        return 'sabzavotlar';
+      case 'cat_fruits':
+      case 'mevalar':
+        return 'mevalar';
+      case 'cat_bakery':
+      case 'non va pishiriq':
+        return 'non va pishiriq';
+      case 'cat_hygiene':
+      case 'gigiena':
+        return 'gigiena';
+      case 'cat_home':
+      case 'uy-ro\'zg\'or':
+        return 'uy-ro\'zg\'or';
+      case 'cat_local':
+      case 'mahalliy':
+      case 'mahalliy mahsulotlar':
+        return 'mahalliy';
+      case 'barchasi':
+        return 'barchasi';
+      default:
+        return normalized;
+    }
   }
 
   List<String> getCategories() {
@@ -139,58 +203,11 @@ class ShopProvider with ChangeNotifier {
     _searchQuery = '';
     _selectedCategory = null;
     _applyFilters();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   void clearError() {
     _error = null;
-    notifyListeners();
-  }
-
-  // Load demo data
-  void loadDemoData() {
-    _shops = [
-      Shop(
-        id: 'shop_1',
-        name: 'Yangi Yer Market',
-        address: 'Markaziy ko\'cha 45, Yangi Yer',
-        phone: '+998901234567',
-        latitude: 40.5966,
-        longitude: 68.7786,
-        category: 'oziq-ovqat',
-        imageUrl: 'assets/images/shops/market1.jpg',
-        workingHours: '08:00 - 22:00',
-        isOpen: true,
-        rating: 4.5,
-      ),
-      Shop(
-        id: 'shop_2',
-        name: 'Choy va Kofe Do\'koni',
-        address: 'Guliston ko\'cha 12, Yangi Yer',
-        phone: '+998907654321',
-        latitude: 40.5980,
-        longitude: 68.7800,
-        category: 'ichimliklar',
-        imageUrl: 'assets/images/shops/tea_shop.jpg',
-        workingHours: '07:00 - 23:00',
-        isOpen: true,
-        rating: 4.2,
-      ),
-      Shop(
-        id: 'shop_3',
-        name: 'Go\'sht va Sut Mahsulotlari',
-        address: 'Dehqon bozori, Yangi Yer',
-        phone: '+998905556667',
-        latitude: 40.5950,
-        longitude: 68.7770,
-        category: 'oziq-ovqat',
-        imageUrl: 'assets/images/shops/meat_shop.jpg',
-        workingHours: '06:00 - 20:00',
-        isOpen: true,
-        rating: 4.7,
-      ),
-    ];
-    _applyFilters();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 }

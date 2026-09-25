@@ -1,0 +1,2563 @@
+{% extends "seller/base_seller.html" %}
+{% load uznum %}
+{% block title %}Universal Moliya & Kanban Doskasi{% endblock %}
+{% block page_title %}Moliya & Kassa Konstruktori{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6" x-data="{ 
+    activeTab: 'kanban', 
+    slideIndex: 1, 
+    selectedPreset: 'choyxona' 
+}">
+
+    <!-- 1. TOP HEADER & QUICK ACTIONS -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-gray-100 dark:border-neutral-800 shadow-sm">
+        <div>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-lg">💰</span>
+                <h2 class="text-xl font-black text-gray-900 dark:text-white">Universal Moliya & Kassa Konstruktori</h2>
+                <span class="text-[11px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 px-2.5 py-0.5 rounded-full">Kanban Doskasi</span>
+                <span class="text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-0.5 rounded-full">100% Qo'lda Boshqaruv</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-neutral-400 mt-1">4-sinf bolasi ham tushunadigan sodda va moslashuvchan tizim: Har bir raqam, sana va bosqichni o'zingiz erkin boshqaring.</p>
+        </div>
+
+        <!-- O'ng tomondagi Asboblar (Eksport va Taqdimot) -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Moliya Tizimini Qurish (Trojan Horse Onboarding Slaydlari) -->
+            <button type="button" onclick="openModal('financeSlidesModal')" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition transform hover:-translate-y-0.5">
+                <span>🚀</span>
+                <span>Moliya Tizimini Qurish</span>
+            </button>
+
+            <!-- Kassa Topshirish (Solishtiruv) -->
+            <button type="button" onclick="openModal('cashReconciliationModal')" class="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold text-xs rounded-xl transition shadow-sm" title="Kunlik kassadagi naqd pulni sanab tekshirish (Kamomat/Ortiqcha)">
+                <span>💰</span>
+                <span>Kassa topshirish</span>
+            </button>
+
+            <!-- Telegram Hisobot -->
+            <button type="button" onclick="openModal('telegramReportModal')" class="flex items-center gap-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold text-xs rounded-xl transition shadow-sm" title="Telegram orqali kunlik kassa hisobotini yuborish / nusxalash">
+                <span>📲</span>
+                <span>Telegram hisobot</span>
+            </button>
+
+            <!-- Excel Eksport -->
+            <a href="{% url 'finance_export_excel' %}" class="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs rounded-xl transition shadow-sm" title="Microsoft Excel (.csv / .xlsx) formatida yuklab olish">
+                <span>📊</span>
+                <span>Excel</span>
+            </a>
+
+            <!-- PDF Eksport -->
+            <a href="{% url 'finance_export_pdf' %}?period={{ period }}" target="_blank" class="flex items-center gap-1.5 px-3 py-2 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-200 dark:border-neutral-700 font-bold text-xs rounded-xl transition shadow-sm" title="A4 formatida rasmiy PDF hisobot">
+                <span>🖨️</span>
+                <span>PDF hisobot</span>
+            </a>
+
+            <!-- Davr filtri -->
+            <div class="flex items-center gap-1 bg-gray-100 dark:bg-neutral-800 p-1 rounded-xl text-xs font-semibold">
+                <a href="?period=today" class="px-2.5 py-1 rounded-lg transition {% if period == 'today' %}bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-sm{% else %}text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white{% endif %}">Bugun</a>
+                <a href="?period=7days" class="px-2.5 py-1 rounded-lg transition {% if period == '7days' %}bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-sm{% else %}text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white{% endif %}">7 kun</a>
+                <a href="?period=month" class="px-2.5 py-1 rounded-lg transition {% if period == 'month' %}bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-sm{% else %}text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white{% endif %}">Shu oy</a>
+                <a href="?period=year" class="px-2.5 py-1 rounded-lg transition {% if period == 'year' %}bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-sm{% else %}text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white{% endif %}">Yillik</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 4 TA ASOSIY KO'RSATKICH (BIG KPI TILES - 15 000 000 formatida) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Kirgan pul -->
+        <div class="bg-white dark:bg-neutral-900 p-4 sm:p-5 rounded-2xl border border-emerald-100 dark:border-neutral-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-[11px] font-bold text-emerald-700 dark:text-emerald-400 mb-1">
+                    <span>🟢 KIRGAN PUL (TUSHUM)</span>
+                    <span class="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs">📈</span>
+                </div>
+                <div class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1.5">{{ income_total|uznum }} <span class="text-[11px] font-normal text-gray-400">so'm</span></div>
+                <p class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">Haqiqatda kassaga tushgan jami mablag'</p>
+            </div>
+            <!-- Naqd va Plastik bo'linishi -->
+            <div class="mt-2.5 pt-2 border-t border-emerald-100/70 dark:border-neutral-800 flex items-center justify-between text-[10px] sm:text-[11px]">
+                <span class="text-emerald-900 dark:text-emerald-300 font-medium">💵 Naqd: <b class="font-black text-emerald-700 dark:text-emerald-400">{{ income_cash|uznum }}</b></span>
+                <span class="text-emerald-900 dark:text-emerald-300 font-medium">💳 Plastik: <b class="font-black text-emerald-700 dark:text-emerald-400">{{ income_card|uznum }}</b></span>
+            </div>
+        </div>
+
+        <!-- Chiqqan pul -->
+        <div class="bg-white dark:bg-neutral-900 p-4 sm:p-5 rounded-2xl border border-rose-100 dark:border-neutral-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-[11px] font-bold text-rose-700 dark:text-rose-400 mb-1">
+                    <span>🔴 CHIQQAN PUL (XARAJAT)</span>
+                    <span class="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xs">📉</span>
+                </div>
+                <div class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1.5">{{ expense_total|uznum }} <span class="text-[11px] font-normal text-gray-400">so'm</span></div>
+                <p class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">To'langan barcha xarajatlar</p>
+            </div>
+            <!-- Naqd va Plastik bo'linishi -->
+            <div class="mt-2.5 pt-2 border-t border-rose-100/70 dark:border-neutral-800 flex items-center justify-between text-[10px] sm:text-[11px]">
+                <span class="text-rose-900 dark:text-rose-300 font-medium">💵 Naqd: <b class="font-black text-rose-700 dark:text-rose-400">{{ expense_cash|uznum }}</b></span>
+                <span class="text-rose-900 dark:text-rose-300 font-medium">💳 Plastik: <b class="font-black text-rose-700 dark:text-rose-400">{{ expense_card|uznum }}</b></span>
+            </div>
+        </div>
+
+        <!-- SOF FOYDA -->
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 sm:p-5 rounded-2xl text-white shadow-md relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-[11px] font-bold opacity-90 mb-1">
+                    <span>💎 SOF CHO'NTAK (FOYDA)</span>
+                    <span class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-xs">👑</span>
+                </div>
+                <div class="text-xl sm:text-2xl font-black mt-1.5">{{ net_profit|uznum }} <span class="text-[11px] font-normal opacity-80">so'm</span></div>
+                <p class="text-[10px] sm:text-[11px] opacity-80 mt-0.5">Kassadan qolgan erkin mablag'</p>
+            </div>
+            <!-- Naqd va Plastik qoldig'i -->
+            <div class="mt-2.5 pt-2 border-t border-white/25 flex items-center justify-between text-[10px] sm:text-[11px] text-white/95">
+                <span>💵 Naqd: <b class="font-black">{{ net_cash|uznum }}</b></span>
+                <span>💳 Plastik: <b class="font-black">{{ net_card|uznum }}</b></span>
+            </div>
+        </div>
+
+        <!-- Qarzlar / Nasiya -->
+        <div class="bg-white dark:bg-neutral-900 p-4 sm:p-5 rounded-2xl border border-amber-100 dark:border-neutral-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between text-[11px] font-bold text-amber-700 dark:text-amber-400 mb-1">
+                    <span>🤝 NASIYA VA QARZLAR</span>
+                    <span class="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs">⏳</span>
+                </div>
+                <div class="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1.5">{{ customer_debt_total|uznum }} <span class="text-[11px] font-normal text-gray-400">so'm</span></div>
+                <p class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">Mijozlar bizga berishi kerak bo'lgan pul</p>
+            </div>
+            <!-- Ikki tomonlama qarz ko'rinishi -->
+            <div class="mt-2.5 pt-2 border-t border-amber-100/70 dark:border-neutral-800 flex items-center justify-between text-[10px] sm:text-[11px]">
+                <span class="text-amber-800 dark:text-amber-300 font-semibold" title="Mijozlarimizdan keladigan pul">📥 Bizga: <b class="font-black">{{ customer_debt_total|uznum }}</b></span>
+                <span class="text-purple-800 dark:text-purple-300 font-semibold" title="Ta'minotchi va sheriklarga beradigan qarzimiz">📤 Bizdan: <b class="font-black">{{ supplier_debt_total|uznum }}</b></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. KATTA TOUCHPAD TUGMALARI (3 ACTION BUTTONS) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <button type="button" onclick="openModal('incomeModal')" class="flex items-center justify-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base shadow-sm transition transform hover:-translate-y-0.5">
+            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-base sm:text-lg">➕</span>
+            <span>+ Pul Kirdi (Tushum)</span>
+        </button>
+        <button type="button" onclick="openModal('expenseModal')" class="flex items-center justify-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm sm:text-base shadow-sm transition transform hover:-translate-y-0.5">
+            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-base sm:text-lg">➖</span>
+            <span>- Pul Chiqdi (Xarajat)</span>
+        </button>
+        <button type="button" onclick="openModal('debtModal')" class="flex items-center justify-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm sm:text-base shadow-sm transition transform hover:-translate-y-0.5">
+            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-base sm:text-lg">🤝</span>
+            <span>+ Nasiya / Qarz Daftari</span>
+        </button>
+    </div>
+
+    <!-- 4. 🎙️ / 💬 AI OVOZLI MOLIYA YORDAMCHISI (FLEXBOX INPUT GROUP - TO'QNAShUVSIZ) -->
+    <div class="bg-gradient-to-r from-purple-900/5 via-fuchsia-900/5 to-indigo-900/5 border border-purple-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div class="flex items-center justify-between gap-3 mb-2">
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm font-bold shadow-sm">🎙️</span>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-900">AI Ovozli Moliya Yordamchisi (Copilot)</h3>
+                    <p class="text-xs text-gray-500">Qo'lda yozishga erinsangiz, gapiring yoki oddiy so'zlar bilan yozib yuboring — AI barchasini hisoblab beradi!</p>
+                </div>
+            </div>
+            <span class="hidden sm:inline-block text-[11px] font-semibold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Gemini AI</span>
+        </div>
+
+        <form id="aiCopilotForm" onsubmit="submitAiFinance(event)" class="mt-3 flex flex-col sm:flex-row items-center gap-2">
+            {% csrf_token %}
+            <!-- Flexbox input group: matn hech qachon mikrofon tugmasi ustiga chiqmaydi -->
+            <div class="flex items-center w-full bg-white border border-gray-200 rounded-xl px-3 py-1 focus-within:border-purple-600 focus-within:ring-2 focus-within:ring-purple-100 transition shadow-sm">
+                <input type="text" id="aiQueryInput" placeholder="Masalan: 'Bugun 20 000 000 sarmoya oldik, 8 000 000 ijaraga ketdi, 1 250 000 go'shtga berdim, kassa 15 000 000'" class="flex-1 min-w-0 text-xs sm:text-sm py-2 px-1 outline-none bg-transparent font-medium text-gray-900 placeholder-gray-400">
+                <button type="button" id="voiceBtn" onclick="toggleVoiceInput()" class="shrink-0 ml-1 p-2 text-gray-400 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition" title="Ovoz bilan aytish">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                </button>
+            </div>
+            <button type="submit" id="aiSubmitBtn" class="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm rounded-xl transition flex-shrink-0 shadow-sm">
+                <span>⚡ Hisoblash</span>
+            </button>
+        </form>
+
+        <!-- Jonli Raqamlar va Summalar ko'rinishi (15 000 000 formatida) -->
+        <div id="aiLivePreview" class="hidden mt-3 p-3 rounded-xl bg-white border border-purple-100 shadow-sm transition">
+            <div class="text-[11px] font-bold text-gray-500 mb-1.5 flex items-center justify-between">
+                <span>⚡ Aniqlangan Summalar (15 000 000 formatida):</span>
+                <span id="aiLiveNet" class="font-black"></span>
+            </div>
+            <div id="aiLiveBadges" class="flex flex-wrap items-center gap-1.5"></div>
+        </div>
+        <div id="aiResponseArea" class="hidden mt-3 p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-950 font-medium"></div>
+    </div>
+
+    <!-- 5. KATEGORIYALAR BO'YICHA XARAJATLAR TAQSIMOTI -->
+    {% if cat_expenses %}
+    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+            <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <span>📊</span> Xarajatlar Qayerga Ketdi?
+            </h3>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openModal('categoryModal')" class="text-xs font-semibold text-purple-600 hover:text-purple-800 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 flex items-center gap-1">
+                    <span>🎨</span> Yangi Kategoriya
+                </button>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            {% for c in cat_expenses %}
+            <div class="p-3 rounded-xl border border-gray-100 bg-gray-50/60 flex items-center justify-between">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-xl">{{ c.category__icon|default:'📦' }}</span>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-gray-800 truncate">{{ c.category__name }}</p>
+                        <p class="text-[11px] text-gray-500 font-semibold">{{ c.total|uznum }} so'm</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 6. ASOSIY REJIMLAR (KANBAN DOSKASI / JADVAL / NASIYA DAFTARI) -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        
+        <!-- Rejim Tablari -->
+        <div class="flex flex-wrap items-center justify-between border-b border-gray-100 px-4 sm:px-6 pt-3 gap-2">
+            <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+                <button @click="activeTab = 'kanban'" :class="activeTab === 'kanban' ? 'border-purple-600 text-purple-700 font-bold' : 'border-transparent text-gray-400 hover:text-gray-700 font-medium'" class="pb-3 text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 shrink-0">
+                    <span>🗂️</span> Kanban Doskasi
+                </button>
+                <button @click="activeTab = 'table'" :class="activeTab === 'table' ? 'border-purple-600 text-purple-700 font-bold' : 'border-transparent text-gray-400 hover:text-gray-700 font-medium'" class="pb-3 text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 shrink-0">
+                    <span>📝</span> Jadval Ko'rinishi ({{ transactions|length }})
+                </button>
+                <button @click="activeTab = 'debts'" :class="activeTab === 'debts' ? 'border-purple-600 text-purple-700 font-bold' : 'border-transparent text-gray-400 hover:text-gray-700 font-medium'" class="pb-3 text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 shrink-0">
+                    <span>🤝</span> Qarz & Nasiya Daftari ({{ debts|length }})
+                </button>
+                <button @click="activeTab = 'audit'" :class="activeTab === 'audit' ? 'border-purple-600 text-purple-700 font-bold' : 'border-transparent text-gray-400 hover:text-gray-700 font-medium'" class="pb-3 text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 shrink-0">
+                    <span>🛡️</span> Bekor Qilinganlar ({{ cancelled_transactions|length }})
+                </button>
+            </div>
+            <div class="pb-2 flex flex-wrap items-center gap-2">
+                <!-- 🔍 Jonli Tezkor Qidiruv (Barcha tablar uchun) -->
+                <div class="relative min-w-[190px] sm:min-w-[240px]">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400 text-xs">🔍</span>
+                    <input 
+                        type="text" 
+                        id="financeSearchInput" 
+                        oninput="filterFinanceItems(this.value)" 
+                        placeholder="Qidiruv (nomi, summa, izoh)..." 
+                        class="w-full text-xs pl-7 pr-7 py-1.5 border border-gray-200 rounded-xl outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-100 transition font-medium bg-gray-50 focus:bg-white"
+                    >
+                    <button 
+                        type="button" 
+                        onclick="clearFinanceSearch()" 
+                        id="clearSearchBtn" 
+                        class="hidden absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-rose-500 text-xs font-bold"
+                        title="Qidiruvni tozalash"
+                    >&times;</button>
+                </div>
+
+                <button type="button" onclick="openModal('categoryModal')" class="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl border border-purple-200 flex items-center gap-1.5 shadow-2xs transition">
+                    <span>🎨</span> <span class="hidden sm:inline">Kategoriya</span> Konstruktori
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 1. KANBAN DOSKASI ==================== -->
+        <div x-show="activeTab === 'kanban'" class="p-3 sm:p-5 bg-gray-50/50 min-h-[500px]">
+            <!-- Kanban Yo'riqnoma -->
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2 bg-blue-50/60 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-900">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">💡</span>
+                    <span><strong>Qo'lda boshqarish:</strong> Har bir ustunda <strong>+ Kartochka qo'shish</strong> orqali yangi kartochka kiriting. Kartochkalarni sichqoncha yoki barmoq bilan ustunlar orasida erkin surishingiz mumkin!</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">{{ kanban_columns|length }} ta Ustun</span>
+                </div>
+            </div>
+
+            <!-- Kanban Ustunlari Flex (Gorizontal Suriladigan) -->
+            <div class="flex overflow-x-auto gap-3.5 items-start pb-4 no-scrollbar min-w-full">
+                {% for col in kanban_columns %}
+                <div 
+                    class="kanban-column w-[275px] sm:w-[290px] shrink-0 bg-white rounded-2xl border border-gray-200/80 shadow-sm flex flex-col transition"
+                    data-stage-id="{{ col.config.id }}"
+                    ondragover="kanbanDragOver(event)"
+                    ondragleave="kanbanDragLeave(event)"
+                    ondrop="kanbanDrop(event, '{{ col.config.id }}')"
+                >
+                    <!-- Ustun Sarlavhasi -->
+                    <div class="p-3 border-b border-gray-100 rounded-t-2xl {{ col.config.header_bg }}">
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-base">{{ col.config.icon }}</span>
+                                <h4 class="text-xs font-bold text-gray-800 truncate" title="{{ col.config.name }}">{{ col.config.name }}</h4>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full {{ col.config.badge_bg }} {{ col.config.badge_text }}">
+                                    {{ col.count }}
+                                </span>
+                                {% if col.config.is_custom %}
+                                <form method="post" style="display:inline" onsubmit="return confirm('Ushbu ustun o\'chirilsinmi? Uning kartochkalari Rejadagi ustuniga ko\'chiriladi.')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_custom_stage">
+                                    <input type="hidden" name="stage_id" value="{{ col.config.custom_id }}">
+                                    <button type="submit" class="text-gray-300 hover:text-rose-600 p-0.5 font-black text-xs" title="Ustunni o'chirish">
+                                        &times;
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Ustun Jami Summasi -->
+                        <div class="mt-2 flex items-center justify-between text-[11px]">
+                            <span class="text-gray-400 font-medium">Jami:</span>
+                            <span class="font-black text-gray-900">{{ col.total_sum|uznum }} so'm</span>
+                        </div>
+                        <!-- Tezkor Yangi Kartochka Qo'shish Tugmasi -->
+                        <button 
+                            type="button" 
+                            onclick="openQuickAddModal('{{ col.config.id }}', '{{ col.config.default_type }}', '{{ col.config.name|escapejs }}')"
+                            class="w-full mt-2.5 py-1.5 px-2 bg-white/80 hover:bg-white border border-gray-200 hover:border-purple-400 rounded-lg text-gray-700 font-bold text-[11px] transition flex items-center justify-center gap-1 shadow-2xs"
+                        >
+                            <span>+</span>
+                            <span>Kartochka qo'shish</span>
+                        </button>
+                    </div>
+
+                    <!-- Kartochkalar ro'yxati -->
+                    <div class="p-2.5 space-y-2.5 min-h-[140px] kanban-cards-container flex-1">
+                        {% for t in col.transactions %}
+                        <div 
+                            id="kanban-tx-{{ t.id }}"
+                            class="kanban-card p-3 rounded-xl border shadow-2xs hover:shadow-md transition cursor-grab active:cursor-grabbing relative group 
+                            {% if t.color == 'emerald' %}bg-emerald-50/40 border-emerald-300 border-l-4 border-l-emerald-500
+                            {% elif t.color == 'rose' %}bg-rose-50/40 border-rose-300 border-l-4 border-l-rose-500
+                            {% elif t.color == 'amber' %}bg-amber-50/40 border-amber-300 border-l-4 border-l-amber-500
+                            {% elif t.color == 'blue' %}bg-blue-50/40 border-blue-300 border-l-4 border-l-blue-500
+                            {% elif t.color == 'purple' %}bg-purple-50/40 border-purple-300 border-l-4 border-l-purple-500
+                            {% elif t.color == 'indigo' %}bg-indigo-50/40 border-indigo-300 border-l-4 border-l-indigo-500
+                            {% elif t.color == 'teal' %}bg-teal-50/40 border-teal-300 border-l-4 border-l-teal-500
+                            {% elif t.color == 'orange' %}bg-orange-50/40 border-orange-300 border-l-4 border-l-orange-500
+                            {% else %}bg-white border-gray-200/90{% endif %}"
+                            draggable="true"
+                            ondragstart="kanbanDragStart(event, '{{ t.id }}')"
+                            ondragend="kanbanDragEnd(event)"
+                            data-tx-id="{{ t.id }}"
+                            data-stage="{{ t.stage }}"
+                        >
+                            <!-- Kartochka Tepadagi Belgilar -->
+                            <div class="flex items-center justify-between gap-1 mb-1.5">
+                                <div class="flex items-center gap-1 min-w-0">
+                                    {% if t.category %}
+                                    <span class="text-xs" title="{{ t.category.name }}">{{ t.category.icon }}</span>
+                                    <span class="text-[10px] font-bold text-gray-500 truncate">{{ t.category.name }}</span>
+                                    {% else %}
+                                    <span class="text-[10px] text-gray-400">Umumiy</span>
+                                    {% endif %}
+                                </div>
+                                <!-- Harakat Tarixi Nishoni -->
+                                {% if t.is_moved %}
+                                <button 
+                                    type="button" 
+                                    onclick="showMovementsHistory('{{ t.id }}')" 
+                                    class="text-[9px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded flex items-center gap-0.5 transition" 
+                                    title="Joyi o'zgartirilgan (Tarixni ko'rish)"
+                                >
+                                    <span>🔄</span> Joyi o'zgargan
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Kartochka Sarlavhasi (Mazmuni) -->
+                            <h5 class="text-xs font-bold text-gray-900 leading-tight line-clamp-2 mb-1.5">{{ t.title }}</h5>
+
+                            <!-- Nima uchun qo'shilgan (Izoh agar bo'lsa) -->
+                            {% if t.notes %}
+                            <p class="text-[10px] text-gray-500 bg-gray-50/80 p-1.5 rounded-lg mb-1.5 line-clamp-2 italic">
+                                💬 {{ t.notes }}
+                            </p>
+                            {% endif %}
+
+                            <!-- Summa (15 000 000 so'm formatida) -->
+                            <div class="text-sm font-black {% if t.tx_type == 'income' %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                                {% if t.tx_type == 'income' %}+{% else %}-{% endif %}{{ t.amount|uznum }} <span class="text-[10px] font-normal text-gray-400">so'm</span>
+                            </div>
+
+                            <!-- Pastki qator: Sana va To'lov usuli -->
+                            <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+                                <span class="font-mono">{{ t.tx_date|date:"d.m.Y" }}</span>
+                                <span class="text-gray-500 font-semibold">{{ t.get_payment_method_display }}</span>
+                            </div>
+
+                            <!-- Kartochka Amallari (Tahrirlash va O'chirish) -->
+                            <div class="mt-2 pt-1 flex items-center justify-between gap-1">
+                                <!-- Tezkor bosqich o'zgartirish tanlagichi -->
+                                <select 
+                                    onchange="quickMoveCard('{{ t.id }}', this.value)" 
+                                    class="text-[10px] py-0.5 px-1 bg-gray-50 border border-gray-200 rounded text-gray-600 outline-none max-w-[105px]"
+                                    title="Bosqichga ko'chirish"
+                                >
+                                    <option value="" disabled selected>⇄ Ko'chirish</option>
+                                    <option value="planned">⏳ Rejada</option>
+                                    <option value="income">🟢 Kassaga kirdi</option>
+                                    <option value="expense">🔴 Kassadan chiqdi</option>
+                                    <option value="debt">🤝 Nasiya</option>
+                                    <option value="settled">✅ Tugallangan</option>
+                                    {% for cs in custom_stages %}
+                                    <option value="{{ cs.stage_key }}">{{ cs.icon }} {{ cs.name }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <div class="flex items-center gap-1">
+                                    <!-- ✏️ Tahrirlash Tugmasi -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openEditTxModal('{{ t.id }}', '{{ t.title|escapejs }}', '{{ t.amount }}', '{{ t.category_id|default:'' }}', '{{ t.tx_type }}', '{{ t.stage }}', '{{ t.payment_method }}', '{{ t.notes|escapejs }}', '{{ t.tx_date|date:'Y-m-d' }}', '{{ t.color|default:'default' }}')"
+                                        class="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition"
+                                        title="Qo'lda tahrirlash (✏️)"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+
+                                    <!-- 🗑️ Bekor qilish / O'chirish (Audit bilan) -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openCancelTxModal('{{ t.id }}', '{{ t.title|escapejs }}', '{{ t.amount }}')"
+                                        class="p-1 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded transition" 
+                                        title="Bekor qilish / O'chirish"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-6 text-gray-300 text-[11px] border border-dashed border-gray-200 rounded-xl">
+                            Kartochka yo'q
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- + Yangi Ustun Qo'shish Kartochkasi -->
+                <div 
+                    class="kanban-column w-[275px] sm:w-[290px] shrink-0 bg-white hover:bg-purple-50/20 rounded-2xl border-2 border-dashed border-gray-200 hover:border-purple-400 p-4 flex flex-col items-center justify-center text-center transition cursor-pointer min-h-[220px] shadow-2xs group" 
+                    onclick="openModal('newColumnModal')"
+                >
+                    <div class="w-12 h-12 rounded-2xl bg-purple-50 group-hover:bg-purple-600 text-purple-600 group-hover:text-white flex items-center justify-center text-2xl mb-2 font-bold shadow-2xs transition">
+                        +
+                    </div>
+                    <h4 class="text-xs font-bold text-gray-800 group-hover:text-purple-700 transition">Yangi Ustun Qo'shish</h4>
+                    <p class="text-[10px] text-gray-400 mt-1 max-w-[140px]">O'zingiz istagan yangi moliya bosqichini oching</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== 2. JADVAL KO'RINISHI ==================== -->
+        <div x-show="activeTab === 'table'" class="p-4 sm:p-5">
+            {% if transactions %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-gray-400 uppercase text-[10px] tracking-wider border-b border-gray-100 pb-2">
+                            <th class="py-2.5">Sana</th>
+                            <th class="py-2.5">Holati / Bosqich</th>
+                            <th class="py-2.5">Turi</th>
+                            <th class="py-2.5">Kategoriya / Nomi</th>
+                            <th class="py-2.5">To'lov usuli</th>
+                            <th class="py-2.5 text-right">Summa</th>
+                            <th class="py-2.5 text-center">Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 font-medium">
+                        {% for t in transactions %}
+                        <tr class="hover:bg-gray-50/80 transition">
+                            <td class="py-3 text-gray-500 font-mono text-[11px]">{{ t.tx_date|date:"d.m.Y" }}</td>
+                            <td class="py-3">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">
+                                    {{ t.stage_name }}
+                                </span>
+                                {% if t.is_moved %}
+                                <button type="button" onclick="showMovementsHistory('{{ t.id }}')" class="ml-1 text-[9px] text-blue-600 underline font-bold" title="Tarixni ko'rish">
+                                    🔄 Tarix
+                                </button>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                {% if t.tx_type == 'income' %}
+                                <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">🟢 Kirim</span>
+                                {% else %}
+                                <span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold text-[10px]">🔴 Chiqim</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                <div class="font-bold text-gray-800">{{ t.title }}</div>
+                                {% if t.category %}
+                                <div class="text-[11px] text-gray-400 flex items-center gap-1">{{ t.category.icon }} {{ t.category.name }}</div>
+                                {% endif %}
+                                {% if t.notes %}
+                                <div class="text-[10px] text-gray-400 italic">💬 {{ t.notes }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 text-gray-500">{{ t.get_payment_method_display }}</td>
+                            <td class="py-3 text-right font-black {% if t.tx_type == 'income' %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                                {% if t.tx_type == 'income' %}+{% else %}-{% endif %}{{ t.amount|uznum }} so'm
+                            </td>
+                            <td class="py-3 text-center">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <!-- ✏️ Tahrirlash -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openEditTxModal('{{ t.id }}', '{{ t.title|escapejs }}', '{{ t.amount }}', '{{ t.category_id|default:'' }}', '{{ t.tx_type }}', '{{ t.stage }}', '{{ t.payment_method }}', '{{ t.notes|escapejs }}', '{{ t.tx_date|date:'Y-m-d' }}', '{{ t.color|default:'default' }}')"
+                                        class="text-gray-400 hover:text-purple-600 p-1.5 hover:bg-purple-50 rounded transition"
+                                        title="Qo'lda tahrirlash (✏️)"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+
+                                    <!-- 🗑️ Bekor qilish (Audit bilan) -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openCancelTxModal('{{ t.id }}', '{{ t.title|escapejs }}', '{{ t.amount }}')"
+                                        class="text-gray-300 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded transition" 
+                                        title="Bekor qilish / O'chirish"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-10 text-gray-400 text-xs">
+                <span class="text-3xl block mb-2">📋</span>
+                Hozircha hech qanday operatsiya kiritilmagan. Yuqoridagi tugmalar orqali ilk yozuvni kiriting!
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ==================== 3. QARZ & NASIYA DAFTARI ==================== -->
+        <div x-show="activeTab === 'debts'" class="p-4 sm:p-5">
+            <!-- Nasiya yo'riqnomasi -->
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2 bg-amber-50/70 border border-amber-200/80 rounded-xl px-3.5 py-2.5 text-xs text-amber-950">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🤝</span>
+                    <span><strong>Qarz daftari nazorati:</strong> Mijoz nasiyasi yoki ta'minotchi qarzini bo'lib-bo'lib (qisman) to'lash mumkin. Har bir to'lov avtomatik kassa kirimi yoki chiqimi sifatida hisobga olinadi.</span>
+                </div>
+                <button type="button" onclick="openModal('debtModal')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition shadow-2xs">
+                    + Yangi Nasiya Yozish
+                </button>
+            </div>
+
+            {% if debts %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-gray-400 uppercase text-[10px] tracking-wider border-b border-gray-100 pb-2">
+                            <th class="py-2.5">Shaxs / Tashkilot</th>
+                            <th class="py-2.5">Turi</th>
+                            <th class="py-2.5">Jami Qarz</th>
+                            <th class="py-2.5">Qolgan Qarz</th>
+                            <th class="py-2.5">Holati</th>
+                            <th class="py-2.5">Muddati</th>
+                            <th class="py-2.5 text-center">Harakat</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 font-medium">
+                        {% for d in debts %}
+                        <tr class="hover:bg-gray-50/80 transition">
+                            <td class="py-3">
+                                <div class="font-bold text-gray-900">{{ d.person_name }}</div>
+                                {% if d.phone %}<div class="text-[11px] text-gray-400 font-mono">{{ d.phone }}</div>{% endif %}
+                            </td>
+                            <td class="py-3 text-gray-600">
+                                {% if d.debt_type == 'customer' %}
+                                <span class="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold">📥 Bizga beradi</span>
+                                {% else %}
+                                <span class="text-purple-800 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[10px] font-bold">📤 Biz beramiz</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 font-black text-gray-900">{{ d.amount|uznum }} so'm</td>
+                            <td class="py-3">
+                                <div class="font-black text-amber-700 text-sm">{{ d.remaining_amount|uznum }} so'm</div>
+                                {% if d.paid_amount > 0 %}
+                                <div class="text-[10px] text-emerald-600 font-bold">({{ d.paid_amount|uznum }} so'm to'langan)</div>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                {% if d.status == 'settled' %}
+                                <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">✅ To'liq yopildi</span>
+                                {% elif d.status == 'partial' %}
+                                <span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">🔄 Qisman to'landi</span>
+                                {% else %}
+                                <span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px] animate-pulse">⏳ Kutilmoqda</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 text-gray-400 text-[11px]">{{ d.due_date|date:"d.m.Y"|default:"Muddatsiz" }}</td>
+                            <td class="py-3 text-center">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    {% if d.status != 'settled' %}
+                                    <!-- 💵 Bo'lib yoki to'liq to'lash tugmasi -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openPayDebtModal('{{ d.id }}', '{{ d.person_name|escapejs }}', '{{ d.debt_type }}', '{{ d.remaining_amount }}')" 
+                                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg shadow-sm transition flex items-center gap-1"
+                                        title="Qarzdan to'lov qabul qilish / to'lash"
+                                    >
+                                        <span>💵</span> To'lov
+                                    </button>
+
+                                    <!-- Tezkor to'liq yopish -->
+                                    <form method="post" style="display:inline" onsubmit="return confirm('Qarz to\'liq yopilsinmi? Kassaga qoldiq summa kiritiladi.')">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="settle_debt">
+                                        <input type="hidden" name="debt_id" value="{{ d.id }}">
+                                        <button type="submit" class="px-2 py-1 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 font-bold text-[10px] rounded-lg transition" title="To'liq yopish">
+                                            ✅ Yopish
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <form method="post" style="display:inline" onsubmit="return confirm('Qarz yozuvi daftardan o\'chirilsinmi?')">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_debt">
+                                        <input type="hidden" name="debt_id" value="{{ d.id }}">
+                                        <button type="submit" class="p-1 text-gray-300 hover:text-rose-600 transition" title="Daftardan o'chirish">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-10 text-gray-400 text-xs">
+                <span class="text-3xl block mb-2">🤝</span>
+                Nasiya yoki qarzlar daftari bo'sh. "+ Yangi Nasiya Yozish" tugmasi orqali yozib qo'yishingiz mumkin!
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ==================== 4. BEKOR QILINGANLAR (AUDIT) DAFTARI ==================== -->
+        <div x-show="activeTab === 'audit'" class="p-4 sm:p-5">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2 bg-purple-50/70 border border-purple-100 rounded-xl px-3.5 py-2.5 text-xs text-purple-900">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🛡️</span>
+                    <span><strong>Nazorat & Xavfsizlik Daftari:</strong> Kassadan o'chirilgan yoki bekor qilingan barcha operatsiyalar shu yerda saqlanadi. Kim, qachon va nima sababdan o'chirgani ko'rinib turadi. Istalgan vaqtda 1 ta tugma bilan qayta tiklashingiz mumkin.</span>
+                </div>
+                <span class="text-[11px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">{{ cancelled_transactions|length }} ta bekor qilingan</span>
+            </div>
+
+            {% if cancelled_transactions %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-gray-400 uppercase text-[10px] tracking-wider border-b border-gray-100 pb-2">
+                            <th class="py-2.5">Bekor qilingan vaqt</th>
+                            <th class="py-2.5">Mazmuni / Nomi</th>
+                            <th class="py-2.5">To'lov shakli</th>
+                            <th class="py-2.5">Kim bekor qildi?</th>
+                            <th class="py-2.5">Bekor qilish sababi</th>
+                            <th class="py-2.5 text-right">Summa</th>
+                            <th class="py-2.5 text-center">Harakat</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 font-medium">
+                        {% for t in cancelled_transactions %}
+                        <tr class="hover:bg-gray-50/80 transition bg-rose-50/20">
+                            <td class="py-3 text-gray-500 font-mono text-[11px]">
+                                {{ t.cancelled_at|date:"d.m.Y H:i"|default:t.tx_date|date:"d.m.Y" }}
+                            </td>
+                            <td class="py-3">
+                                <div class="font-bold text-gray-800 line-through">{{ t.title }}</div>
+                                {% if t.category %}
+                                <div class="text-[10px] text-gray-400">{{ t.category.icon }} {{ t.category.name }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 text-gray-500">{{ t.get_payment_method_display }}</td>
+                            <td class="py-3">
+                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-lg">
+                                    👤 {{ t.cancelled_by.username|default:"Noma'lum" }}
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                <span class="text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg text-[11px] font-medium inline-block max-w-xs truncate" title="{{ t.cancel_reason }}">
+                                    ⚠️ {{ t.cancel_reason|default:"Sabab ko'rsatilmagan" }}
+                                </span>
+                            </td>
+                            <td class="py-3 text-right font-black text-gray-500 line-through">
+                                {{ t.amount|uznum }} so'm
+                            </td>
+                            <td class="py-3 text-center">
+                                <form method="post" style="display:inline" onsubmit="return confirm('Ushbu operatsiyani qayta tiklab, kassaga qo\'shmoqchimisiz?')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="restore_transaction">
+                                    <input type="hidden" name="tx_id" value="{{ t.id }}">
+                                    <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg shadow-sm transition inline-flex items-center gap-1" title="Operatsiyani qayta tiklash">
+                                        <span>♻️</span> Qaytarish (Tiklash)
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-10 text-gray-400 text-xs">
+                <span class="text-3xl block mb-2">🎉</span>
+                Bekor qilingan operatsiyalar yo'q. Barcha yozuvlar tartibli va xavfsiz holatda!
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- 1. MODAL: YANGI KARTOCHKA QO'SHISH (KANBAN TEZKOR QO'SHISH - NOMI, SUMMASI, NIMA UCHUN QO'SHILGAN IZOHI BILAN) -->
+<div id="quickCardModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🗂️</span>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-sm">Yangi Kartochka Qo'shish</h3>
+                    <span id="quickCardModalStageBadge" class="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100"></span>
+                </div>
+            </div>
+            <button onclick="closeModal('quickCardModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_transaction">
+            <input type="hidden" id="quick_stage" name="stage" value="income">
+            <input type="hidden" id="quick_tx_type" name="tx_type" value="income">
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Kartochka Nomi / Tovarlar nomi *</label>
+                <input type="text" name="title" required placeholder="Masalan: 20 kg mol go'shti, akamdan sarmoya" class="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-xl focus:border-purple-600 outline-none font-medium">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Summa (so'm) *</label>
+                <div class="relative">
+                    <input type="text" id="quick_card_amount_input" inputmode="numeric" name="amount" required placeholder="15 000 000" class="money-input w-full text-lg font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none text-gray-900 transition">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">so'm</span>
+                </div>
+                <!-- Tezkor Kassir Tugmalari -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    <button type="button" onclick="quickAddAmount('quick_card_amount_input', 50000)" class="px-2 py-0.5 bg-gray-100 hover:bg-purple-100 text-gray-700 hover:text-purple-800 text-[10px] font-bold rounded-lg transition">+50k</button>
+                    <button type="button" onclick="quickAddAmount('quick_card_amount_input', 100000)" class="px-2 py-0.5 bg-gray-100 hover:bg-purple-100 text-gray-700 hover:text-purple-800 text-[10px] font-bold rounded-lg transition">+100k</button>
+                    <button type="button" onclick="quickAddAmount('quick_card_amount_input', 500000)" class="px-2 py-0.5 bg-gray-100 hover:bg-purple-100 text-gray-700 hover:text-purple-800 text-[10px] font-bold rounded-lg transition">+500k</button>
+                    <button type="button" onclick="quickAddAmount('quick_card_amount_input', 1000000)" class="px-2 py-0.5 bg-gray-100 hover:bg-purple-100 text-gray-700 hover:text-purple-800 text-[10px] font-bold rounded-lg transition">+1 mln</button>
+                    <button type="button" onclick="quickAppendZeros('quick_card_amount_input')" class="px-2 py-0.5 bg-purple-50 hover:bg-purple-200 text-purple-800 text-[10px] font-black rounded-lg transition">+000</button>
+                    <button type="button" onclick="quickClearAmount('quick_card_amount_input')" class="px-2 py-0.5 bg-gray-50 hover:bg-rose-100 text-gray-400 hover:text-rose-600 text-[10px] font-bold rounded-lg transition">✖️</button>
+                </div>
+                <div class="text-[11px] font-bold text-purple-600 mt-1 min-h-[16px] money-preview"></div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Nima uchun qo'shilgan? (Ixtiyoriy izoh / eslatma)</label>
+                <textarea name="notes" rows="2" placeholder="Masalan: Kechagi banket zakalati uchun olindi yoki yetkazib beruvchiga berildi..." class="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl outline-none focus:border-purple-600"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Kategoriya</label>
+                    <select name="category_id" class="w-full text-xs px-3 py-2 border rounded-xl outline-none">
+                        <option value="">-- Umumiy --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">To'lov shakli</label>
+                    <select name="payment_method" class="w-full text-xs px-3 py-2 border rounded-xl outline-none">
+                        <option value="cash">Naqd pul</option>
+                        <option value="card">Plastik karta / Click</option>
+                        <option value="bank">Bank hisobi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Sana</label>
+                <input type="date" name="tx_date" value="{{ today|date:'Y-m-d' }}" class="w-full text-xs px-3 py-2 border rounded-xl outline-none">
+            </div>
+
+            <!-- Kartochka Rangi (Color Picker) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kartochka Rangi (Ajratib turish uchun):</label>
+                <input type="hidden" id="quick_card_color" name="color" value="default">
+                <div class="flex items-center gap-2 flex-wrap" id="quickColorPalette">
+                    <button type="button" onclick="selectCardColor('default', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-400 flex items-center justify-center text-xs shadow-2xs ring-2 ring-purple-600 transition transform hover:scale-110" data-color="default" title="Standart (Oq)">⚪</button>
+                    <button type="button" onclick="selectCardColor('emerald', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="emerald" title="Yashil (Kirim / Tayyor)">🟢</button>
+                    <button type="button" onclick="selectCardColor('rose', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-rose-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="rose" title="Qizil (Xarajat / Muhim)">🔴</button>
+                    <button type="button" onclick="selectCardColor('amber', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="amber" title="Sariq (Nasiya / Kutilmoqda)">🟡</button>
+                    <button type="button" onclick="selectCardColor('blue', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="blue" title="Ko'k (Yetkazish / Transport)">🔵</button>
+                    <button type="button" onclick="selectCardColor('purple', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="purple" title="Binafsha (Maxsus / Oylik)">🟣</button>
+                    <button type="button" onclick="selectCardColor('teal', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-teal-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="teal" title="Feruza (Mahsulotlar)">🩵</button>
+                    <button type="button" onclick="selectCardColor('orange', 'quick')" class="quick-color-btn w-7 h-7 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="orange" title="Apelsin (Zakalat / Bo'nak)">🟠</button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm">
+                Kartochkani Saqlash
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 2. MODAL: PUL KIRDI (INCOME) -->
+<div id="incomeModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-emerald-600 text-lg">🟢</span> + Pul Kirdi (Tushum)
+            </h3>
+            <button onclick="closeModal('incomeModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_transaction">
+            <input type="hidden" name="tx_type" value="income">
+            <input type="hidden" name="stage" value="income">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Summa (so'm) *</label>
+                <div class="relative">
+                    <input type="text" id="income_amount_input" inputmode="numeric" name="amount" required placeholder="15 000 000" class="money-input w-full text-lg font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none text-gray-900 transition">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">so'm</span>
+                </div>
+                <!-- Tezkor Kassir Tugmalari -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    <button type="button" onclick="quickAddAmount('income_amount_input', 50000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+50k</button>
+                    <button type="button" onclick="quickAddAmount('income_amount_input', 100000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+100k</button>
+                    <button type="button" onclick="quickAddAmount('income_amount_input', 500000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+500k</button>
+                    <button type="button" onclick="quickAddAmount('income_amount_input', 1000000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+1 mln</button>
+                    <button type="button" onclick="quickAppendZeros('income_amount_input')" class="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-200 text-emerald-800 text-[10px] font-black rounded-lg transition">+000</button>
+                    <button type="button" onclick="quickClearAmount('income_amount_input')" class="px-2 py-0.5 bg-gray-50 hover:bg-rose-100 text-gray-400 hover:text-rose-600 text-[10px] font-bold rounded-lg transition">✖️</button>
+                </div>
+                <div class="text-[11px] font-bold text-emerald-600 mt-1 min-h-[16px] money-preview"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Kategoriya</label>
+                <select name="category_id" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-emerald-600 outline-none">
+                    {% for cat in categories %}
+                    {% if cat.category_type == 'income' or cat.category_type == 'capital' %}
+                    <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qisqa Mazmuni</label>
+                <input type="text" name="title" placeholder="Masalan: Tushlik kassa savdosi" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-emerald-600 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Sana</label>
+                    <input type="date" name="tx_date" value="{{ today|date:'Y-m-d' }}" class="w-full text-xs px-3 py-2 border rounded-xl outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">To'lov shakli</label>
+                    <select name="payment_method" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-emerald-600 outline-none">
+                        <option value="cash">Naqd pul</option>
+                        <option value="card">Plastik karta / Click</option>
+                        <option value="bank">Bank hisobi</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Izoh (ixtiyoriy)</label>
+                <textarea name="notes" rows="2" placeholder="Qo'shimcha tafsilotlar..." class="w-full text-xs px-3 py-2 border rounded-xl outline-none"></textarea>
+            </div>
+            <!-- Qolgan qismini mijoz nasiyasiga yozish -->
+            <div class="pt-2 border-t border-gray-100">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" name="has_split_debt" value="1" onchange="toggleSplitSection('incomeSplitSection', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4">
+                    <span class="text-xs font-bold text-gray-700">🤝 Qolgani mijoz nasiyasiga yozilsinmi?</span>
+                </label>
+                <div id="incomeSplitSection" class="hidden mt-2 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2.5">
+                    <p class="text-[10px] text-emerald-900 font-medium">Mijoz to'lamay ketgan qolgan summa Nasiya daftariga yoziladi:</p>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Qolgan nasiya summasi (so'm) *</label>
+                        <input type="text" inputmode="numeric" name="split_debt_amount" placeholder="200 000" class="money-input w-full text-xs px-3 py-2 border rounded-lg outline-none font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Mijoz ismi / Tashkilot *</label>
+                        <input type="text" name="split_person_name" placeholder="Masalan: Botir akam" class="w-full text-xs px-3 py-2 border rounded-lg outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Telefon raqami</label>
+                            <input type="text" name="split_phone" placeholder="+998 90 123 45 67" class="w-full text-xs px-3 py-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Qaytarish muddati</label>
+                            <input type="date" name="split_due_date" class="w-full text-xs px-3 py-2 border rounded-lg outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Kartochka Rangi (Color Picker) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kartochka Rangi:</label>
+                <input type="hidden" id="income_card_color" name="color" value="emerald">
+                <div class="flex items-center gap-2 flex-wrap" id="incomeColorPalette">
+                    <button type="button" onclick="selectCardColor('emerald', 'income')" class="income-color-btn w-7 h-7 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs ring-2 ring-purple-600 scale-110 transition transform hover:scale-110" data-color="emerald" title="Yashil (Kirim / Tayyor)">🟢</button>
+                    <button type="button" onclick="selectCardColor('default', 'income')" class="income-color-btn w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-400 flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="default" title="Standart (Oq)">⚪</button>
+                    <button type="button" onclick="selectCardColor('blue', 'income')" class="income-color-btn w-7 h-7 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="blue" title="Ko'k">🔵</button>
+                    <button type="button" onclick="selectCardColor('teal', 'income')" class="income-color-btn w-7 h-7 rounded-full bg-teal-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="teal" title="Feruza">🩵</button>
+                    <button type="button" onclick="selectCardColor('purple', 'income')" class="income-color-btn w-7 h-7 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="purple" title="Binafsha">🟣</button>
+                    <button type="button" onclick="selectCardColor('amber', 'income')" class="income-color-btn w-7 h-7 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="amber" title="Sariq">🟡</button>
+                </div>
+            </div>
+            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm">
+                Saqlash
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 3. MODAL: PUL CHIQDI (EXPENSE) -->
+<div id="expenseModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-rose-600 text-lg">🔴</span> - Pul Chiqdi (Xarajat)
+            </h3>
+            <button onclick="closeModal('expenseModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_transaction">
+            <input type="hidden" name="tx_type" value="expense">
+            <input type="hidden" name="stage" value="expense">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qancha pul ketdi? (so'm) *</label>
+                <div class="relative">
+                    <input type="text" id="expense_amount_input" inputmode="numeric" name="amount" required placeholder="15 000 000" class="money-input w-full text-lg font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-rose-600 focus:ring-2 focus:ring-rose-100 outline-none text-gray-900 transition">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">so'm</span>
+                </div>
+                <!-- Tezkor Kassir Tugmalari -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    <button type="button" onclick="quickAddAmount('expense_amount_input', 50000)" class="px-2 py-0.5 bg-gray-100 hover:bg-rose-100 text-gray-700 hover:text-rose-800 text-[10px] font-bold rounded-lg transition">+50k</button>
+                    <button type="button" onclick="quickAddAmount('expense_amount_input', 100000)" class="px-2 py-0.5 bg-gray-100 hover:bg-rose-100 text-gray-700 hover:text-rose-800 text-[10px] font-bold rounded-lg transition">+100k</button>
+                    <button type="button" onclick="quickAddAmount('expense_amount_input', 500000)" class="px-2 py-0.5 bg-gray-100 hover:bg-rose-100 text-gray-700 hover:text-rose-800 text-[10px] font-bold rounded-lg transition">+500k</button>
+                    <button type="button" onclick="quickAddAmount('expense_amount_input', 1000000)" class="px-2 py-0.5 bg-gray-100 hover:bg-rose-100 text-gray-700 hover:text-rose-800 text-[10px] font-bold rounded-lg transition">+1 mln</button>
+                    <button type="button" onclick="quickAppendZeros('expense_amount_input')" class="px-2 py-0.5 bg-rose-50 hover:bg-rose-200 text-rose-800 text-[10px] font-black rounded-lg transition">+000</button>
+                    <button type="button" onclick="quickClearAmount('expense_amount_input')" class="px-2 py-0.5 bg-gray-50 hover:bg-rose-100 text-gray-400 hover:text-rose-600 text-[10px] font-bold rounded-lg transition">✖️</button>
+                </div>
+                <div class="text-[11px] font-bold text-rose-600 mt-1 min-h-[16px] money-preview"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qayerga ketdi? (Kategoriya)</label>
+                <select name="category_id" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-rose-600 outline-none">
+                    {% for cat in categories %}
+                    {% if cat.category_type == 'expense' or cat.category_type == 'planned' %}
+                    <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Nima olindi / Nima uchun?</label>
+                <input type="text" name="title" placeholder="Masalan: 20 kg go'sht, 5 qop piyoz" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-rose-600 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Sana</label>
+                    <input type="date" name="tx_date" value="{{ today|date:'Y-m-d' }}" class="w-full text-xs px-3 py-2 border rounded-xl outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">To'lov shakli</label>
+                    <select name="payment_method" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-rose-600 outline-none">
+                        <option value="cash">Naqd pul</option>
+                        <option value="card">Plastik karta / Click</option>
+                        <option value="bank">Bank hisobi</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Izoh (ixtiyoriy)</label>
+                <textarea name="notes" rows="2" placeholder="Qo'shimcha izoh..." class="w-full text-xs px-3 py-2 border rounded-xl outline-none"></textarea>
+            </div>
+            <!-- Qolgan qismi nasiyaga (qarzga) qoldimi? -->
+            <div class="pt-2 border-t border-gray-100">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" name="has_split_debt" value="1" onchange="toggleSplitSection('expenseSplitSection', this.checked)" class="rounded text-rose-600 focus:ring-rose-500 w-4 h-4">
+                    <span class="text-xs font-bold text-gray-700">🤝 Qolgani nasiyaga (qarzga) qoldimi?</span>
+                </label>
+                <div id="expenseSplitSection" class="hidden mt-2 p-3 bg-rose-50/60 border border-rose-200 rounded-xl space-y-2.5">
+                    <p class="text-[10px] text-rose-900 font-medium">Bozorchi yoki yetkazib beruvchiga qolgan summa Qarz daftariga yoziladi:</p>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Qolgan qarz summasi (so'm) *</label>
+                        <input type="text" inputmode="numeric" name="split_debt_amount" placeholder="500 000" class="money-input w-full text-xs px-3 py-2 border rounded-lg outline-none font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Yetkazib beruvchi / Sherik nomi *</label>
+                        <input type="text" name="split_person_name" placeholder="Masalan: Go'shtchi Shokir aka" class="w-full text-xs px-3 py-2 border rounded-lg outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Telefon raqami</label>
+                            <input type="text" name="split_phone" placeholder="+998 90 123 45 67" class="w-full text-xs px-3 py-2 border rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Qaytarish muddati</label>
+                            <input type="date" name="split_due_date" class="w-full text-xs px-3 py-2 border rounded-lg outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Kartochka Rangi (Color Picker) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kartochka Rangi:</label>
+                <input type="hidden" id="expense_card_color" name="color" value="rose">
+                <div class="flex items-center gap-2 flex-wrap" id="expenseColorPalette">
+                    <button type="button" onclick="selectCardColor('rose', 'expense')" class="expense-color-btn w-7 h-7 rounded-full bg-rose-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs ring-2 ring-purple-600 scale-110 transition transform hover:scale-110" data-color="rose" title="Qizil (Xarajat / Muhim)">🔴</button>
+                    <button type="button" onclick="selectCardColor('default', 'expense')" class="expense-color-btn w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-400 flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="default" title="Standart (Oq)">⚪</button>
+                    <button type="button" onclick="selectCardColor('amber', 'expense')" class="expense-color-btn w-7 h-7 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="amber" title="Sariq">🟡</button>
+                    <button type="button" onclick="selectCardColor('orange', 'expense')" class="expense-color-btn w-7 h-7 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="orange" title="Apelsin">🟠</button>
+                    <button type="button" onclick="selectCardColor('purple', 'expense')" class="expense-color-btn w-7 h-7 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="purple" title="Binafsha">🟣</button>
+                    <button type="button" onclick="selectCardColor('blue', 'expense')" class="expense-color-btn w-7 h-7 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="blue" title="Ko'k">🔵</button>
+                </div>
+            </div>
+            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm">
+                Xarajatni Saqlash
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 4. MODAL: NASIYA / QARZ (DEBT) -->
+<div id="debtModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-indigo-600 text-lg">🤝</span> Nasiya & Qarz Daftari
+            </h3>
+            <button onclick="closeModal('debtModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_debt">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qarz turi</label>
+                <select name="debt_type" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-indigo-600 outline-none">
+                    <option value="customer">Mijoz nasiyasi (U bizga berishi kerak)</option>
+                    <option value="supplier">Yetkazib beruvchi qarzi (Biz berishimiz kerak)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Kim? (Ismi / Tashkilot) *</label>
+                <input type="text" name="person_name" required placeholder="Masalan: Alisher aka, Sherzod prokuror" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-indigo-600 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Telefon raqami</label>
+                <input type="text" name="phone" placeholder="+998 90 123 45 67" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-indigo-600 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qarz summasi (so'm) *</label>
+                <div class="relative">
+                    <input type="text" inputmode="numeric" name="amount" required placeholder="15 000 000" class="money-input w-full text-lg font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none text-gray-900 transition">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">so'm</span>
+                </div>
+                <div class="text-[11px] font-bold text-indigo-600 mt-1 min-h-[16px] money-preview"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qachon beradi? (Qaytarish sanasi)</label>
+                <input type="date" name="due_date" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-indigo-600 outline-none">
+            </div>
+            <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm">
+                Daftarga Yozish
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 5. MODAL: YANGI KATEGORIYA QO'SHISH (4 TA CHEKLANGAN TUR & TELEGRAM EMOJI QIDIRUVCHISI) -->
+<div id="categoryModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div>
+                <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                    <span>🎨</span> Yangi Kategoriya (Xarajat / Tushum Bo'limi)
+                </h3>
+                <p class="text-[11px] text-gray-500 mt-0.5">Do'kon xarajat yoki tushumlarini bo'limlarga ajrating (masalan: <i>Go'sht, Sabzavot, Ish haqi, Savdo</i>)</p>
+            </div>
+            <button onclick="closeModal('categoryModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_category">
+            
+            <!-- 4 TA FUNDAMENTAL KATEGORIYA TURI -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kategoriya Yo'nalishi:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-rose-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-rose-800 bg-rose-50/50 has-[:checked]:ring-2 has-[:checked]:ring-rose-500 has-[:checked]:border-rose-500">
+                        <input type="radio" name="category_type" value="expense" checked class="text-rose-600">
+                        <span>🔴 Chiqim (Xarajat)</span>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-emerald-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50/50 has-[:checked]:ring-2 has-[:checked]:ring-emerald-500 has-[:checked]:border-emerald-500">
+                        <input type="radio" name="category_type" value="income" class="text-emerald-600">
+                        <span>🟢 Kirim (Tushum)</span>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-indigo-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-indigo-800 bg-indigo-50/50 has-[:checked]:ring-2 has-[:checked]:ring-indigo-500 has-[:checked]:border-indigo-500">
+                        <input type="radio" name="category_type" value="capital" class="text-indigo-600">
+                        <span>💼 Sarmoya</span>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-amber-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50/50 has-[:checked]:ring-2 has-[:checked]:ring-amber-500 has-[:checked]:border-amber-500">
+                        <input type="radio" name="category_type" value="planned" class="text-amber-600">
+                        <span>⏳ Rejadagi</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Telegram uslubidagi jonli Emoji qidirish & tanlash -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Emoji / Ikonka (Telegramdek so'z bilan qidiring)</label>
+                <div class="flex items-center gap-2">
+                    <span id="categoryEmojiPreview" class="w-12 h-11 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-2xl shadow-2xs">🥩</span>
+                    <input type="hidden" id="categoryIconInput" name="icon" value="🥩">
+                    <div class="relative flex-1">
+                        <input type="text" id="categoryEmojiSearch" oninput="searchEmojiTelegram(this.value, 'categoryEmojiList', 'categoryIconInput', 'categoryEmojiPreview')" placeholder="Masalan: pul, go'sht, osh, choy, ijara, oylik..." class="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-xl outline-none focus:border-purple-600 font-medium">
+                    </div>
+                </div>
+                
+                <!-- Jonli chiqadigan emojilar qatori (Telegramdek tezkor takliflar) -->
+                <div id="categoryEmojiList" class="mt-2 p-2 bg-gray-50 border border-gray-100 rounded-xl flex flex-wrap gap-1.5 items-center">
+                    <!-- Default popular emojis -->
+                    <button type="button" onclick="selectTelegramEmoji('🥩', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🥩</button>
+                    <button type="button" onclick="selectTelegramEmoji('🥬', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🥬</button>
+                    <button type="button" onclick="selectTelegramEmoji('🌾', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🌾</button>
+                    <button type="button" onclick="selectTelegramEmoji('🍽️', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🍽️</button>
+                    <button type="button" onclick="selectTelegramEmoji('👨‍🍳', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">👨‍🍳</button>
+                    <button type="button" onclick="selectTelegramEmoji('🏢', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🏢</button>
+                    <button type="button" onclick="selectTelegramEmoji('⚡', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">⚡</button>
+                    <button type="button" onclick="selectTelegramEmoji('🛵', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🛵</button>
+                    <button type="button" onclick="selectTelegramEmoji('💵', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">💵</button>
+                    <button type="button" onclick="selectTelegramEmoji('💰', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">💰</button>
+                    <button type="button" onclick="selectTelegramEmoji('🤝', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🤝</button>
+                    <button type="button" onclick="selectTelegramEmoji('💡', 'categoryIconInput', 'categoryEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">💡</button>
+                </div>
+
+                <!-- Barcha 100+ emojini ichkarida ochish/yopish -->
+                <button type="button" onclick="toggleFullPalette('categoryFullPalette', 'categoryIconInput', 'categoryEmojiPreview')" class="mt-1.5 text-[11px] font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1">
+                    <span>🎨 100+ Emojilar to'plamini ko'rish</span>
+                </button>
+                <div id="categoryFullPalette" class="hidden mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl max-h-48 overflow-y-auto space-y-3 text-xs"></div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Kategoriya Nomi *</label>
+                <input type="text" name="name" id="categoryNameInput" oninput="autoSuggestEmojiFromName(this.value, 'categoryIconInput', 'categoryEmojiPreview')" required placeholder="Masalan: Tandir Go'shti, Somsa Xarajatlari, Kunlik Taksi" class="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-xl outline-none font-medium focus:border-purple-600">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Kategoriya Izohi / Tavsifi (ixtiyoriy)</label>
+                <textarea name="description" rows="2" placeholder="Masalan: Ushbu toifaga faqat to'yxona uchun olingan maxsus go'shtlar kiritiladi" class="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl outline-none focus:border-purple-600"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs sm:text-sm transition mt-2 shadow-sm">
+                Kategoriyani Saqlash
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 6. MODAL: YANGI KANBAN USTUNI QO'SHISH (NEW COLUMN MODAL) -->
+<div id="newColumnModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div>
+                <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                    <span>🧱</span> Yangi Kanban Ustuni Qo'shish (Doska Bosqichi)
+                </h3>
+                <p class="text-[11px] text-gray-500 mt-0.5">Kanban doskasiga o'z ish jarayoningiz bosqichini qo'shing (masalan: <i>Ustalarga bo'nak, Viloyat yetkazmasi, Zakazlar</i>)</p>
+            </div>
+            <button onclick="closeModal('newColumnModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_custom_stage">
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Ustun Nomi *</label>
+                <input type="text" name="name" id="newColumnNameInput" oninput="autoSuggestEmojiFromName(this.value, 'newColumnIconInput', 'newColumnEmojiPreview')" required placeholder="Masalan: Kutilayotgan Zakalatlar, Ustalarga bo'nak, Viloyat filiali" class="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-xl outline-none focus:border-purple-600 font-medium">
+            </div>
+
+            <!-- 4 TA FUNDAMENTAL KATEGORIYA TURI -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-0.5">Ushbu ustun kassa hisob-kitobiga qanday ta'sir qiladi?</label>
+                <p class="text-[10px] text-gray-400 mb-1.5 leading-snug">Kassa balansini aniq hisoblash uchun ustun 4 ta asosiy qoidadan biriga birikadi:</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-rose-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-rose-800 bg-rose-50/50 has-[:checked]:ring-2 has-[:checked]:ring-rose-500 has-[:checked]:border-rose-500">
+                        <input type="radio" name="category_type" value="expense" checked class="text-rose-600">
+                        <span>🔴 Chiqim</span>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-emerald-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50/50 has-[:checked]:ring-2 has-[:checked]:ring-emerald-500 has-[:checked]:border-emerald-500">
+                        <input type="radio" name="category_type" value="income" class="text-emerald-600">
+                        <span>🟢 Kirim</span>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-indigo-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-indigo-800 bg-indigo-50/50 has-[:checked]:ring-2 has-[:checked]:ring-indigo-500 has-[:checked]:border-indigo-500">
+                        <input type="radio" name="category_type" value="capital" class="text-indigo-600">
+                        <span>💼 Sarmoya</span>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-gray-200 hover:border-amber-400 cursor-pointer flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50/50 has-[:checked]:ring-2 has-[:checked]:ring-amber-500 has-[:checked]:border-amber-500">
+                        <input type="radio" name="category_type" value="planned" class="text-amber-600">
+                        <span>⏳ Reja</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Telegram uslubidagi jonli Emoji qidirish -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Ustun Emojisi</label>
+                <div class="flex items-center gap-2">
+                    <span id="newColumnEmojiPreview" class="w-12 h-11 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-2xl shadow-2xs">📋</span>
+                    <input type="hidden" id="newColumnIconInput" name="icon" value="📋">
+                    <div class="relative flex-1">
+                        <input type="text" oninput="searchEmojiTelegram(this.value, 'newColumnEmojiList', 'newColumnIconInput', 'newColumnEmojiPreview')" placeholder="Telegramdek qidiring (masalan: pul, go'sht, osh)..." class="w-full text-xs px-3 py-2.5 border border-gray-200 rounded-xl outline-none focus:border-purple-600 font-medium">
+                    </div>
+                </div>
+                <div id="newColumnEmojiList" class="mt-2 p-2 bg-gray-50 border border-gray-100 rounded-xl flex flex-wrap gap-1.5 items-center">
+                    <button type="button" onclick="selectTelegramEmoji('📋', 'newColumnIconInput', 'newColumnEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">📋</button>
+                    <button type="button" onclick="selectTelegramEmoji('🥩', 'newColumnIconInput', 'newColumnEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🥩</button>
+                    <button type="button" onclick="selectTelegramEmoji('🍽️', 'newColumnIconInput', 'newColumnEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🍽️</button>
+                    <button type="button" onclick="selectTelegramEmoji('💵', 'newColumnIconInput', 'newColumnEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">💵</button>
+                    <button type="button" onclick="selectTelegramEmoji('🤝', 'newColumnIconInput', 'newColumnEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">🤝</button>
+                    <button type="button" onclick="selectTelegramEmoji('⏳', 'newColumnIconInput', 'newColumnEmojiPreview')" class="p-1 hover:bg-white rounded text-xl">⏳</button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs sm:text-sm transition mt-2 shadow-sm">
+                Ustunni Yaratish
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 7. MODAL: OPERATSIYANI TAHRIRLASH (✏️ EDIT TX MODAL) -->
+<div id="editTxModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-purple-600 text-lg">✏️</span> Operatsiyani Tahrirlash
+            </h3>
+            <button onclick="closeModal('editTxModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form id="editTxForm" method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_transaction">
+            <input type="hidden" id="edit_tx_id" name="tx_id" value="">
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Summa (so'm) *</label>
+                <div class="relative">
+                    <input type="text" inputmode="numeric" id="edit_amount" name="amount" required placeholder="15 000 000" class="money-input w-full text-lg font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none text-gray-900 transition">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">so'm</span>
+                </div>
+                <div class="text-[11px] font-bold text-purple-600 mt-1 min-h-[16px] money-preview"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Bosqich / Ustun</label>
+                    <select id="edit_stage" name="stage" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-purple-600 outline-none font-semibold">
+                        <option value="planned">⏳ Kutilayotgan (Rejada)</option>
+                        <option value="income">🟢 Kassaga kirdi (+)</option>
+                        <option value="expense">🔴 Kassadan chiqdi (-)</option>
+                        <option value="debt">🤝 Nasiyalar (Qarz)</option>
+                        <option value="settled">✅ Tugallangan (Tarix)</option>
+                        {% for cs in custom_stages %}
+                        <option value="{{ cs.stage_key }}">{{ cs.icon }} {{ cs.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Turi</label>
+                    <select id="edit_tx_type" name="tx_type" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-purple-600 outline-none font-semibold">
+                        <option value="income">🟢 Kirim (+)</option>
+                        <option value="expense">🔴 Chiqim (-)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Kategoriya</label>
+                <select id="edit_category_id" name="category_id" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-purple-600 outline-none">
+                    <option value="">-- Kategoriyasiz --</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }} ({{ cat.get_category_type_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Mazmuni / Tovarlar nomi *</label>
+                <input type="text" id="edit_title" name="title" required class="w-full text-xs px-3 py-2 border rounded-xl focus:border-purple-600 outline-none font-medium">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Sana</label>
+                    <input type="date" id="edit_tx_date" name="tx_date" class="w-full text-xs px-3 py-2 border rounded-xl outline-none font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">To'lov shakli</label>
+                    <select id="edit_payment_method" name="payment_method" class="w-full text-xs px-3 py-2 border rounded-xl outline-none">
+                        <option value="cash">Naqd pul</option>
+                        <option value="card">Plastik karta / Click</option>
+                        <option value="bank">Bank hisobi</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Kartochka Rangi (Color Picker) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kartochka Rangi:</label>
+                <input type="hidden" id="edit_color" name="color" value="default">
+                <div class="flex items-center gap-2 flex-wrap" id="editColorPalette">
+                    <button type="button" onclick="selectCardColor('default', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-400 flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="default" title="Standart (Oq)">⚪</button>
+                    <button type="button" onclick="selectCardColor('emerald', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="emerald" title="Yashil (Kirim / Tayyor)">🟢</button>
+                    <button type="button" onclick="selectCardColor('rose', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-rose-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="rose" title="Qizil (Xarajat / Muhim)">🔴</button>
+                    <button type="button" onclick="selectCardColor('amber', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="amber" title="Sariq (Nasiya / Kutilmoqda)">🟡</button>
+                    <button type="button" onclick="selectCardColor('blue', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="blue" title="Ko'k (Yetkazish / Transport)">🔵</button>
+                    <button type="button" onclick="selectCardColor('purple', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="purple" title="Binafsha (Maxsus / Oylik)">🟣</button>
+                    <button type="button" onclick="selectCardColor('teal', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-teal-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="teal" title="Feruza (Mahsulotlar)">🩵</button>
+                    <button type="button" onclick="selectCardColor('orange', 'edit')" class="edit-color-btn w-7 h-7 rounded-full bg-orange-500 border-2 border-white flex items-center justify-center text-xs shadow-2xs transition transform hover:scale-110" data-color="orange" title="Apelsin (Zakalat / Bo'nak)">🟠</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Nima uchun qo'shilgan (Izoh / Sabab)</label>
+                <textarea id="edit_notes" name="notes" rows="2" class="w-full text-xs px-3 py-2 border rounded-xl outline-none"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm">
+                O'zgarishlarni Saqlash
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: NASIYA TO'LOVINI QABUL QILISH / TO'LASH (PARTIAL / FULL DEBT PAYMENT) -->
+<div id="payDebtModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-emerald-600 text-lg">💵</span> <span id="payDebtModalTitle">Qarzdan To'lov Qabul Qilish</span>
+            </h3>
+            <button onclick="closeModal('payDebtModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="pay_debt">
+            <input type="hidden" id="pay_debt_id" name="debt_id" value="">
+
+            <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="text-gray-500">Mijoz / Shaxs:</span>
+                    <span id="pay_debt_person" class="font-bold text-gray-900"></span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">Qolgan qarz summasi:</span>
+                    <span id="pay_debt_remaining_display" class="font-black text-amber-700"></span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Qancha to'lanmoqda? (so'm) *</label>
+                <div class="relative">
+                    <input type="text" inputmode="numeric" id="pay_debt_amount" name="pay_amount" required placeholder="1 000 000" class="money-input w-full text-lg font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none text-gray-900 transition">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">so'm</span>
+                </div>
+                <!-- Tezkor Kassir Tugmalari -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    <button type="button" onclick="quickAddAmount('pay_debt_amount', 50000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+50k</button>
+                    <button type="button" onclick="quickAddAmount('pay_debt_amount', 100000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+100k</button>
+                    <button type="button" onclick="quickAddAmount('pay_debt_amount', 500000)" class="px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 text-[10px] font-bold rounded-lg transition">+500k</button>
+                    <button type="button" onclick="quickAppendZeros('pay_debt_amount')" class="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-200 text-emerald-800 text-[10px] font-black rounded-lg transition">+000</button>
+                    <button type="button" onclick="quickClearAmount('pay_debt_amount')" class="px-2 py-0.5 bg-gray-50 hover:bg-rose-100 text-gray-400 hover:text-rose-600 text-[10px] font-bold rounded-lg transition">✖️</button>
+                </div>
+                <div class="text-[11px] font-bold text-emerald-600 mt-1 min-h-[16px] money-preview"></div>
+                <p class="text-[10px] text-gray-400 mt-0.5">Xohlasangiz summani kamaytirib, qisman to'lov qilishingiz mumkin.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">To'lov shakli</label>
+                    <select name="payment_method" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-emerald-600 outline-none font-semibold">
+                        <option value="cash">💵 Naqd pul</option>
+                        <option value="card">💳 Plastik / Click</option>
+                        <option value="bank">🏦 Bank hisobi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Izoh (ixtiyoriy)</label>
+                    <input type="text" name="note" placeholder="Masalan: Qarzning yarmi berildi" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-emerald-600 outline-none">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm flex items-center justify-center gap-1.5">
+                <span>✅</span> <span>To'lovni Saqlash va Kassaga Kiritish</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: OPERATSIYANI BEKOR QILISH / O'CHIRISH (SOFT DELETE AUDIT MODAL) -->
+<div id="cancelTxModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-rose-600 text-lg">⚠️</span> Operatsiyani Bekor Qilish (O'chirish)
+            </h3>
+            <button onclick="closeModal('cancelTxModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form method="post" class="mt-4 space-y-3.5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel_transaction">
+            <input type="hidden" id="cancel_tx_id" name="tx_id" value="">
+
+            <div class="p-3 bg-rose-50 rounded-xl border border-rose-100 text-xs">
+                <p class="font-bold text-rose-900" id="cancel_tx_title"></p>
+                <p class="font-black text-rose-700 mt-1" id="cancel_tx_amount"></p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Nima sababdan bekor qilinmoqda? *</label>
+                <textarea name="reason" rows="3" required placeholder="Masalan: Mijoz buyurtmani rad etdi yoki adashib kiritilgan..." class="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl focus:border-rose-600 outline-none font-medium"></textarea>
+                <p class="text-[10px] text-gray-400 mt-1">Ushbu operatsiya kassa balansidan chiqariladi, ammo audit daftarda kim o'chirgani va sababi saqlanib qoladi.</p>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm flex items-center justify-center gap-1.5">
+                <span>🗑️</span> <span>Bekor Qilish (O'chirish)</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 8. MODAL: HARAKAT VA AUDIT TARIXI (MOVEMENTS AUDIT MODAL) -->
+<div id="movementsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span>🔄</span> Bosqichlar Harakat Tarixi
+            </h3>
+            <button onclick="closeModal('movementsModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="py-2 shrink-0 border-b border-gray-50">
+            <p id="movementsModalTitle" class="font-black text-sm text-gray-900"></p>
+            <p id="movementsModalAmount" class="text-xs font-bold text-purple-600"></p>
+        </div>
+
+        <div id="movementsList" class="overflow-y-auto py-3 space-y-3 flex-1 text-xs">
+            <div class="text-center py-6 text-gray-400">Yuklanmoqda...</div>
+        </div>
+
+        <div class="pt-3 border-t border-gray-100 text-right shrink-0">
+            <button type="button" onclick="closeModal('movementsModal')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs">
+                Yopish
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 9. MODAL: INTERAKTIV SLAYDLI TAQDIMOT & TIZIMNI O'RNATISH (TROJAN HORSE ONBOARDING) -->
+<div id="financeSlidesModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[92vh] flex flex-col justify-between">
+        
+        <!-- Slayd Tepadagi Holat -->
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🚀</span>
+                <div>
+                    <h3 class="font-black text-gray-900 text-base">Moliya Tizimini O'rnatish Konstruktori</h3>
+                    <p class="text-xs text-gray-400">3 daqiqada sizning korxonangizga moslangan No-Code moliya oqimi</p>
+                </div>
+            </div>
+            <button onclick="closeModal('financeSlidesModal')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+        </div>
+
+        <!-- 4 TA INTERAKTIV SLAYD KONTENTI -->
+        <div class="py-6 flex-1 overflow-y-auto">
+            
+            <!-- 1-SLAYD: Pul Qayerdan Keladi? -->
+            <div x-show="slideIndex === 1" class="space-y-4">
+                <div class="flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-wider">
+                    <span>1-Qadam</span> • <span>Tushumlar Oqimi</span>
+                </div>
+                <h4 class="text-lg sm:text-xl font-black text-gray-900">Sizning biznesingizga pul qayerdan keladi?</h4>
+                <p class="text-xs text-gray-600">Biznesingiz yo'nalishini tanlang, tizim siz uchun tayyor kassa kanallarini ochib beradi:</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                    <label :class="selectedPreset === 'choyxona' ? 'border-purple-600 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white'" class="p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center text-center">
+                        <input type="radio" name="biz_preset" value="choyxona" x-model="selectedPreset" class="hidden">
+                        <span class="text-3xl mb-2">🫖</span>
+                        <span class="font-bold text-xs text-gray-900">Choyxona & Restoran</span>
+                        <span class="text-[10px] text-gray-400 mt-1">Stol savdosi, banket, kabob, dostavka</span>
+                    </label>
+
+                    <label :class="selectedPreset === 'fastfood' ? 'border-purple-600 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white'" class="p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center text-center">
+                        <input type="radio" name="biz_preset" value="fastfood" x-model="selectedPreset" class="hidden">
+                        <span class="text-3xl mb-2">🍔</span>
+                        <span class="font-bold text-xs text-gray-900">Fast-Food & Kafe</span>
+                        <span class="text-[10px] text-gray-400 mt-1">Lavash, burger, strips, tezkor kassa</span>
+                    </label>
+
+                    <label :class="selectedPreset === 'magazin' ? 'border-purple-600 bg-purple-50/50 shadow-sm' : 'border-gray-200 bg-white'" class="p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center text-center">
+                        <input type="radio" name="biz_preset" value="magazin" x-model="selectedPreset" class="hidden">
+                        <span class="text-3xl mb-2">🏪</span>
+                        <span class="font-bold text-xs text-gray-900">Do'kon & Savdo</span>
+                        <span class="text-[10px] text-gray-400 mt-1">Ulgurji, chakana, naqd va plastik kassa</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2-SLAYD: Chiqimlar Qayerga Ketadi? -->
+            <div x-show="slideIndex === 2" class="space-y-4">
+                <div class="flex items-center gap-2 text-rose-600 font-bold text-xs uppercase tracking-wider">
+                    <span>2-Qadam</span> • <span>Xarajatlar Nazorati</span>
+                </div>
+                <h4 class="text-lg sm:text-xl font-black text-gray-900">Pul qayerga ketayotganini 1 tiyinigacha bilasiz</h4>
+                <p class="text-xs text-gray-600">Siz tanlagan yo'nalish bo'yicha eng ko'p ketadigan xarajat toifalari avtomatik shakllantiriladi:</p>
+
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/80 space-y-2.5 text-xs">
+                    <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100">
+                        <span class="font-bold text-gray-800">🥩 Xom-ashyo & Mahsulotlar</span>
+                        <span class="text-[11px] text-gray-400">Go'sht, yog', un, sabzavotlar</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100">
+                        <span class="font-bold text-gray-800">👨‍🍳 Ish Haqi & Bonuslar</span>
+                        <span class="text-[11px] text-gray-400">Kunlik oshpaz, kassir va xodimlar maoshi</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100">
+                        <span class="font-bold text-gray-800">🏢 Ijara & Kommunal</span>
+                        <span class="text-[11px] text-gray-400">Bino, gaz, elektr, suv, soliq</span>
+                    </div>
+                </div>
+                <p class="text-[11px] text-purple-700 font-medium italic">* Istalgan vaqtda o'zingiz yangi toifalarni va emojilarni qo'shishingiz mumkin.</p>
+            </div>
+
+            <!-- 3-SLAYD: Kanban Doskasi Qanday Ishlaydi? -->
+            <div x-show="slideIndex === 3" class="space-y-4">
+                <div class="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
+                    <span>3-Qadam</span> • <span>Kanban Doskasi Tuzilishi</span>
+                </div>
+                <h4 class="text-lg sm:text-xl font-black text-gray-900">Qog'oz daftardek oson: Kartochkalarni ushlab suring</h4>
+                <p class="text-xs text-gray-600">Buxgalteriya formulalarini unuting. Aniq bosqichlar kassa tartibini kafolatlaydi:</p>
+
+                <div class="grid grid-cols-5 gap-1.5 text-center text-xs">
+                    <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                        <span class="text-xl block">⏳</span>
+                        <span class="font-bold text-[10px] text-amber-800 block mt-1">Rejadagi</span>
+                        <span class="text-[9px] text-gray-400">0 so'm balans</span>
+                    </div>
+                    <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <span class="text-xl block">🟢</span>
+                        <span class="font-bold text-[10px] text-emerald-800 block mt-1">Kassa Kirimi</span>
+                        <span class="text-[9px] text-gray-400">+Kassaga kirdi</span>
+                    </div>
+                    <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
+                        <span class="text-xl block">🔴</span>
+                        <span class="font-bold text-[10px] text-rose-800 block mt-1">To'langan</span>
+                        <span class="text-[9px] text-gray-400">-Kassadan chiqdi</span>
+                    </div>
+                    <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+                        <span class="text-xl block">🤝</span>
+                        <span class="font-bold text-[10px] text-indigo-800 block mt-1">Nasiya</span>
+                        <span class="text-[9px] text-gray-400">Qarzlar</span>
+                    </div>
+                    <div class="p-2.5 bg-gray-100 border border-gray-200 rounded-xl">
+                        <span class="text-xl block">✅</span>
+                        <span class="font-bold text-[10px] text-gray-800 block mt-1">Arxiv</span>
+                        <span class="text-[9px] text-gray-400">Yopilgan</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4-SLAYD: Sof Foyda va Bitta Tugma Bilan O'rnatish -->
+            <div x-show="slideIndex === 4" class="space-y-4 text-center">
+                <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl font-bold mx-auto">
+                    💎
+                </div>
+                <h4 class="text-xl font-black text-gray-900">Barchasi Tayyor! Tizimni Ishga Tushiramizmi?</h4>
+                <p class="text-xs text-gray-600 max-w-md mx-auto">
+                    "Do'konga O'rnatish" tugmasini bosishingiz bilan barcha toifalar va Kanban doskasi darhol ishga tushadi. Har bir sonni o'zingiz erkin qo'lda boshqara olasiz.
+                </p>
+
+                <form method="post" action="{% url 'finance_install_preset' %}" class="pt-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="preset_type" :value="selectedPreset">
+                    <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-600 hover:opacity-95 text-white font-black text-sm sm:text-base rounded-2xl shadow-lg transition transform hover:-translate-y-0.5">
+                        🚀 Tizimni Do'konga O'rnatish
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- Slayd Pastki Tugmalari (Navigatsiya) -->
+        <div class="pt-4 border-t border-gray-100 flex items-center justify-between shrink-0 text-xs">
+            <button 
+                type="button" 
+                x-show="slideIndex > 1" 
+                @click="slideIndex--"
+                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition"
+            >
+                ← Oldingi
+            </button>
+            <div class="flex items-center gap-1.5 mx-auto">
+                <template x-for="i in 4">
+                    <span :class="slideIndex === i ? 'w-6 bg-purple-600' : 'w-2 bg-gray-200'" class="h-2 rounded-full transition-all duration-300"></span>
+                </template>
+            </div>
+            <button 
+                type="button" 
+                x-show="slideIndex < 4" 
+                @click="slideIndex++"
+                class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition"
+            >
+                Keyingi →
+            </button>
+        </div>
+
+    </div>
+<!-- 10. MODAL: KUNLIK KASSA TOPSHIRISH (KASSA SOLISHTIRUVI / AUDIT) -->
+<div id="cashReconciliationModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-amber-500 text-lg">💰</span> Kunlik Kassa Topshirish (Solishtiruv)
+            </h3>
+            <button onclick="closeModal('cashReconciliationModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="mt-4 space-y-3.5 text-xs">
+            <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-500 font-medium">Tizim bo'yicha naqd pul qoldig'i:</span>
+                    <span class="font-black text-gray-900 text-sm" id="expectedCashDisplay">{{ net_cash|uznum }} so'm</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-200/60 text-gray-500">
+                    <span>Plastik / Click tushumi:</span>
+                    <span class="font-bold text-purple-700">{{ net_card|uznum }} so'm</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Kassada sanab olingan haqiqiy naqd pul (so'm):</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        inputmode="numeric" 
+                        id="actualCashInput" 
+                        placeholder="Masalan: {{ net_cash|uznum }}" 
+                        oninput="calculateCashDiscrepancy(this.value, '{{ net_cash }}')" 
+                        class="money-input w-full text-base font-black px-4 py-2.5 border border-gray-200 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none text-gray-900"
+                    >
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-xs">so'm</span>
+                </div>
+                <!-- Tezkor tugmalar -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    <button type="button" onclick="setExactCash('actualCashInput', '{{ net_cash }}')" class="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-bold rounded-lg transition">To'liq tenglashtirish ({{ net_cash|uznum }})</button>
+                    <button type="button" onclick="quickAppendZeros('actualCashInput')" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-[10px] font-black rounded-lg transition">+000</button>
+                    <button type="button" onclick="quickClearAmount('actualCashInput')" class="px-2 py-0.5 bg-gray-50 hover:bg-rose-100 text-gray-400 hover:text-rose-600 text-[10px] font-bold rounded-lg transition">✖️</button>
+                </div>
+            </div>
+
+            <!-- Solishtiruv natijasi (Jonli tahlil) -->
+            <div id="cashDiscrepancyResult" class="p-3.5 rounded-xl border bg-gray-50 border-gray-200 text-xs">
+                <span class="text-gray-400 italic">Sanab olingan naqd pulni kiriting...</span>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-2">
+                <button type="button" onclick="closeModal('cashReconciliationModal')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 11. MODAL: TELEGRAM KASSA HISOBOTI (DAILY SUMMARY DIGEST) -->
+<div id="telegramReportModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-blue-500 text-lg">📲</span> Kunlik Kassa Xabarnomasi (Telegram)
+            </h3>
+            <button onclick="closeModal('telegramReportModal')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="mt-4 space-y-3">
+            <p class="text-xs text-gray-500">Do'kon egasi yoki hamkorlarga Telegram orqali bugungi kassa xulosasini yuboring yoki nusxasini oling:</p>
+
+            <div class="relative">
+                <textarea 
+                    id="telegramReportContent" 
+                    rows="9" 
+                    readonly 
+                    class="w-full text-xs font-mono p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none select-all text-gray-800 leading-relaxed"
+                >📊 {{ shop.name }} — KUNLIK KASSA HISOBOTI ({{ today|date:"d.m.Y" }})
+━━━━━━━━━━━━━━━━━━━
+🟢 Kassa Kirimi: {{ income_total|uznum }} so'm
+   • 💵 Naqd: {{ income_cash|uznum }} so'm
+   • 💳 Plastik: {{ income_card|uznum }} so'm
+
+🔴 Kassa Chiqimi: {{ expense_total|uznum }} so'm
+   • 💵 Naqd: {{ expense_cash|uznum }} so'm
+   • 💳 Plastik: {{ expense_card|uznum }} so'm
+
+💎 Sof Kassa (Foyda): {{ net_profit|uznum }} so'm
+   • 💵 Naqd qoldiq: {{ net_cash|uznum }} so'm
+   • 💳 Plastik hisob: {{ net_card|uznum }} so'm
+
+🤝 Nasiyalar Holati:
+   • 📥 Bizga berishadi: {{ customer_debt_total|uznum }} so'm
+   • 📤 Biz beramiz: {{ supplier_debt_total|uznum }} so'm
+━━━━━━━━━━━━━━━━━━━
+✅ Universal Kassa & Moliya tizimi</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button 
+                    type="button" 
+                    onclick="copyTelegramReport()" 
+                    id="copyTgBtn" 
+                    class="py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+                >
+                    <span>📋</span> <span>Nusxa olish</span>
+                </button>
+                <button 
+                    type="button" 
+                    onclick="sendTelegramReportViaBot()" 
+                    id="sendTgBtn" 
+                    class="py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                    <span>✈️</span> <span>Botga yuborish</span>
+                </button>
+            </div>
+            <div id="tgStatusMsg" class="hidden text-[11px] font-bold text-center py-1 rounded-lg"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+// Modal funksiyalari
+function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('hidden');
+        const firstMoney = el.querySelector('.money-input');
+        if (firstMoney) setTimeout(() => firstMoney.focus(), 50);
+    }
+}
+
+function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+}
+
+// 15 000 000 probel bilan formatlash
+function formatWithSpaces(val) {
+    if (!val) return '';
+    const digits = val.toString().replace(/\D/g, '');
+    if (!digits) return '';
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+// Barcha money-input elementlariga hodisalarni ulash
+function bindMoneyInputs() {
+    document.querySelectorAll('.money-input').forEach(input => {
+        const parent = input.closest('div').parentElement;
+        const preview = parent ? parent.querySelector('.money-preview') : null;
+
+        function update() {
+            const digits = input.value.replace(/\D/g, '');
+            if (!digits) {
+                input.value = '';
+                if (preview) preview.textContent = '';
+                return;
+            }
+            const cur = input.selectionStart;
+            const oldLen = input.value.length;
+            const fmt = formatWithSpaces(digits);
+            input.value = fmt;
+            const diff = fmt.length - oldLen;
+            const newCur = Math.max(0, cur + diff);
+            input.setSelectionRange(newCur, newCur);
+
+            if (preview) {
+                preview.textContent = fmt + " so'm";
+            }
+        }
+
+        input.removeEventListener('input', update);
+        input.addEventListener('input', update);
+        input.addEventListener('paste', () => setTimeout(update, 10));
+        if (input.value) update();
+    });
+}
+document.addEventListener('DOMContentLoaded', bindMoneyInputs);
+
+// ==================== TELEGRAM USLUBIDAGI EMOJI QIDIRUV VA TANLAGICH ====================
+const TELEGRAM_EMOJIS = [
+    { keywords: ['pul', 'summa', 'so\'m', 'som', 'money', 'kassa', 'daromad', 'dollar', 'tushum', 'naqd', 'foyda'], emojis: ['💵', '💰', '💳', '🪙', '💎', '🏷️', '📈'] },
+    { keywords: ['gosht', 'go\'sht', 'mol', 'qoy', 'qo\'y', 'shashlik', 'kabob', 'parranda', 'tovuq', 'dumgaza', 'jigar', 'baliq'], emojis: ['🥩', '🍗', '🍖', '🥓', '🦃', '🦆', '🐟'] },
+    { keywords: ['osh', 'palov', 'taom', 'ovqat', 'sho\'rva', 'manti', 'somsa', 'lagmon', 'choyxona', 'qozon'], emojis: ['🍽️', '🍲', '🍛', '🥣', '🥘', '🍢', '🥟'] },
+    { keywords: ['sabzavot', 'piyoz', 'kartoshka', 'sabzi', 'pomidor', 'bodring', 'qalampir', 'sarimsoq', 'kokat'], emojis: ['🥬', '🥕', '🧅', '🥔', '🧄', '🍅', '🥒', '🌶️'] },
+    { keywords: ['choy', 'kofe', 'qahva', 'suv', 'ichimlik', 'limon', 'cola', 'fanta', 'sharbat'], emojis: ['🫖', '☕', '🍵', '🥤', '🧃', '🥛', '🧊'] },
+    { keywords: ['non', 'un', 'yog\'', 'yog', 'patir', 'bulochka', 'lavash', 'xamirturush', 'guruch'], emojis: ['🌾', '🍞', '🥖', '🥐', '🥯', '🍚', '🧈', '🍳'] },
+    { keywords: ['ijara', 'bino', 'uy', 'joy', 'magazin', 'dokon', 'choyxona', 'baza', 'ombor'], emojis: ['🏢', '🏬', '🏠', '🏪', '🔑', '🛋️', '🚪'] },
+    { keywords: ['ish', 'haqi', 'oylik', 'xodim', 'oshpaz', 'afitsiant', 'kassir', 'ishchi', 'maosh', 'kundalik'], emojis: ['👨‍🍳', '👩‍🍳', '🧑‍🍳', '💁‍♂️', '💁‍♀️', '💼', '👥', '🦺'] },
+    { keywords: ['svet', 'elektr', 'gaz', 'suv', 'kommunal', 'tok', 'chiqindi', 'tozalash'], emojis: ['⚡', '💧', '🔥', '💡', '🔌', '🧹', '🗑️', '🛠️'] },
+    { keywords: ['mashina', 'dostavka', 'yetkazib', 'taksi', 'benzin', 'gaz-zapravka', 'transport', 'kuryer'], emojis: ['🛵', '🚗', '🚚', '🚲', '⛽', '📦', '🗺️'] },
+    { keywords: ['qarz', 'nasiya', 'hamkor', 'sherik', 'prokuror', 'beramiz', 'olamiz'], emojis: ['🤝', '📝', '📋', '⚖️', '🏛️', '👥'] },
+    { keywords: ['sarmoya', 'invest', 'investitsiya', 'kapital', 'biznes', 'ulush'], emojis: ['💼', '💎', '📈', '🚀', '⭐', '🎯'] },
+];
+
+function selectTelegramEmoji(emoji, targetInputId, targetPreviewId) {
+    const inp = document.getElementById(targetInputId);
+    const prev = document.getElementById(targetPreviewId);
+    if (inp) inp.value = emoji;
+    if (prev) prev.textContent = emoji;
+}
+
+function searchEmojiTelegram(query, listContainerId, targetInputId, targetPreviewId) {
+    const listEl = document.getElementById(listContainerId);
+    if (!listEl) return;
+
+    const clean = query.toLowerCase().trim();
+    if (!clean) {
+        listEl.innerHTML = `
+            <button type="button" onclick="selectTelegramEmoji('🥩', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🥩</button>
+            <button type="button" onclick="selectTelegramEmoji('🥬', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🥬</button>
+            <button type="button" onclick="selectTelegramEmoji('🌾', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🌾</button>
+            <button type="button" onclick="selectTelegramEmoji('🍽️', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🍽️</button>
+            <button type="button" onclick="selectTelegramEmoji('👨‍🍳', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">👨‍🍳</button>
+            <button type="button" onclick="selectTelegramEmoji('🏢', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🏢</button>
+            <button type="button" onclick="selectTelegramEmoji('⚡', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">⚡</button>
+            <button type="button" onclick="selectTelegramEmoji('🛵', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🛵</button>
+            <button type="button" onclick="selectTelegramEmoji('💵', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">💵</button>
+            <button type="button" onclick="selectTelegramEmoji('💰', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">💰</button>
+            <button type="button" onclick="selectTelegramEmoji('🤝', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">🤝</button>
+            <button type="button" onclick="selectTelegramEmoji('💡', '${targetInputId}', '${targetPreviewId}')" class="p-1 hover:bg-white rounded text-xl">💡</button>
+        `;
+        return;
+    }
+
+    let matchedEmojis = new Set();
+    TELEGRAM_EMOJIS.forEach(item => {
+        const isMatch = item.keywords.some(kw => kw.includes(clean) || clean.includes(kw));
+        if (isMatch) {
+            item.emojis.forEach(e => matchedEmojis.add(e));
+        }
+    });
+
+    if (matchedEmojis.size > 0) {
+        let html = '';
+        matchedEmojis.forEach(e => {
+            html += `<button type="button" onclick="selectTelegramEmoji('${e}', '${targetInputId}', '${targetPreviewId}')" class="p-1.5 hover:bg-white rounded-lg text-2xl transition transform hover:scale-110">${e}</button>`;
+        });
+        listEl.innerHTML = html;
+        // Birinchi mos kelganini avtomatik tanlab qo'yish
+        const firstMatch = Array.from(matchedEmojis)[0];
+        if (firstMatch) selectTelegramEmoji(firstMatch, targetInputId, targetPreviewId);
+    } else {
+        listEl.innerHTML = `<span class="text-[11px] text-gray-400 p-1">Mos emoji topilmadi. Klaviaturadan bemalol kiritishingiz mumkin.</span>`;
+    }
+}
+
+// Nomi yozilayotganda avtomatik mos emojini Telegramdek topish
+function autoSuggestEmojiFromName(nameVal, targetInputId, targetPreviewId) {
+    if (!nameVal || nameVal.trim().length < 2) return;
+    const clean = nameVal.toLowerCase().trim();
+    for (const item of TELEGRAM_EMOJIS) {
+        for (const kw of item.keywords) {
+            if (clean.includes(kw)) {
+                selectTelegramEmoji(item.emojis[0], targetInputId, targetPreviewId);
+                return;
+            }
+        }
+    }
+}
+
+// Barcha 100+ emojilarni inline ko'rsatish
+function toggleFullPalette(paletteId, targetInputId, targetPreviewId) {
+    const p = document.getElementById(paletteId);
+    if (!p) return;
+    if (!p.classList.contains('hidden')) {
+        p.classList.add('hidden');
+        return;
+    }
+    p.classList.remove('hidden');
+    if (!p.hasChildNodes() || p.children.length === 0) {
+        let html = '';
+        const groups = [
+            { name: 'Taomlar & Oshxona', emojis: ['🍽️', '🥣', '🍲', '🍛', '🍜', '🥘', '🍢', '🥟'] },
+            { name: 'Go\'sht & Parranda', emojis: ['🥩', '🍗', '🍖', '🥓', '🦃', '🦆', '🐟', '🦐'] },
+            { name: 'Sabzavot & Mevalar', emojis: ['🥬', '🥕', '🧅', '🥔', '🧄', '🍅', '🥒', '🌶️'] },
+            { name: 'Don & Non', emojis: ['🌾', '🍞', '🥖', '🥐', '🥯', '🍚', '🧈', '🍳'] },
+            { name: 'Kommunal & Bino', emojis: ['⚡', '💧', '🔥', '🏢', '🏪', '🔑', '🧹', '🛠️'] },
+            { name: 'Xodimlar', emojis: ['👨‍🍳', '👩‍🍳', '🧑‍🍳', '💁‍♂️', '💼', '👥', '🦺', '🤝'] },
+            { name: 'Dostavka & Kassa', emojis: ['🛵', '🚗', '🚚', '📦', '💵', '💳', '💰', '💎'] }
+        ];
+        groups.forEach(g => {
+            html += `<div class="mb-2"><p class="text-[10px] font-bold text-gray-500 uppercase mb-1">${g.name}</p><div class="flex flex-wrap gap-1">`;
+            g.emojis.forEach(e => {
+                html += `<button type="button" onclick="selectTelegramEmoji('${e}', '${targetInputId}', '${targetPreviewId}'); document.getElementById('${paletteId}').classList.add('hidden');" class="p-1 hover:bg-white rounded text-xl">${e}</button>`;
+            });
+            html += `</div></div>`;
+        });
+        p.innerHTML = html;
+    }
+}
+
+// ==================== KANBAN DRAG AND DROP ====================
+let draggedTxId = null;
+
+function kanbanDragStart(e, txId) {
+    draggedTxId = txId;
+    e.dataTransfer.setData('text/plain', txId);
+    e.dataTransfer.effectAllowed = 'move';
+    const card = document.getElementById('kanban-tx-' + txId);
+    if (card) {
+        card.classList.add('opacity-50', 'scale-95');
+    }
+}
+
+function kanbanDragEnd(e) {
+    if (draggedTxId) {
+        const card = document.getElementById('kanban-tx-' + draggedTxId);
+        if (card) {
+            card.classList.remove('opacity-50', 'scale-95');
+        }
+    }
+}
+
+function kanbanDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const col = e.currentTarget;
+    col.classList.add('ring-2', 'ring-purple-400', 'bg-purple-50/20');
+}
+
+function kanbanDragLeave(e) {
+    const col = e.currentTarget;
+    col.classList.remove('ring-2', 'ring-purple-400', 'bg-purple-50/20');
+}
+
+function kanbanDrop(e, targetStage) {
+    e.preventDefault();
+    const col = e.currentTarget;
+    col.classList.remove('ring-2', 'ring-purple-400', 'bg-purple-50/20');
+
+    const txId = e.dataTransfer.getData('text/plain') || draggedTxId;
+    if (!txId) return;
+
+    moveCardAjax(txId, targetStage);
+}
+
+function quickMoveCard(txId, targetStage) {
+    if (!targetStage) return;
+    moveCardAjax(txId, targetStage);
+}
+
+function moveCardAjax(txId, targetStage) {
+    const formData = new FormData();
+    formData.append('action', 'move_transaction');
+    formData.append('tx_id', txId);
+    formData.append('target_stage', targetStage);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "seller_finance_web" %}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Xatolik: ' + (data.error || 'Ko\'chirib bo\'lmadi'));
+        }
+    })
+    .catch(err => {
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '{% url "seller_finance_web" %}';
+        f.innerHTML = `
+            <input type="hidden" name="action" value="move_transaction">
+            <input type="hidden" name="tx_id" value="${txId}">
+            <input type="hidden" name="target_stage" value="${targetStage}">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        `;
+        document.body.appendChild(f);
+        f.submit();
+    });
+}
+
+// Quick Add modal per stage (NOMI, SUMMASI, NIMA UCHUN QO'SHILGAN IZOHI)
+function openQuickAddModal(stageId, defaultType, stageName) {
+    document.getElementById('quick_stage').value = stageId;
+    document.getElementById('quick_tx_type').value = (defaultType === 'income' || stageId === 'income') ? 'income' : 'expense';
+    const badge = document.getElementById('quickCardModalStageBadge');
+    if (badge) badge.textContent = stageName || stageId;
+    selectCardColor('default', 'quick');
+    openModal('quickCardModal');
+}
+
+// Kartochka rangini tanlash funksiyasi (quick, edit, income, expense)
+function selectCardColor(color, prefix) {
+    const input = document.getElementById(prefix + '_card_color') || document.getElementById(prefix + '_color');
+    if (input) input.value = color;
+
+    const paletteId = prefix + 'ColorPalette';
+    const container = document.getElementById(paletteId);
+    if (container) {
+        container.querySelectorAll('.' + prefix + '-color-btn').forEach(btn => {
+            if (btn.dataset.color === color) {
+                btn.classList.add('ring-2', 'ring-purple-600', 'scale-110');
+            } else {
+                btn.classList.remove('ring-2', 'ring-purple-600', 'scale-110');
+            }
+        });
+    }
+}
+
+// ✏️ Edit Transaction Modal Ochish
+function openEditTxModal(id, title, amount, catId, txType, stage, payMethod, notes, dateVal, colorVal) {
+    document.getElementById('edit_tx_id').value = id;
+    document.getElementById('edit_title').value = title;
+    
+    const amtInput = document.getElementById('edit_amount');
+    amtInput.value = formatWithSpaces(Math.round(amount));
+    
+    document.getElementById('edit_tx_type').value = txType;
+    document.getElementById('edit_stage').value = stage;
+    document.getElementById('edit_category_id').value = catId;
+    document.getElementById('edit_payment_method').value = payMethod;
+    document.getElementById('edit_notes').value = notes;
+    document.getElementById('edit_tx_date').value = dateVal;
+
+    selectCardColor(colorVal || 'default', 'edit');
+
+    bindMoneyInputs();
+    openModal('editTxModal');
+}
+
+// 💵 Nasiya to'lovini qabul qilish / to'lash modalini ochish (Partial / Full debt payment)
+function openPayDebtModal(debtId, personName, debtType, remainingAmt) {
+    document.getElementById('pay_debt_id').value = debtId;
+    document.getElementById('pay_debt_person').textContent = personName + (debtType === 'customer' ? " (Mijozimiz)" : " (Yetkazib beruvchi)");
+    
+    const remNum = Math.round(parseFloat(remainingAmt) || 0);
+    const remFmt = formatWithSpaces(remNum);
+    document.getElementById('pay_debt_remaining_display').textContent = remFmt + " so'm";
+    
+    const amtInput = document.getElementById('pay_debt_amount');
+    amtInput.value = remFmt;
+    
+    const modalTitle = document.getElementById('payDebtModalTitle');
+    if (modalTitle) {
+        modalTitle.textContent = debtType === 'customer' ? "Nasiya Qabul Qilish (+ Kassa Kirimi)" : "Qarz To'lash (- Kassa Chiqimi)";
+    }
+
+    bindMoneyInputs();
+    openModal('payDebtModal');
+}
+
+// 🗑️ Operatsiyani bekor qilish (Soft Delete Audit) modalini ochish
+function openCancelTxModal(txId, title, amount) {
+    document.getElementById('cancel_tx_id').value = txId;
+    document.getElementById('cancel_tx_title').textContent = title;
+    document.getElementById('cancel_tx_amount').textContent = formatWithSpaces(Math.round(amount)) + " so'm";
+    openModal('cancelTxModal');
+}
+
+// 🔄 Harakat Tarixini Ko'rish (Audit Log)
+function showMovementsHistory(txId) {
+    const listEl = document.getElementById('movementsList');
+    listEl.innerHTML = '<div class="text-center py-6 text-gray-400">Tarix yuklanmoqda...</div>';
+    openModal('movementsModal');
+
+    const formData = new FormData();
+    formData.append('action', 'get_movements');
+    formData.append('tx_id', txId);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "seller_finance_web" %}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('movementsModalTitle').textContent = data.tx_title;
+            document.getElementById('movementsModalAmount').textContent = data.amount + " so'm";
+
+            if (data.movements && data.movements.length > 0) {
+                let html = '';
+                data.movements.forEach((m, idx) => {
+                    html += `
+                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-2.5">
+                            <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0 text-[10px]">${idx + 1}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between text-[10px] text-gray-400">
+                                    <span class="font-bold text-gray-700">${m.moved_by}</span>
+                                    <span>${m.moved_at}</span>
+                                </div>
+                                <div class="mt-1 text-xs font-bold text-gray-800">
+                                    <span class="text-amber-700">${m.from_stage}</span> 
+                                    <span class="text-gray-400">➔</span> 
+                                    <span class="text-emerald-700">${m.to_stage}</span>
+                                </div>
+                                ${m.note ? `<p class="mt-1 text-[11px] text-gray-500 italic">${m.note}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            } else {
+                listEl.innerHTML = '<div class="text-center py-6 text-gray-400">Harakat tarixi mavjud emas (Asl holatda).</div>';
+            }
+        } else {
+            listEl.innerHTML = '<div class="text-center py-6 text-rose-500">Tarixni yuklashda xatolik yuz berdi.</div>';
+        }
+    })
+    .catch(err => {
+        listEl.innerHTML = '<div class="text-center py-6 text-rose-500">Bog\'lanishda xatolik yuz berdi.</div>';
+    });
+}
+
+// AI Copilot maydonidagi raqamlarni probel bilan ajratish va jonli ko'rsatish
+const aiInput = document.getElementById('aiQueryInput');
+const aiLivePreview = document.getElementById('aiLivePreview');
+const aiLiveBadges = document.getElementById('aiLiveBadges');
+const aiLiveNet = document.getElementById('aiLiveNet');
+
+function formatNumbersInSentence(str) {
+    if (!str) return '';
+    return str.replace(/\b\d{4,}\b/g, function(match) {
+        return match.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    });
+}
+
+function updateAiLiveAmounts() {
+    if (!aiInput) return;
+    const text = aiInput.value;
+    if (!text || text.trim().length < 2) {
+        if (aiLivePreview) aiLivePreview.classList.add('hidden');
+        return;
+    }
+
+    const formatted = formatNumbersInSentence(text);
+    if (formatted !== text) {
+        const cur = aiInput.selectionStart;
+        const diff = formatted.length - text.length;
+        aiInput.value = formatted;
+        const newCur = Math.max(0, cur + diff);
+        aiInput.setSelectionRange(newCur, newCur);
+    }
+
+    const clean = aiInput.value.toLowerCase().replace(/,/g, '.');
+    const chunks = clean.split(/[,;\n\.\+]|\s+va\s+/);
+    let badgesHtml = '';
+    let totalInc = 0;
+    let totalExp = 0;
+    let foundCount = 0;
+
+    chunks.forEach(chunk => {
+        chunk = chunk.trim();
+        if (!chunk) return;
+
+        let amt = 0;
+        const mln = chunk.match(/((?:\d[\d\s\.]*\d|\d))\s*(?:mln|million)/);
+        const ming = chunk.match(/((?:\d[\d\s\.]*\d|\d))\s*(?:ming|k\b)/);
+        const spaceNum = chunk.match(/\b(\d{1,3}(?:\s\d{3})+)\b/);
+        const rawNum = chunk.match(/\b(\d{4,})\b/);
+
+        if (mln) {
+            amt = parseFloat(mln[1].replace(/\s/g, '')) * 1000000;
+        } else if (ming) {
+            amt = parseFloat(ming[1].replace(/\s/g, '')) * 1000;
+        } else if (spaceNum) {
+            amt = parseFloat(spaceNum[1].replace(/\s/g, ''));
+        } else if (rawNum) {
+            amt = parseFloat(rawNum[1]);
+        }
+
+        if (amt && amt > 0) {
+            foundCount++;
+            let isIncome = /kassa|tushum|savdo|kirdi|daromad|to'lov|sarmoya|invest|foyda|olgan|oldik/.test(chunk);
+            if (/ijara|ijaraga|berdim|berdik|to'ladim|to'ladik|chiqdi|ketdi|keti|xarajat|go'sht|sabzavot|piyoz|un|yog'/.test(chunk)) {
+                isIncome = false;
+            }
+
+            if (isIncome) totalInc += amt;
+            else totalExp += amt;
+
+            const fmtAmt = Math.round(amt).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            const badgeClass = isIncome ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200';
+            const sign = isIncome ? '🟢 +' : '🔴 -';
+            badgesHtml += `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeClass}">${sign} ${fmtAmt} so'm</span>`;
+        }
+    });
+
+    if (foundCount > 0 && aiLiveBadges && aiLiveNet && aiLivePreview) {
+        aiLiveBadges.innerHTML = badgesHtml;
+        const net = totalInc - totalExp;
+        const netFmt = Math.round(Math.abs(net)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        aiLiveNet.innerHTML = `Sof Qoldiq: <span class="${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${net < 0 ? '-' : ''}${netFmt} so'm</span>`;
+        aiLivePreview.classList.remove('hidden');
+    } else if (aiLivePreview) {
+        aiLivePreview.classList.add('hidden');
+    }
+}
+
+if (aiInput) {
+    aiInput.addEventListener('input', updateAiLiveAmounts);
+    aiInput.addEventListener('paste', () => setTimeout(updateAiLiveAmounts, 20));
+    aiInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace') {
+            const cur = this.selectionStart;
+            if (cur > 1 && this.value[cur - 1] === ' ' && /\d/.test(this.value[cur - 2])) {
+                e.preventDefault();
+                this.value = this.value.slice(0, cur - 2) + this.value.slice(cur);
+                this.setSelectionRange(cur - 2, cur - 2);
+                updateAiLiveAmounts();
+            }
+        }
+    });
+}
+
+// AI Copilot AJAX
+function submitAiFinance(e) {
+    e.preventDefault();
+    const query = document.getElementById('aiQueryInput').value.trim();
+    if (!query) return;
+
+    const btn = document.getElementById('aiSubmitBtn');
+    const respArea = document.getElementById('aiResponseArea');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Hisoblanmoqda...</span>';
+    respArea.classList.add('hidden');
+
+    const formData = new FormData();
+    formData.append('action', 'ai_copilot');
+    formData.append('query', query);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "seller_finance_web" %}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡ Hisoblash</span>';
+        if (data.success) {
+            respArea.innerHTML = data.message.replace(/\n/g, '<br>');
+            respArea.classList.remove('hidden');
+            setTimeout(() => { window.location.reload(); }, 2500);
+        } else {
+            alert('Xatolik: ' + (data.error || 'Hisoblab bo\'lmadi'));
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡ Hisoblash</span>';
+        document.getElementById('aiCopilotForm').submit();
+    });
+}
+
+// Web Speech Recognition
+let recognition = null;
+function toggleVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert('Brauzeringiz ovozli yozishni qo\'llamaydi. Iltimos, Google Chrome yoki Telegram orqali yozing.');
+        return;
+    }
+    if (!recognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'uz-UZ';
+        recognition.interimResults = false;
+        recognition.onstart = function() {
+            document.getElementById('voiceBtn').classList.add('text-red-600', 'animate-pulse');
+        };
+        recognition.onresult = function(e) {
+            const transcript = e.results[0][0].transcript;
+            document.getElementById('aiQueryInput').value = transcript;
+            document.getElementById('voiceBtn').classList.remove('text-red-600', 'animate-pulse');
+            submitAiFinance(new Event('submit'));
+        };
+        recognition.onerror = function() {
+            document.getElementById('voiceBtn').classList.remove('text-red-600', 'animate-pulse');
+        };
+        recognition.onend = function() {
+            document.getElementById('voiceBtn').classList.remove('text-red-600', 'animate-pulse');
+        };
+    }
+    recognition.start();
+}
+
+// ==================== TEZKOR KASSIR TUGMALARI ====================
+function quickAddAmount(inputId, delta) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const curVal = parseInt(input.value.replace(/\D/g, '') || '0', 10);
+    const newVal = curVal + delta;
+    input.value = formatWithSpaces(newVal);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function quickAppendZeros(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const curDigits = input.value.replace(/\D/g, '');
+    if (!curDigits) return;
+    const newVal = curDigits + '000';
+    input.value = formatWithSpaces(newVal);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function quickClearAmount(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+// ==================== SPLIT DEBT TOGGLE ====================
+function toggleSplitSection(sectionId, isChecked) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    if (isChecked) {
+        el.classList.remove('hidden');
+    } else {
+        el.classList.add('hidden');
+    }
+}
+
+// ==================== GLOBAL JONLI QIDIRUV (0ms LATENCY) ====================
+function filterFinanceItems(query) {
+    const q = (query || '').toLowerCase().trim();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        if (q.length > 0) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    // 1. Kanban kartochkalari
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        let visibleCount = 0;
+        const cards = col.querySelectorAll('.kanban-card');
+        cards.forEach(card => {
+            const text = (card.textContent || '').toLowerCase();
+            if (!q || text.includes(q)) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        const badge = col.querySelector('.rounded-full');
+        if (badge && cards.length > 0) {
+            badge.textContent = q ? visibleCount : cards.length;
+        }
+    });
+
+    // 2. Oddiy jadval qatorlari
+    ['table', 'debts', 'audit'].forEach(tabName => {
+        const tabEl = document.querySelector(`[x-show="activeTab === '${tabName}'"]`);
+        if (tabEl) {
+            const rows = tabEl.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const text = (row.textContent || '').toLowerCase();
+                if (!q || text.includes(q)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    });
+}
+
+function clearFinanceSearch() {
+    const inp = document.getElementById('financeSearchInput');
+    if (inp) inp.value = '';
+    filterFinanceItems('');
+}
+
+// ==================== KASSA TOPSHIRISH SOLISHTIRUV ====================
+function calculateCashDiscrepancy(actualVal, expectedVal) {
+    const resultBox = document.getElementById('cashDiscrepancyResult');
+    if (!resultBox) return;
+
+    const actual = parseFloat((actualVal || '').toString().replace(/\D/g, '') || '0');
+    const expected = parseFloat(expectedVal || '0');
+
+    if (!actualVal && actual === 0) {
+        resultBox.className = 'p-3.5 rounded-xl border bg-gray-50 border-gray-200 text-xs text-gray-500';
+        resultBox.innerHTML = '<span class="italic">Sanab olingan naqd pulni kiriting...</span>';
+        return;
+    }
+
+    const diff = actual - expected;
+    const fmtDiff = formatWithSpaces(Math.abs(diff));
+
+    if (diff === 0) {
+        resultBox.className = 'p-3.5 rounded-xl border bg-emerald-50 border-emerald-300 text-xs text-emerald-900 font-bold';
+        resultBox.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-xl">✅</span>
+                <div>
+                    <p class="text-sm font-black text-emerald-800">Kassa 100% To'g'ri!</p>
+                    <p class="text-[11px] font-normal text-emerald-700 mt-0.5">Tizim hisobi bilan sanalgan naqd pul to'liq mos keldi (Farq: 0 so'm).</p>
+                </div>
+            </div>
+        `;
+    } else if (diff > 0) {
+        resultBox.className = 'p-3.5 rounded-xl border bg-blue-50 border-blue-300 text-xs text-blue-900 font-bold';
+        resultBox.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🟢</span>
+                <div>
+                    <p class="text-sm font-black text-blue-800">+${fmtDiff} so'm ORTIQCHA</p>
+                    <p class="text-[11px] font-normal text-blue-700 mt-0.5">Kassadagi pul tizimdagidan ${fmtDiff} so'm ko'p. Ehtimol, kiritilmagan tushum bor.</p>
+                </div>
+            </div>
+        `;
+    } else {
+        resultBox.className = 'p-3.5 rounded-xl border bg-rose-50 border-rose-300 text-xs text-rose-900 font-bold';
+        resultBox.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🔴</span>
+                <div>
+                    <p class="text-sm font-black text-rose-800">-${fmtDiff} so'm KAMOMAD (Yetishmovchilik)</p>
+                    <p class="text-[11px] font-normal text-rose-700 mt-0.5">Diqqat! Kassadagi pul tizimdagidan ${fmtDiff} so'm kam. Kassir bilan solishtiring.</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function setExactCash(inputId, expectedVal) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    inp.value = formatWithSpaces(expectedVal);
+    calculateCashDiscrepancy(inp.value, expectedVal);
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+// ==================== TELEGRAM HISOBOTINI NUSXA OLISH VA YUBORISH ====================
+function copyTelegramReport() {
+    const textarea = document.getElementById('telegramReportContent');
+    const copyBtn = document.getElementById('copyTgBtn');
+    const statusMsg = document.getElementById('tgStatusMsg');
+    if (!textarea) return;
+
+    navigator.clipboard.writeText(textarea.value).then(() => {
+        if (copyBtn) {
+            const oldText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<span>✅</span> <span>Nusxa olindi!</span>';
+            copyBtn.classList.add('bg-emerald-100', 'text-emerald-800');
+            setTimeout(() => {
+                copyBtn.innerHTML = oldText;
+                copyBtn.classList.remove('bg-emerald-100', 'text-emerald-800');
+            }, 2500);
+        }
+        if (statusMsg) {
+            statusMsg.textContent = '✅ Matn xotiraga nusxalandi! Telegramga joylab yuborishingiz mumkin.';
+            statusMsg.className = 'text-[11px] font-bold text-center py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200';
+            statusMsg.classList.remove('hidden');
+        }
+    }).catch(err => {
+        textarea.select();
+        document.execCommand('copy');
+        alert('Nusxalandi!');
+    });
+}
+
+function sendTelegramReportViaBot() {
+    const sendBtn = document.getElementById('sendTgBtn');
+    const statusMsg = document.getElementById('tgStatusMsg');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span>⏳</span> <span>Yuborilmoqda...</span>';
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'send_telegram_report');
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "seller_finance_web" %}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<span>✈️</span> <span>Botga yuborish</span>';
+        }
+        if (statusMsg) {
+            statusMsg.classList.remove('hidden');
+            if (data.success) {
+                statusMsg.textContent = data.message || 'Hisobot Telegram botga muvaffaqiyatli yuborildi!';
+                statusMsg.className = 'text-[11px] font-bold text-center py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200';
+            } else {
+                statusMsg.textContent = 'Xatolik: ' + (data.error || 'Yuborib bo\'lmadi');
+                statusMsg.className = 'text-[11px] font-bold text-center py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200';
+            }
+        }
+    })
+    .catch(err => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<span>✈️</span> <span>Botga yuborish</span>';
+        }
+        if (statusMsg) {
+            statusMsg.classList.remove('hidden');
+            statusMsg.textContent = 'Server bilan aloqa uzildi. Iltimos, "Nusxa olish" tugmasidan foydalaning.';
+            statusMsg.className = 'text-[11px] font-bold text-center py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200';
+        }
+    });
+}
+</script>
+{% endblock %}

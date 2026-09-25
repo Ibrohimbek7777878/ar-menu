@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Stollar QR Stendlari - {{ shop.name }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            background: #f3f4f6;
+            padding: 24px;
+        }
+        .controls {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .btn {
+            background: #7c3aed;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        .btn:hover { background: #6d28d9; }
+        .btn-outline {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-outline:hover { background: #f9fafb; }
+
+        /* A4 Page Layout */
+        .stands-grid {
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* Individual Stand Card (A6 ratio portrait) */
+        .stand-card {
+            background: #fff;
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 24px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+            page-break-inside: avoid;
+        }
+        .shop-name {
+            font-size: 18px;
+            font-weight: 900;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .hall-name {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .table-pill {
+            background: #0f172a;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 900;
+            padding: 4px 18px;
+            border-radius: 9999px;
+            margin: 12px 0;
+            letter-spacing: 0.5px;
+        }
+        .qr-wrapper {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 12px;
+            display: inline-block;
+            margin: 8px 0;
+        }
+        .qr-img {
+            width: 170px;
+            height: 170px;
+            display: block;
+            border-radius: 8px;
+        }
+        .cta-box {
+            margin-top: 8px;
+        }
+        .cta-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #7c3aed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .cta-desc {
+            font-size: 10px;
+            color: #475569;
+            margin-top: 3px;
+            line-height: 1.3;
+            max-width: 240px;
+        }
+        .wifi-box {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dotted #e2e8f0;
+            width: 100%;
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .controls {
+                display: none !important;
+            }
+            .stands-grid {
+                max-width: 100%;
+                gap: 10mm;
+            }
+            .stand-card {
+                box-shadow: none;
+                border: 1px dashed #94a3b8;
+                break-inside: avoid;
+            }
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div>
+            <h2 style="font-size: 15px; font-weight: bold; color: #111827;">{{ shop.name }} — Stollar QR Stendlari</h2>
+            <p style="font-size: 11px; color: #6b7280;">Jami faol stollar: {{ tables|length }} ta. Stol ustiga qo'yiladigan akril stendlar uchun tayyor dizayn.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="window.print()" class="btn">
+                🖨️ Hammasini Chop Etish (Print)
+            </button>
+            <button onclick="window.close()" class="btn btn-outline">
+                ✖ Yopish
+            </button>
+        </div>
+    </div>
+
+    <div class="stands-grid">
+        {% for t in tables %}
+        <div class="stand-card">
+            <div>
+                <div class="shop-name">{{ shop.name }}</div>
+                <div class="hall-name">{{ t.hall.name|default:"Asosiy zal" }}</div>
+                <div class="table-pill">STOL #{{ t.number }}</div>
+            </div>
+
+            <div class="qr-wrapper">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ t.qr_url|urlencode }}" alt="QR {{ t.number }}" class="qr-img">
+            </div>
+
+            <div class="cta-box">
+                <div class="cta-title">
+                    <span>📱</span> Kamerangizni qarating!
+                </div>
+                <div class="cta-desc">
+                    Taomlarni <b>3D ko'rinishda</b> ko'ring va ofitsiantni kutmasdan buyurtma bering!
+                </div>
+            </div>
+
+            <div class="wifi-box">
+                <span>🥽 360° AR Menyu & Smart Restoran</span>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: span 2; text-align: center; padding: 40px; color: #64748b;">
+            Hali faol stollar mavjud emas. Avval stollar bo'limidan stol qo'shing.
+        </div>
+        {% endfor %}
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,165 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ shop.name }} — Online Store Guliston{% endblock %}
+
+{% block content %}
+<style>
+    /* Shablon ranglari — custom dizayn bu o'zgaruvchilar orqali boshqariladi */
+    .shop-scope {
+        --sp-primary: {{ tpl_colors.primary|default:'#16a34a' }};
+        --sp-accent: {{ tpl_colors.accent|default:'#22c55e' }};
+        --sp-background: {{ tpl_colors.background|default:'#ffffff' }};
+        --sp-surface: {{ tpl_colors.surface|default:'#f8fafc' }};
+        --sp-text: {{ tpl_colors.text_primary|default:'#1a1a1a' }};
+    }
+    .shop-scope .sp-hero { background: linear-gradient(120deg, var(--sp-primary), var(--sp-accent)); }
+    .shop-scope .sp-cta { background: var(--sp-primary); }
+    .shop-scope .sp-chip { background: color-mix(in srgb, var(--sp-accent) 18%, transparent); color: var(--sp-primary); }
+    .shop-scope .sp-surface { background: var(--sp-surface); }
+    .shop-scope .sp-accent-bg { background: var(--sp-accent); }
+</style>
+<div class="shop-scope" id="shop-top" style="background: var(--sp-background);">
+
+{% if table_info %}
+<!-- QR stol banneri -->
+<div class="mx-auto max-w-6xl px-4 sm:px-5 pt-4">
+    <div class="flex items-center justify-between gap-3 rounded-2xl px-4 py-3" style="background: color-mix(in srgb, var(--sp-primary) 14%, transparent); border: 1.5px solid var(--sp-primary);">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">🍽️</span>
+            <div>
+                <p class="text-sm font-bold">{{ t.table_word|default:"Stol" }} {{ table_info.number }}{% if table_info.hall %} · {{ table_info.hall }}{% endif %}</p>
+                <p class="text-xs text-muted">{{ t.table_note|default:"Buyurtingiz shu stolga yetkaziladi" }}</p>
+            </div>
+        </div>
+        <a href="/cart/?table={{ table_info.token }}" class="rounded-full px-4 py-2 text-xs font-bold text-white" style="background: var(--sp-primary);">{{ t.table_order|default:"Buyurtma berish" }}</a>
+    </div>
+</div>
+{% endif %}
+
+{% if menu_position == 'left' %}
+<!-- Chap menyu (desktop rail) -->
+<aside class="hidden lg:flex flex-col gap-2 fixed left-4 top-1/3 z-30 shop-nav" style="background: var(--sp-surface); border-radius: 1rem; padding: .6rem; box-shadow: 0 8px 30px rgba(16,24,40,.12);">
+    <a href="#shop-top" class="w-11 h-11 rounded-xl flex items-center justify-center text-xl hover:opacity-80" title="Bosh sahifa" style="background: color-mix(in srgb, var(--sp-primary) 12%, transparent)">🏠</a>
+    <a href="#catalog" class="w-11 h-11 rounded-xl flex items-center justify-center text-xl hover:opacity-80" title="Mahsulotlar" style="background: color-mix(in srgb, var(--sp-primary) 12%, transparent)">🛍️</a>
+    {% for sec in sections %}{% if sec.type == 'reviews' %}<a href="#catalog" class="w-11 h-11 rounded-xl flex items-center justify-center text-xl hover:opacity-80" title="Sharhlar" style="background: color-mix(in srgb, var(--sp-primary) 12%, transparent)">⭐</a>{% endif %}{% if sec.type == 'map' %}<a href="#catalog" class="w-11 h-11 rounded-xl flex items-center justify-center text-xl hover:opacity-80" title="Xarita" style="background: color-mix(in srgb, var(--sp-primary) 12%, transparent)">📍</a>{% endif %}{% endfor %}
+    <a href="tel:{{ shop.phone }}" class="w-11 h-11 rounded-xl flex items-center justify-center text-xl text-white" style="background: var(--sp-primary)" title="{{ shop.phone }}">📞</a>
+</aside>
+<style>.shop-nav { margin-left: .25rem; }</style>
+{% endif %}
+
+{% if menu_position == 'bottom' %}
+<!-- Pastki menyu (sticky bar) -->
+<nav class="sticky bottom-0 z-30 shop-bottom-nav" style="background: var(--sp-surface); box-shadow: 0 -4px 20px rgba(16,24,40,.10);">
+    <div class="mx-auto max-w-6xl flex items-center justify-around py-2">
+        <a href="#shop-top" class="flex flex-col items-center gap-0.5 text-[11px] font-semibold" style="color: var(--sp-primary)"><span class="text-lg">🏠</span>Bosh</a>
+        <a href="#catalog" class="flex flex-col items-center gap-0.5 text-[11px] font-semibold" style="color: var(--sp-primary)"><span class="text-lg">🛍️</span>Mahsulot</a>
+        <a href="#catalog" class="flex flex-col items-center gap-0.5 text-[11px] font-semibold" style="color: var(--sp-primary)"><span class="text-lg">⭐</span>Sharhlar</a>
+        <a href="tel:{{ shop.phone }}" class="flex flex-col items-center gap-0.5 text-[11px] font-semibold" style="color: var(--sp-primary)"><span class="text-lg">📞</span>Qo'ng'iroq</a>
+    </div>
+</nav>
+{% endif %}
+
+<!-- Shop Header -->
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-8 sm:py-12">
+    <div class="card-surface p-6 sm:p-8">
+        <div class="flex flex-col sm:flex-row items-start gap-6">
+            <div class="w-20 h-20 rounded-2xl bg-accent flex items-center justify-center shrink-0 overflow-hidden">
+                {% if shop.image %}
+                <img src="{{ shop.image.url }}" alt="{{ shop.name }}" class="w-full h-full object-cover">
+                {% else %}
+                <span class="material-icons-outlined text-primary text-4xl">storefront</span>
+                {% endif %}
+            </div>
+            <div class="flex-1">
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                    <h1 class="font-display text-2xl sm:text-3xl font-semibold tracking-tight">{{ shop.name }}</h1>
+                    {% if shop.is_verified %}<span class="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary border border-primary/20">✓ {{ t.verified }}</span>{% endif %}
+                    {% if shop.is_open %}
+                    <span class="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">🟢 {{ t.map_open }}</span>
+                    {% else %}
+                    <span class="rounded-full bg-sand px-2.5 py-1 text-[11px] font-semibold text-muted">🔴 {{ t.map_closed }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4 fill-primary text-primary" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                        <span class="font-semibold">{{ shop.rating|default:"0" }}</span>
+                    </span>
+                    {% if shop.working_hours %}<span class="flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>{{ shop.working_hours }}</span>{% endif %}
+                    {% if shop.address %}<span class="flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>{{ shop.address }}</span>{% endif %}
+                    {% if shop.phone %}<span class="flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>{{ shop.phone }}</span>{% endif %}
+                </div>
+                {% if shop.description %}<p class="mt-3 text-sm text-muted max-w-2xl leading-relaxed">{{ shop.description }}</p>{% endif %}
+                <div class="mt-4 flex flex-wrap gap-3 text-xs text-muted">
+                    <span>{{ t.map_min_order }}: <strong>{{ shop.min_order|uznum }} {{ t.catalog_som }}</strong></span>
+                    <span>{{ t.map_delivery }}: <strong>{{ shop.delivery_fee|uznum }} {{ t.catalog_som }}</strong></span>
+                    <span>{{ t.store_free_delivery }}: <strong>{{ shop.free_delivery_from|uznum }} {{ t.catalog_som }}</strong> dan</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search / Sort -->
+<div class="mx-auto max-w-6xl px-4 sm:px-5 pb-2">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex-1 max-w-sm">
+            <form method="get" class="relative">
+                <input type="text" name="q" value="{{ query }}" placeholder="{{ t.search }}..." class="rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full">
+                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            </form>
+        </div>
+        <select onchange="window.location.href='?sort='+this.value+'&q={{ query|urlencode }}'" class="rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary sm:w-44">
+            <option value="default" {% if sort == 'default' %}selected{% endif %}>{{ t.sort }}</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>{{ t.catalog_sort_cheap }}</option>
+            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>{{ t.catalog_sort_expensive }}</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>{{ t.sort }}: {{ t.name }}</option>
+        </select>
+    </div>
+</div>
+
+{% if flash_deals %}
+<!-- Flash aksiya: countdown bilan -->
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-3">
+  <div class="rounded-2xl p-4" style="background: linear-gradient(120deg, var(--sp-accent), var(--sp-primary)); color:#fff;">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <p class="font-display font-bold text-lg">⚡ Flash aksiya — bugungigacha!</p>
+      <p id="flashTimer" class="font-mono font-bold text-lg bg-black/25 rounded-xl px-3 py-1">--:--:--</p>
+    </div>
+    <div class="flex gap-3 overflow-x-auto pb-1" style="scrollbar-width:none">
+      {% for p in flash_deals %}
+      <a href="{% url 'customer_product' p.slug %}" class="shrink-0 w-40 bg-white rounded-xl overflow-hidden text-inherit">
+        <div class="h-24 bg-sand flex items-center justify-center overflow-hidden">
+          {% if p.image %}<img src="{{ p.image.url }}" class="w-full h-full object-cover" loading="lazy">{% else %}🛍️{% endif %}
+        </div>
+        <div class="p-2 text-gray-900">
+          <p class="text-xs font-semibold truncate">{{ p.name }}</p>
+          <p class="text-sm font-bold" style="color:var(--sp-primary)">{{ p.price|floatformat:0 }} <s class="text-gray-400 text-xs">{{ p.old_price|floatformat:0 }}</s></p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<script>
+(function(){var t=setInterval(function(){var n=new Date(),e=new Date(n);e.setHours(23,59,59);
+var d=e-n,h=String(Math.floor(d/36e5)).padStart(2,'0'),m=String(Math.floor(d%36e5/6e4)).padStart(2,'0'),s2=String(Math.floor(d%6e4/1e3)).padStart(2,'0');
+var el=document.getElementById('flashTimer');if(!el)return clearInterval(t);el.textContent=h+':'+m+':'+s2;},1000);})();
+</script>
+{% endif %}
+
+{% if best_sellers %}
+{% include 'components/product_carousel.html' with title="🔥 Eng ko'p sotilgan" items=best_sellers cid="crBest" %}
+{% endif %}
+{% if trending %}
+{% include 'components/product_carousel.html' with title="📈 Trendda" items=trending cid="crTrend" %}
+{% endif %}
+
+<!-- Builder sections -->
+<div class="pb-12">
+    {% for section in sections %}
+        {% include "components/shop_section.html" with section=section shop=shop products=products categories=categories reviews=reviews template=template tpl_colors=tpl_colors %}
+    {% endfor %}
+</div>
+</div><!-- /shop-scope -->
+{% endblock %}

@@ -1,0 +1,1485 @@
+{% extends "seller/base_seller.html" %}
+{% load uznum %}
+{% block title %}AR / 3D Boshqaruvi{% endblock %}
+{% block page_title %}AR / 3D{% endblock %}
+
+{% block content %}
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<style>
+    :root { --sp: {{ shop.color_primary|default:'#16a34a' }}; --ac: {{ shop.color_accent|default:'#1a1a2e' }}; }
+
+    .ar-hero {
+        background: linear-gradient(135deg, #7c3aed, color-mix(in srgb, #7c3aed 55%, var(--ac)));
+        border-radius:1.25rem; padding:1.75rem 2rem 1.5rem; color:#fff; position:relative; overflow:hidden;
+    }
+    .ar-hero::before { content:''; position:absolute; top:-60%; right:-10%; width:280px; height:280px; background:radial-gradient(circle,rgba(255,255,255,.10) 0%,transparent 70%); border-radius:50%; }
+
+    .s-pill { display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.6rem .9rem; background:rgba(255,255,255,.13); border-radius:.75rem; backdrop-filter:blur(6px); min-width:68px; }
+    .s-num { font-size:1.15rem; font-weight:800; line-height:1; }
+    .s-lbl { font-size:.6rem; opacity:.72; font-weight:500; text-transform:uppercase; letter-spacing:.04em; }
+
+    .ar-card { background:#fff; border:1.5px solid #f3f4f6; border-radius:1rem; overflow:hidden; transition:all .2s; position:relative; }
+    .ar-card:hover { border-color:#e5e7eb; box-shadow:0 8px 24px rgba(0,0,0,.06); transform:translateY(-2px); }
+    .ar-badge { position:absolute; top:.75rem; right:.75rem; display:flex; gap:.35rem; z-index:2; }
+    .badge-3d { background:#7c3aed; color:#fff; font-size:.6rem; font-weight:700; padding:.25rem .55rem; border-radius:.5rem; }
+    .badge-no { background:#e5e7eb; color:#6b7280; font-size:.6rem; font-weight:600; padding:.25rem .55rem; border-radius:.5rem; }
+    .badge-creating { background:#f59e0b; color:#fff; font-size:.6rem; font-weight:700; padding:.25rem .55rem; border-radius:.5rem; animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+    .ar-img { width:100%; height:160px; object-fit:cover; background:#f3f4f6; }
+    .ar-body { padding:1rem; }
+    .ar-name { font-size:.9rem; font-weight:700; color:#111827; margin-bottom:.25rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ar-cat { font-size:.7rem; color:#9ca3af; margin-bottom:.75rem; }
+    .ar-model-url { font-size:.65rem; color:#7c3aed; background:#f5f3ff; padding:.2rem .5rem; border-radius:.4rem; word-break:break-all; margin-bottom:.75rem; display:block; max-height:2.4rem; overflow:hidden; }
+
+    .ar-actions { display:flex; gap:.4rem; flex-wrap:wrap; }
+    .ar-btn { font-size:.7rem; font-weight:600; padding:.35rem .7rem; border-radius:.5rem; border:none; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:.3rem; }
+    .ar-btn-purple { background:#7c3aed; color:#fff; }
+    .ar-btn-purple:hover { background:#6d28d9; }
+    .ar-btn-green { background:#dcfce7; color:#16a34a; }
+    .ar-btn-green:hover { background:#bbf7d0; }
+    .ar-btn-amber { background:#fef3c7; color:#d97706; }
+    .ar-btn-amber:hover { background:#fde68a; }
+    .ar-btn-red { background:#fee2e2; color:#dc2626; }
+    .ar-btn-red:hover { background:#fecaca; }
+
+    .lib-card { background:#fff; border:1.5px solid #f3f4f6; border-radius:.875rem; padding:1rem; transition:all .15s; }
+    .lib-card:hover { border-color:#7c3aed; box-shadow:0 4px 12px rgba(124,58,237,.08); }
+    .lib-name { font-size:.8rem; font-weight:700; color:#111827; }
+    .lib-file { font-size:.65rem; color:#9ca3af; margin-top:.2rem; }
+
+    .attach-select { font-size:.7rem; border:1.5px solid #e5e7eb; border-radius:.5rem; padding:.3rem .5rem; background:#fff; color:#374151; max-width:110px; }
+
+    .empty-state { text-align:center; padding:3rem 1rem; color:#9ca3af; }
+    .empty-state svg { width:48px; height:48px; margin:0 auto .75rem; opacity:.4; }
+
+    .ar-filter-pill { background: #f9fafb; border-color: #e5e7eb; color: #4b5563; cursor: pointer; transition: all .15s; }
+    .ar-filter-pill:hover { background: #f3f4f6; color: #111827; }
+    .ar-filter-pill.active { background: #7c3aed; border-color: #7c3aed; color: #ffffff; }
+
+    /* Modals */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:1.25rem; width:92%; max-width:540px; max-height:92vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,.2); }
+    .modal-lg { max-width:640px; }
+    .modal-header { padding:1.25rem 1.5rem; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between; }
+    .modal-body { padding:1.5rem; }
+    .modal-close { width:32px; height:32px; border-radius:.5rem; border:none; background:#f3f4f6; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .modal-close:hover { background:#e5e7eb; }
+
+    .fl { display:block; font-size:.75rem; font-weight:600; color:#374151; margin-bottom:.35rem; }
+    .fi { width:100%; border:1.5px solid #e5e7eb; border-radius:.75rem; padding:.6rem .85rem; font-size:.85rem; background:#fff; color:#111827; transition:all .15s; outline:none; }
+    .fi:focus { border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.1); }
+
+    .create-btn { width:100%; background:#7c3aed; color:#fff; border:none; border-radius:.875rem; padding:.85rem; font-size:.9rem; font-weight:700; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .create-btn:hover { background:#6d28d9; transform:translateY(-1px); box-shadow:0 4px 12px rgba(124,58,237,.3); }
+    .create-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    .open-modal-btn { display:inline-flex; align-items:center; gap:.5rem; background:#fff; color:#7c3aed; border:2px solid #7c3aed; border-radius:.875rem; padding:.65rem 1.25rem; font-size:.85rem; font-weight:700; cursor:pointer; transition:all .15s; }
+    .open-modal-btn:hover { background:#7c3aed; color:#fff; }
+
+    .step-badge { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#7c3aed; color:#fff; font-size:.75rem; font-weight:700; flex-shrink:0; }
+    .step-line { flex:1; height:2px; background:#e5e7eb; transition:all .2s; }
+    .step-line.active { background:#7c3aed; }
+
+    /* Dedicated 4-photo slot card */
+    .slot-card {
+        border: 2px dashed #e2e8f0;
+        border-radius: 0.875rem;
+        background: #f8fafc;
+        padding: 0.75rem;
+        position: relative;
+        transition: all 0.2s;
+    }
+    .slot-card:hover {
+        border-color: #7c3aed;
+        background: #faf5ff;
+    }
+    .slot-card.has-file {
+        border-style: solid;
+        border-color: #c084fc;
+        background: #fff;
+    }
+    .slot-preview-area {
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        cursor: pointer;
+        background: #f1f5f9;
+    }
+    .slot-preview-area img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .slot-remove-btn {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.4rem;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: bold;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+    }
+    .slot-card.has-file .slot-remove-btn {
+        display: flex;
+    }
+
+    /* Carousel Guide */
+    .guide-carousel {
+        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        border: 1px solid #ddd6fe;
+        border-radius: 0.875rem;
+        padding: 0.85rem 1rem;
+        position: relative;
+    }
+    .guide-slide { display: none; }
+    .guide-slide.active { display: block; animation: fadeIn .25s ease-in-out; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(2px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<div>
+    <!-- Hero -->
+    <div class="ar-hero mb-5">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-xs opacity-70 font-medium tracking-wide uppercase">AR / 3D</p>
+                <h2 class="text-xl font-bold mt-0.5">3D modellar boshqaruvi</h2>
+                <p class="text-xs opacity-60 mt-1">Mahsulotlaringizni AR texnologiyasi bilan boyiting</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="s-pill">
+                        <span class="s-num">{{ total }}</span>
+                        <span class="s-lbl">Jami</span>
+                    </span>
+                    <span class="s-pill">
+                        <span class="s-num">{{ ar_count }}</span>
+                        <span class="s-lbl">AR faol</span>
+                    </span>
+                    <span class="s-pill">
+                        <span class="s-num">{{ no_ar_count }}</span>
+                        <span class="s-lbl">Yo'q</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="open-modal-btn bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-400 font-bold shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 transition transform hover:-translate-y-0.5" title="Mijozlar ko'radigan jonli AIR 3D menyu saytini ochish">
+                        <span class="text-base">🚀</span> Jonli AR Menyu Sayti ↗
+                    </a>
+                    <button type="button" class="open-modal-btn bg-white/20 text-white border-white/40 hover:bg-white/30 hover:text-white" onclick="openAutoMatchModal()" title="Kutubxona bo'yicha avtomatik 3D biriktirish">
+                        ⚡ Avto-biriktirish
+                    </button>
+                    <button class="open-modal-btn" onclick="openCreateModal()">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        Yangi yaratish
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jonli AIR 3D Menyu Alohida Sayti Kartasi -->
+    <div class="mb-6 p-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-700 to-indigo-800 text-white shadow-xl relative overflow-hidden border border-emerald-400/30">
+        <div class="absolute -right-8 -bottom-8 w-56 h-56 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div class="space-y-2 max-w-2xl">
+                <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-emerald-100 border border-white/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>JONLI AIR 3D & AR MENYU SAYTI ULANDI</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 text-white">
+                    <span>🍽️</span> Restoraningiz Jonli AR 3D Menyu Sayti
+                </h2>
+                <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+                    Mijozlar ushbu alohida havola yoki stol ustidagi QR kod orqali kirib, taomlarni real 3D/AR ko‘rinishida aylanma tomosha qilishadi, ofitsiantni chaqirishadi va to‘g‘ridan-to‘g‘ri stolga buyurtma berishadi.
+                </p>
+                <div class="flex flex-wrap items-center gap-2 pt-1 text-xs text-white/90">
+                    <span class="opacity-80 font-medium">To'g'ridan-to'g'ri sayt havolasi:</span>
+                    <span class="bg-black/30 px-3 py-1 rounded-lg text-emerald-200 font-mono select-all border border-white/15" id="liveArUrlPath">
+                        {% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0">
+                <a href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-sm shadow-lg hover:shadow-2xl transition flex items-center justify-center gap-2 group transform active:scale-95">
+                    <span>🌐 Jonli Saytni Ochish</span>
+                    <svg class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+                <button type="button" onclick="copyArMenuLink()" class="px-4 py-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-sm border border-white/30 backdrop-blur-sm transition flex items-center justify-center gap-1.5" title="Havolani nusxalash">
+                    <span id="copyIcon">📋</span> <span id="copyBtnText">Nusxalash</span>
+                </button>
+                <button type="button" onclick="openQrModal('{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}')" class="px-4 py-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-sm border border-white/30 backdrop-blur-sm transition flex items-center justify-center gap-1.5" title="QR Kodni ko'rish">
+                    <span>📱</span> QR Kod
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Yaqinda yaratilgan / yangilangan 3D modellar -->
+    {% if recent_3d_products %}
+    <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50/40 to-pink-50/30 border border-purple-200/70 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm shadow-sm font-bold">✨</span>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-900">Yaqinda yaratilgan / yangilangan 3D modellar</h3>
+                    <p class="text-xs text-gray-500">Yangi 3D qo'shilgan mahsulotlaringiz shu yerda tezkor ko'rinadi</p>
+                </div>
+            </div>
+            <span class="text-xs font-semibold text-purple-700 bg-purple-100/80 px-2.5 py-1 rounded-full">Oxirgi {{ recent_3d_products|length }} ta</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {% for rp in recent_3d_products %}
+            <div class="bg-white rounded-xl p-3 border {% if rp.id == just_created_ar_id %}border-amber-400 ring-2 ring-amber-300 shadow-md{% else %}border-gray-200 hover:border-purple-300{% endif %} flex gap-3 items-center relative transition">
+                {% if rp.id == just_created_ar_id %}
+                <span class="absolute -top-2.5 -right-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow animate-pulse">
+                    🔥 HOZIR YARATILDI
+                </span>
+                {% endif %}
+                {% if rp.image %}
+                <img src="{{ rp.image.url }}" class="w-14 h-14 rounded-lg object-cover bg-gray-100 flex-shrink-0" alt="{{ rp.name }}">
+                {% else %}
+                <div class="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">📦</div>
+                {% endif %}
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-bold text-gray-900 truncate" title="{{ rp.name }}">{{ rp.name }}</div>
+                    <div class="text-[11px] text-gray-400 truncate">{{ rp.category.name|default:"Kategoriya yo'q" }} · {{ rp.price|uznum }} so'm</div>
+                    <div class="mt-1.5 flex items-center gap-1.5">
+                        <button type="button" onclick="preview3D('{{ rp.name|escapejs }}', '{{ rp.ar_model|default:'/media/products/dish_3d.glb' }}')" class="text-[11px] bg-purple-600 hover:bg-purple-700 text-white font-semibold px-2 py-0.5 rounded flex items-center gap-1">
+                            👁️ 3D
+                        </button>
+                        <a href="{% url 'customer_product_ar' rp.slug %}" target="_blank" class="text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold px-2 py-0.5 rounded flex items-center gap-0.5">
+                            🥽 AR
+                        </a>
+                        <a href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold px-2 py-0.5 rounded flex items-center gap-0.5" title="AIR 3D Menyu saytida ochish">
+                            🍽️ Menyu
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. Kutubxona modellari (Ixcham Akkordeon) -->
+    <details class="group bg-white border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm transition">
+        <summary class="flex items-center justify-between cursor-pointer select-none list-none font-bold text-sm text-gray-800">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-base">📚</div>
+                <div>
+                    <span>Umumiy 3D Modellari Kutubxonasi</span>
+                    <span class="text-xs font-normal text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full ml-1.5">{{ library_models|length }} ta tayyor model</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition">
+                <span class="group-open:hidden">Kutubxonani ko‘rish ▼</span>
+                <span class="hidden group-open:inline">Yopish ▲</span>
+            </div>
+        </summary>
+        <p class="text-xs text-gray-400 mt-2">Barcha umumiy oziq-ovqat va restoran modellari. Mahsulotingizga mosini biriktirishingiz mumkin.</p>
+        <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {% for lib in library_models %}
+            <div class="lib-card flex flex-col justify-between">
+                <div>
+                    <div class="flex items-start justify-between gap-1">
+                        <div class="lib-name">{{ lib.name_uz }}</div>
+                        <span class="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-medium">{{ lib.real_size_cm }} sm</span>
+                    </div>
+                    {% if lib.name_ru %}<div class="lib-file">{{ lib.name_ru }}</div>{% endif %}
+                    <div class="text-[11px] text-gray-400 mt-1">Ulanish: {{ lib.used_by_count }} ta</div>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between">
+                    <button type="button" onclick="preview3D('{{ lib.name_uz|escapejs }}', '{{ lib.glb_url|default:'/media/products/dish_3d.glb' }}')" class="text-xs text-purple-600 hover:text-purple-800 font-semibold flex items-center gap-1">
+                        👁️ 3D Ko‘rish
+                    </button>
+                    <span class="text-[10px] text-gray-400 uppercase font-mono">{{ lib.category_key }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-xs text-gray-400">Kutubxona bo'sh</div>
+            {% endfor %}
+        </div>
+    </details>
+
+    <!-- 3. Mahsulotlar Filtrlari va Qidiruv Paneli -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-4 mb-5 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5 pb-3.5 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <h3 class="text-sm font-bold text-gray-800">
+                    Barcha mahsulotlar (<span id="totalProductCount">{{ products.count }}</span>)
+                </h3>
+                <span class="text-xs text-gray-400">· Filtrlangan: <b id="visibleProductCount" class="text-purple-700">{{ products.count }}</b> ta</span>
+            </div>
+            <!-- Saralash (Sort) -->
+            <div class="flex items-center gap-2">
+                <label for="arSortSelect" class="text-xs text-gray-500 font-medium">Saralash:</label>
+                <select id="arSortSelect" onchange="applyFilters()" class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-gray-50 text-gray-700 outline-none focus:border-purple-500">
+                    <option value="newest">Yangi yaratilganlar oldinda</option>
+                    <option value="name_asc">Nomi (A - Z)</option>
+                    <option value="name_desc">Nomi (Z - A)</option>
+                    <option value="price_asc">Narxi (Arzonroq)</option>
+                    <option value="price_desc">Narxi (Qimmatroq)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Filtr tugmalari va qidiruv qatori -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <!-- Qidiruv input -->
+            <div class="md:col-span-4 relative">
+                <input type="text" id="arSearchInput" oninput="applyFilters()" placeholder="🔍 Nomi bo'yicha qidirish..." class="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 pl-8 bg-gray-50 focus:bg-white focus:border-purple-500 outline-none transition">
+                <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+
+            <!-- Kategoriya select -->
+            <div class="md:col-span-3">
+                <select id="arCategorySelect" onchange="applyFilters()" class="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 focus:bg-white focus:border-purple-500 outline-none transition text-gray-700">
+                    <option value="">Barcha kategoriyalar</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filter Pills (Status tabs) -->
+            <div class="md:col-span-5 flex flex-wrap gap-1.5" id="statusPills">
+                <button type="button" onclick="setStatusFilter('all')" data-status="all" class="ar-filter-pill active text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition">
+                    🌟 Barchasi
+                </button>
+                <button type="button" onclick="setStatusFilter('has_3d')" data-status="has_3d" class="ar-filter-pill text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition">
+                    🥽 3D mavjud ({{ ar_count }})
+                </button>
+                <button type="button" onclick="setStatusFilter('ai_4')" data-status="ai_4" class="ar-filter-pill text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition">
+                    🚀 AI / 4-rakurs
+                </button>
+                <button type="button" onclick="setStatusFilter('library')" data-status="library" class="ar-filter-pill text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition">
+                    📚 Kutubxona
+                </button>
+                <button type="button" onclick="setStatusFilter('no_3d')" data-status="no_3d" class="ar-filter-pill text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition">
+                    ⏳ 3D yo'q ({{ no_ar_count }})
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Mahsulotlar Ro'yxati -->
+    <div>
+        {% if products %}
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {% for p in products %}
+            <div class="ar-card product-item {% if p.id == just_created_ar_id %}ring-2 ring-amber-400 shadow-lg border-amber-300{% endif %}"
+                 id="product-card-{{ p.pk }}"
+                 data-name="{{ p.name|lower }}"
+                 data-category="{{ p.category.id|default:'' }}"
+                 data-has3d="{% if p.has_3d %}1{% else %}0{% endif %}"
+                 data-source="{% if 'ai_generated_4angles' in p.model3d.source or 'ai' in p.model3d.source %}ai_4{% elif 'library' in p.model3d.source %}library{% else %}none{% endif %}"
+                 data-price="{{ p.price|default:0 }}"
+                 data-id="{{ p.id }}">
+                <div class="ar-badge">
+                    {% if p.id == just_created_ar_id %}
+                    <span class="badge-creating bg-amber-500 font-black">🔥 YANGI</span>
+                    {% endif %}
+                    {% if p.has_3d %}
+                    <span class="badge-3d">🥽 AR</span>
+                    {% else %}
+                    <span class="badge-no">YO'Q</span>
+                    {% endif %}
+                </div>
+
+                {% if p.image %}
+                <img class="ar-img" src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">
+                {% else %}
+                <div class="ar-img flex items-center justify-center bg-gray-100">
+                    <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                {% endif %}
+
+                <div class="ar-body">
+                    <div class="ar-name" title="{{ p.name }}">{{ p.name }}</div>
+                    <div class="ar-cat">{{ p.category.name|default:"Kategoriya yo'q" }} · {{ p.price|uznum }} so'm</div>
+
+                    {% if p.ar_model or p.has_3d %}
+                    <div class="flex items-center gap-1.5 mb-2.5 flex-wrap">
+                        <button type="button" onclick="preview3D('{{ p.name|escapejs }}', '{{ p.ar_model|default:'/media/products/dish_3d.glb' }}')" class="text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-2 py-1 rounded-md font-semibold flex items-center gap-1 transition">
+                            👁️ 3D Ko‘rish
+                        </button>
+                        <a href="{% url 'customer_product_ar' p.slug %}" target="_blank" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1 rounded-md font-semibold flex items-center gap-1 transition">
+                            🥽 AR Sahifa
+                        </a>
+                        <a href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded-md font-semibold flex items-center gap-1 transition" title="Restoran 3D Menyu saytida ochish">
+                            🍽️ Menyu Saytida ↗
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="ar-actions">
+                        {% if p.has_3d %}
+                        <form method="post" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="remove_ar">
+                            <input type="hidden" name="product_id" value="{{ p.pk }}">
+                            <button class="ar-btn ar-btn-red" title="AR ni o'chirish">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                O'chirish
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_ar">
+                            <input type="hidden" name="product_id" value="{{ p.pk }}">
+                            <button class="ar-btn ar-btn-green" title="AR ni yoqish">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Yoqish
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <form method="post" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="auto_match_single">
+                            <input type="hidden" name="product_id" value="{{ p.pk }}">
+                            <button class="ar-btn ar-btn-amber" title="Kutubxona yoki AI orqali avtomatik biriktirish">
+                                ⚡ Avto
+                            </button>
+                        </form>
+
+                        {% if p.image %}
+                        <form method="post" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="ai_generate">
+                            <input type="hidden" name="product_id" value="{{ p.pk }}">
+                            <button class="ar-btn ar-btn-purple" title="AI bilan 3D yaratish">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                AI 3D
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <form method="post" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="attach_library">
+                            <input type="hidden" name="product_id" value="{{ p.pk }}">
+                            <select name="library_id" class="attach-select" onchange="this.form.submit()">
+                                <option value="">Kutubxona...</option>
+                                {% for lib in library_models %}
+                                <option value="{{ lib.pk }}" {% if p.ar_model == lib.glb_url %}selected{% endif %}>{{ lib.name_uz }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <p class="text-sm">Mahsulotlar topilmadi</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Yangi AR yaratish -->
+<!-- Modal 1: Avto-biriktirish sozlamalari -->
+<div class="modal-overlay" id="autoMatchModal">
+    <div class="modal" style="max-width: 480px;">
+        <div class="modal-header">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Avtomatik 3D biriktirish</h3>
+                    <p class="text-xs text-gray-400">Kutubxonadan mos 3D modellarni ulash</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeAutoMatchModal()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Statistika kartasi -->
+            <div class="p-3 bg-purple-50/70 border border-purple-100 rounded-xl mb-4 flex items-center justify-between text-xs text-purple-900 font-medium">
+                <div>Jami: <b>{{ total }} ta</b></div>
+                <div class="text-emerald-700">AR faol: <b>{{ ar_count }} ta</b></div>
+                <div class="text-amber-700">AR yo'q: <b>{{ no_ar_count }} ta</b></div>
+            </div>
+
+            <!-- Variantlar -->
+            <div class="space-y-3 mb-5" id="autoMatchOptions">
+                <label class="block p-3 border-2 border-purple-500 bg-purple-50/30 rounded-xl cursor-pointer transition hover:bg-purple-50/50" id="labelOptionNoAr">
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="match_mode" value="missing" checked class="mt-1 text-purple-600" onchange="updateMatchOptionUI()">
+                        <div>
+                            <p class="text-xs font-bold text-gray-900">Faqat 3D modeli yo'q mahsulotlarga</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">Tavsiya etiladi. Hozirda 3D ulanmagan (<span class="font-semibold text-purple-700">{{ no_ar_count }} ta</span>) mahsulotga kutubxonadan mos model qidiriladi.</p>
+                        </div>
+                    </div>
+                </label>
+                <label class="block p-3 border border-gray-200 rounded-xl cursor-pointer transition hover:bg-gray-50" id="labelOptionForce">
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="match_mode" value="force" class="mt-1 text-purple-600" onchange="updateMatchOptionUI()">
+                        <div>
+                            <p class="text-xs font-bold text-gray-900">Barcha mahsulotlarni yangilash (Qayta moslash)</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">Barcha {{ total }} ta mahsulot uchun kutubxonadan qaytadan eng mos 3D modellar topiladi va yangilanadi.</p>
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Progress holati -->
+            <div id="autoMatchProgress" style="display:none" class="mb-4 p-4 bg-purple-50 rounded-xl text-center">
+                <div class="animate-spin inline-block w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full mb-2"></div>
+                <p class="text-xs font-bold text-purple-900">3D modellar qidirilmoqda va ulanmoqda...</p>
+                <p class="text-[11px] text-purple-600 mt-0.5">Iltimos bir necha soniya kuting</p>
+            </div>
+
+            <!-- Natija xabari -->
+            <div id="autoMatchResult" style="display:none" class="mb-4 p-3 rounded-xl text-xs font-semibold"></div>
+
+            <!-- Tugmalar -->
+            <div class="flex gap-2">
+                <button type="button" class="w-1/3 py-2.5 px-3 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100" onclick="closeAutoMatchModal()">Bekor qilish</button>
+                <button type="button" class="w-2/3 create-btn py-2.5 text-xs" id="autoMatchStartBtn" onclick="runAutoMatch()">
+                    ⚡ Biriktirishni boshlash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Yangi 3D model yaratish (4 tomonli suratlar + kategoriya) -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Yangi 3D model yaratish</h3>
+                    <p class="text-xs text-gray-400">4 ta rakursli rasmlardan to'liq 360° 3D model yarating</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeCreateModal()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Stepper -->
+            <div class="flex items-center gap-2 mb-6">
+                <div class="flex items-center gap-1.5">
+                    <span class="step-badge" id="step1Badge">1</span>
+                    <span class="text-xs font-bold text-purple-700" id="step1Title">Mahsulot</span>
+                </div>
+                <div class="step-line" id="step1Line"></div>
+                <div class="flex items-center gap-1.5">
+                    <span class="step-badge" id="step2Badge" style="background:#e5e7eb;color:#9ca3af">2</span>
+                    <span class="text-xs font-bold text-gray-400" id="step2Title">4 ta surat</span>
+                </div>
+                <div class="step-line" id="step2Line"></div>
+                <div class="flex items-center gap-1.5">
+                    <span class="step-badge" id="step3Badge" style="background:#e5e7eb;color:#9ca3af">3</span>
+                    <span class="text-xs font-bold text-gray-400" id="step3Title">Yaratish</span>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="arCreateForm" onsubmit="return validateForm(event)">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_ar">
+
+                <!-- STEP 1: Kategoriya va Mahsulot -->
+                <div id="step1">
+                    <!-- Kategoriya tanlash (birinchi navbatda) -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="fl mb-0">1. Kategoriya tanlang yoki yangi yarating <span class="text-red-500">*</span></label>
+                            <button type="button" class="text-xs text-purple-600 hover:text-purple-800 font-semibold" onclick="toggleNewCategoryBox(true)">+ Yangi kategoriya</button>
+                        </div>
+                        <select name="category_id" class="fi" id="createCategorySelect" onchange="onCategoryChanged()">
+                            <option value="">— Kategoriyani tanlang —</option>
+                            <option value="__new__" class="font-bold text-purple-700 bg-purple-50">+ Yangi kategoriya yaratish...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <!-- Yangi kategoriya inline qutisi -->
+                        <div id="newCategoryBox" style="display:none" class="mt-2.5 p-3 bg-purple-50/70 border border-purple-200 rounded-xl">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-bold text-purple-900">Yangi kategoriya kiritish</span>
+                                <button type="button" class="text-[11px] text-gray-400 hover:text-gray-600" onclick="toggleNewCategoryBox(false)">✕ Yopish</button>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" name="new_category_name" id="newCategoryInput" class="fi py-1.5 text-xs" placeholder="Masalan: Poyabzallar yoki Burgerlar">
+                                <button type="button" class="ar-btn ar-btn-purple px-3 py-1.5 text-xs whitespace-nowrap" onclick="saveNewCategoryInline()">Qo'shish</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mahsulot tanlash rejimi (Tablar) -->
+                    <div class="mb-4">
+                        <label class="fl">2. Mahsulotni belgilang</label>
+                        <div class="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl mb-3">
+                            <button type="button" id="tabExistingBtn" class="py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-purple-700 transition" onclick="switchProductTab('existing')">
+                                Mavjud mahsulot
+                            </button>
+                            <button type="button" id="tabNewBtn" class="py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition" onclick="switchProductTab('new')">
+                                + Yangi mahsulot
+                            </button>
+                        </div>
+
+                        <!-- 1) Mavjud mahsulot select -->
+                        <div id="existingProductPanel">
+                            <select name="product_id" class="fi" id="productSelect" onchange="selectProduct()">
+                                <option value="">— Mahsulot tanlang —</option>
+                                {% for p in products %}
+                                <option value="{{ p.pk }}" data-category="{{ p.category_id|default:'' }}" data-name="{{ p.name }}" data-price="{{ p.price }}" data-img="{% if p.image %}{{ p.image.url }}{% endif %}">{{ p.name }} ({{ p.price|uznum }} so'm)</option>
+                                {% endfor %}
+                            </select>
+
+                            <div id="selectedProductPreview" style="display:none" class="mt-3 flex items-center gap-3 p-3 bg-purple-50 border border-purple-100 rounded-xl">
+                                <img id="selectedProductImg" class="w-12 h-12 rounded-lg object-cover bg-white" alt="">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-900" id="selectedProductName"></p>
+                                    <p class="text-[11px] text-purple-700">Mavjud rasm 1-rakurs sifatida qo'llanilishi mumkin</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2) Yangi mahsulot formasi -->
+                        <div id="newProductPanel" style="display:none" class="space-y-2.5">
+                            <div>
+                                <label class="text-[11px] font-semibold text-gray-600">Mahsulot nomi <span class="text-red-500">*</span></label>
+                                <input type="text" name="new_product_name" class="fi" placeholder="masalan: Krasovka Nike Air" id="newNameInput">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-gray-600">Narxi (so'm)</label>
+                                <input type="number" name="new_product_price" class="fi" placeholder="150000" id="newPriceInput">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: 4 ta rakursli suratlar va Yo'riqnoma -->
+                <div id="step2" style="display:none">
+                    <!-- Slayder Yo'riqnoma (Slide Guide) -->
+                    <div class="guide-carousel mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Suratga olish yo'riqnomasi
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button type="button" class="w-6 h-6 rounded-full bg-white text-purple-700 font-bold text-xs flex items-center justify-center hover:bg-purple-100 shadow-sm" onclick="changeGuideSlide(-1)">‹</button>
+                                <span class="text-[11px] font-bold text-purple-700 px-1" id="guideSlideIndicator">1/4</span>
+                                <button type="button" class="w-6 h-6 rounded-full bg-white text-purple-700 font-bold text-xs flex items-center justify-center hover:bg-purple-100 shadow-sm" onclick="changeGuideSlide(1)">›</button>
+                            </div>
+                        </div>
+
+                        <!-- 4 Slide content -->
+                        <div class="guide-slide active" id="guideSlide1">
+                            <p class="text-xs font-bold text-gray-900">📸 1. Oldi tomoni (Front View)</p>
+                            <p class="text-[11px] text-gray-600 mt-0.5">Mahsulotni to'g'ri ko'z sathida, yaxshi yorug'likda va tekis oq yoki neytral fonda to'g'ridan-to'g'ri suratga oling.</p>
+                        </div>
+                        <div class="guide-slide" id="guideSlide2">
+                            <p class="text-xs font-bold text-gray-900">🔄 2. Orqa tomoni (Back View)</p>
+                            <p class="text-[11px] text-gray-600 mt-0.5">Mahsulotni 180° ga aylantiring va kamerani o'zgartirmasdan, bir xil masofadan orqa qismini suratga oling.</p>
+                        </div>
+                        <div class="guide-slide" id="guideSlide3">
+                            <p class="text-xs font-bold text-gray-900">📐 3. O'ng tomoni (Right View)</p>
+                            <p class="text-[11px] text-gray-600 mt-0.5">Mahsulotni 90° o'ng tomonga burib, qalinligi va yon qirralarini aniq ko'rsatadigan rasm oling.</p>
+                        </div>
+                        <div class="guide-slide" id="guideSlide4">
+                            <p class="text-xs font-bold text-gray-900">📐 4. Chap yoki Yuqori tomoni (Left/Top View)</p>
+                            <p class="text-[11px] text-gray-600 mt-0.5">Mahsulotni 90° chap tomondan yoki tepadan suratga oling. Bu 3D modelni 360° to'liq yopadi.</p>
+                        </div>
+                    </div>
+
+                    <!-- 4 Dedicated Upload Slots -->
+                    <div class="mb-2 flex items-center justify-between">
+                        <label class="fl mb-0">Rasmlarni yuklang (Kamida oldi tomoni kerak)</label>
+                        <span class="text-[11px] text-purple-700 font-medium">Barcha tomonlar mustaqil</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- SLOT 1: Oldi (Front) -->
+                        <div class="slot-card" id="slotCard1">
+                            <button type="button" class="slot-remove-btn" onclick="clearSlot(1)" title="O'chirish">✕</button>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[11px] font-bold text-gray-800 flex items-center gap-1">
+                                    📷 1. Oldi tomoni <span class="text-red-500">*</span>
+                                </span>
+                            </div>
+                            <div class="slot-preview-area" onclick="document.getElementById('inputSlot1').click()">
+                                <img id="previewSlot1" style="display:none" alt="Oldi">
+                                <div id="phSlot1" class="text-center p-2">
+                                    <svg class="w-6 h-6 mx-auto text-purple-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                    <span class="text-[11px] font-semibold text-gray-700 block">Surat tanlang</span>
+                                    <span class="text-[9px] text-gray-400 block">Front 0°</span>
+                                </div>
+                            </div>
+                            <input type="file" name="image_front" id="inputSlot1" accept="image/*" style="display:none" onchange="handleSlotChange(this, 1)">
+                        </div>
+
+                        <!-- SLOT 2: Orqasi (Back) -->
+                        <div class="slot-card" id="slotCard2">
+                            <button type="button" class="slot-remove-btn" onclick="clearSlot(2)" title="O'chirish">✕</button>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[11px] font-bold text-gray-800 flex items-center gap-1">
+                                    🔄 2. Orqa tomoni
+                                </span>
+                            </div>
+                            <div class="slot-preview-area" onclick="document.getElementById('inputSlot2').click()">
+                                <img id="previewSlot2" style="display:none" alt="Orqasi">
+                                <div id="phSlot2" class="text-center p-2">
+                                    <svg class="w-6 h-6 mx-auto text-purple-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                    <span class="text-[11px] font-semibold text-gray-700 block">Surat tanlang</span>
+                                    <span class="text-[9px] text-gray-400 block">Back 180°</span>
+                                </div>
+                            </div>
+                            <input type="file" name="image_back" id="inputSlot2" accept="image/*" style="display:none" onchange="handleSlotChange(this, 2)">
+                        </div>
+
+                        <!-- SLOT 3: O'ng tomoni (Right) -->
+                        <div class="slot-card" id="slotCard3">
+                            <button type="button" class="slot-remove-btn" onclick="clearSlot(3)" title="O'chirish">✕</button>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[11px] font-bold text-gray-800 flex items-center gap-1">
+                                    📐 3. O'ng tomoni
+                                </span>
+                            </div>
+                            <div class="slot-preview-area" onclick="document.getElementById('inputSlot3').click()">
+                                <img id="previewSlot3" style="display:none" alt="O'ng">
+                                <div id="phSlot3" class="text-center p-2">
+                                    <svg class="w-6 h-6 mx-auto text-purple-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                    <span class="text-[11px] font-semibold text-gray-700 block">Surat tanlang</span>
+                                    <span class="text-[9px] text-gray-400 block">Right 90°</span>
+                                </div>
+                            </div>
+                            <input type="file" name="image_right" id="inputSlot3" accept="image/*" style="display:none" onchange="handleSlotChange(this, 3)">
+                        </div>
+
+                        <!-- SLOT 4: Chap / Yuqori (Left) -->
+                        <div class="slot-card" id="slotCard4">
+                            <button type="button" class="slot-remove-btn" onclick="clearSlot(4)" title="O'chirish">✕</button>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[11px] font-bold text-gray-800 flex items-center gap-1">
+                                    📐 4. Chap / Yuqori
+                                </span>
+                            </div>
+                            <div class="slot-preview-area" onclick="document.getElementById('inputSlot4').click()">
+                                <img id="previewSlot4" style="display:none" alt="Chap">
+                                <div id="phSlot4" class="text-center p-2">
+                                    <svg class="w-6 h-6 mx-auto text-purple-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                    <span class="text-[11px] font-semibold text-gray-700 block">Surat tanlang</span>
+                                    <span class="text-[9px] text-gray-400 block">Left 90° / Top</span>
+                                </div>
+                            </div>
+                            <input type="file" name="image_left" id="inputSlot4" accept="image/*" style="display:none" onchange="handleSlotChange(this, 4)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Tasdiqlash va 3D Yaratish -->
+                <div id="step3" style="display:none">
+                    <p class="text-sm font-semibold text-gray-800 mb-3">3. 3D model generatsiyasini boshlash</p>
+                    
+                    <div class="bg-purple-50/70 border border-purple-100 rounded-xl p-4 mb-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center flex-shrink-0">
+                                🥽
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-purple-950" id="summaryProductName">Mahsulot nomi</h4>
+                                <p class="text-[11px] text-purple-700 mt-0.5" id="summaryCategoryName">Kategoriya</p>
+                                <p class="text-[11px] text-gray-500 mt-1">4 rakursli suratlar 3D box model sirtlariga to'liq joylashtiriladi va GLB formatda eksport qilinadi.</p>
+                            </div>
+                        </div>
+
+                        <!-- 4 ta rasm miniatyuralari -->
+                        <div class="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-purple-200/60">
+                            <div class="text-center">
+                                <div class="w-full h-12 bg-white rounded border border-purple-200 overflow-hidden flex items-center justify-center">
+                                    <img id="summaryThumb1" class="w-full h-full object-contain" alt="">
+                                </div>
+                                <span class="text-[9px] text-gray-500 block mt-0.5">Oldi</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-full h-12 bg-white rounded border border-purple-200 overflow-hidden flex items-center justify-center">
+                                    <img id="summaryThumb2" class="w-full h-full object-contain" alt="">
+                                </div>
+                                <span class="text-[9px] text-gray-500 block mt-0.5">Orqa</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-full h-12 bg-white rounded border border-purple-200 overflow-hidden flex items-center justify-center">
+                                    <img id="summaryThumb3" class="w-full h-full object-contain" alt="">
+                                </div>
+                                <span class="text-[9px] text-gray-500 block mt-0.5">O'ng</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-full h-12 bg-white rounded border border-purple-200 overflow-hidden flex items-center justify-center">
+                                    <img id="summaryThumb4" class="w-full h-full object-contain" alt="">
+                                </div>
+                                <span class="text-[9px] text-gray-500 block mt-0.5">Chap</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tugmalar navigatsiyasi -->
+                <div class="flex gap-2 mt-5">
+                    <button type="button" id="prevBtn" style="display:none" class="w-1/3 py-3 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100 transition" onclick="goToPrevStep()">
+                        Ortga
+                    </button>
+                    <button type="submit" class="create-btn flex-1" id="submitBtn">
+                        <span id="submitText">Davom etish</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- GLOBAL STATE ---
+let currentStep = 1;
+let activeProductMode = 'existing'; // 'existing' | 'new'
+let currentGuideSlide = 1;
+const slotImages = { 1: null, 2: null, 3: null, 4: null };
+
+// --- AUTO MATCH MODAL LOGIC ---
+function openAutoMatchModal() {
+    document.getElementById('autoMatchModal').classList.add('show');
+    document.getElementById('autoMatchProgress').style.display = 'none';
+    document.getElementById('autoMatchResult').style.display = 'none';
+    document.getElementById('autoMatchStartBtn').disabled = false;
+    document.getElementById('autoMatchOptions').style.display = 'block';
+}
+
+function closeAutoMatchModal() {
+    document.getElementById('autoMatchModal').classList.remove('show');
+}
+
+function updateMatchOptionUI() {
+    const isForce = document.querySelector('input[name="match_mode"]:checked').value === 'force';
+    const l1 = document.getElementById('labelOptionNoAr');
+    const l2 = document.getElementById('labelOptionForce');
+    if (isForce) {
+        l1.className = 'block p-3 border border-gray-200 rounded-xl cursor-pointer transition hover:bg-gray-50';
+        l2.className = 'block p-3 border-2 border-purple-500 bg-purple-50/30 rounded-xl cursor-pointer transition hover:bg-purple-50/50';
+    } else {
+        l1.className = 'block p-3 border-2 border-purple-500 bg-purple-50/30 rounded-xl cursor-pointer transition hover:bg-purple-50/50';
+        l2.className = 'block p-3 border border-gray-200 rounded-xl cursor-pointer transition hover:bg-gray-50';
+    }
+}
+
+function runAutoMatch() {
+    const isForce = document.querySelector('input[name="match_mode"]:checked').value === 'force';
+    const prog = document.getElementById('autoMatchProgress');
+    const res = document.getElementById('autoMatchResult');
+    const btn = document.getElementById('autoMatchStartBtn');
+    const opts = document.getElementById('autoMatchOptions');
+
+    prog.style.display = 'block';
+    res.style.display = 'none';
+    btn.disabled = true;
+    opts.style.opacity = '0.5';
+
+    const formData = new FormData();
+    formData.append('action', 'batch_auto_match');
+    formData.append('force', isForce ? '1' : '0');
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        prog.style.display = 'none';
+        res.style.display = 'block';
+        opts.style.opacity = '1';
+        if (data.success) {
+            res.className = 'mb-4 p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200';
+            res.innerHTML = `✅ <b>${data.attached_count} ta</b> mahsulotga 3D model muvaffaqiyatli ulandi!<br><span class="text-[11px] font-normal opacity-80">${data.message}</span>`;
+            setTimeout(() => {
+                window.location.reload();
+            }, 1200);
+        } else {
+            res.className = 'mb-4 p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200';
+            res.textContent = data.message || 'Xatolik yuz berdi';
+            btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        prog.style.display = 'none';
+        res.style.display = 'block';
+        res.className = 'mb-4 p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-800 border border-red-200';
+        res.textContent = 'Server bilan aloqa uzildi. Iltimos qayta urinib ko‘ring.';
+        btn.disabled = false;
+        opts.style.opacity = '1';
+    });
+}
+
+// --- CREATE MODAL LOGIC ---
+function openCreateModal() {
+    document.getElementById('createModal').classList.add('show');
+    currentStep = 1;
+    updateStepsUI();
+}
+
+function closeCreateModal() {
+    document.getElementById('createModal').classList.remove('show');
+}
+
+function toggleNewCategoryBox(show) {
+    const box = document.getElementById('newCategoryBox');
+    box.style.display = show ? 'block' : 'none';
+    if (show) {
+        document.getElementById('newCategoryInput').focus();
+    }
+}
+
+function onCategoryChanged() {
+    const sel = document.getElementById('createCategorySelect');
+    if (sel.value === '__new__') {
+        toggleNewCategoryBox(true);
+    } else {
+        toggleNewCategoryBox(false);
+        filterProductsByCategory(sel.value);
+    }
+}
+
+function filterProductsByCategory(catId) {
+    const pSel = document.getElementById('productSelect');
+    for (let opt of pSel.options) {
+        if (!opt.value) continue;
+        const optCat = opt.getAttribute('data-category');
+        if (!catId || optCat === String(catId)) {
+            opt.style.display = '';
+        } else {
+            opt.style.display = 'none';
+        }
+    }
+}
+
+function saveNewCategoryInline() {
+    const inp = document.getElementById('newCategoryInput');
+    const val = inp.value.trim();
+    if (!val) {
+        alert('Kategoriya nomini kiriting!');
+        return;
+    }
+    const formData = new FormData();
+    formData.append('action', 'create_category');
+    formData.append('name', val);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const sel = document.getElementById('createCategorySelect');
+            const newOpt = new Option(data.name, data.id, true, true);
+            sel.add(newOpt, sel.options[2]);
+            sel.value = data.id;
+            toggleNewCategoryBox(false);
+            inp.value = '';
+            filterProductsByCategory(data.id);
+        } else {
+            alert(data.error || 'Xatolik yuz berdi');
+        }
+    })
+    .catch(() => {
+        alert('Kategoriya saqlashda xato');
+    });
+}
+
+function switchProductTab(mode) {
+    activeProductMode = mode;
+    const tabExt = document.getElementById('tabExistingBtn');
+    const tabNew = document.getElementById('tabNewBtn');
+    const panelExt = document.getElementById('existingProductPanel');
+    const panelNew = document.getElementById('newProductPanel');
+
+    if (mode === 'existing') {
+        tabExt.className = 'py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-purple-700 transition';
+        tabNew.className = 'py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition';
+        panelExt.style.display = 'block';
+        panelNew.style.display = 'none';
+        document.getElementById('newNameInput').value = '';
+    } else {
+        tabNew.className = 'py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-purple-700 transition';
+        tabExt.className = 'py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition';
+        panelExt.style.display = 'none';
+        panelNew.style.display = 'block';
+        document.getElementById('productSelect').value = '';
+        document.getElementById('selectedProductPreview').style.display = 'none';
+    }
+}
+
+function selectProduct() {
+    const sel = document.getElementById('productSelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (sel.value) {
+        const img = opt.dataset.img;
+        const name = opt.dataset.name;
+        if (img) {
+            document.getElementById('selectedProductImg').src = img;
+            document.getElementById('selectedProductName').textContent = name;
+            document.getElementById('selectedProductPreview').style.display = 'flex';
+            // Auto-populate slot 1 preview if slot 1 is empty
+            if (!slotImages[1]) {
+                document.getElementById('previewSlot1').src = img;
+                document.getElementById('previewSlot1').style.display = 'block';
+                document.getElementById('phSlot1').style.display = 'none';
+                document.getElementById('slotCard1').classList.add('has-file');
+                slotImages[1] = img;
+            }
+        } else {
+            document.getElementById('selectedProductPreview').style.display = 'none';
+        }
+        const optCat = opt.dataset.category;
+        if (optCat && document.getElementById('createCategorySelect').value !== optCat) {
+            document.getElementById('createCategorySelect').value = optCat;
+        }
+    } else {
+        document.getElementById('selectedProductPreview').style.display = 'none';
+    }
+}
+
+// --- GUIDE SLIDER ---
+function changeGuideSlide(delta) {
+    currentGuideSlide += delta;
+    if (currentGuideSlide < 1) currentGuideSlide = 4;
+    if (currentGuideSlide > 4) currentGuideSlide = 1;
+    for (let i = 1; i <= 4; i++) {
+        const sl = document.getElementById('guideSlide' + i);
+        if (sl) sl.className = 'guide-slide' + (i === currentGuideSlide ? ' active' : '');
+    }
+    document.getElementById('guideSlideIndicator').textContent = currentGuideSlide + '/4';
+}
+
+// --- 4 PHOTO SLOTS UPLOAD HANDLER ---
+function handleSlotChange(input, slotNum) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('previewSlot' + slotNum);
+            const ph = document.getElementById('phSlot' + slotNum);
+            const card = document.getElementById('slotCard' + slotNum);
+            
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            ph.style.display = 'none';
+            card.classList.add('has-file');
+            slotImages[slotNum] = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function clearSlot(slotNum) {
+    const input = document.getElementById('inputSlot' + slotNum);
+    const preview = document.getElementById('previewSlot' + slotNum);
+    const ph = document.getElementById('phSlot' + slotNum);
+    const card = document.getElementById('slotCard' + slotNum);
+
+    if (input) input.value = '';
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+    if (ph) ph.style.display = 'block';
+    if (card) card.classList.remove('has-file');
+    slotImages[slotNum] = null;
+}
+
+// --- STEPPER TRANSITIONS ---
+function updateStepsUI() {
+    for (let i = 1; i <= 3; i++) {
+        const badge = document.getElementById('step' + i + 'Badge');
+        const title = document.getElementById('step' + i + 'Title');
+        const step = document.getElementById('step' + i);
+
+        if (i === currentStep) {
+            badge.style.background = '#7c3aed';
+            badge.style.color = '#fff';
+            if (title) title.className = 'text-xs font-bold text-purple-700';
+            step.style.display = 'block';
+        } else if (i < currentStep) {
+            badge.style.background = '#10b981';
+            badge.style.color = '#fff';
+            if (title) title.className = 'text-xs font-bold text-emerald-600';
+            step.style.display = 'none';
+        } else {
+            badge.style.background = '#e5e7eb';
+            badge.style.color = '#9ca3af';
+            if (title) title.className = 'text-xs font-bold text-gray-400';
+            step.style.display = 'none';
+        }
+    }
+
+    document.getElementById('step1Line').className = 'step-line' + (currentStep > 1 ? ' active' : '');
+    document.getElementById('step2Line').className = 'step-line' + (currentStep > 2 ? ' active' : '');
+
+    const prevBtn = document.getElementById('prevBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+
+    if (currentStep === 1) {
+        prevBtn.style.display = 'none';
+        submitText.textContent = 'Davom etish (2/3)';
+    } else if (currentStep === 2) {
+        prevBtn.style.display = 'block';
+        submitText.textContent = 'Davom etish (3/3)';
+    } else {
+        prevBtn.style.display = 'block';
+        submitText.textContent = '🚀 3D Model Yaratish';
+        populateSummary();
+    }
+}
+
+function goToPrevStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        updateStepsUI();
+    }
+}
+
+function populateSummary() {
+    const sel = document.getElementById('productSelect');
+    const newName = document.getElementById('newNameInput').value.trim();
+    const pName = activeProductMode === 'existing' && sel.selectedIndex > 0
+        ? sel.options[sel.selectedIndex].text
+        : (newName || 'Yangi mahsulot');
+
+    const catSel = document.getElementById('createCategorySelect');
+    const cName = catSel.selectedIndex > 0 ? catSel.options[catSel.selectedIndex].text : 'Kategoriya tanlanmagan';
+
+    document.getElementById('summaryProductName').textContent = pName;
+    document.getElementById('summaryCategoryName').textContent = 'Kategoriya: ' + cName;
+
+    for (let i = 1; i <= 4; i++) {
+        const thumb = document.getElementById('summaryThumb' + i);
+        if (slotImages[i]) {
+            thumb.src = slotImages[i];
+            thumb.style.display = 'block';
+        } else {
+            thumb.src = '';
+            thumb.style.display = 'none';
+        }
+    }
+}
+
+function validateForm(e) {
+    if (currentStep === 1) {
+        if (activeProductMode === 'existing') {
+            const pVal = document.getElementById('productSelect').value;
+            if (!pVal) {
+                alert('Iltimos, mavjud mahsulotni tanlang yoki "+ Yangi mahsulot" tabiga o‘ting.');
+                e.preventDefault();
+                return false;
+            }
+        } else {
+            const newName = document.getElementById('newNameInput').value.trim();
+            if (!newName) {
+                alert('Iltimos, yangi mahsulot nomini kiriting.');
+                e.preventDefault();
+                return false;
+            }
+        }
+        currentStep = 2;
+        updateStepsUI();
+        e.preventDefault();
+        return false;
+    } else if (currentStep === 2) {
+        // Slot 1 is required
+        if (!slotImages[1]) {
+            alert('Iltimos, kamida 1-suratni (Oldi tomoni) yuklang!');
+            e.preventDefault();
+            return false;
+        }
+        currentStep = 3;
+        updateStepsUI();
+        e.preventDefault();
+        return false;
+    }
+
+    // Step 3 final submit
+    document.getElementById('submitText').textContent = '3D Model yaratilmoqda...';
+    document.getElementById('submitBtn').disabled = true;
+    return true;
+}
+
+// --- 3D PREVIEW MODAL ---
+function preview3D(title, glbUrl) {
+    document.getElementById('previewModalTitle').textContent = title || "3D Model";
+    document.getElementById('previewModelUrl').textContent = glbUrl || "";
+    const mv = document.getElementById('sellerModalViewer');
+    mv.src = glbUrl;
+    document.getElementById('preview3DModal').classList.add('show');
+}
+
+function closePreviewModal() {
+    const modal = document.getElementById('preview3DModal');
+    modal.classList.remove('show');
+    document.getElementById('sellerModalViewer').src = '';
+}
+
+// --- JONLI QIDIRUV VA FILTRLAR ---
+let currentStatusFilter = 'all';
+
+function setStatusFilter(status) {
+    currentStatusFilter = status;
+    document.querySelectorAll('.ar-filter-pill').forEach(btn => {
+        if (btn.getAttribute('data-status') === status) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    applyFilters();
+}
+
+function applyFilters() {
+    const query = (document.getElementById('arSearchInput')?.value || '').toLowerCase().trim();
+    const catVal = document.getElementById('arCategorySelect')?.value || '';
+    const sortVal = document.getElementById('arSortSelect')?.value || 'newest';
+    const grid = document.getElementById('productGrid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.product-item'));
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const name = (card.getAttribute('data-name') || '').toLowerCase();
+        const cat = card.getAttribute('data-category') || '';
+        const has3d = card.getAttribute('data-has3d') === '1';
+        const source = card.getAttribute('data-source') || '';
+
+        let matchSearch = !query || name.includes(query);
+        let matchCat = !catVal || cat === catVal;
+        let matchStatus = true;
+
+        if (currentStatusFilter === 'has_3d') {
+            matchStatus = has3d;
+        } else if (currentStatusFilter === 'no_3d') {
+            matchStatus = !has3d;
+        } else if (currentStatusFilter === 'ai_4') {
+            matchStatus = has3d && source === 'ai_4';
+        } else if (currentStatusFilter === 'library') {
+            matchStatus = has3d && source === 'library';
+        }
+
+        if (matchSearch && matchCat && matchStatus) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    const countEl = document.getElementById('visibleProductCount');
+    if (countEl) countEl.textContent = visibleCount;
+
+    let emptyMsg = document.getElementById('filterEmptyState');
+    if (visibleCount === 0) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('div');
+            emptyMsg.id = 'filterEmptyState';
+            emptyMsg.className = 'col-span-full py-12 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200 my-4';
+            emptyMsg.innerHTML = `
+                <div class="text-4xl mb-2">🔍</div>
+                <div class="text-sm font-bold text-gray-700">Qidiruv bo'yicha hech qanday mahsulot topilmadi</div>
+                <p class="text-xs text-gray-400 mt-1">Filtrlarni tozalab qayta qidirib ko'ring</p>
+                <button type="button" onclick="resetFilters()" class="mt-3 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-semibold rounded-lg transition">Filtrlarni tozalash</button>
+            `;
+            grid.appendChild(emptyMsg);
+        } else {
+            emptyMsg.style.display = '';
+        }
+    } else if (emptyMsg) {
+        emptyMsg.style.display = 'none';
+    }
+
+    cards.sort((a, b) => {
+        if (sortVal === 'newest') {
+            return parseInt(b.getAttribute('data-id') || 0) - parseInt(a.getAttribute('data-id') || 0);
+        } else if (sortVal === 'name_asc') {
+            return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+        } else if (sortVal === 'name_desc') {
+            return (b.getAttribute('data-name') || '').localeCompare(a.getAttribute('data-name') || '');
+        } else if (sortVal === 'price_asc') {
+            return parseFloat(a.getAttribute('data-price') || 0) - parseFloat(b.getAttribute('data-price') || 0);
+        } else if (sortVal === 'price_desc') {
+            return parseFloat(b.getAttribute('data-price') || 0) - parseFloat(a.getAttribute('data-price') || 0);
+        }
+        return 0;
+    });
+
+    cards.forEach(card => grid.appendChild(card));
+}
+
+function resetFilters() {
+    const search = document.getElementById('arSearchInput');
+    if (search) search.value = '';
+    const cat = document.getElementById('arCategorySelect');
+    if (cat) cat.value = '';
+    const sort = document.getElementById('arSortSelect');
+    if (sort) sort.value = 'newest';
+    setStatusFilter('all');
+}
+
+// Yangi yaratilgan mahsulotga avtomatik scroll qilish
+document.addEventListener('DOMContentLoaded', function() {
+    const justCreated = document.querySelector('.product-item.ring-amber-400');
+    if (justCreated) {
+        justCreated.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// --- JONLI AR MENYU SAYTI FUNKSIYALARI ---
+function copyArMenuLink() {
+    const liveUrlText = window.location.origin + "{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}";
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(liveUrlText).then(() => {
+            handleCopySuccess();
+        }).catch(() => fallbackCopy(liveUrlText));
+    } else {
+        fallbackCopy(liveUrlText);
+    }
+}
+
+function handleCopySuccess() {
+    const btnText = document.getElementById('copyBtnText');
+    const icon = document.getElementById('copyIcon');
+    if (btnText && icon) {
+        btnText.textContent = "Nusxalandi! ✅";
+        icon.textContent = "✓";
+        setTimeout(() => {
+            btnText.textContent = "Nusxalash";
+            icon.textContent = "📋";
+        }, 2500);
+    }
+}
+
+function fallbackCopy(text) {
+    const dummy = document.createElement('input');
+    document.body.appendChild(dummy);
+    dummy.value = text;
+    dummy.select();
+    document.execCommand('copy');
+    document.body.removeChild(dummy);
+    handleCopySuccess();
+}
+
+function openQrModal(path) {
+    const fullUrl = window.location.origin + path;
+    const qrImg = document.getElementById('qrModalImage');
+    const qrLink = document.getElementById('qrModalTargetUrl');
+    const openLink = document.getElementById('qrModalOpenLink');
+    if (qrImg) {
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(fullUrl);
+    }
+    if (qrLink) {
+        qrLink.textContent = fullUrl;
+        qrLink.href = fullUrl;
+    }
+    if (openLink) {
+        openLink.href = fullUrl;
+    }
+    const modal = document.getElementById('arQrModal');
+    if (modal) modal.classList.add('show');
+}
+
+function closeQrModal() {
+    const modal = document.getElementById('arQrModal');
+    if (modal) modal.classList.remove('show');
+}
+</script>
+
+<!-- 3D Preview Modal -->
+<div id="preview3DModal" class="modal-overlay">
+    <div class="modal" style="max-width: 540px;">
+        <div class="modal-header">
+            <div>
+                <h4 id="previewModalTitle" class="text-base font-bold text-gray-900">3D Model Ko'rinishi</h4>
+                <p class="text-xs text-gray-400">360° aylantirish, masshtablash va AR tekshiruvi</p>
+            </div>
+            <button type="button" class="modal-close" onclick="closePreviewModal()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="relative bg-gray-950 flex items-center justify-center" style="height: 340px; border-radius: 0.5rem; margin: 1rem; overflow: hidden;">
+            <model-viewer id="sellerModalViewer" src="" ar ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate shadow-intensity="1" class="w-full h-full" style="width: 100%; height: 340px;"></model-viewer>
+        </div>
+        <div class="px-5 pb-5 flex items-center justify-between">
+            <span id="previewModelUrl" class="text-xs text-gray-500 font-mono truncate max-w-[320px]"></span>
+            <button type="button" onclick="closePreviewModal()" class="ar-btn ar-btn-purple">Yopish</button>
+        </div>
+    </div>
+</div>
+
+<!-- QR Kod Modal -->
+<div id="arQrModal" class="modal-overlay">
+    <div class="modal text-center" style="max-width: 440px;">
+        <div class="modal-header text-left">
+            <div>
+                <h4 class="text-base font-bold text-gray-900">Restoran AR Menyu QR Kodi</h4>
+                <p class="text-xs text-gray-400">Stollar ustiga qo'yish yoki smartfonda tekshirish uchun</p>
+            </div>
+            <button type="button" class="modal-close" onclick="closeQrModal()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-6 flex flex-col items-center">
+            <div class="p-4 bg-white border-2 border-emerald-500/30 rounded-2xl shadow-inner mb-4">
+                <img id="qrModalImage" src="" alt="AR Menyu QR kodi" class="w-56 h-56 mx-auto rounded-lg">
+            </div>
+            <p class="text-xs text-gray-500 mb-1">Smartfon kamerasi orqali skanerlang:</p>
+            <a id="qrModalTargetUrl" href="#" target="_blank" class="text-xs font-mono text-emerald-600 font-bold hover:underline break-all mb-5 block"></a>
+            <div class="flex items-center gap-2 w-full">
+                <a id="qrModalOpenLink" href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                    🌐 Saytni Ochish ↗
+                </a>
+                <button type="button" onclick="window.print()" class="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition flex items-center gap-1">
+                    🖨️ Chop etish
+                </button>
+                <button type="button" onclick="closeQrModal()" class="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

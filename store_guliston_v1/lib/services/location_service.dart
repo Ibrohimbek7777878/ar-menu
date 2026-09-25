@@ -1,16 +1,39 @@
+import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class LocationService {
+  /// Lokatsiya ruxsatini so'rash (iOS + Android)
+  /// Web uchun brauzer ruxsatini qabul qiladi.
   Future<bool> requestLocationPermission() async {
-    final status = await Permission.location.request();
-    return status.isGranted;
+    if (kIsWeb) {
+      return true;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+      return false;
+    }
+
+    return true;
   }
 
   Future<bool> checkLocationPermission() async {
-    final status = await Permission.location.status;
-    return status.isGranted;
+    if (kIsWeb) {
+      return true;
+    }
+
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse;
   }
 
   Future<Position?> getCurrentPosition() async {
@@ -18,7 +41,9 @@ class LocationService {
       final hasPermission = await checkLocationPermission();
       if (!hasPermission) {
         final granted = await requestLocationPermission();
-        if (!granted) return null;
+        if (!granted) {
+          return null;
+        }
       }
 
       return await Geolocator.getCurrentPosition(
@@ -40,10 +65,14 @@ class LocationService {
   }
 
   Stream<Position> getPositionStream() {
+    if (kIsWeb) {
+      return const Stream<Position>.empty();
+    }
+
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
+        distanceFilter: 10,
       ),
     );
   }
@@ -64,10 +93,21 @@ class LocationService {
 
   Future<String> getAddressFromCoordinates(double latitude, double longitude) async {
     try {
-      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+      final geo = Geocoding();
+      final placemarks = await geo.placemarkFromCoordinates(latitude, longitude);
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        return '${place.street}, ${place.locality}, ${place.country}';
+        final parts = <String>[];
+        if (place.street != null && place.street!.isNotEmpty) {
+          parts.add(place.street!);
+        }
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          parts.add(place.locality!);
+        }
+        if (place.country != null && place.country!.isNotEmpty) {
+          parts.add(place.country!);
+        }
+        return parts.isNotEmpty ? parts.join(', ') : 'Manzil aniqlanmadi';
       }
     } catch (e) {
       print('Reverse geocoding error: $e');
@@ -75,18 +115,24 @@ class LocationService {
     return 'Manzil aniqlanmadi';
   }
 
-  // Check if location services are enabled
   Future<bool> isLocationServiceEnabled() async {
+    if (kIsWeb) {
+      return true;
+    }
     return await Geolocator.isLocationServiceEnabled();
   }
 
-  // Open location settings
   Future<bool> openLocationSettings() async {
+    if (kIsWeb) {
+      return false;
+    }
     return await Geolocator.openLocationSettings();
   }
 
-  // Open app settings
   Future<bool> openAppSettings() async {
+    if (kIsWeb) {
+      return false;
+    }
     return await Geolocator.openAppSettings();
   }
 }

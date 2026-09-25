@@ -1,0 +1,103 @@
+{% extends "admin/base_admin.html" %}
+{% load i18n_tags %}
+{% block title %}{{ t.store_management_short }} - {{ t.admin_panel }}{% endblock %}
+{% block page_title %}{{ t.store_management_short }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div>
+        <p class="eyebrow mb-1">{{ t.store_management }}</p>
+        <h1 class="font-display text-2xl font-semibold text-ink">{{ t.store_management_short }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ shops|length }} ta do'kon</p>
+    </div>
+    <a href="{% url 'admin_shop_create' %}" class="btn btn-primary shadow-soft">
+        <span class="material-icons-outlined !text-lg">add</span>
+        Yangi do'kon
+    </a>
+</div>
+
+<div class="mb-6 max-w-md">
+    <form method="GET" class="relative">
+        <input type="text" name="search" value="{{ search|default:'' }}" placeholder="{{ t.search }}..." class="pl-10 !rounded-full">
+        <span class="material-icons-outlined text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 !text-lg">search</span>
+    </form>
+</div>
+
+<div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="tbl w-full min-w-[640px]">
+            <thead>
+                <tr>
+                    <th>{{ t.store_management_short }}</th>
+                    <th>{{ t.categories }}</th>
+                    <th>{{ t.map_rating }}</th>
+                    <th>{{ t.map_open }}</th>
+                    <th>Tavsiya</th>
+                    <th class="!text-right">{{ t.actions }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shop in shops %}
+                <tr class="group hover:!bg-brand-50/30 transition-colors">
+                    <td>
+                        <div class="flex items-center gap-3">
+                            {% if shop.image %}
+                            <img src="{{ shop.image.url }}" alt="{{ shop.name }}" class="w-11 h-11 rounded-xl object-cover border border-gray-100 group-hover:border-brand-100 transition-colors">
+                            {% else %}
+                            <div class="w-11 h-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                                <span class="material-icons-outlined !text-lg text-gray-300">storefront</span>
+                            </div>
+                            {% endif %}
+                            <span class="text-sm font-semibold text-ink">{{ shop.name }}</span>
+                        </div>
+                    </td>
+                    <td class="text-gray-600">{{ shop.category.name|default:"—" }}</td>
+                    <td>
+                        <span class="inline-flex items-center gap-1 text-sm font-medium text-ink">
+                            <span class="material-icons !text-base text-amber-400">star</span>
+                            {{ shop.rating|default:"0" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if shop.is_open %}
+                        <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.map_open }}</span>
+                        {% else %}
+                        <span class="pill text-gray-500 bg-gray-100"><span class="size-1.5 rounded-full bg-gray-400"></span>{{ t.map_closed }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if shop.is_featured %}
+                        <span class="pill text-blue-700 bg-blue-50"><span class="size-1.5 rounded-full bg-blue-500"></span>Tavsiya</span>
+                        {% else %}
+                        <span class="pill text-gray-500 bg-gray-100">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="!text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{% url 'admin_shop_edit' shop.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-brand-700 hover:bg-brand-50 transition" title="{{ t.edit }}">
+                                <span class="material-icons-outlined !text-lg">edit</span>
+                            </a>
+                            <a href="{% url 'admin_shop_builder' shop.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-brand-700 hover:bg-brand-50 transition" title="Store Builder">
+                                <span class="material-icons-outlined !text-lg">palette</span>
+                            </a>
+                            <a href="{% url 'admin_shop_delete' shop.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="{{ t.delete }}" onclick="return confirm('{{ t.admin_delete_confirm }}')">
+                                <span class="material-icons-outlined !text-lg">delete</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-14 text-center">
+                        <span class="grid size-14 place-items-center mx-auto rounded-2xl bg-gray-50 text-gray-300 mb-3">
+                            <span class="material-icons-outlined !text-3xl">storefront</span>
+                        </span>
+                        <p class="text-sm font-medium text-gray-500">{{ t.store_not_found }}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

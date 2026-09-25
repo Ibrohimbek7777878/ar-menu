@@ -15,13 +15,13 @@ class WeatherProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadCurrentWeather(String city) async {
+  Future<void> loadCurrentWeather(String apiKey) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _currentWeather = await _weatherService.getCurrentWeather(city);
+      _currentWeather = await _weatherService.getCurrentWeather(apiKey);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -31,13 +31,13 @@ class WeatherProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadWeatherForecast(String city, int days) async {
+  Future<void> loadWeatherForecast(String apiKey, int days) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _forecast = await _weatherService.getWeatherForecast(city, days);
+      _forecast = await _weatherService.getWeatherForecast(apiKey, days);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -47,14 +47,14 @@ class WeatherProvider with ChangeNotifier {
     }
   }
 
-  Future<void> refreshWeather(String city) async {
-    await loadCurrentWeather(city);
-    await loadWeatherForecast(city, 5); // 5 day forecast
+  Future<void> refreshWeather(String apiKey) async {
+    await loadCurrentWeather(apiKey);
+    await loadWeatherForecast(apiKey, 5); // 5 day forecast
   }
 
   void clearError() {
     _error = null;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   // Load demo weather for Yangiyer
@@ -99,6 +99,6 @@ class WeatherProvider with ChangeNotifier {
       ),
     ];
 
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 }

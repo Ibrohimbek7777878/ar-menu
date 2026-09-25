@@ -1,0 +1,266 @@
+{% extends "customer/base_customer.html" %}
+{% load i18n_tags uznum %}
+{% comment %}
+V10 ichki sahifalar draft preview — REAL komponentlar + REAL ma'lumot + draft ranglar + i18n.
+page: catalog | product | cart | checkout | tracking | delivery (home — to'liq real shop_detail)
+{% endcomment %}
+{% block title %}[Preview] {{ shop.name|default:"Do'kon" }} — ichki sahifa{% endblock %}
+{% block content %}
+<style>
+    .pv-scope { --sp-primary: {{ tpl_colors.primary|default:'#16a34a' }}; --sp-accent: {{ tpl_colors.accent|default:'#22c55e' }};
+                --sp-bg: {{ tpl_colors.background|default:'#ffffff' }}; --sp-surface: {{ tpl_colors.surface|default:'#f8fafc' }};
+                --sp-text: {{ tpl_colors.text_primary|default:'#1a1a1a' }}; --sp-muted: {{ tpl_colors.text_secondary|default:'#666666' }};
+                background: var(--sp-bg); color: var(--sp-text); }
+    .pv-card { background: var(--sp-surface); border-radius: 1rem; }
+    .pv-btn { background: var(--sp-primary); color: #fff; }
+    .pv-btn:hover { opacity: .92; }
+    .pv-btn-outline { border: 2px solid var(--sp-primary); color: var(--sp-primary); }
+    .pv-accent { background: var(--sp-accent); }
+    .pv-badge { background: color-mix(in srgb, var(--sp-accent) 20%, transparent); color: var(--sp-primary); }
+    .pv-muted { color: var(--sp-muted); }
+    .pv-value { color: var(--sp-primary); }
+    /* Leaflet z-index — header ustiga chiqib ketmasligi uchun */
+    .pv-map-wrap { position: relative; z-index: 0; }
+    .pv-map-wrap .leaflet-container { z-index: 0; }
+    /* Mobil iframe — hammasi bitta ustunda, xarita balandligi moslashuvchan */
+    @media (max-width: 767px) { .pv-map-height { height: 240px !important; } }
+    @media (min-width: 768px) { .pv-map-height { height: 340px; } }
+</style>
+
+<div class="pv-scope min-h-screen">
+    <div class="pv-accent text-white text-[11px] sm:text-xs font-bold text-center py-1.5 px-3">
+        {{ t.builder_preview_badge }}
+    </div>
+
+    <div class="mx-auto max-w-5xl px-3 sm:px-4 py-5 sm:py-6">
+
+        {% if preview_page == 'catalog' %}
+        <h1 class="text-xl sm:text-2xl font-bold mb-3">{{ t.builder_catalog_title }}</h1>
+        <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
+            {% for c in categories|slice:":8" %}
+            <span class="pv-badge whitespace-nowrap text-xs font-bold px-3.5 py-1.5 rounded-full">{{ c.name }}</span>
+            {% endfor %}
+        </div>
+        {% if related %}
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {% for r in related %}
+            <div class="pv-card p-3">
+                <div class="pv-badge h-24 sm:h-28 rounded-xl flex items-center justify-center text-4xl mb-2 overflow-hidden">{% if r.image %}<img src="{{ r.image.url }}" class="h-full object-contain">{% else %}📦{% endif %}</div>
+                <p class="text-sm font-semibold truncate">{{ r.name }}</p>
+                <div class="flex items-center justify-between mt-1">
+                    <p class="text-sm font-bold pv-value">{{ r.price|uznum }} so'm</p>
+                    <span class="pv-btn w-7 h-7 rounded-lg flex items-center justify-center text-sm">+</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}<p class="pv-muted">{{ t.builder_no_products }}</p>{% endif %}
+
+        {% elif preview_page == 'product' %}
+        {% if product %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+            <div class="pv-card overflow-hidden flex items-center justify-center p-4" style="min-height:220px">
+                {% if product.image %}<img src="{{ product.image.url }}" class="max-h-56 sm:max-h-72 object-contain rounded-xl" alt="">
+                {% else %}<div class="pv-badge text-5xl w-full h-44 sm:h-48 flex items-center justify-center rounded-xl">📦</div>{% endif %}
+            </div>
+            <div class="space-y-4">
+                <div class="flex flex-wrap gap-2">
+                    {% if product.is_organic %}<span class="pv-badge text-[11px] font-bold px-2.5 py-1 rounded-full">🌱 Organic</span>{% endif %}
+                    {% if product.is_halal %}<span class="pv-badge text-[11px] font-bold px-2.5 py-1 rounded-full">Halol</span>{% endif %}
+                    {% if product.stock > 0 %}<span class="pv-badge text-[11px] font-bold px-2.5 py-1 rounded-full">✓ {{ t.builder_in_stock }}</span>
+                    {% else %}<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-500/15 text-red-500">{{ t.builder_out_stock }}</span>{% endif %}
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold">{{ product.name }}</h1>
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="pv-accent text-white px-2 py-0.5 rounded font-bold">{{ product.rating|floatformat:1 }} ★</span>
+                    <span class="pv-muted">{{ product.reviews_count }} sharh</span>
+                </div>
+                <div class="flex items-end gap-3">
+                    <span class="text-2xl sm:text-3xl font-bold pv-value">{{ product.price|uznum }} so'm</span>
+                    {% if product.old_price %}<span class="pv-muted line-through text-lg">{{ product.old_price|uznum }} so'm</span>{% endif %}
+                </div>
+                {% if product.description %}<p class="pv-muted text-sm leading-relaxed">{{ product.description|truncatewords:30 }}</p>{% endif %}
+                <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
+                    <button class="pv-btn flex-1 py-3 rounded-xl font-bold">🛒 {{ t.builder_add_to_cart }}</button>
+                    <button class="pv-btn-outline flex-1 py-3 rounded-xl font-bold bg-transparent">⚡ {{ t.builder_buy_now }}</button>
+                </div>
+                <div class="pv-card p-3 text-sm space-y-1.5">
+                    <p class="flex justify-between"><span class="pv-muted">{{ t.builder_warehouse }}</span><b>{{ product.stock }} {{ product.unit|default:"dona" }}</b></p>
+                    <p class="flex justify-between"><span class="pv-muted">{{ t.builder_time }}</span><b class="pv-value">{{ t.builder_minutes }}</b></p>
+                </div>
+            </div>
+        </div>
+        {% if related %}
+        <h3 class="text-lg font-bold mt-8 mb-3">{{ t.builder_similar }}</h3>
+        <div class="grid grid-cols-3 gap-2 sm:gap-3">
+            {% for r in related %}
+            <div class="pv-card p-2.5 sm:p-3">
+                <div class="pv-badge h-16 sm:h-24 rounded-lg flex items-center justify-center text-2xl mb-2 overflow-hidden">{% if r.image %}<img src="{{ r.image.url }}" class="h-full object-contain">{% else %}📦{% endif %}</div>
+                <p class="text-xs sm:text-sm font-semibold truncate">{{ r.name }}</p>
+                <p class="text-xs sm:text-sm font-bold pv-value">{{ r.price|uznum }} so'm</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}<p class="pv-muted">{{ t.builder_no_products }}</p>{% endif %}
+
+        {% elif preview_page == 'cart' %}
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">🛒 {{ t.builder_cart_title }}</h1>
+        <div class="space-y-3">
+            {% if product %}
+            <div class="pv-card p-3 flex items-center gap-3">
+                <div class="pv-badge w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden">{% if product.image %}<img src="{{ product.image.url }}" class="h-full object-contain">{% else %}📦{% endif %}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm truncate">{{ product.name }}</p>
+                    <p class="text-sm font-bold pv-value">{{ product.price|uznum }} so'm</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="w-7 h-7 rounded-lg pv-accent text-white flex items-center justify-center font-bold">−</span>
+                    <b class="text-sm">1</b>
+                    <span class="w-7 h-7 rounded-lg pv-btn flex items-center justify-center font-bold">+</span>
+                </div>
+            </div>
+            <div class="pv-card p-3 flex items-center gap-3 opacity-70">
+                <div class="pv-badge w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl shrink-0">🥛</div>
+                <div class="flex-1"><p class="font-semibold text-sm">Sut 1L</p><p class="text-sm font-bold pv-value">12 000 so'm</p></div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="w-7 h-7 rounded-lg pv-accent text-white flex items-center justify-center font-bold">−</span>
+                    <b class="text-sm">2</b>
+                    <span class="w-7 h-7 rounded-lg pv-btn flex items-center justify-center font-bold">+</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="pv-card p-4 mt-4 space-y-2">
+            <p class="flex justify-between text-sm"><span class="pv-muted">{{ t.builder_products }}</span><b>{% if product %}{{ product.price|uznum }}{% else %}0{% endif %} so'm</b></p>
+            <p class="flex justify-between text-sm"><span class="pv-muted">{{ t.builder_delivery }}</span><b>{% if shop %}{{ shop.delivery_fee|uznum }}{% else %}6 000{% endif %} so'm</b></p>
+            <hr class="border-black/10">
+            <p class="flex justify-between text-lg"><b>{{ t.builder_total }}</b><b class="pv-value">{% if product %}{{ product.price|uznum }}{% else %}0{% endif %} so'm</b></p>
+            <a href="{% url 'seller_template_preview_page' slug 'checkout' %}" class="pv-btn block text-center py-3.5 rounded-xl font-bold mt-2">{{ t.builder_confirm }} →</a>
+        </div>
+
+        {% elif preview_page == 'checkout' %}
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">🧾 {{ t.builder_checkout_title }}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-5">
+            <div class="md:col-span-3 space-y-4">
+                <div class="pv-card p-4 sm:p-5 space-y-3">
+                    <p class="font-bold">1. {{ t.builder_step1 }}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><label class="text-xs pv-muted font-semibold">{{ t.builder_name_ph }} *</label>
+                            <input type="text" placeholder="{{ t.builder_name_ph }}" class="w-full mt-1 px-3 py-2.5 rounded-xl border border-black/10 bg-white"></div>
+                        <div><label class="text-xs pv-muted font-semibold">{{ t.phone }} *</label>
+                            <input type="tel" value="+998" class="w-full mt-1 px-3 py-2.5 rounded-xl border border-black/10 bg-white"></div>
+                    </div>
+                </div>
+                <div class="pv-card p-4 sm:p-5 space-y-3">
+                    <p class="font-bold">2. {{ t.builder_step2 }}</p>
+                    <input type="text" placeholder="{{ t.builder_address_ph }}" class="w-full px-3 py-2.5 rounded-xl border border-black/10 bg-white">
+                    <textarea rows="2" placeholder="{{ t.builder_notes_ph }}" class="w-full px-3 py-2.5 rounded-xl border border-black/10 bg-white"></textarea>
+                    <div class="pv-badge rounded-xl p-3 text-sm flex items-center gap-2">📍 {{ t.builder_pick_map }}</div>
+                </div>
+                <div class="pv-card p-4 sm:p-5 space-y-3">
+                    <p class="font-bold">3. {{ t.builder_step3 }}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <label class="flex items-center gap-2 border border-black/10 bg-white rounded-xl px-3 py-2.5 cursor-pointer"><input type="radio" name="pay" checked> 💵 {{ t.builder_pay_cash }}</label>
+                        <label class="flex items-center gap-2 border border-black/10 bg-white rounded-xl px-3 py-2.5 cursor-pointer"><input type="radio" name="pay"> 🟦 Click</label>
+                        <label class="flex items-center gap-2 border border-black/10 bg-white rounded-xl px-3 py-2.5 cursor-pointer"><input type="radio" name="pay"> 🟪 Payme</label>
+                        <label class="flex items-center gap-2 border border-black/10 bg-white rounded-xl px-3 py-2.5 cursor-pointer"><input type="radio" name="pay"> 💳 UzCard</label>
+                    </div>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <div class="pv-card p-4 sm:p-5 space-y-3 md:sticky md:top-4">
+                    <p class="font-bold">{{ t.builder_items }}</p>
+                    {% if product %}
+                    <p class="flex justify-between text-sm"><span>{{ product.name|truncatechars:22 }} × 1</span><b>{{ product.price|uznum }} so'm</b></p>
+                    {% else %}<p class="pv-muted text-sm">{{ t.builder_no_products }}</p>{% endif %}
+                    <hr class="border-black/10">
+                    <p class="flex justify-between text-sm"><span class="pv-muted">{{ t.builder_products }}</span><b>{% if product %}{{ product.price|uznum }}{% else %}0{% endif %} so'm</b></p>
+                    <p class="flex justify-between text-sm"><span class="pv-muted">{{ t.builder_delivery }}</span><b>{% if shop %}{{ shop.delivery_fee|uznum }}{% else %}6 000{% endif %} so'm</b></p>
+                    <hr class="border-black/10">
+                    <p class="flex justify-between text-lg"><b>{{ t.builder_total }}</b><b class="pv-value">{% if product %}{{ product.price|uznum }}{% else %}0{% endif %} so'm</b></p>
+                    <button class="pv-btn w-full py-3.5 rounded-xl font-bold text-base">✅ {{ t.builder_confirm }}</button>
+                    <p class="text-[11px] pv-muted text-center">{{ t.builder_sms_note }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% elif preview_page == 'tracking' %}
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">📦 {{ t.builder_status_title }}</h1>
+        <div class="pv-card p-4 sm:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+                <div><p class="text-xs pv-muted">{{ t.builder_order_no }}</p><p class="font-bold">#GL-2026-0847</p></div>
+                <span class="pv-badge text-xs font-bold px-3 py-1.5 rounded-full">🛵 {{ t.builder_delivering }}</span>
+            </div>
+            <div class="space-y-0">
+                {% for step, done in tracking_steps %}
+                <div class="flex gap-3">
+                    <div class="flex flex-col items-center">
+                        <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                              {% if done %}style="background: var(--sp-primary); color: #fff"{% else %}style="background: color-mix(in srgb, var(--sp-text) 12%, transparent)"{% endif %}>{% if done %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                        {% if not forloop.last %}<div class="w-0.5 flex-1 min-h-[24px]" {% if done %}style="background: var(--sp-primary)"{% else %}style="background: color-mix(in srgb, var(--sp-text) 15%, transparent)"{% endif %}></div>{% endif %}
+                    </div>
+                    <div class="pb-5 min-w-0">
+                        <p class="font-semibold text-sm">{{ step.0 }}</p>
+                        <p class="text-xs pv-muted">{{ step.1 }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <hr class="border-black/10 my-3">
+            <p class="flex flex-wrap justify-between gap-1 text-sm"><span class="pv-muted">{{ t.builder_courier }}</span><b>🛵 Aziz · +998 90 123 45 67</b></p>
+            <p class="flex flex-wrap justify-between gap-1 text-sm mt-1"><span class="pv-muted">{{ t.builder_total_pay }}</span><b class="pv-value">{% if product %}{{ product.price|uznum }}{% else %}42 000{% endif %} so'm ({{ t.builder_cash_word }})</b></p>
+        </div>
+
+        {% elif preview_page == 'delivery' %}
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">🚚 {{ t.builder_delivery_title }}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-5">
+            <div class="md:col-span-3">
+                <div class="pv-map-wrap rounded-2xl overflow-hidden border border-black/10 pv-map-height" id="pvMap"></div>
+                <div class="pv-card p-4 mt-3 flex items-center gap-3">
+                    <span class="pv-badge w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0">📍</span>
+                    <div class="min-w-0">
+                        <p class="font-bold text-sm">{{ shop.name|default:"Do'kon" }} {{ t.builder_my_location }}</p>
+                        <p class="pv-muted text-sm truncate">{{ shop.address|default:"Guliston shahri" }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="md:col-span-2 space-y-3">
+                <div class="pv-card p-4">
+                    <p class="font-bold mb-2">{{ t.builder_delivery_terms }}</p>
+                    <p class="flex justify-between text-sm py-1"><span class="pv-muted">{{ t.builder_price }}</span><b>{% if shop %}{{ shop.delivery_fee|uznum }}{% else %}6 000{% endif %} so'm</b></p>
+                    <p class="flex justify-between text-sm py-1"><span class="pv-muted">{{ t.builder_free_from }}</span><b>{% if shop %}{{ shop.free_delivery_from|uznum }}{% else %}50 000{% endif %} so'm</b></p>
+                    <p class="flex justify-between text-sm py-1"><span class="pv-muted">{{ t.builder_time }}</span><b class="pv-value">{{ t.builder_minutes }}</b></p>
+                    {% if shop.is_fast_delivery %}<p class="pv-badge rounded-lg px-2.5 py-1.5 text-xs font-bold mt-2 inline-block">⚡ 30 min</p>{% endif %}
+                </div>
+                <div class="pv-card p-4 text-sm space-y-1.5">
+                    <p class="font-bold mb-1">{{ t.builder_work_hours }}</p>
+                    <p class="flex justify-between"><span class="pv-muted">{{ t.builder_daily }}</span><b>{{ shop.working_hours|default:"08:00 - 22:00" }}</b></p>
+                    <p class="flex justify-between"><span class="pv-muted">{{ t.phone }}</span><b>{{ shop.phone|default:"+998 -- --- -- --" }}</b></p>
+                    <p class="flex justify-between"><span class="pv-muted">{{ t.status }}</span><b class="pv-value">{% if shop.is_open %}🟢 {{ t.builder_open }}{% else %}🔴 {{ t.builder_closed }}{% endif %}</b></p>
+                </div>
+                <div class="pv-badge rounded-xl p-3 text-xs">{{ t.builder_courier_note }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="flex flex-wrap gap-1.5 justify-center mt-8 pb-6">
+            {% for p in all_pages %}
+            <a href="{% url 'seller_template_preview_page' slug p.0 %}" class="px-3 py-1.5 rounded-full text-xs font-bold {% if p.0 == preview_page %}pv-btn{% else %}pv-btn-outline bg-transparent{% endif %}">{{ p.2 }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if preview_page == 'delivery' %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const lat = {{ shop.latitude|default:40.12 }}, lng = {{ shop.longitude|default:67.84 }};
+    const map = L.map('pvMap', {scrollWheelZoom: false}).setView([lat, lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.circleMarker([lat, lng], {radius: 12, color: '{{ tpl_colors.primary|default:"#16a34a" }}', fillOpacity: 0.6}).addTo(map)
+        .bindPopup({{ shop.name|default:"Do'kon"|escapejs|safe }});
+</script>
+{% endif %}
+{% endblock %}

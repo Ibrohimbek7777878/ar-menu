@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.products }} - {{ t.admin_panel }}{% endblock %}
+{% block page_title %}{{ t.products }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div>
+        <p class="eyebrow mb-1">{{ t.products_management }}</p>
+        <h1 class="font-display text-2xl font-semibold text-ink">{{ t.products }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ products|length }} ta mahsulot</p>
+    </div>
+    <a href="{% url 'admin_product_create' %}" class="btn btn-primary shadow-soft">
+        <span class="material-icons-outlined !text-lg">add</span>
+        Yangi mahsulot
+    </a>
+</div>
+
+<div class="flex flex-col sm:flex-row gap-3 mb-6">
+    <form method="GET" class="flex-1 flex gap-2">
+        <div class="relative flex-1 max-w-md">
+            <input type="text" name="search" value="{{ search|default:'' }}" placeholder="{{ t.search }}..." class="pl-10 !rounded-full">
+            <span class="material-icons-outlined text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 !text-lg">search</span>
+        </div>
+        <button type="submit" class="btn btn-outline hidden sm:inline-flex">{{ t.search }}</button>
+    </form>
+    <form method="GET" class="shrink-0">
+        <select name="category" onchange="this.form.submit()" class="!rounded-full !py-2.5 !text-sm min-w-[180px]">
+            <option value="">{{ t.categories }}</option>
+            {% for cat in categories %}
+            <option value="{{ cat.pk }}" {% if category_filter == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="tbl w-full min-w-[680px]">
+            <thead>
+                <tr>
+                    <th>{{ t.shop_image }}</th>
+                    <th>{{ t.name }}</th>
+                    <th>{{ t.price }}</th>
+                    <th>{{ t.store_management_short }}</th>
+                    <th>{{ t.categories }}</th>
+                    <th>{{ t.active }}</th>
+                    <th class="!text-right">{{ t.actions }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr class="group hover:!bg-brand-50/30 transition-colors">
+                    <td>
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-11 h-11 rounded-xl object-contain bg-white border border-gray-100 p-1 group-hover:border-brand-100 transition-colors">
+                        {% else %}
+                        <div class="w-11 h-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+                            <span class="material-icons-outlined !text-lg text-gray-300">inventory_2</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="font-medium max-w-[260px]">
+                        <span class="block truncate font-semibold text-ink" title="{{ product.name }}">{{ product.name }}</span>
+                    </td>
+                    <td class="font-semibold text-ink whitespace-nowrap">{{ product.price|uznum }} {{ t.catalog_som }}</td>
+                    <td class="text-gray-600">{{ product.shop.name }}</td>
+                    <td class="text-gray-600">{{ product.category.name|default:"—" }}</td>
+                    <td>
+                        {% if product.is_available %}
+                        <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.product_available }}</span>
+                        {% else %}
+                        <span class="pill text-red-700 bg-red-50"><span class="size-1.5 rounded-full bg-red-500"></span>{{ t.product_unavailable }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="!text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{% url 'admin_product_edit' product.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-brand-700 hover:bg-brand-50 transition" title="{{ t.edit }}">
+                                <span class="material-icons-outlined !text-lg">edit</span>
+                            </a>
+                            <a href="{% url 'admin_product_delete' product.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="{{ t.delete }}" onclick="return confirm('{{ t.seller_product_delete_confirm }}')">
+                                <span class="material-icons-outlined !text-lg">delete</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="py-14 text-center">
+                        <span class="grid size-14 place-items-center mx-auto rounded-2xl bg-gray-50 text-gray-300 mb-3">
+                            <span class="material-icons-outlined !text-3xl">inventory_2</span>
+                        </span>
+                        <p class="text-sm font-medium text-gray-500">{{ t.products_not_found }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Qidiruvni o'zgartirib ko'ring yoki yangi mahsulot qo'shing</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

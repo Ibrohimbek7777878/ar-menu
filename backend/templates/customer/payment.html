@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load i18n_tags %}
+{% block title %}{{ t.checkout_payment }} — {{ t.site_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;padding:24px 16px;">
+
+  <h1 style="font-family:'Fraunces',serif;font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">
+    {{ t.checkout_payment }}
+  </h1>
+  <p style="color:#6b7280;font-size:14px;margin-bottom:24px;">Buyurtma #{{ order.order_number }}</p>
+
+  <!-- Summa -->
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:24px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <span style="color:#6b7280;">{{ t.cart_products_count }}</span>
+      <span style="font-weight:500;">{{ order.total_amount|uznum }} {{ t.catalog_som }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <span style="color:#6b7280;">{{ t.cart_delivery_fee }}</span>
+      <span style="font-weight:500;">{{ order.delivery_fee|uznum }} {{ t.catalog_som }}</span>
+    </div>
+    <div style="border-top:1px solid #e5e7eb;padding-top:8px;display:flex;justify-content:space-between;">
+      <span style="font-weight:700;">{{ t.cart_grand_total_label }}</span>
+      <span style="font-weight:700;color:#16a34a;font-size:18px;">{{ order.final_amount|uznum }} {{ t.catalog_som }}</span>
+    </div>
+  </div>
+
+  <!-- To'lov uslublari -->
+  <form method="POST" action="/payment/create/{{ order.pk }}/">
+    {% csrf_token %}
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+      <!-- Naqd pul -->
+      <label style="
+        display:flex;align-items:center;gap:12px;padding:16px;
+        border:2px solid #e5e7eb;border-radius:12px;cursor:pointer;
+        transition:all .15s;
+      " class="payment-option">
+        <input type="radio" name="method" value="cash" checked style="accent-color:#16a34a;width:18px;height:18px;">
+        <div style="flex:1;">
+          <div style="font-weight:600;color:#1a1a1a;">💵 {{ t.cart_cash_delivery }}</div>
+          <div style="font-size:13px;color:#6b7280;">Yetkazishda naqd pul bilan to'lash</div>
+        </div>
+      </label>
+
+      <!-- Click -->
+      <label style="
+        display:flex;align-items:center;gap:12px;padding:16px;
+        border:2px solid #e5e7eb;border-radius:12px;cursor:pointer;
+        transition:all .15s;
+      " class="payment-option">
+        <input type="radio" name="method" value="click" style="accent-color:#16a34a;width:18px;height:18px;">
+        <div style="flex:1;">
+          <div style="font-weight:600;color:#1a1a1a;">📱 Click</div>
+          <div style="font-size:13px;color:#6b7280;">Click ilovasi orqali to'lash</div>
+        </div>
+      </label>
+
+      <!-- Payme -->
+      <label style="
+        display:flex;align-items:center;gap:12px;padding:16px;
+        border:2px solid #e5e7eb;border-radius:12px;cursor:pointer;
+        transition:all .15s;
+      " class="payment-option">
+        <input type="radio" name="method" value="payme" style="accent-color:#16a34a;width:18px;height:18px;">
+        <div style="flex:1;">
+          <div style="font-weight:600;color:#1a1a1a;">💳 Payme</div>
+          <div style="font-size:13px;color:#6b7280;">Payme orqali to'lash</div>
+        </div>
+      </label>
+
+      <!-- UzCard -->
+      <label style="
+        display:flex;align-items:center;gap:12px;padding:16px;
+        border:2px solid #e5e7eb;border-radius:12px;cursor:pointer;
+        transition:all .15s;
+      " class="payment-option">
+        <input type="radio" name="method" value="uzcard" style="accent-color:#16a34a;width:18px;height:18px;">
+        <div style="flex:1;">
+          <div style="font-weight:600;color:#1a1a1a;">🏦 UzCard</div>
+          <div style="font-size:13px;color:#6b7280;">UzCard/Paycom orqali to'lash</div>
+        </div>
+      </label>
+    </div>
+
+    <button type="submit" style="
+      width:100%;padding:14px;background:#16a34a;color:white;border:none;
+      border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;
+    ">{{ t.pay_now }}</button>
+  </form>
+
+  <div style="text-align:center;margin-top:16px;">
+    <a href="/cart/" style="color:#6b7280;font-size:14px;text-decoration:none;">← {{ t.cart_title }}ga qaytish</a>
+  </div>
+</div>
+
+<style>
+  .payment-option:has(input:checked) {
+    border-color: #16a34a !important;
+    background: #f0fdf4;
+  }
+</style>
+{% endblock %}

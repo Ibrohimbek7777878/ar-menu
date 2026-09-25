@@ -1,0 +1,151 @@
+{% extends "courier/base_courier.html" %}
+{% load uznum %}
+{% block title %}Buyurtma #{{ order.order_number }} - Kuryer paneli{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex items-center gap-3 mb-8">
+        <a href="{% url 'courier_dashboard' %}" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-500 dark:text-gray-400 transition">
+            <span class="material-icons !text-xl">arrow_back</span>
+        </a>
+        <div>
+            <p class="eyebrow mb-1">Buyurtma</p>
+            <h1 class="font-display text-2xl font-semibold text-ink dark:text-white">#{{ order.order_number }}</h1>
+        </div>
+        {% if order.status == 'pending' %}
+        <span class="pill text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-400">Kutilmoqda</span>
+        {% elif order.status == 'confirmed' %}
+        <span class="pill text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-400">Tasdiqlangan</span>
+        {% elif order.status == 'preparing' %}
+        <span class="pill text-indigo-700 bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400">Tayyorlanmoqda</span>
+        {% elif order.status == 'ready' %}
+        <span class="pill text-cyan-700 bg-cyan-50 dark:bg-cyan-950 dark:text-cyan-400">Tayyor</span>
+        {% elif order.status == 'out_for_delivery' %}
+        <span class="pill text-purple-700 bg-purple-50 dark:bg-purple-950 dark:text-purple-400">Yetkazilmoqda</span>
+        {% elif order.status == 'delivered' %}
+        <span class="pill text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-400">Yetkazilgan</span>
+        {% elif order.status == 'cancelled' %}
+        <span class="pill text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-400">Bekor qilingan</span>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="card p-6 sm:p-7">
+                <p class="eyebrow mb-4">{{ t.delivery_label }}</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Buyurtma raqami</p>
+                        <p class="font-display font-semibold text-base text-ink dark:text-white">#{{ order.order_number }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Sana</p>
+                        <p class="font-medium text-base text-ink dark:text-white">{{ order.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.customer_label }}</p>
+                        <p class="font-medium text-base text-ink dark:text-white">{{ order.customer_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.phone }}</p>
+                        <a href="tel:{{ order.customer_phone }}" class="font-medium text-base text-brand-700 dark:text-brand-400 hover:underline">{{ order.customer_phone }}</a>
+                    </div>
+                    {% if order.customer_phone2 %}
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.shop_phone2 }}</p>
+                        <a href="tel:{{ order.customer_phone2 }}" class="font-medium text-base text-brand-700 dark:text-brand-400 hover:underline">{{ order.customer_phone2 }}</a>
+                    </div>
+                    {% endif %}
+                    <div class="sm:col-span-2">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.address_label }}</p>
+                        <p class="font-medium text-base text-ink dark:text-white flex items-start gap-1.5">
+                            <span class="material-icons !text-lg text-gray-400 mt-0.5">location_on</span>
+                            {{ order.address }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 sm:p-7">
+                <p class="eyebrow mb-4">Manzil xaritasi</p>
+                <div class="w-full h-64 border-2 border-dashed border-[#e5e5e0] dark:border-neutral-800 rounded-xl flex items-center justify-center">
+                    <div class="text-center">
+                        <span class="material-icons !text-4xl text-gray-300 dark:text-neutral-700 mx-auto block mb-2">map</span>
+                        <p class="text-sm text-gray-400">Xarita joylashuvi (tez orada)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 sm:p-7">
+                <p class="eyebrow mb-4">{{ t.products_label }}</p>
+                <div class="divide-y divide-[#f5f4ef] dark:divide-neutral-900">
+                    {% for item in order.items.all %}
+                    <div class="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
+                        {% if item.product_image %}
+                        <img src="{{ item.product_image }}" alt="{{ item.product_name }}" class="w-12 h-12 rounded-lg object-cover bg-white dark:bg-neutral-900 border border-[#eceae4] dark:border-neutral-800">
+                        {% elif item.product and item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}" class="w-12 h-12 rounded-lg object-contain bg-white dark:bg-neutral-900 border border-[#eceae4] dark:border-neutral-800 p-1">
+                        {% else %}
+                        <div class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-neutral-900 flex items-center justify-center">
+                            <span class="material-icons !text-xl text-gray-400">inventory_2</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium truncate text-ink dark:text-white">{{ item.product_name }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ item.quantity }} × {{ item.price|uznum }} {{ t.catalog_som }}</p>
+                        </div>
+                        <p class="text-sm font-semibold flex-shrink-0 text-ink dark:text-white">{{ item.total|uznum }} {{ t.catalog_som }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="card p-6">
+                <p class="eyebrow mb-4">{{ t.total_label }}</p>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">{{ t.products_label }}</span>
+                        <span class="text-ink dark:text-white">{{ order.subtotal|uznum }} {{ t.catalog_som }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">{{ t.delivery_label }}</span>
+                        <span class="text-ink dark:text-white">{% if order.delivery_fee %}{{ order.delivery_fee|uznum }} {{ t.catalog_som }}{% else %}Bepul{% endif %}</span>
+                    </div>
+                    <div class="border-t border-[#f0efea] dark:border-neutral-900 pt-3 flex justify-between items-center">
+                        <span class="font-semibold text-ink dark:text-white">{{ t.total_label }}</span>
+                        <span class="font-display font-semibold text-lg text-brand-700 dark:text-brand-400">{{ order.final_amount|uznum }} {{ t.catalog_som }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if order.status != 'delivered' and order.status != 'cancelled' %}
+            <div class="card p-6 space-y-3">
+                <p class="eyebrow mb-1">Amallar</p>
+                {% if order.status == 'confirmed' or order.status == 'preparing' %}
+                <form method="POST" action="{% url 'courier_accept_order' order.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-full">
+                        <span class="material-icons !text-lg">check</span>
+                        Buyurtmani olish
+                    </button>
+                </form>
+                {% endif %}
+                {% if order.status == 'out_for_delivery' %}
+                <form method="POST" action="{% url 'courier_deliver_order' order.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-full">
+                        <span class="material-icons !text-lg">check</span>
+                        Yetkazildi deb belgilash
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <a href="{% url 'courier_dashboard' %}" class="btn btn-outline w-full">Orqaga qaytish</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

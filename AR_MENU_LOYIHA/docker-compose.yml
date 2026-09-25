@@ -1,0 +1,63 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports: ["8060:8060"]
+    env_file: .env
+    depends_on: [db, redis]
+    command: daphne -b 0.0.0.0 -p 8060 config.asgi:application
+
+  ws:
+    build: .
+    ports: ["8061:8061"]
+    env_file: .env
+    depends_on: [db, redis]
+    command: daphne -b 0.0.0.0 -p 8061 config.asgi:application
+
+  worker:
+    build: .
+    env_file: .env
+    depends_on: [db, redis]
+    command: python manage.py run_worker --queue=model3d
+    restart: unless-stopped
+
+  worker-fiscal:
+    build: .
+    env_file: .env
+    depends_on: [db, redis]
+    command: python manage.py run_worker --queue=fiscal
+    restart: unless-stopped
+
+  worker-notify:
+    build: .
+    env_file: .env
+    depends_on: [db, redis]
+    command: python manage.py run_worker --queue=notify
+    restart: unless-stopped
+
+  worker-ai:
+    build: .
+    env_file: .env
+    depends_on: [db, redis]
+    command: python manage.py run_worker --queue=ai
+    restart: unless-stopped
+
+  worker-analytics:
+    build: .
+    env_file: .env
+    depends_on: [db, redis]
+    command: python manage.py run_worker --queue=analytics
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: armenu_db
+      POSTGRES_USER: ibrohim
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7
+
+volumes:
+  pgdata:

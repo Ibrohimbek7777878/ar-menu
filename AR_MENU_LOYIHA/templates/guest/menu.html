@@ -1,0 +1,240 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5">
+  <meta name="theme-color" content="{{ restaurant.color_primary|default:'#E85D2A' }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="{% static 'favicon.ico' %}">
+  <title>{{ restaurant.name }} — ARMENU</title>
+  <link rel="stylesheet" href="{% static 'guest/css/theme.css' %}?v={{ static_version }}">
+  <link rel="stylesheet" href="{% static 'guest/css/menu.css' %}?v={{ static_version }}">
+  <link rel="stylesheet" href="{% static 'guest/css/ar.css' %}?v={{ static_version }}">
+  <style>
+    :root {
+      --brand: {{ restaurant.color_primary|default:'#E85D2A' }};
+      --brand-hover: {{ restaurant.color_primary|default:'#D14E1F' }};
+      --brand-accent: {{ restaurant.color_accent|default:'#1A1A2E' }};
+      --brand-light: {{ restaurant.color_primary|default:'#E85D2A' }}18;
+      --brand-glow: {{ restaurant.color_primary|default:'#E85D2A' }}40;
+    }
+    .hero-banner {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-accent) 100%);
+      color: #FFFFFF;
+      padding: var(--sp-5) var(--sp-4);
+      margin: var(--sp-2) var(--sp-4) var(--sp-3);
+      border-radius: var(--r-xl);
+      box-shadow: 0 16px 36px -8px var(--brand-glow), 0 4px 12px -2px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .hero-banner::after {
+      content: "";
+      position: absolute;
+      top: -40%;
+      right: -15%;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero-banner__title {
+      font-size: var(--fs-xl);
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -0.02em;
+    }
+    .hero-banner__live-badge {
+      font-size: 10px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 3px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.08em;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .hero-banner__subtitle {
+      font-size: var(--fs-sm);
+      opacity: 0.95;
+      line-height: 1.45;
+      margin-bottom: 14px;
+      max-width: 90%;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .hero-banner__badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .hero-banner__badge {
+      background: rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .hero-banner__ar-btn {
+      background: #FFFFFF;
+      color: var(--brand-accent);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hero-banner__ar-btn:active {
+      transform: scale(0.95);
+    }
+    .hero-banner__ar-btn.is-active {
+      background: #10B981;
+      color: #FFFFFF;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+    }
+    .badge--ar {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+      color: #FFFFFF !important;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.4);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.45);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr__brand">
+    {% if restaurant.logo %}<img class="hdr__logo" src="{{ restaurant.logo.url }}" alt="">{% endif %}
+    <div>
+      <div class="hdr__name">{{ restaurant.name }}</div>
+      {% if table %}<div class="hdr__table" data-i18n-tpl="order.table"
+                         data-i18n-n="{{ table.number }}"></div>{% endif %}
+    </div>
+  </div>
+  <div class="hdr__actions">
+    <button class="icon-btn" id="btnLang" aria-label="Language">🌐 <span id="langCode">{{ lang|upper }}</span></button>
+    <button class="icon-btn" id="btnTheme" aria-label="Theme">🌙</button>
+  </div>
+</header>
+
+<section class="hero-banner" id="heroBanner">
+  <div class="hero-banner__content">
+    <div class="hero-banner__title">
+      <span>✨ 3D & AR Smart Menyu</span>
+      <span class="hero-banner__live-badge">INTERACTIVE</span>
+    </div>
+    <div class="hero-banner__subtitle">
+      Taomlarni buyurtma qilishdan oldin stolingizda 360° va AR orqali ko'ring!
+    </div>
+    <div class="hero-banner__badges">
+      {% if table %}
+        <span class="hero-banner__badge">🪑 Stol #{{ table.number }}</span>
+      {% endif %}
+      {% if restaurant.service_fee_pct %}
+        <span class="hero-banner__badge">🏷 Xizmat: {{ restaurant.service_fee_pct|floatformat:0 }}%</span>
+      {% endif %}
+      <button class="hero-banner__ar-btn" id="btnFilterAR">✨ 3D Taomlar</button>
+    </div>
+  </div>
+</section>
+
+<div class="searchbar">
+  <input id="searchInput" type="search" class="searchbar__input"
+         data-i18n-ph="menu.search_placeholder" autocomplete="off">
+</div>
+
+<nav class="cats" id="cats" aria-label="categories"></nav>
+
+<div class="diets" id="diets"></div>
+
+<main class="list" id="dishList"><div class="skeleton-grid" id="skeleton"></div></main>
+
+<div class="empty" id="emptyState" hidden>
+  <div class="empty__icon">🔍</div>
+  <div data-i18n="menu.no_results"></div>
+</div>
+
+<div class="bottombar">
+  <button class="btn btn--ghost" id="btnCall">🔔 <span data-i18n="call.title"></span></button>
+  <button class="btn btn--primary" id="btnCart" hidden>
+    🛒 <span id="cartCount">0</span> · <span id="cartTotal">0</span>
+  </button>
+  <button class="icon-btn" id="btnChat" aria-label="AI">🤖</button>
+</div>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot" class="toasts" aria-live="polite"></div>
+  {% include "guest/ar_modal.html" %}
+
+<script>
+  window.ARMENU = {
+    slug: "{{ restaurant.slug }}",
+    restaurantId: {{ restaurant.id }},
+    tableId: {{ table.id|default:"null" }},
+    tableNumber: "{{ table.number|default:'' }}",
+    sessionId: "{{ session_id }}",
+    lang: "{{ lang }}",
+    i18nVersion: {{ i18n_version }},
+    serviceFeePct: {{ restaurant.service_fee_pct|default:0 }},
+    wsUrl: (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
+           + "/ws/guest/{{ session_id }}/",
+    requestId: "{{ request.request_id|default:'' }}"
+  };
+</script>
+<script src="{% static 'common/js/logger.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/i18n.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/toast.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/theme.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/cart.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/ar-detect.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/ar.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/ws.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/dish.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/menu.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/call.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/order.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/chatbot.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'guest/js/offline.js' %}?v={{ static_version }}"></script>
+<script>
+  // Service Worker ro'yxatdan o'tkazish
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js?v={{ static_version }}', { scope: '/' })
+      .then(reg => {
+        console.log('[PWA] SW registered:', reg.scope);
+        reg.update();
+      })
+      .catch(err => console.warn('[PWA] SW register failed:', err));
+  }
+</script>
+</body>
+</html>

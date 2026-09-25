@@ -1,125 +1,74 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  # PostgreSQL Database
-  postgres:
+  db:
     image: postgres:16-alpine
-    container_name: guliston_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      POSTGRES_DB: online_store_guliston
+      POSTGRES_DB: ${POSTGRES_DB:-store_guliston}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     ports:
       - "5432:5432"
-    networks:
-      - guliston_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: guliston_redis
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    networks:
-      - guliston_network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # RabbitMQ Message Queue
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: guliston_rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq
-      RABBITMQ_DEFAULT_PASS: rabbitmq123
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      interval: 5s
+      timeout: 3s
+      retries: 10
     ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
-    networks:
-      - guliston_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - "6379:6379"
 
-  # API Backend
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: guliston_api
+  web:
+    build: .
+    command: gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    env_file:
+      - .env
     environment:
-      NODE_ENV: development
-      PORT: 3000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: online_store_guliston
-      DB_USER: postgres
-      DB_PASSWORD: postgres123
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: rabbitmq
-      RABBITMQ_PASS: rabbitmq123
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - guliston_network
-    restart: unless-stopped
-
-  # Adminer (Database Management UI)
-  adminer:
-    image: adminer:latest
-    container_name: guliston_adminer
     ports:
-      - "8080:8080"
+      - "8000:8000"
+
+  worker:
+    build: .
+    command: celery -A backend worker -l info
+    env_file:
+      - .env
     environment:
-      ADMINER_DEFAULT_SERVER: postgres
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
     depends_on:
-      - postgres
-    networks:
-      - guliston_network
-    restart: unless-stopped
+      - redis
+      - db
+
+  beat:
+    build: .
+    command: celery -A backend beat -l info
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
 
 volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  rabbitmq_data:
-    driver: local
-
-networks:
-  guliston_network:
-    driver: bridge
+  pgdata:

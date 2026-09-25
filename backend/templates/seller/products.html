@@ -1,0 +1,218 @@
+{% extends "seller/base_seller.html" %}
+{% load i18n_tags uznum %}
+{% block title %}Mahsulotlar{% endblock %}
+{% block page_title %}Mahsulotlar{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --sp-primary: {{ shop.color_primary|default:'#16a34a' }};
+        --sp-accent: {{ shop.color_accent|default:'#1a1a2e' }};
+    }
+    /* ── Header ── */
+    .p-hero {
+        background: linear-gradient(135deg, var(--sp-primary), color-mix(in srgb, var(--sp-primary) 65%, var(--sp-accent)));
+        border-radius: 1.25rem; padding: 1.75rem 2rem 1.5rem; color: #fff;
+        position: relative; overflow: hidden;
+    }
+    .p-hero::before { content:''; position:absolute; top:-60%; right:-15%; width:340px; height:340px; background:radial-gradient(circle,rgba(255,255,255,.10) 0%,transparent 70%); border-radius:50%; }
+    .p-hero::after  { content:''; position:absolute; bottom:-40%; left:-10%; width:240px; height:240px; background:radial-gradient(circle,rgba(255,255,255,.06) 0%,transparent 70%); border-radius:50%; }
+
+    /* ── Stat pill ── */
+    .s-pill { display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.65rem 1rem; background:rgba(255,255,255,.13); border-radius:.75rem; backdrop-filter:blur(6px); min-width:72px; }
+    .s-num { font-size:1.15rem; font-weight:800; line-height:1; }
+    .s-lbl { font-size:.6rem; opacity:.72; font-weight:500; text-transform:uppercase; letter-spacing:.04em; }
+
+    /* ── Search ── */
+    .s-input {
+        border:1.5px solid #e5e7eb; border-radius:.875rem; padding:.7rem 1rem .7rem 2.75rem;
+        font-size:.875rem; background:#fff; transition:all .2s; width:100%; outline:none;
+    }
+    .s-input:focus { border-color:var(--sp-primary); box-shadow:0 0 0 3px color-mix(in srgb, var(--sp-primary) 12%, transparent); }
+
+    /* ── Chips ── */
+    .chip { display:inline-flex; align-items:center; gap:.3rem; padding:.45rem .9rem; border-radius:999px; font-size:.78rem; font-weight:600; border:1.5px solid #e5e7eb; background:#fff; color:#6b7280; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .chip:hover { border-color:var(--sp-primary); color:var(--sp-primary); }
+    .chip.on { background:var(--sp-primary); border-color:var(--sp-primary); color:#fff; }
+
+    /* ── Product card ── */
+    .c { background:#fff; border:1px solid #f3f4f6; border-radius:1rem; overflow:hidden; transition:all .25s ease; position:relative; }
+    .c:hover { transform:translateY(-3px); box-shadow:0 14px 44px rgba(0,0,0,.06); border-color:color-mix(in srgb, var(--sp-primary) 28%, transparent); }
+    .c:hover .c-img img { transform:scale(1.06); }
+    .c-img { overflow:hidden; position:relative; background:#fafafa; }
+    .c-img img { transition:transform .4s ease; width:100%; height:100%; object-fit:cover; display:block; }
+
+    /* ── Badges ── */
+    .b { position:absolute; display:inline-flex; align-items:center; gap:.2rem; font-size:9px; font-weight:700; padding:.2rem .55rem; border-radius:999px; backdrop-filter:blur(6px); line-height:1.3; }
+    .b-ok  { top:.45rem; left:.45rem; background:rgba(22,163,74,.88); color:#fff; }
+    .b-no  { top:.45rem; left:.45rem; background:rgba(239,68,68,.88); color:#fff; }
+    .b-fl  { top:.45rem; right:.45rem; background:linear-gradient(135deg,#f97316,#ef4444); color:#fff; }
+    .b-hit { top:2rem;   right:.45rem; background:linear-gradient(135deg,#8b5cf6,#6366f1); color:#fff; }
+    .b-new { top:3.5rem; right:.45rem; background:linear-gradient(135deg,#06b6d4,#0ea5e9); color:#fff; }
+    .b-disc{ top:.45rem; left:.45rem; background:#ef4444; color:#fff; }
+    .b-ar  { top:.45rem; left:3.5rem; background:rgba(99,102,241,.88); color:#fff; }
+
+    /* ── Price ── */
+    .pr    { font-weight:700; font-size:.95rem; color:var(--sp-primary); }
+    .pr-fl { color:#ea580c; font-weight:700; }
+    .pr-old{ color:#d1d5db; text-decoration:line-through; font-size:.72rem; }
+
+    /* ── Action row ── */
+    .act { display:flex; gap:.4rem; padding-top:.65rem; border-top:1px solid #f3f4f6; margin-top:.65rem; }
+    .act-e {
+        flex:1; display:flex; align-items:center; justify-content:center; gap:.3rem;
+        padding:.45rem; border-radius:.7rem; font-size:.72rem; font-weight:600;
+        color:#374151; background:#f9fafb; transition:all .15s; text-decoration:none;
+    }
+    .act-e:hover { background:color-mix(in srgb, var(--sp-primary) 10%, #fff); color:var(--sp-primary); }
+    .act-ar {
+        display:flex; align-items:center; justify-content:center; padding:.45rem .6rem;
+        border-radius:.7rem; font-size:.72rem; color:#6366f1; background:#eef2ff;
+        transition:all .15s; text-decoration:none;
+    }
+    .act-ar:hover { background:#e0e7ff; color:#4f46e5; }
+    .act-d {
+        display:flex; align-items:center; justify-content:center; padding:.45rem .65rem;
+        border-radius:.7rem; font-size:.72rem; color:#d1d5db; background:transparent;
+        transition:all .15s; border:none; cursor:pointer;
+    }
+    .act-d:hover { background:#fef2f2; color:#ef4444; }
+
+    /* ── Empty ── */
+    .empty { background:#fff; border:2px dashed #e5e7eb; border-radius:1.25rem; padding:3rem 2rem; text-align:center; }
+
+    /* ── Dark Mode Adaptations ── */
+    .dark .c { background:#1e293b; border-color:#334155; }
+    .dark .c:hover { border-color:var(--sp-primary); box-shadow:0 14px 44px rgba(0,0,0,.45); }
+    .dark .c-img { background:#0f172a; }
+    .dark .s-input { background:#1e293b; border-color:#334155; color:#f8fafc; }
+    .dark .s-input:focus { border-color:var(--sp-primary); }
+    .dark .chip { background:#1e293b; border-color:#334155; color:#94a3b8; }
+    .dark .chip:hover { border-color:var(--sp-primary); color:var(--sp-primary); }
+    .dark .chip.on { background:var(--sp-primary); border-color:var(--sp-primary); color:#fff; }
+    .dark .act { border-top-color:#334155; }
+    .dark .act-e { background:#334155; color:#e2e8f0; }
+    .dark .act-e:hover { background:color-mix(in srgb, var(--sp-primary) 20%, #334155); color:#fff; }
+    .dark .act-ar { background:rgba(99,102,241,.15); color:#a5b4fc; }
+    .dark .act-ar:hover { background:rgba(99,102,241,.25); color:#c7d2fe; }
+    .dark .act-d:hover { background:rgba(239,68,68,.15); }
+    .dark .empty { background:#1e293b; border-color:#334155; }
+</style>
+
+<div>
+    <!-- ── Hero ── -->
+    <div class="p-hero mb-5">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-xs opacity-70 font-medium tracking-wide uppercase">{{ shop.name }}</p>
+                <h2 class="text-xl font-bold mt-0.5">Mahsulotlar katalogi</h2>
+            </div>
+            <a href="{% url 'seller_product_create_web' %}" class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white font-semibold text-sm transition backdrop-blur-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" d="M12 5v14m7-7H5"/></svg>
+                Yangi mahsulot
+            </a>
+        </div>
+        <div class="relative z-10 flex gap-2.5 mt-4 flex-wrap">
+            <div class="s-pill"><span class="s-num">{{ products|length }}</span><span class="s-lbl">Jami</span></div>
+            <div class="s-pill"><span class="s-num">{{ available_count|default:"0" }}</span><span class="s-lbl">Mavjud</span></div>
+            <div class="s-pill"><span class="s-num">{{ flash_count|default:"0" }}</span><span class="s-lbl">Flash</span></div>
+            <div class="s-pill"><span class="s-num">{{ hit_count|default:"0" }}</span><span class="s-lbl">Hit</span></div>
+            <div class="s-pill"><span class="s-num">{{ ar_count|default:"0" }}</span><span class="s-lbl">3D/AR</span></div>
+        </div>
+    </div>
+
+    <!-- ── Search + Chips ── -->
+    <form method="get" class="flex flex-col sm:flex-row gap-2 mb-5">
+        <div class="relative flex-1 min-w-[200px]">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.34-4.34"/></svg>
+            <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="Mahsulot qidirish..." class="s-input">
+        </div>
+        <div class="flex gap-1.5 overflow-x-auto pb-0.5" style="scrollbar-width:none">
+            <button type="submit" name="category" value="" class="chip {% if not request.GET.category %}on{% endif %}">Barchasi</button>
+            {% for c in categories %}
+            <button type="submit" name="category" value="{{ c.pk }}" class="chip {% if request.GET.category == c.pk|stringformat:'s' %}on{% endif %}">{{ c.name }}</button>
+            {% endfor %}
+        </div>
+    </form>
+
+    <!-- ── Grid ── -->
+    {% if products %}
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        {% for p in products %}
+        <div class="c">
+            <a href="{% url 'seller_product_edit_web' p.pk %}" class="block relative">
+                <div class="c-img aspect-[4/3] flex items-center justify-center">
+                    {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">
+                    {% else %}<span class="text-3xl opacity-15">📦</span>{% endif %}
+                </div>
+                {% if not p.is_available %}<span class="b b-no">Tugagan</span>
+                {% elif p.flash_active %}<span class="b b-fl">⚡ Flash</span>{% endif %}
+                {% if p.old_price %}<span class="b b-disc">-{{ p.discount_percent }}%</span>{% endif %}
+                {% if p.is_hit %}<span class="b b-hit">🔥</span>{% endif %}
+                {% if p.is_new %}<span class="b b-new">Yangi</span>{% endif %}
+                {% if p.has_3d %}<span class="b b-ar">3D</span>{% endif %}
+            </a>
+            <div class="p-3 sm:p-3.5">
+                <p class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug">{{ p.name }}</p>
+                <div class="flex items-baseline gap-1.5 mt-1">
+                    {% if p.flash_active %}
+                    <span class="pr-fl text-sm">{{ p.effective_price|uznum }}</span>
+                    <span class="pr-old">{{ p.price|uznum }}</span>
+                    {% else %}
+                    <span class="pr text-sm">{{ p.price|uznum }}</span>
+                    {% if p.old_price %}<span class="pr-old">{{ p.old_price|uznum }}</span>{% endif %}
+                    {% endif %}
+                    <span class="text-[9px] text-gray-400 font-medium">so'm</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                    {% if p.rating > 0 %}
+                    <span class="flex items-center gap-0.5">
+                        <svg class="w-2.5 h-2.5 text-amber-400 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                        {{ p.rating|floatformat:1 }}
+                    </span>
+                    {% endif %}
+                    {% if p.views > 0 %}
+                    <span class="flex items-center gap-0.5">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        {{ p.views }}
+                    </span>
+                    {% endif %}
+                    {% if p.category %}<span class="truncate">{{ p.category.name }}</span>{% endif %}
+                </div>
+                <div class="act">
+                    <a href="{% url 'seller_product_edit_web' p.pk %}" class="act-e">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Tahrir
+                    </a>
+                    {% if p.has_3d %}
+                    <a href="/ar/{{ p.pk }}/" target="_blank" class="act-ar" title="3D/AR ko'rish">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2 12l5-5 5 5-5 5-5-5z" transform="rotate(90 12 12)"/></svg>
+                        3D
+                    </a>
+                    {% endif %}
+                    <form method="post" action="{% url 'seller_product_delete_web' p.pk %}" onsubmit="return confirm('O\'chirilsinmi?')">
+                        {% csrf_token %}
+                        <button class="act-d" title="O'chirish">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <div class="grid size-16 place-items-center mx-auto rounded-2xl mb-4" style="background:color-mix(in srgb, var(--sp-primary) 8%, #fff)">
+            <svg class="w-7 h-7" style="color:var(--sp-primary)" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
+        <p class="font-semibold text-gray-600">Hali mahsulot yo'q</p>
+        <p class="text-sm text-gray-400 mt-1">Birinchi mahsulotni qo'shing</p>
+        <a href="{% url 'seller_product_create_web' %}" class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition" style="background:var(--sp-primary)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" d="M12 5v14m7-7H5"/></svg>
+            Mahsulot qo'shish
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

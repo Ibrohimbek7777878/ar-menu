@@ -1,0 +1,117 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+{% block title %}Telegram Bot{% endblock %}
+{% block page_title %}Telegram Bot{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div>
+    <p class="eyebrow mb-1">{{ t.marketing_channel }}</p>
+    <h1 class="font-display text-2xl font-semibold text-ink">{{ t.telegram_bot_title }}</h1>
+    <p class="text-sm text-gray-500 mt-1">{{ t.telegram_desc }}</p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="card p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-medium text-gray-500">{{ t.subscribers }}</p>
+          <p class="font-display text-2xl font-semibold text-ink mt-1.5">{{ subscriber_count }}</p>
+        </div>
+        <span class="grid size-11 place-items-center rounded-2xl bg-sky-50 text-sky-600">
+          <span class="material-icons-outlined text-[22px]">group</span>
+        </span>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-medium text-gray-500">{{ t.bot_token }}</p>
+          <p class="text-sm font-semibold mt-2">
+            {% if token_set %}<span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>Ulandi — @marketing_orign_bot</span>
+            {% else %}<span class="pill text-red-700 bg-red-50"><span class="size-1.5 rounded-full bg-red-500"></span>.env da yo'q</span>{% endif %}
+          </p>
+        </div>
+        <span class="grid size-11 place-items-center rounded-2xl {% if token_set %}bg-brand-50 text-brand-600{% else %}bg-red-50 text-red-600{% endif %}">
+          <span class="material-icons-outlined text-[22px]">{% if token_set %}check_circle{% else %}error{% endif %}</span>
+        </span>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-xs font-medium text-gray-500">{{ t.admin_chat_id }}</p>
+          <p class="font-mono text-sm font-semibold text-ink mt-1.5 break-all">{{ owner_chat|default:"—" }}</p>
+        </div>
+        <span class="grid size-11 place-items-center rounded-2xl bg-violet-50 text-violet-600 shrink-0">
+          <span class="material-icons-outlined text-[22px]">admin_panel_settings</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {% if not token_set %}
+  <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex gap-3">
+    <span class="material-icons-outlined text-amber-600 shrink-0">warning</span>
+    <span><b>TELEGRAM_BOT_TOKEN</b> o'rnatilmagan. Bot haqiqiy xabar yubora olmaydi. Uni <code class="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-200">.env</code> faylga qo'shing.</span>
+  </div>
+  {% endif %}
+
+  <div class="card p-6">
+    <div class="flex items-center gap-2.5 mb-4">
+      <span class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600">
+        <span class="material-icons-outlined text-lg">campaign</span>
+      </span>
+      <h2 class="font-display font-semibold text-ink">{{ t.broadcast_title }}</h2>
+    </div>
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="broadcast">
+      <textarea name="message" rows="4" required
+        class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
+        placeholder="Xabar matnini kiriting... (HTML qo'llab-quvvatlanadi, masalan <b>qalin</b>)"></textarea>
+      <button type="submit" class="btn btn-primary shadow-soft">
+        <span class="material-icons-outlined !text-lg">send</span>
+        Yuborish ({{ subscriber_count }} ta obunachiga)
+      </button>
+    </form>
+  </div>
+
+  <div class="card p-6">
+    <div class="flex items-center gap-2.5 mb-3">
+      <span class="grid size-9 place-items-center rounded-xl bg-sky-50 text-sky-600">
+        <span class="material-icons-outlined text-lg">bug_report</span>
+      </span>
+      <h2 class="font-display font-semibold text-ink">{{ t.test_title }}</h2>
+    </div>
+    <p class="text-sm text-gray-500 mb-3">O'zingizga test xabar yuborib bot ishlashini tekshiring.</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="test">
+      <button type="submit" class="btn btn-outline">
+        <span class="material-icons-outlined !text-lg">smart_toy</span>
+        Menga test xabar yuborish
+      </button>
+    </form>
+  </div>
+
+  {% if subscribers %}
+  <div class="card p-6">
+    <h2 class="font-display font-semibold text-ink mb-4 flex items-center gap-2">
+      <span class="material-icons-outlined text-gray-400">history</span>
+      Oxirgi obunachilar
+    </h2>
+    <div class="divide-y divide-gray-50 text-sm">
+      {% for s in subscribers %}
+      <div class="flex items-center justify-between py-2.5">
+        <span class="inline-flex items-center gap-2 font-medium text-ink">
+          <span class="grid size-7 place-items-center rounded-full bg-sky-50 text-sky-600 text-xs">@</span>
+          {{ s.username|default:"—" }} {% if s.first_name %}<span class="text-gray-400">({{ s.first_name }})</span>{% endif %}
+        </span>
+        <span class="font-mono text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1">{{ s.chat_id }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS — AUTONOMOUS MULTI-AGENT SWARM SYSTEM</title>
+    <style>
+        :root {
+            --bg-deep: #030712;
+            --bg-surface: #0b1329;
+            --bg-card: #1c2541;
+            --bg-code: #011627;
+            --neon-cyan: #00f5d4;
+            --neon-blue: #00bbf9;
+            --neon-purple: #9b5de5;
+            --neon-pink: #f15bb5;
+            --text-pure: #ffffff;
+            --text-main: #cbd5e1;
+            --text-muted: #64748b;
+            --alert-red: #ef4444;
+            --alert-green: #22c55e;
+            --amber: #ffb703;
+        }
+
+        body {
+            font-family: 'Fira Code', 'Segoe UI', Monaco, monospace;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 50px 20px;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px dashed var(--neon-blue);
+            padding-bottom: 50px;
+            margin-bottom: 60px;
+        }
+
+        header h1 {
+            font-size: 3.2em;
+            color: var(--neon-cyan);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 30px rgba(0, 245, 212, 0.4);
+        }
+
+        header p {
+            font-size: 1.3em;
+            color: var(--text-muted);
+            margin: 15px 0 0 0;
+        }
+
+        .architecture-blueprint {
+            background-color: var(--bg-surface);
+            border-left: 5px solid var(--neon-purple);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 50px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .faza-container {
+            background-color: var(--bg-surface);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        .faza-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .faza-title {
+            font-size: 1.6em;
+            color: var(--neon-blue);
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .faza-badge {
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+            color: var(--text-pure);
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .grid-blocks {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-blocks { grid-template-columns: 1fr; }
+        }
+
+        .block-card {
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .block-card h4 {
+            margin-top: 0;
+            color: var(--neon-cyan);
+            font-size: 1.2em;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+
+        .critical-warning {
+            background-color: rgba(239, 68, 68, 0.07);
+            border: 1px solid var(--alert-red);
+            border-left: 6px solid var(--alert-red);
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .critical-warning h5 {
+            margin: 0 0 10px 0;
+            color: var(--alert-red);
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        pre {
+            background-color: var(--bg-code);
+            padding: 25px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 25px 0;
+        }
+
+        code {
+            font-family: 'Fira Code', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+            color: #d6deeb;
+        }
+
+        .c-keyword { color: #ff7b72; }
+        .c-func { color: #d2a6ff; }
+        .c-str { color: #a5d6ff; }
+        .c-comm { color: #8b949e; font-style: italic; }
+        .c-num { color: #f2cc60; }
+
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .tech-table th, .tech-table td {
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 15px;
+            text-align: left;
+        }
+
+        .tech-table th {
+            background-color: var(--bg-code);
+            color: var(--neon-cyan);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎙️ JARVIS AI — 6-FAZA INTEGRATED SWARM SPECIFICATION</h1>
+        <p>Ko'p Agentli (Multi-Agent), 0 dollarlik MVP Simmetriya va Avtonom Harakat Standarti</p>
+    </header>
+
+    <div class="architecture-blueprint">
+        <h2>🌐 1. MULTI-AGENT PROAKTIV DATA-FLOW TIZIMI</h2>
+        <p>Ushbu tizim video interfeysidagidek asinxron muloqot qiladi: bitta asosiy <strong>Orchestrator (Jarvis)</strong> kiruvchi ovozni qabul qiladi va fondagi kichik agentlarga (Data Agent, Task Agent) vazifalarni taqsimlaydi.</p>
+        <table class="tech-table">
+            <thead>
+                <tr>
+                    <th>Faza</th>
+                    <th>Komponent Nomi</th>
+                    <th>Xavfsiz / Nol Mablag' Texnologiyasi</th>
+                    <th>Multi-Agent Tizimidagi O'rni</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Faza 1</strong></td>
+                    <td>Ingress Webhook Shield</td>
+                    <td>FastAPI + Async BackgroundTasks</td>
+                    <td>Barcha agentlar uchun kirish va xatolikdan himoya qalqoni.</td>
+                </tr>
+                <tr>
+                    <td><strong>Faza 2</strong></td>
+                    <td>Telegram Mini App PWA</td>
+                    <td>Native HTML5 + JS + ServiceWorker</td>
+                    <td>Boshqaruv paneli va Agentlar holatini ko'rsatuvchi interfeys.</td>
+                </tr>
+                <tr>
+                    <td><strong>Faza 3</strong></td>
+                    <td>Asinxron STT Moduli</td>
+                    <td>Deepgram Nova-2 (RAM Buffer Stream)</td>
+                    <td>Ovozli buyruqlarni real vaqtda matnli oqimga aylantirish.</td>
+                </tr>
+                <tr>
+                    <td><strong>Faza 4</strong></td>
+                    <td>Dinamik RAG Miyasi</td>
+                    <td>GPT-4o-mini Context Ingestion</td>
+                    <td>Soha hujjatlarini o'qib, agentlarga bilim berish (Knowledge Base).</td>
+                </tr>
+                <tr>
+                    <td><strong>Faza 5</strong></td>
+                    <td>Action Detection & Cron</td>
+                    <td>Regex Agent Parser + Python Apscheduler</td>
+                    <td>Avtonom tarzda bazaga yozish va proaktiv hisobotlarni otish.</td>
+                </tr>
+                <tr>
+                    <td><strong>Faza 6</strong></td>
+                    <td>High-Load Redis Qalqoni</td>
+                    <td>Redis RateLimiter + Docker Container</td>
+                    <td>Sistemani spamlardan va API budjetining tugab qolishidan asrash.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="faza-container">
+        <div class="faza-header">
+            <div class="faza-title">FAZA 1: Ingress Webhook Controller va Global Error Handling Shield</div>
+            <div class="faza-badge">Xavfsizlik</div>
+        </div>
+        <div class="grid-blocks">
+            <div class="block-card">
+                <h4>🔗 Fazalararo Aloqa Zanjiri</h4>
+                <p><strong>Kirish Nuqtasi:</strong> Telegram bot yoki Mini App orqali yuborilgan har qanday HTTP webhook paketini ushlaydi.</p>
+                <p><strong>Chiqish Nuqtasi:</strong> Ma'lumotlarni fonda qayta ishlash uchun Faza 3 (STT) va Faza 4 (LLM) gacha xavfsiz yetkazadi.</p>
+            </div>
+            <div class="block-card">
+                <h4>🎯 Nuqta-Verguligacha Texnik Qoida</h4>
+                <ul>
+                    <li>Telegram serverlaridan kelgan so'rovga darhol 1 soniya ichida <code>HTTP 200 OK</code> javobi qaytariladi. Og'ir logikalar fonga asinxron uzatiladi.</li>
+                </ul>
+            </div>
+        </div>
+        <pre><code><span class="c-keyword">from</span> fastapi <span class="c-keyword">import</span> FastAPI, Request, BackgroundTasks, status
+<span class="c-keyword">from</span> fastapi.responses <span class="c-keyword">import</span> JSONResponse
+
+app = FastAPI(title=<span class="c-str">"Jarvis Shield"</span>)
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">orchestrator_background_worker</span>(payload: dict):
+    <span class="c-keyword">try</span>:
+        <span class="c-comm"># Ushbu nuqtada Faza 3, 4 va 5 zanjiri xavfsiz ishga tushadi</span>
+        <span class="c-keyword">pass</span>
+    <span class="c-keyword">except</span> Exception <span class="c-keyword">as</span> err:
+        <span class="c-keyword">await</span> send_log_to_developer_channel(str(err))
+
+<span class="c-keyword">@app.post</span>(<span class="c-str">"/v1/jarvis/webhook"</span>)
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">ingress_api</span>(request: Request, bg_tasks: BackgroundTasks):
+    <span class="c-keyword">try</span>:
+        body = <span class="c-keyword">await</span> request.json()
+        bg_tasks.add_task(orchestrator_background_worker, body)
+        <span class="c-keyword">return</span> JSONResponse(status_code=status.HTTP_200_OK, content={<span class="c-str">"status"</span>: <span class="c-str">"processed"</span>})
+    <span class="c-keyword">except</span> Exception <span class="c-keyword">as</span> fatal:
+        bg_tasks.add_task(send_log_to_developer_channel, f<span class="c-str">"FATAL CRASH: {str(fatal)}"</span>)
+        <span class="c-keyword">return</span> JSONResponse(status_code=status.HTTP_200_OK, content={<span class="c-str">"status"</span>: <span class="c-str">"shield_active"</span>})</code></pre>
+    </div>
+
+    <div class="faza-container">
+        <div class="faza-header">
+            <div class="faza-title">FAZA 2: Telegram Mini App (TMA) va Home Screen (PWA) Avtonom Interfeysi</div>
+            <div class="faza-badge">Frontend UI</div>
+        </div>
+        <div class="grid-blocks">
+            <div class="block-card">
+                <h4>🔗 Fazalararo Aloqa Zanjiri</h4>
+                <p><strong>Kirish Nuqtasi:</strong> Faza 1 dagi Ingress bot taqdim etgan tugma orqali ishga tushadi.</p>
+                <p><strong>Chiqish Nuqtasi:</strong> Foydalanuvchining ekranidan mikrofondan olingan audio baytlarni Faza 3 (STT)ga yo'naltiradi.</p>
+            </div>
+            <div class="block-card">
+                <h4>🎯 Nuqta-Verguligacha Texnik Qoida</h4>
+                <ul>
+                    <li>Foydalanuvchi ilovani telefonga o'rnatganda Telegram WebApp ssenariylari va <code>initData</code> tokenlari brauzerning <code>localStorage</code> xotirasida saqlanishi shart.</li>
+                </ul>
+            </div>
+        </div>
+        <pre><code><span class="c-comm">&lt;!-- manifest.json - Home Screen (PWA) uchun majburiy konfiguratsiya --&gt;</span>
+{
+  <span class="c-keyword">"name"</span>: <span class="c-str">"Jarvis Swarm OS"</span>,
+  <span class="c-keyword">"short_name"</span>: <span class="c-str">"Jarvis"</span>,
+  <span class="c-keyword">"start_url"</span>: <span class="c-str">"/index.html?mode=standalone"</span>,
+  <span class="c-keyword">"display"</span>: <span class="c-str">"standalone"</span>,
+  <span class="c-keyword">"background_color"</span>: <span class="c-str">"#030712"</span>,
+  <span class="c-keyword">"theme_color"</span>: <span class="c-str">"#00f5d4"</span>,
+  <span class="c-keyword">"icons": [{"src": "/icon.png", "sizes": "512x512", "type": "image/png"}]
+}</span></code></pre>
+    </div>
+
+    <div class="faza-container">
+        <div class="faza-header">
+            <div class="faza-title">FAZA 3: Ovozli Processing (Deepgram Asynchronous STT Moduli)</div>
+            <div class="faza-badge">Ovoz Miyasi</div>
+        </div>
+        <div class="grid-blocks">
+            <div class="block-card">
+                <h4>🔗 Fazalararo Aloqa Zanjiri</h4>
+                <p><strong>Kirish Nuqtasi:</strong> Telegram API yoki TMA interfeysidan kelgan xom audio ma'lumotlar oqimi.</p>
+                <p><strong>Chiqish Nuqtasi:</strong> Tinish belgilari to'g'rilangan o'zbekcha toza matn ko'rinishida Faza 4 (RAG Miyasi)ga o'tadi.</p>
+            </div>
+            <div class="block-card">
+                <h4>🎯 Nuqta-Verguligacha Texnik Qoida</h4>
+                <ul>
+                    <li>Audioni diskka yozish qat'iyan taqiqlanadi. Ma'lumot faqat operativ xotirada (RAM buffer) <code>bytes</code> holatida ushlanadi va Deepgram API-ga asinxron yuboriladi.</li>
+                </ul>
+            </div>
+        </div>
+        <pre><code><span class="c-keyword">import</span> httpx
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">transcribe_audio_stream</span>(audio_bytes: bytes) -> str:
+    api_url = <span class="c-str">"https://api.deepgram.com/v1/listen?model=nova-2&language=uz&smart_format=true"</span>
+    headers = {
+        <span class="c-str">"Authorization"</span>: <span class="c-str">"Token DEEPGRAM_API_KEY_SHU_YERDA"</span>,
+        <span class="c-str">"Content-Type"</span>: <span class="c-str">"audio/ogg"</span>
+    }
+    <span class="c-keyword">async</span> <span class="c-keyword">with</span> httpx.AsyncClient() <span class="c-keyword">as</span> client:
+        response = <span class="c-keyword">await</span> client.post(api_url, headers=headers, content=audio_bytes)
+        <span class="c-keyword">if</span> response.status_code == <span class="c-num">200</span>:
+            <span class="c-keyword">return</span> response.json()[<span class="c-str">"results"</span>][<span class="c-str">"channels"</span>][<span class="c-num">0</span>][<span class="c-str">"alternatives"</span>][<span class="c-num">0</span>][<span class="c-str">"transcript"</span>]
+        <span class="c-keyword">raise</span> Exception(<span class="c-str">"STT_API_GATEWAY_TIMEOUT"</span>)</code></pre>
+    </div>
+
+    <div class="faza-container">
+        <div class="faza-header">
+            <div class="faza-title">FAZA 4: Dinamik Biznes Kontekst (RAG) va Istalgan Sohani Bir Zumda O'rganish Miyasi</div>
+            <div class="faza-badge">Agent Miyasi</div>
+        </div>
+        <div class="grid-blocks">
+            <div class="block-card">
+                <h4>🔗 Fazalararo Aloqa Zanjiri</h4>
+                <p><strong>Kirish Nuqtasi:</strong> Faza 3 dan kelgan toza matnli foydalanuvchi buyrug'i.</p>
+                <p><strong>Chiqish Nuqtasi:</strong> Qarorlar zanjiri va bajarilishi kerak bo'lgan yashirin funksiya kodlari (Action Tags) Faza 5 ga uzatiladi.</p>
+            </div>
+            <div class="block-card">
+                <h4>🎯 Nuqta-Verguligacha Texnik Qoida</h4>
+                <ul>
+                    <li>Hech qanday biznes ma'lumoti kod ichida qattiq yozilmaydi (hardcode taqiqlanadi). Kontekst dinamik ravishda tashqi fayldan prompt ichiga o'qiladi.</li>
+                </ul>
+            </div>
+        </div>
+        <pre><code><span class="c-keyword">import</span> openai
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">execute_agent_brain</span>(user_text: str, current_business_knowledge: str) -> str:
+    system_prompt = f<span class="c-str">"""Siz Jarvis ko'p agentli tizimining bosh boshqaruvchisiz.
+    Siz boshqarayotgan korxona qoidalari: {current_business_knowledge}
+    Agar mijoz buyurtma bersa, javob oxiriga [ACTION:SAVE_ORDER] tegi qo'shilsin."""</span>
+    
+    response = <span class="c-keyword">await</span> openai.ChatCompletion.acreate(
+        model=<span class="c-str">"gpt-4o-mini"</span>,
+        messages=[
+            {<span class="c-str">"role"</span>: <span class="c-str">"system"</span>, <span class="c-str">"content"</span>: system_prompt},
+            {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: user_text}
+        ],
+        temperature=<span class="c-num">0.2</span>
+    )
+    <span class="c-keyword">return</span> response.choices[<span class="c-num">0</span>].message.content</code></pre>
+    </div>
+
+    <div class="faza-container">
+        <div class="faza-header">
+            <div class="faza-title">FAZA 5: Proaktivlik va Avtonom Action-Taker Execution System</div>
+            <div class="faza-badge">Avtomatizatsiya</div>
+        </div>
+        <div class="grid-blocks">
+            <div class="block-card">
+                <h4>🔗 Fazalararo Aloqa Zanjiri</h4>
+                <p><strong>Kirish Nuqtasi:</strong> Faza 4 agentidan qaytgan matn tarkibidagi yashirin buyruq teglarini qabul qiladi.</p>
+                <p><strong>Chiqish Nuqtasi:</strong> Ma'lumotni Google Sheets/PostgreSQL-ga saqlab, Faza 1 tizimi orqali foydalanuvchiga yakuniy natijani qaytaradi.</p>
+            </div>
+            <div class="block-card">
+                <h4>🎯 Nuqta-Verguligacha Texnik Qoida</h4>
+                <ul>
+                    <li>Tizim faqat buyruq kutmaydi; <code>APScheduler</code> yordamida har kuni 20:00 da o'zi proaktiv ravishda kunlik hisobotlarni hisoblab, xo'jayinga xabar yuboradi.</li>
+                </ul>
+            </div>
+        </div>
+        <pre><code><span class="c-keyword">import</span> re
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">parse_and_execute_action</span>(agent_response: str, payload_data: dict):
+    <span class="c-keyword">if</span> re.search(<span class="c-str">r"\[ACTION:SAVE_ORDER\]"</span>, agent_response):
+        <span class="c-keyword">await</span> write_to_free_google_sheets(payload_data)
+        <span class="c-comm"># Tegni foydalanuvchiga ko'rsatmaslik uchun tozalash</span>
+        <span class="c-keyword">return</span> re.sub(<span class="c-str">r"\[ACTION:SAVE_ORDER\]"</span>, <span class="c-str">""</span>, agent_response)
+    <span class="c-keyword">return</span> agent_response</code></pre>
+    </div>
+
+    <div class="faza-container">
+        <div class="faza-header">
+            <div class="faza-title">FAZA 6: High-Load Himoyasi va Production Ready Scalability (Redis & Docker)</div>
+            <div class="faza-badge">Masshtablash</div>
+        </div>
+        <div class="grid-blocks">
+            <div class="block-card">
+                <h4>🔗 Fazalararo Aloqa Zanjiri</h4>
+                <p><strong>Global Nazorat:</strong> Faza 1 dan Faza 5 gacha bo'lgan barcha API oqimlarini o'rab turadi, xavfsizlik devori vazifasini bajaradi.</p>
+            </div>
+            <div class="block-card">
+                <h4>🎯 Nuqta-Verguligacha Texnik Qoida</h4>
+                <ul>
+                    <li>Redis yordamida har bir foydalanuvchi so'rovlari soni tekshiriladi (Rate Limiting). Bu bitta user botni spam qilib, API budjetingizni tugatib qo'ymasligi uchun shart.</li>
+                </ul>
+            </div>
+        </div>
+        <pre><code><span class="c-comm"># Dockerfile - Jarvis platformasini 0-uzilish bilan istalgan serverga o'rnatish</span>
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+    </div>
+</div>
+
+</body>
+</html>

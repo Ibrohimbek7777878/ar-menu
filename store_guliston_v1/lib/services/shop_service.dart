@@ -1,170 +1,137 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import '../database/sqlite.dart';
+import '../database/database_helper.dart';
 import '../models/shop.dart';
-import 'auth_service.dart';
+import '../models/shop_template.dart';
+import 'api_service.dart';
 
 class ShopService {
-  static const String _baseUrl = 'https://api.storeguliston.com'; // Replace with actual API
-  final AuthService _authService = AuthService();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final ApiService _apiService = ApiService();
 
-  Future<List<Shop>> getShops() async {
+  // ─── Templates ──────────────────────────────────────────────────
+
+  Future<List<ShopTemplate>> getTemplates({String? category}) async {
     try {
-      final token = await _authService.getToken();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/shops'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _apiService.getTemplates(category: category);
+      final templates = (response['templates'] as Map<String, dynamic>)
+          .values
+          .expand((list) => list as List)
+          .map((t) => ShopTemplate.fromJson(t))
+          .toList();
+      return templates;
+    } catch (e) {
+      debugPrint('ShopService: getTemplates xatosi: $e');
+      return [];
+    }
+  }
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.map((shop) => Shop.fromJson(shop)).toList();
+  Future<ShopTemplate?> getTemplateDetail(String slug) async {
+    try {
+      return await _apiService.getTemplateDetail(slug);
+    } catch (e) {
+      debugPrint('ShopService: getTemplateDetail xatosi: $e');
+      return null;
+    }
+  }
+
+  Future<bool> applyTemplate(
+    String templateSlug, {
+    Map<String, dynamic>? layout,
+    bool saveAsTemplate = false,
+    String? templateName,
+    Map<String, dynamic>? colors,
+  }) async {
+    try {
+      final response = await _apiService.applyTemplate(
+        templateSlug,
+        layout: layout,
+        saveAsTemplate: saveAsTemplate,
+        templateName: templateName,
+        colors: colors,
+      );
+      return response['message'] != null;
+    } catch (e) {
+      debugPrint('ShopService: applyTemplate xatosi: $e');
+      return false;
+    }
+  }
+
+  Future<List<Shop>> getMyShops() async {
+    try {
+      return await _apiService.getMyShops();
+    } catch (e) {
+      debugPrint('ShopService: getMyShops xatosi: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> importProducts({required int targetShopId, required int sourceShopId, List<int>? productIds}) async {
+    return await _apiService.importProducts(targetShopId: targetShopId, sourceShopId: sourceShopId, productIds: productIds);
+  }
+
+  Future<Map<String, dynamic>> setManualProducts({required int shopId, required int sectionIndex, required List<int> productIds}) async {
+    return await _apiService.setManualProducts(shopId: shopId, sectionIndex: sectionIndex, productIds: productIds);
+  }
+
+  Future<List<Shop>> getShops({String? city, String? storeType}) async {
+    try {
+      final remoteShops = await _apiService.getShops(city: city, storeType: storeType);
+      if (remoteShops.isNotEmpty) {
+        _cacheShops(remoteShops);
+        return remoteShops;
       }
     } catch (e) {
-      print('Get shops error: $e');
+      debugPrint('ShopService: Backend API xatosi, lokal SQLite ga o\'tilmoqda: $e');
     }
-    return _getDemoShops(); // Return demo data if API fails
+
+    final db = await _dbHelper.database;
+    final maps = city != null && city.isNotEmpty
+        ? await db.query('shops', where: 'city = ?', whereArgs: [city], orderBy: 'rating DESC')
+        : await db.query('shops', orderBy: 'rating DESC');
+    return maps.map((map) => Shop.fromMap(map)).toList();
   }
 
   Future<Shop?> getShopById(String id) async {
     try {
-      final token = await _authService.getToken();
-      final response = await http.get(
-        Uri.parse('$_baseUrl/shops/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return Shop.fromJson(data);
-      }
+      final remoteShop = await _apiService.getShopDetail(id);
+      if (remoteShop != null) return remoteShop;
     } catch (e) {
-      print('Get shop error: $e');
+      debugPrint('ShopService: getShopById API xatosi: $e');
     }
+
+    final db = await _dbHelper.database;
+    final maps = await db.query('shops', where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) return Shop.fromMap(maps.first);
     return null;
   }
 
-  Future<List<Shop>> getShopsByCategory(String category) async {
-    final allShops = await getShops();
-    return allShops.where((shop) => shop.category == category).toList();
-  }
-
-  Future<List<Shop>> searchShops(String query) async {
-    final allShops = await getShops();
-    return allShops.where((shop) =>
-        shop.name.toLowerCase().contains(query.toLowerCase()) ||
-        shop.address.toLowerCase().contains(query.toLowerCase())).toList();
-  }
-
-  // Admin functions
-  Future<Shop?> createShop(Shop shop) async {
+  void _cacheShops(List<Shop> shops) async {
     try {
-      final token = await _authService.getToken();
-      final response = await http.post(
-        Uri.parse('$_baseUrl/shops'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(shop.toJson()),
-      );
-
-      if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return Shop.fromJson(data);
+      final db = await _dbHelper.database;
+      for (final shop in shops) {
+        await db.insert('shops', shop.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
       }
     } catch (e) {
-      print('Create shop error: $e');
+      debugPrint('ShopService: _cacheShops xatosi: $e');
     }
-    return null;
+  }
+
+  Future<Shop?> createShop(Shop shop) async {
+    final db = await _dbHelper.database;
+    await db.insert('shops', shop.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    return shop;
   }
 
   Future<Shop?> updateShop(String id, Shop shop) async {
-    try {
-      final token = await _authService.getToken();
-      final response = await http.put(
-        Uri.parse('$_baseUrl/shops/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(shop.toJson()),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return Shop.fromJson(data);
-      }
-    } catch (e) {
-      print('Update shop error: $e');
-    }
-    return null;
+    final db = await _dbHelper.database;
+    await db.update('shops', shop.toMap(), where: 'id = ?', whereArgs: [id]);
+    return shop;
   }
 
   Future<bool> deleteShop(String id) async {
-    try {
-      final token = await _authService.getToken();
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/shops/$id'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      return response.statusCode == 204;
-    } catch (e) {
-      print('Delete shop error: $e');
-    }
-    return false;
-  }
-
-  // Demo data for Yangiyer city
-  List<Shop> _getDemoShops() {
-    return [
-      Shop(
-        id: 'shop_1',
-        name: 'Yangi Yer Market',
-        address: 'Markaziy ko\'cha 45, Yangi Yer',
-        phone: '+998901234567',
-        latitude: 40.5966,
-        longitude: 68.7786,
-        category: 'oziq-ovqat',
-        imageUrl: 'assets/images/shops/market1.jpg',
-        workingHours: '08:00 - 22:00',
-        isOpen: true,
-        rating: 4.5,
-      ),
-      Shop(
-        id: 'shop_2',
-        name: 'Choy va Kofe Do\'koni',
-        address: 'Guliston ko\'cha 12, Yangi Yer',
-        phone: '+998907654321',
-        latitude: 40.5980,
-        longitude: 68.7800,
-        category: 'ichimliklar',
-        imageUrl: 'assets/images/shops/tea_shop.jpg',
-        workingHours: '07:00 - 23:00',
-        isOpen: true,
-        rating: 4.2,
-      ),
-      Shop(
-        id: 'shop_3',
-        name: 'Go\'sht va Sut Mahsulotlari',
-        address: 'Dehqon bozori, Yangi Yer',
-        phone: '+998905556667',
-        latitude: 40.5950,
-        longitude: 68.7770,
-        category: 'oziq-ovqat',
-        imageUrl: 'assets/images/shops/meat_shop.jpg',
-        workingHours: '06:00 - 20:00',
-        isOpen: true,
-        rating: 4.7,
-      ),
-    ];
+    final db = await _dbHelper.database;
+    final deleted = await db.delete('shops', where: 'id = ?', whereArgs: [id]);
+    return deleted > 0;
   }
 }

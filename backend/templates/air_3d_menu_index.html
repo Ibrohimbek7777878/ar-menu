@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AIR 3D MENU — AR Menyu & 3D Restoran Menyusi</title>
+    <meta name="description" content="O'zbekiston va xalqaro mehmonlar uchun innovatsion AIR 3D & AR Menyu, ofitsiant va oshxona tizimi" />
+    <meta property="og:title" content="AIR 3D MENU — AR Menyu & 3D Restoran Menyusi" />
+    <meta property="og:description" content="O'zbekiston va xalqaro mehmonlar uchun innovatsion AIR 3D & AR Menyu, ofitsiant va oshxona tizimi" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+    {% if initial_data_json %}
+    <script>
+      window.__INITIAL_DATA__ = {{ initial_data_json|safe }};
+    </script>
+    {% endif %}
+    <!-- Haqiqiy 3D/AR taom modellari uchun (GLB, model-viewer veb-komponent) -->
+    <script type="module" async src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+    <script type="module" crossorigin src="/assets/index.js?v=2.6"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index.css?v=2.6">
+  </head>
+  <body>
+    <div id="root">
+      <noscript>AIR 3D MENU — Innovatsion AR Menyu va 3D Restoran Menyusi</noscript>
+    </div>
+
+    <!-- NFC Arrival Notification Toast -->
+    <div id="nfc-toast" style="display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(15,23,42,0.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); color:#fff; border:1px solid rgba(245,158,11,0.5); padding:10px 18px; border-radius:9999px; box-shadow:0 12px 32px rgba(0,0,0,0.35); font-family:'Inter', sans-serif; font-size:12px; font-weight:700; align-items:center; gap:8px; animation:nfcSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+      <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:#f59e0b; color:#000; font-size:11px;">⚡</span>
+      <span id="nfc-toast-text">NFC orqali ulandi: Stol Menyusi</span>
+    </div>
+
+    <style>
+      @keyframes nfcSlideDown {
+        from { opacity: 0; transform: translate(-50%, -20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+      }
+    </style>
+
+    <script>
+      (function() {
+        if (window.__INITIAL_DATA__ && window.__INITIAL_DATA__.is_nfc) {
+          window.addEventListener('DOMContentLoaded', function() {
+            var toast = document.getElementById('nfc-toast');
+            var txt = document.getElementById('nfc-toast-text');
+            if (toast && txt) {
+              var tbl = window.__INITIAL_DATA__.table_number || '';
+              txt.textContent = 'Smart NFC Ulandi: Stol #' + tbl + ' • Xush kelibsiz!';
+              toast.style.display = 'inline-flex';
+              setTimeout(function() {
+                toast.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -15px)';
+                setTimeout(function() { toast.remove(); }, 600);
+              }, 4500);
+            }
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
+

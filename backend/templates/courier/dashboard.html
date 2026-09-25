@@ -1,0 +1,132 @@
+{% extends "courier/base_courier.html" %}
+{% load uznum %}
+{% block title %}Dashboard - Kuryer paneli{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <p class="eyebrow mb-1">Dashboard</p>
+            <h1 class="font-display text-2xl sm:text-3xl font-semibold text-ink dark:text-white">Assalomu alaykum, {{ courier.name }}</h1>
+        </div>
+        <div class="hidden sm:flex items-center gap-2">
+            {% if courier.status == 'active' %}
+            <span class="pill text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-400">Tayyorman</span>
+            {% elif courier.status == 'busy' %}
+            <span class="pill text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-400">Bandman</span>
+            {% else %}
+            <span class="pill text-gray-500 bg-gray-100 dark:bg-neutral-900">Oflayn</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="card p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Bugungi yetkazishlar</p>
+                    <p class="font-display text-3xl font-semibold mt-1.5 text-ink dark:text-white">{{ stats.today_deliveries|default:"0" }}</p>
+                </div>
+                <div class="w-12 h-12 bg-brand-50 dark:bg-brand-900/40 rounded-xl flex items-center justify-center">
+                    <span class="material-icons !text-2xl text-brand-600 dark:text-brand-400">task_alt</span>
+                </div>
+            </div>
+        </div>
+        <div class="card p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Mavjud buyurtmalar</p>
+                    <p class="font-display text-3xl font-semibold mt-1.5 text-ink dark:text-white">{{ stats.available_orders|default:"0" }}</p>
+                </div>
+                <div class="w-12 h-12 bg-amber-50 dark:bg-amber-950/50 rounded-xl flex items-center justify-center">
+                    <span class="material-icons !text-2xl text-amber-600 dark:text-amber-400">local_shipping</span>
+                </div>
+            </div>
+        </div>
+        <div class="card p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Yetkazilmoqda</p>
+                    <p class="font-display text-3xl font-semibold mt-1.5 text-ink dark:text-white">{{ stats.pending_orders|default:"0" }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 rounded-xl flex items-center justify-center">
+                    <span class="material-icons !text-2xl text-blue-600 dark:text-blue-400">delivery_dining</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card overflow-hidden">
+        <div class="px-6 py-5 border-b border-[#eceae4] dark:border-neutral-900 flex items-center justify-between">
+            <div>
+                <p class="eyebrow mb-1">Joriy</p>
+                <h2 class="font-display text-lg font-semibold text-ink dark:text-white">Faol buyurtmalar</h2>
+            </div>
+            <span class="pill text-gray-500 bg-gray-100 dark:bg-neutral-900">{{ orders|length }} ta</span>
+        </div>
+        <div class="divide-y divide-[#f5f4ef] dark:divide-neutral-900">
+            {% for order in orders %}
+            <div class="px-6 py-5 hover:bg-cream dark:hover:bg-[#111] transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="font-display font-semibold text-ink dark:text-white">#{{ order.order_number }}</span>
+                            {% if order.status == 'pending' %}
+                            <span class="pill text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-400">Kutilmoqda</span>
+                            {% elif order.status == 'confirmed' %}
+                            <span class="pill text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-400">Tasdiqlangan</span>
+                            {% elif order.status == 'preparing' %}
+                            <span class="pill text-indigo-700 bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400">Tayyorlanmoqda</span>
+                            {% elif order.status == 'ready' %}
+                            <span class="pill text-cyan-700 bg-cyan-50 dark:bg-cyan-950 dark:text-cyan-400">Tayyor</span>
+                            {% elif order.status == 'out_for_delivery' %}
+                            <span class="pill text-purple-700 bg-purple-50 dark:bg-purple-950 dark:text-purple-400">Yetkazilmoqda</span>
+                            {% elif order.status == 'delivered' %}
+                            <span class="pill text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-400">Yetkazilgan</span>
+                            {% elif order.status == 'cancelled' %}
+                            <span class="pill text-red-700 bg-red-50 dark:bg-red-950 dark:text-red-400">Bekor qilingan</span>
+                            {% endif %}
+                            {% if not order.courier %}
+                            <span class="pill text-gray-500 bg-gray-100 dark:bg-neutral-900">Ochilgan</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">{{ order.customer_name }} · <span class="text-gray-400">{{ order.customer_phone }}</span></p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
+                            <span class="material-icons !text-base">location_on</span>
+                            {{ order.address|truncatechars:70 }}
+                        </p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ order.items_count|default:order.items.count }} ta mahsulot · {{ order.final_amount|uznum }} {{ t.catalog_som }}</p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <a href="{% url 'courier_order_detail' order.pk %}" class="btn btn-outline !py-2 !px-3.5 !text-sm">Batafsil</a>
+                        {% if order.status == 'confirmed' or order.status == 'preparing' %}
+                        <form method="POST" action="{% url 'courier_accept_order' order.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary !py-2 !px-3.5 !text-sm">
+                                <span class="material-icons !text-lg">check</span>
+                                Olish
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if order.status == 'out_for_delivery' %}
+                        <form method="POST" action="{% url 'courier_deliver_order' order.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary !py-2 !px-3.5 !text-sm">
+                                <span class="material-icons !text-lg">check</span>
+                                Yetkazildi
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="px-6 py-16 text-center">
+                <span class="material-icons !text-5xl text-gray-300 dark:text-neutral-700 mx-auto block mb-3">inbox</span>
+                <p class="text-base text-gray-500 dark:text-gray-400">Faol buyurtmalar mavjud emas</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

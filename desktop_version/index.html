@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Store Guliston</title>
+<style>
+:root{--bg:#f5f5f5;--surface:#fff;--text:#1a1a1a;--text2:#666;--primary:#16a34a;--primary-dark:#15803d;--accent:#f97316;--border:#e5e5e5;--card:#fff;--shadow:0 2px 12px rgba(0,0,0,.08);--danger:#ef4444;--radius:16px;--sidebar-w:260px}
+[data-theme="dark"]{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e5e5e5;--text2:#999;--border:#333;--card:#1e1e1e;--shadow:0 2px 12px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:all .3s}
+a{color:var(--primary);text-decoration:none}
+button{cursor:pointer;border:none;font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+.hidden{display:none!important}
+.badge{background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;display:inline-flex;align-items:center;justify-content:center;position:absolute;top:-6px;right:-6px}
+.toast{position:fixed;top:20px;right:20px;background:var(--primary);color:#fff;padding:14px 24px;border-radius:12px;z-index:9999;animation:slideIn .3s;box-shadow:var(--shadow);font-weight:600}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fade .3s ease}
+/* ===== CUSTOMER LAYOUT ===== */
+.customer-layout{display:flex;min-height:100vh}
+.customer-content{flex:1;margin-left:220px;padding:24px;max-width:1200px}
+.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;z-index:100;transition:all .3s}
+.sidebar-logo{padding:0 20px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.sidebar-logo .logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:800}
+.sidebar-logo h2{font-size:16px;font-weight:700}
+.sidebar-logo small{display:block;font-size:11px;color:var(--text2);font-weight:400}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border-left:3px solid transparent;position:relative}
+.nav-item:hover{background:var(--primary);background:rgba(22,163,74,.08);color:var(--primary)}
+.nav-item.active{color:var(--primary);background:rgba(22,163,74,.08);border-left-color:var(--primary);font-weight:600}
+.nav-item .icon{font-size:18px;width:24px;text-align:center}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--text2)}
+.sidebar-footer .theme-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 0}
+/* ===== CARDS ===== */
+.card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid var(--border);transition:all .2s}
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,.12)}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+/* ===== BUTTONS ===== */
+.btn{padding:10px 20px;border-radius:12px;font-weight:600;font-size:14px;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px}
+.btn-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0;background:var(--bg);color:var(--text)}
+/* ===== FORMS ===== */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text2)}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:14px;transition:all .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(22,163,74,.15)}
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);background:var(--bg)}
+td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:14px}
+tr:hover{background:rgba(22,163,74,.03)}
+/* ===== STAT CARD ===== */
+.stat-card{padding:20px;display:flex;align-items:center;gap:16px}
+.stat-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.stat-icon.green{background:rgba(22,163,74,.1);color:#16a34a}
+.stat-icon.blue{background:rgba(59,130,246,.1);color:#3b82f6}
+.stat-icon.orange{background:rgba(249,115,22,.1);color:#f97316}
+.stat-icon.purple{background:rgba(168,85,247,.1);color:#a855f7}
+.stat-info h3{font-size:28px;font-weight:800}
+.stat-info p{font-size:13px;color:var(--text2)}
+/* ===== STATUS BADGES ===== */
+.status{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block}
+.status-pending{background:#fef3c7;color:#d97706}
+.status-confirmed{background:#dbeafe;color:#2563eb}
+.status-preparing{background:#e0e7ff;color:#4f46e5}
+.status-ready{background:#d1fae5;color:#059669}
+.status-outForDelivery{background:#fce7f3;color:#db2777}
+.status-delivered{background:#dcfce7;color:#16a34a}
+.status-cancelled{background:#fee2e2;color:#ef4444}
+.status-active{background:#dcfce7;color:#16a34a}
+.status-inactive{background:#fee2e2;color:#ef4444}
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fade .2s}
+.modal{background:var(--surface);border-radius:var(--radius);padding:32px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.modal-header h2{font-size:20px;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-size:18px;cursor:pointer;border:none}
+/* ===== SHOP CARD (CUSTOMER) ===== */
+.shop-card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border);transition:all .3s;cursor:pointer}
+.shop-card:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.shop-card-img{height:160px;background:linear-gradient(135deg,#16a34a,#22c55e);display:flex;align-items:center;justify-content:center;font-size:48px;color:#fff}
+.shop-card-body{padding:16px}
+.shop-card-body h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.shop-card-body p{font-size:13px;color:var(--text2)}
+.shop-card-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--border)}
+.rating{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--accent)}
+/* ===== PRODUCT CARD ===== */
+.product-card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border);transition:all .3s;display:flex;flex-direction:column}
+.product-card:hover{transform:translateY(-2px)}
+.product-card-img{height:140px;background:linear-gradient(135deg,#f97316,#fb923c);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff}
+.product-card-body{padding:14px;flex:1;display:flex;flex-direction:column}
+.product-card-body h4{font-size:14px;font-weight:600;margin-bottom:4px}
+.product-card-body .desc{font-size:12px;color:var(--text2);flex:1}
+.product-card-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--border)}
+.price{font-size:18px;font-weight:800;color:var(--primary)}
+.price small{font-size:12px;font-weight:400;color:var(--text2)}
+/* ===== CART ===== */
+.cart-item{display:flex;align-items:center;gap:16px;padding:16px;border-bottom:1px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.cart-item-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+.cart-item-info{flex:1}
+.cart-item-info h4{font-size:14px;font-weight:600}
+.cart-item-info p{font-size:12px;color:var(--text2)}
+.qty-controls{display:flex;align-items:center;gap:8px}
+.qty-btn{width:28px;height:28px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:pointer;color:var(--text)}
+.qty-val{font-weight:700;font-size:14px;min-width:24px;text-align:center}
+/* ===== CHECKOUT ===== */
+.checkout-summary{background:var(--bg);border-radius:12px;padding:16px}
+.checkout-row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px}
+.checkout-total{border-top:2px solid var(--border);padding-top:12px;margin-top:8px;font-weight:700;font-size:16px}
+/* ===== CUSTOMER BOTTOM NAV (MOBILE) ===== */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:100;padding:8px 0}
+.bottom-nav-items{display:flex;justify-content:space-around}
+.bottom-nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer;padding:4px 12px;position:relative}
+.bottom-nav-item.active{color:var(--primary);font-weight:600}
+.bottom-nav-item .icon{font-size:20px}
+/* ===== TABS ===== */
+.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:24px}
+.tab{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--text2)}
+.tab.active{background:var(--primary);color:#fff}
+.tab:hover:not(.active){background:var(--border)}
+/* ===== CATEGORY CHIPS ===== */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:8px 0}
+.chip{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border:2px solid var(--border);transition:all .2s;background:var(--surface)}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* ===== SEARCH ===== */
+.search-bar{display:flex;gap:12px;align-items:center}
+.search-bar input{flex:1;padding:14px 20px;border:2px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);font-size:15px}
+.search-bar input:focus{outline:none;border-color:var(--primary)}
+/* ===== EMPTY STATE ===== */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-state .icon{font-size:64px;margin-bottom:16px;opacity:.5}
+.empty-state h3{font-size:18px;margin-bottom:8px;color:var(--text)}
+/* ===== RESPONSIVE ===== */
+@media(max-width:1024px){.grid-4{grid-template-columns:repeat(2,1fr)}.customer-content{margin-left:0;padding:16px}}
+@media(max-width:768px){.grid-4,.grid-3{grid-template-columns:1fr}.sidebar{display:none}.customer-content{margin-left:0;padding:16px;padding-bottom:80px}.bottom-nav{display:block}}
+</style>
+</head>
+<body>
+
+<!-- ============ TOAST ============ -->
+<div id="toast"></div>
+
+<!-- ============ SPLASH ============ -->
+<div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#16a34a,#22c55e);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff">
+<div style="width:80px;height:80px;background:rgba(255,255,255,.2);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:20px">🏪</div>
+<h1 style="font-size:28px;font-weight:800">Online Store</h1>
+<p style="opacity:.8;margin-top:4px">Guliston — Yangi Yer</p>
+<div style="margin-top:30px;width:40px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden"><div style="width:0%;height:100%;background:#fff;border-radius:2px;animation:load 1.5s ease forwards"></div></div>
+<style>@keyframes load{to{width:100%}}</style>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-logo">
+<div class="logo-icon">S</div>
+<div><h2>Store Guliston</h2><small>E-commerce platforma</small></div>
+</div>
+<nav class="sidebar-nav" id="customerNav">
+<div class="nav-item active" data-page="home" onclick="go('home')"><span class="icon">🏠</span> Bosh sahifa</div>
+<div class="nav-item" data-page="catalog" onclick="go('catalog')"><span class="icon">📦</span> Katalog</div>
+<div class="nav-item" data-page="cart" onclick="go('cart')"><span class="icon">🛒</span> Savat <span class="badge hidden" id="cartBadge">0</span></div>
+<div class="nav-item" data-page="orders" onclick="go('orders')"><span class="icon">📋</span> Buyurtmalarim</div>
+<div class="nav-item" data-page="profile" onclick="go('profile')"><span class="icon">👤</span> Profil</div>
+</nav>
+<nav class="sidebar-nav hidden" id="adminNav">
+<div class="nav-item active" data-page="admin-dashboard" onclick="go('admin-dashboard')"><span class="icon">📊</span> Dashboard</div>
+<div class="nav-item" data-page="admin-shops" onclick="go('admin-shops')"><span class="icon">🏪</span> Do'konlar</div>
+<div class="nav-item" data-page="admin-products" onclick="go('admin-products')"><span class="icon">📦</span> Mahsulotlar</div>
+<div class="nav-item" data-page="admin-orders" onclick="go('admin-orders')"><span class="icon">📋</span> Buyurtmalar</div>
+<div class="nav-item" data-page="admin-couriers" onclick="go('admin-couriers')"><span class="icon">🛵</span> Kuryerlar</div>
+<div class="nav-item" data-page="admin-categories" onclick="go('admin-categories')"><span class="icon">🏷️</span> Kategoriyalar</div>
+<div class="nav-item" data-page="admin-settings" onclick="go('admin-settings')"><span class="icon">⚙️</span> Sozlamalar</div>
+</nav>
+<div class="sidebar-footer">
+<div class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span> <span id="themeText">Qorong'u</span></div>
+<div style="margin-top:8px;cursor:pointer" onclick="toggleAdmin()"><span id="modeText">👤 Mijoz</span></div>
+<div style="margin-top:4px;font-size:11px;color:var(--text2);cursor:pointer" id="langSelect" onclick="cycleLang()">🌐 O'zbek</div>
+</div>
+</div>
+
+<!-- Main Content -->
+<div class="customer-content" id="mainContent"></div>
+
+<!-- Mobile Bottom Nav -->
+<div class="bottom-nav">
+<div class="bottom-nav-items">
+<div class="bottom-nav-item active" data-page="home" onclick="go('home')"><span class="icon">🏠</span>Bosh</div>
+<div class="bottom-nav-item" data-page="catalog" onclick="go('catalog')"><span class="icon">📦</span>Katalog</div>
+<div class="bottom-nav-item" data-page="cart" onclick="go('cart')"><span class="icon">🛒</span>Savat</div>
+<div class="bottom-nav-item" data-page="orders" onclick="go('orders')"><span class="icon">📋</span>Buyurtma</div>
+<div class="bottom-nav-item" data-page="profile" onclick="go('profile')"><span class="icon">👤</span>Profil</div>
+</div>
+</div>
+</div>
+
+<script>
+// ============ DATA ============
+const DB = {
+shops: [
+{id:'s1',name:'Yangi Yer Market',address:'Markaziy ko\'cha 45, Yangi Yer',phone:'+998901234567',lat:40.5966,lng:68.7786,category:'oziq-ovqat',img:'',hours:'08:00-22:00',open:true,rating:4.5},
+{id:'s2',name:'Choy va Kofe Do\'koni',address:'Guliston ko\'cha 12',phone:'+998907654321',lat:40.598,lng:68.78,category:'ichimliklar',img:'',hours:'07:00-23:00',open:true,rating:4.2},
+{id:'s3',name:'Guliston Sut Bozori',address:'Dehqon bozori',phone:'+998905556667',lat:40.595,lng:68.777,category:'sut-mahsulotlari',img:'',hours:'06:00-20:00',open:true,rating:4.7},
+{id:'s4',name:'Nonxon Guliston',address:'Navro\'z ko\'cha 20',phone:'+998909998877',lat:40.604,lng:68.788,category:'non-va-pishiriq',img:'',hours:'07:00-21:00',open:true,rating:4.6},
+{id:'s5',name:'Mahalliy Navbahor',address:'Bozor yo\'li, Guliston',phone:'+998909112233',lat:40.607,lng:68.785,category:'mahalliy',img:'',hours:'08:00-22:00',open:true,rating:4.8},
+{id:'s6',name:'Guliston Maxsus Do\'koni',address:'Pochtaxon ko\'cha 8',phone:'+998901112244',lat:40.6085,lng:68.7875,category:'mahalliy',img:'',hours:'08:00-22:00',open:true,rating:4.4},
+{id:'s7',name:'Frutti Land',address:'Istiqlol ko\'cha 3',phone:'+998903223344',lat:40.6012,lng:68.7878,category:'mevalar',img:'',hours:'07:00-21:00',open:true,rating:4.6},
+{id:'s8',name:'Gazli Ichimliklar',address:'Yangi yor ko\'cha 5',phone:'+998904334455',lat:40.5975,lng:68.779,category:'ichimliklar',img:'',hours:'09:00-23:00',open:true,rating:4.3},
+{id:'s9',name:'Tibbiyot va Gigiena',address:'Sog\'lom yo\'l 10',phone:'+998907776655',lat:40.5988,lng:68.7812,category:'gigiena',img:'',hours:'08:00-22:00',open:true,rating:4.5},
+{id:'s10',name:'Guliston Tezkor Do\'koni',address:'Ibrat ko\'cha 18',phone:'+998909001122',lat:40.6025,lng:68.79,category:'mahalliy',img:'',hours:'08:00-23:00',open:true,rating:4.7}
+],
+products: [
+{id:'p1',name:'Yangi Olmalar',price:12000,img:'',unit:'kg',desc:'Shirin va sharbatli olmalar',shopId:'s1',cat:'Mevalar',avail:true,stock:100},
+{id:'p2',name:'Sabzavotlar',price:8000,img:'',unit:'kg',desc:'Yangi sabzavotlar',shopId:'s1',cat:'Sabzavotlar',avail:true,stock:150},
+{id:'p3',name:'Kartoshka',price:5000,img:'',unit:'kg',desc:'Sifatli kartoshka',shopId:'s2',cat:'Sabzavotlar',avail:true,stock:200},
+{id:'p4',name:'Apelsin sharbat',price:12000,img:'',unit:'stakan',desc:'Tabiiy apelsin sharbati',shopId:'s2',cat:'Ichimliklar',avail:true,stock:70},
+{id:'p5',name:'Sut (1L)',price:8500,img:'',unit:'litr',desc:'Mahalliy xom sut',shopId:'s3',cat:'Sut mahsulotlari',avail:true,stock:100},
+{id:'p6',name:'Qaymoq (200g)',price:18000,img:'',unit:'paket',desc:'Qalin qaymoq',shopId:'s3',cat:'Sut mahsulotlari',avail:true,stock:45},
+{id:'p7',name:'Non (1 dona)',price:2500,img:'',unit:'dona',desc:'Qo\'l bilan pishirilgan non',shopId:'s4',cat:'Non va pishiriq',avail:true,stock:150},
+{id:'p8',name:'Shirin bulochka',price:9000,img:'',unit:'dona',desc:'Mahalliy bulochka',shopId:'s4',cat:'Non va pishiriq',avail:true,stock:70},
+{id:'p9',name:'Coca-Cola (1.5L)',price:22000,img:'',unit:'botal',desc:'Gazlangan ichimlik',shopId:'s8',cat:'Ichimliklar',avail:true,stock:55},
+{id:'p10',name:'Pepsi (1.5L)',price:22000,img:'',unit:'botal',desc:'Mashhur gazlangan ichimlik',shopId:'s8',cat:'Ichimliklar',avail:true,stock:55},
+{id:'p11',name:'Tish pastasi',price:14000,img:'',unit:'dona',desc:'Og\'iz gigienasi uchun',shopId:'s9',cat:'Gigiena',avail:true,stock:80},
+{id:'p12',name:'Moyka yuvish suyuqligi',price:18000,img:'',unit:'botal',desc:'Idish yuvish uchun',shopId:'s2',cat:'Uy-ro\'zg\'or',avail:true,stock:65},
+{id:'p13',name:'Shakar (1kg)',price:12000,img:'',unit:'kg',desc:'Sifati yuqori shakar',shopId:'s1',cat:'Oziq-ovqat',avail:true,stock:90},
+{id:'p14',name:'Mol go\'shti (1kg)',price:125000,img:'',unit:'kg',desc:'Yangi mol go\'shti',shopId:'s3',cat:'Go\'sht',avail:true,stock:20},
+{id:'p15',name:'Qo\'y go\'shti (1kg)',price:135000,img:'',unit:'kg',desc:'Zo\'r sifatli qo\'y go\'shti',shopId:'s3',cat:'Go\'sht',avail:true,stock:30},
+{id:'p16',name:'Pishloq (200g)',price:22000,img:'',unit:'dona',desc:'Mahalliy pishloq',shopId:'s3',cat:'Sut mahsulotlari',avail:true,stock:40},
+{id:'p17',name:'Asal (500g)',price:42000,img:'',unit:'dona',desc:'Mahalliy asal',shopId:'s6',cat:'Mahalliy mahsulotlar',avail:true,stock:40},
+{id:'p18',name:'Quritilgan sabzi',price:12000,img:'',unit:'paket',desc:'Gulistonlik mahalliy quritma',shopId:'s5',cat:'Mahalliy mahsulotlar',avail:true,stock:60},
+{id:'p19',name:'Nonushta paket',price:15000,img:'',unit:'paket',desc:'Odatdagi mahalliy non',shopId:'s5',cat:'Non va pishiriq',avail:true,stock:40},
+{id:'p20',name:'Baget',price:5000,img:'',unit:'dona',desc:'Xushbo\'y baget',shopId:'s4',cat:'Non va pishiriq',avail:true,stock:80},
+{id:'p21',name:'Choynak',price:55000,img:'',unit:'dona',desc:'Issiq choy uchun choynak',shopId:'s4',cat:'Uy-ro\'zg\'or',avail:true,stock:25},
+{id:'p22',name:'Plastik idish',price:10000,img:'',unit:'dona',desc:'Uy uchun amaliy plastik idish',shopId:'s5',cat:'Uy-ro\'zg\'or',avail:true,stock:90},
+{id:'p23',name:'Disinfeksiya spreyi',price:26000,img:'',unit:'botal',desc:'Zararkunandalarga qarshi spreyi',shopId:'s9',cat:'Gigiena',avail:true,stock:55},
+{id:'p24',name:'Moyka suvi',price:12000,img:'',unit:'botal',desc:'Uy-ro\'zg\'or uchun suyuqlik',shopId:'s1',cat:'Uy-ro\'zg\'or',avail:true,stock:50},
+{id:'p25',name:'Nok (1kg)',price:12000,img:'',unit:'kg',desc:'Yumshoq va shirali nok',shopId:'s7',cat:'Mevalar',avail:true,stock:50}
+],
+categories: [
+{id:'c1',name:'Mevalar',icon:'🍎',color:'#f97316'},
+{id:'c2',name:'Sabzavotlar',icon:'🥬',color:'#22c55e'},
+{id:'c3',name:'Sut mahsulotlari',icon:'🥛',color:'#f59e0b'},
+{id:'c4',name:'Go\'sht',icon:'🥩',color:'#ef4444'},
+{id:'c5',name:'Non va pishiriq',icon:'🍞',color:'#92400e'},
+{id:'c6',name:'Ichimliklar',icon:'🥤',color:'#3b82f6'},
+{id:'c7',name:'Gigiena',icon:'🧴',color:'#a855f7'},
+{id:'c8',name:'Uy-ro\'zg\'or',icon:'🧹',color:'#64748b'},
+{id:'c9',name:'Mahalliy mahsulotlar',icon:'🏅',color:'#6366f1'},
+{id:'c10',name:'Oziq-ovqat',icon:'🏪',color:'#16a34a'}
+],
+couriers: [
+{id:'cr1',name:'Sardor Raximov',phone:'+998901112233',status:'active'},
+{id:'cr2',name:'Jamshid Karimov',phone:'+998903334455',status:'active'},
+{id:'cr3',name:'Akbar Toshmatov',phone:'+998905556677',status:'inactive'}
+]
+};
+
+let state = {
+page:'home',isAdmin:false,cart:[],orders:[],
+search:'',catFilter:'',theme:'light',lang:'uz',
+adminSession:false
+};
+
+const I18N = {
+uz:{home:'Bosh sahifa',catalog:'Katalog',cart:'Savat',orders:'Buyurtmalarim',profile:'Profil',search:'Qidirish...',addToCart:'Savatga qo\'shish',checkout:'Buyurtma berish',total:'Jami',delivery:'Yetkazish',deliveryFee:'6,000 so\'m',name:'Ism',phone:'Telefon',address:'Manzil',notes:'Izoh',confirm:'Tasdiqlash',back:'Orqaga',shops:'Do\'konlar',products:'Mahsulotlar',admin:'Admin panel',login:'Kirish',register:'Ro\'yxatdan o\'tish',dashboard:'Dashboard',allOrders:'Barcha buyurtmalar',couriers:'Kuryerlar',categories:'Kategoriyalar',settings:'Sozlamalar',add:'Qo\'shish',edit:'Tahrirlash',delete:'O\'chirish',save:'Saqlash',cancel:'Bekor qilish',open:'Ochiq',closed:'Yopiq',dark:'Qorong\'u',light:'Yorug\'i',adminMode:'Admin rejimi',customerMode:'Mijoz rejimi',noShops:'Do\'konlar topilmadi',noProducts:'Mahsulotlar topilmadi',noOrders:'Buyurtmalar yo\'q',emptyCart:'Savat bo\'sh',orderSuccess:'Buyurtma muvaffaqiyatli berildi!',phone1:'Asosiy telefon',phone2:'Qo\'shimcha telefon 1',phone3:'Qo\'shimcha telefon 2',pickup:'Olib ketish',deliver:'Yetkazish',price:'Narx',stock:'Ombor',status:'Holat',actions:'Amallar',date:'Sana',amount:'Summa',view:'Ko\'rish',assign:'Tayinlash',courier:'Kuryer',shop:'Do\'kon',category:'Kategoriya',logout:'Chiqish',user:'Foydalanuvchi',welcome:'Xush kelibsiz!',all:'Barchasi',unit:'Birlik'},
+ru:{home:'Главная',catalog:'Каталог',cart:'Корзина',orders:'Мои заказы',profile:'Профиль',search:'Поиск...',addToCart:'В корзину',checkout:'Заказать',total:'Итого',delivery:'Доставка',deliveryFee:'6,000 сум',name:'Имя',phone:'Телефон',address:'Адрес',notes:'Заметки',confirm:'Подтвердить',back:'Назад',shops:'Магазины',products:'Товары',admin:'Админ панель',login:'Вход',register:'Регистрация',dashboard:'Панель',allOrders:'Все заказы',couriers:'Курьеры',categories:'Категории',settings:'Настройки',add:'Добавить',edit:'Редактировать',delete:'Удалить',save:'Сохранить',cancel:'Отмена',open:'Открыт',closed:'Закрыт',dark:'Тёмный',light:'Светлый',adminMode:'Режим админа',customerMode:'Режим клиента',noShops:'Магазины не найдены',noProducts:'Товары не найдены',noOrders:'Заказов нет',emptyCart:'Корзина пуста',orderSuccess:'Заказ успешно оформлен!',phone1:'Основной телефон',phone2:'Доп. телефон 1',phone3:'Доп. телефон 2',pickup:'Самовывоз',deliver:'Доставка',price:'Цена',stock:'Склад',status:'Статус',actions:'Действия',date:'Дата',amount:'Сумма',view:'Просмотр',assign:'Назначить',courier:'Курьер',shop:'Магазин',category:'Категория',logout:'Выход',user:'Пользователь',welcome:'Добро пожаловать!',all:'Все',unit:'Единица'},
+en:{home:'Home',catalog:'Catalog',cart:'Cart',orders:'My Orders',profile:'Profile',search:'Search...',addToCart:'Add to Cart',checkout:'Order',total:'Total',delivery:'Delivery',deliveryFee:'6,000 so\'m',name:'Name',phone:'Phone',address:'Address',notes:'Notes',confirm:'Confirm',back:'Back',shops:'Shops',products:'Products',admin:'Admin Panel',login:'Login',register:'Register',dashboard:'Dashboard',allOrders:'All Orders',couriers:'Couriers',categories:'Categories',settings:'Settings',add:'Add',edit:'Edit',delete:'Delete',save:'Save',cancel:'Cancel',open:'Open',closed:'Closed',dark:'Dark',light:'Light',adminMode:'Admin Mode',customerMode:'Customer Mode',noShops:'No shops found',noProducts:'No products found',noOrders:'No orders yet',emptyCart:'Cart is empty',orderSuccess:'Order placed successfully!',phone1:'Primary phone',phone2:'Additional phone 1',phone3:'Additional phone 2',pickup:'Pickup',deliver:'Deliver',price:'Price',stock:'Stock',status:'Status',actions:'Actions',date:'Date',amount:'Amount',view:'View',assign:'Assign',courier:'Courier',shop:'Shop',category:'Category',logout:'Logout',user:'User',welcome:'Welcome!',all:'All',unit:'Unit'}
+};
+
+function t(k){return I18N[state.lang][k]||k}
+function fmt(n){return n.toLocaleString('uz-UZ')+' so\'m'}
+function $(s){return document.querySelector(s)}
+function $$(s){return document.querySelectorAll(s)}
+function toast(msg){const d=document.createElement('div');d.className='toast';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
+
+// ============ INIT ============
+function init(){
+const saved=localStorage.getItem('store_state');
+if(saved){const p=JSON.parse(saved);Object.assign(state,p);state.cart=p.cart||[];state.orders=p.orders||[]}
+applyTheme();
+setTimeout(()=>{$('#splash').classList.add('hidden');$('#app').classList.remove('hidden');go(state.page)},1800);
+}
+
+function save(){localStorage.setItem('store_state',JSON.stringify(state))}
+
+// ============ NAVIGATION ============
+function go(page){
+state.page=page;
+$$('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===page)});
+$$('.bottom-nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===page)});
+render();
+save();
+}
+
+// ============ THEME ============
+function toggleTheme(){
+state.theme=state.theme==='light'?'dark':'light';
+applyTheme();save();
+}
+function applyTheme(){
+document.documentElement.dataset.theme=state.theme;
+$('#themeIcon').textContent=state.theme==='dark'?'☀️':'🌙';
+$('#themeText').textContent=state.theme==='dark'?t('light'):t('dark');
+}
+
+// ============ LANG ============
+function cycleLang(){
+const langs=['uz','ru','en'];
+const i=langs.indexOf(state.lang);
+state.lang=langs[(i+1)%langs.length];
+const names={uz:"O'zbek",ru:'Русский',en:'English'};
+$('#langSelect').textContent='🌐 '+names[state.lang];
+$('#modeText').textContent=state.isAdmin?t('customerMode'):t('adminMode');
+$('#themeText').textContent=state.theme==='dark'?t('light'):t('dark');
+applyTheme();save();render();
+}
+
+// ============ ADMIN TOGGLE ============
+function toggleAdmin(){
+state.isAdmin=!state.isAdmin;
+state.adminSession=state.isAdmin;
+$('#customerNav').classList.toggle('hidden',state.isAdmin);
+$('#adminNav').classList.toggle('hidden',!state.isAdmin);
+$('#modeText').textContent=state.isAdmin?t('customerMode'):t('adminMode');
+go(state.isAdmin?'admin-dashboard':'home');
+}
+
+// ============ CART ============
+function addToCart(pid){
+const p=DB.products.find(x=>x.id===pid);
+if(!p)return;
+const existing=state.cart.find(c=>c.id===pid);
+if(existing){existing.qty++}else{state.cart.push({...p,qty:1})}
+updateBadge();save();toast(p.name+' '+t('addToCart'));
+}
+function removeFromCart(pid){
+state.cart=state.cart.filter(c=>c.id!==pid);
+updateBadge();save();render();
+}
+function changeQty(pid,d){
+const item=state.cart.find(c=>c.id===pid);
+if(!item)return;
+item.qty+=d;
+if(item.qty<=0){removeFromCart(pid);return}
+save();render();
+}
+function cartTotal(){return state.cart.reduce((s,c)=>s+c.price*c.qty,0)}
+function cartCount(){return state.cart.reduce((s,c)=>s+c.qty,0)}
+function updateBadge(){
+const b=$('#cartBadge');
+if(b){const c=cartCount();b.textContent=c;b.classList.toggle('hidden',c===0)}
+}
+
+// ============ ORDERS ============
+function placeOrder(){
+if(state.cart.length===0){toast(t('emptyCart'));return}
+const name=$('#checkoutName')?.value||'Mijoz';
+const phone=$('#checkoutPhone')?.value||'';
+const address=$('#checkoutAddress')?.value||'';
+const notes=$('#checkoutNotes')?.value||'';
+const total=cartTotal();
+const fee=6000;
+const order={
+id:'ord_'+Date.now(),
+number:'#'+(state.orders.length+1).toString().padStart(4,'0'),
+customerName:name,phones:[phone],address,notes,
+items:[...state.cart],totalAmount:total,deliveryFee:fee,finalAmount:total+fee,
+status:'pending',date:new Date().toISOString()
+};
+state.orders.push(order);
+state.cart=[];
+updateBadge();save();
+toast(t('orderSuccess'));
+go('orders');
+}
+
+// ============ RENDER ============
+function render(){
+const c=$('#mainContent');
+const pages={
+home:renderHome,catalog:renderCatalog,cart:renderCart,
+orders:renderOrders,profile:renderProfile,
+'admin-dashboard':renderAdminDashboard,'admin-shops':renderAdminShops,
+'admin-products':renderAdminProducts,'admin-orders':renderAdminOrders,
+'admin-couriers':renderAdminCouriers,'admin-categories':renderAdminCategories,
+'admin-settings':renderAdminSettings
+};
+c.innerHTML=(pages[state.page]||renderHome)();
+c.className='customer-content fade-in';
+updateBadge();
+}
+
+function renderHome(){
+let shopCards=DB.shops.filter(s=>{
+if(state.search&&!s.name.toLowerCase().includes(state.search.toLowerCase()))return false;
+return true;
+}).map(s=>`
+<div class="shop-card" onclick="viewShop('${s.id}')">
+<div class="shop-card-img">${s.img?'<img src="'+s.img+'" width="100%" height="100%" object-fit="cover">':'🏪'}</div>
+<div class="shop-card-body"><h3>${s.name}</h3><p>${s.address}</p></div>
+<div class="shop-card-footer">
+<div class="rating">⭐ ${s.rating}</div>
+<span class="status ${s.open?'status-active':'status-inactive'}">${s.open?t('open'):t('closed')}</span>
+</div>
+</div>
+`).join('');
+return `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+<h2 style="font-size:24px;font-weight:800">${t('welcome')}</h2>
+<div style="display:flex;gap:8px">
+<span style="background:var(--primary);color:#fff;padding:8px 16px;border-radius:12px;font-size:13px;font-weight:600">📍 Guliston</span>
+</div>
+</div>
+<div class="search-bar" style="margin-bottom:24px">
+<input type="text" placeholder="${t('search')+' '+t('shops')+'...'}" value="${state.search}" oninput="state.search=this.value;render()">
+</div>
+<h3 style="margin-bottom:16px;font-size:18px;font-weight:700">${t('shops')} <span style="color:var(--text2);font-size:14px">(${DB.shops.length})</span></h3>
+<div class="grid-3">${shopCards||'<div class="empty-state"><div class="icon">🏪</div><h3>'+t('noShops')+'</h3></div>'}</div>
+`;
+}
+
+function viewShop(sid){
+state._viewShop=sid;state.page='catalog';state.catFilter='';render();
+$$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page==='catalog'));
+$$('.bottom-nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page==='catalog'));
+}
+
+function renderCatalog(){
+const shopId=state._viewShop;
+let prods=shopId?DB.products.filter(p=>p.shopId===shopId):DB.products;
+const cats=[...new Set(prods.map(p=>p.cat))];
+if(state.catFilter)prods=prods.filter(p=>p.cat===state.catFilter);
+let shopName=shopId?DB.shops.find(s=>s.id===shopId)?.name||'':'';
+return `
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+<button class="btn btn-outline btn-sm" onclick="state._viewShop=null;state.catFilter='';render()">← ${t('back')}</button>
+<h2 style="font-size:20px;font-weight:700">${shopName?shopName+' — ':''}${t('catalog')}</h2>
+</div>
+<div class="chips" style="margin-bottom:20px">
+<div class="chip ${!state.catFilter?'active':''}" onclick="state.catFilter='';render()">${t('all')}</div>
+${DB.categories.map(c=>`<div class="chip ${state.catFilter===c.name?'active':''}" onclick="state.catFilter='${c.name}';render()">${c.icon} ${c.name}</div>`).join('')}
+</div>
+<div class="search-bar" style="margin-bottom:20px">
+<input type="text" placeholder="${t('search')+'...'}" value="${state.search}" oninput="state.search=this.value;render()">
+</div>
+<div class="grid-4">
+${prods.filter(p=>!state.search||p.name.toLowerCase().includes(state.search.toLowerCase())).map(p=>`
+<div class="product-card">
+<div class="product-card-img">${p.img?'<img src="'+p.img+'" width="100%" height="100%">':getCatIcon(p.cat)}</div>
+<div class="product-card-body">
+<h4>${p.name}</h4>
+<p class="desc">${p.desc}</p>
+<p style="font-size:11px;color:var(--text2);margin-top:4px">${DB.shops.find(s=>s.id===p.shopId)?.name||''}</p>
+</div>
+<div class="product-card-footer">
+<div class="price">${fmt(p.price)} <small>/${p.unit}</small></div>
+<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart('${p.id}')">🛒 +</button>
+</div>
+</div>
+`).join('')}
+</div>
+${prods.length===0?'<div class="empty-state"><div class="icon">📦</div><h3>'+t('noProducts')+'</h3></div>':''}
+`;
+}
+
+function getCatIcon(cat){
+const m={'Mevalar':'🍎','Sabzavotlar':'🥬','Sut mahsulotlari':'🥛','Go\'sht':'🥩','Non va pishiriq':'🍞','Ichimliklar':'🥤','Gigiena':'🧴','Uy-ro\'zg\'or':'🧹','Mahalliy mahsulotlar':'🏅','Oziq-ovqat':'🏪'};
+return m[cat]||'📦';
+}
+
+function renderCart(){
+if(state.cart.length===0){
+return `<div class="empty-state"><div class="icon">🛒</div><h3>${t('emptyCart')}</h3><p style="margin-top:8px"><button class="btn btn-primary" onclick="go('catalog')">${t('catalog')}</button></p></div>`;
+}
+const items=state.cart.map(c=>`
+<div class="cart-item">
+<div class="cart-item-icon">${getCatIcon(c.cat)}</div>
+<div class="cart-item-info"><h4>${c.name}</h4><p>${fmt(c.price)} / ${c.unit}</p></div>
+<div class="qty-controls">
+<button class="qty-btn" onclick="changeQty('${c.id}',-1)">−</button>
+<span class="qty-val">${c.qty}</span>
+<button class="qty-btn" onclick="changeQty('${c.id}',1)">+</button>
+</div>
+<div style="font-weight:700;min-width:100px;text-align:right">${fmt(c.price*c.qty)}</div>
+<button class="btn-icon" onclick="removeFromCart('${c.id}')" style="margin-left:8px">✕</button>
+</div>
+`).join('');
+return `
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">🛒 ${t('cart')}</h2>
+<div style="display:grid;grid-template-columns:1fr 380px;gap:24px">
+<div>${items}</div>
+<div class="card" style="position:sticky;top:24px;height:fit-content">
+<h3 style="margin-bottom:16px;font-size:16px;font-weight:700">${t('checkout')}</h3>
+<div class="form-group"><label>${t('name')}</label><input id="checkoutName" placeholder="${t('name')}"></div>
+<div class="form-group"><label>${t('phone')}</label><input id="checkoutPhone" type="tel" placeholder="+998901234567"></div>
+<div class="form-group"><label>${t('address')}</label><input id="checkoutAddress" placeholder="${t('address')}"></div>
+<div class="form-group"><label>${t('notes')}</label><textarea id="checkoutNotes" rows="2" placeholder="${t('notes')}"></textarea></div>
+<div class="checkout-summary">
+<div class="checkout-row"><span>${t('total')}</span><span style="font-weight:600">${fmt(cartTotal())}</span></div>
+<div class="checkout-row"><span>${t('delivery')}</span><span style="color:var(--primary);font-weight:600">${t('deliveryFee')}</span></div>
+<div class="checkout-row checkout-total"><span>${t('total')}</span><span style="color:var(--primary)">${fmt(cartTotal()+6000)}</span></div>
+</div>
+<button class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:16px" onclick="placeOrder()">${t('confirm')} — ${fmt(cartTotal()+6000)}</button>
+</div>
+</div>
+`;
+}
+
+function renderOrders(){
+if(state.orders.length===0){
+return `<div class="empty-state"><div class="icon">📋</div><h3>${t('noOrders')}</h3></div>`;
+}
+const rows=state.orders.map(o=>`
+<tr>
+<td><strong>${o.number}</strong></td>
+<td>${o.customerName||'-'}</td>
+<td>${fmt(o.finalAmount)}</td>
+<td><span class="status status-${o.status}">${statusLabel(o.status)}</span></td>
+<td>${new Date(o.date).toLocaleDateString('uz-UZ')}</td>
+</tr>
+`).join('');
+return `
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">📋 ${t('orders')}</h2>
+<div class="card"><div class="table-wrap"><table>
+<thead><tr><th>#</th><th>${t('name')}</th><th>${t('amount')}</th><th>${t('status')}</th><th>${t('date')}</th></tr></thead>
+<tbody>${rows}</tbody>
+</table></div></div>
+`;
+}
+
+function renderProfile(){
+return `
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">👤 ${t('profile')}</h2>
+<div class="card" style="max-width:500px">
+<div style="text-align:center;padding:20px 0">
+<div style="width:80px;height:80px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px">👤</div>
+<h3>${t('welcome')}</h3>
+<p style="color:var(--text2)">${t('customerMode')}</p>
+</div>
+<div style="margin-top:20px">
+<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>${t('orders')}</span><strong>${state.orders.length}</strong></div>
+<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>${t('cart')}</span><strong>${cartCount()}</strong></div>
+<div style="display:flex;justify-content:space-between;padding:12px 0"><span>${t('lang')||'Til'}</span><strong>${state.lang.toUpperCase()}</strong></div>
+</div>
+</div>
+`;
+}
+
+// ============ ADMIN ============
+function renderAdminDashboard(){
+const shops=DB.shops.length;
+const products=DB.products.length;
+const orders=state.orders.length;
+const revenue=state.orders.reduce((s,o)=>s+o.finalAmount,0);
+return `
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">📊 ${t('dashboard')}</h2>
+<div class="grid-4" style="margin-bottom:24px">
+<div class="card stat-card"><div class="stat-icon green">🏪</div><div class="stat-info"><h3>${shops}</h3><p>${t('shops')}</p></div></div>
+<div class="card stat-card"><div class="stat-icon blue">📦</div><div class="stat-info"><h3>${products}</h3><p>${t('products')}</p></div></div>
+<div class="card stat-card"><div class="stat-icon orange">📋</div><div class="stat-info"><h3>${orders}</h3><p>${t('orders')}</p></div></div>
+<div class="card stat-card"><div class="stat-icon purple">💰</div><div class="stat-info"><h3>${fmt(revenue)}</h3><p>${t('total')}</p></div></div>
+</div>
+<div class="grid-2">
+<div class="card"><h3 style="margin-bottom:16px;font-size:16px">${t('allOrders')}</h3>
+${state.orders.slice(-5).reverse().map(o=>`
+<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+<div><strong>${o.number}</strong> — ${o.customerName||'-'}</div>
+<div><span class="status status-${o.status}">${statusLabel(o.status)}</span></div>
+<div>${fmt(o.finalAmount)}</div>
+</div>
+`).join('')||'<p style="color:var(--text2)">Buyurtmalar yo\'q</p>'}
+</div>
+<div class="card"><h3 style="margin-bottom:16px;font-size:16px">${t('shops')}</h3>
+${DB.shops.slice(0,5).map(s=>`
+<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+<div><strong>${s.name}</strong></div>
+<span class="status ${s.open?'status-active':'status-inactive'}">${s.open?t('open'):t('closed')}</span>
+</div>
+`).join('')}
+</div>
+</div>
+`;
+}
+
+function renderAdminShops(){
+const rows=DB.shops.map(s=>`
+<tr>
+<td><strong>${s.name}</strong></td>
+<td>${s.address}</td>
+<td>${s.phone}</td>
+<td>${s.category}</td>
+<td><span class="status ${s.open?'status-active':'status-inactive'}">${s.open?t('open'):t('closed')}</span></td>
+<td>⭐ ${s.rating}</td>
+<td>
+<button class="btn btn-outline btn-sm" onclick="editShop('${s.id}')">${t('edit')}</button>
+<button class="btn btn-danger btn-sm" onclick="deleteShop('${s.id}')">${t('delete')}</button>
+</td>
+</tr>
+`).join('');
+return `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+<h2 style="font-size:20px;font-weight:700">🏪 ${t('shops')}</h2>
+<button class="btn btn-primary" onclick="openShopModal()">+ ${t('add')}</button>
+</div>
+<div class="card"><div class="table-wrap"><table>
+<thead><tr><th>${t('name')}</th><th>${t('address')}</th><th>${t('phone')}</th><th>${t('category')}</th><th>${t('status')}</th><th>⭐</th><th>${t('actions')}</th></tr></thead>
+<tbody>${rows}</tbody>
+</table></div></div>
+<div id="modalArea"></div>
+`;
+}
+
+function renderAdminProducts(){
+const rows=DB.products.map(p=>`
+<tr>
+<td><strong>${p.name}</strong></td>
+<td>${fmt(p.price)}</td>
+<td>${p.unit}</td>
+<td>${p.cat}</td>
+<td>${DB.shops.find(s=>s.id===p.shopId)?.name||'-'}</td>
+<td>${p.stock}</td>
+<td><button class="btn btn-outline btn-sm" onclick="editProduct('${p.id}')">${t('edit')}</button>
+<button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">${t('delete')}</button></td>
+</tr>
+`).join('');
+return `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+<h2 style="font-size:20px;font-weight:700">📦 ${t('products')}</h2>
+<button class="btn btn-primary" onclick="openProductModal()">+ ${t('add')}</button>
+</div>
+<div class="card"><div class="table-wrap"><table>
+<thead><tr><th>${t('name')}</th><th>${t('price')}</th><th>${t('unit')||'Birlik'}</th><th>${t('category')}</th><th>${t('shop')}</th><th>${t('stock')}</th><th>${t('actions')}</th></tr></thead>
+<tbody>${rows}</tbody>
+</table></div></div>
+<div id="modalArea"></div>
+`;
+}
+
+function renderAdminOrders(){
+const rows=state.orders.map(o=>`
+<tr>
+<td><strong>${o.number}</strong></td>
+<td>${o.customerName||'-'}</td>
+<td>${(o.phones||[]).join(', ')||'-'}</td>
+<td>${o.items.map(i=>i.name+' x'+i.qty).join(', ')}</td>
+<td>${fmt(o.finalAmount)}</td>
+<td><span class="status status-${o.status}">${statusLabel(o.status)}</span></td>
+<td>
+<select onchange="updateOrderStatus('${o.id}',this.value)" style="padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+${['pending','confirmed','preparing','ready','outForDelivery','delivered','cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${statusLabel(s)}</option>`).join('')}
+</select>
+</td>
+</tr>
+`).join('');
+return `
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">📋 ${t('allOrders')}</h2>
+<div class="card"><div class="table-wrap"><table>
+<thead><tr><th>#</th><th>${t('name')}</th><th>${t('phone')}</th><th>${t('products')||'Mahsulotlar'}</th><th>${t('amount')}</th><th>${t('status')}</th><th>${t('actions')}</th></tr></thead>
+<tbody>${rows}</tbody>
+</table></div></div>
+${state.orders.length===0?'<div class="empty-state"><div class="icon">📋</div><h3>Buyurtmalar yo\'q</h3></div>':''}
+`;
+}
+
+function renderAdminCouriers(){
+const rows=DB.couriers.map(c=>`
+<tr>
+<td><strong>${c.name}</strong></td>
+<td>${c.phone}</td>
+<td><span class="status status-${c.status}">${c.status==='active'?t('active'):t('inactive')}</span></td>
+<td>
+<button class="btn btn-outline btn-sm" onclick="editCourier('${c.id}')">${t('edit')}</button>
+<button class="btn btn-danger btn-sm" onclick="deleteCourier('${c.id}')">${t('delete')}</button>
+</td>
+</tr>
+`).join('');
+return `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+<h2 style="font-size:20px;font-weight:700">🛵 ${t('couriers')}</h2>
+<button class="btn btn-primary" onclick="openCourierModal()">+ ${t('add')}</button>
+</div>
+<div class="card"><div class="table-wrap"><table>
+<thead><tr><th>${t('name')}</th><th>${t('phone')}</th><th>${t('status')}</th><th>${t('actions')}</th></tr></thead>
+<tbody>${rows}</tbody>
+</table></div></div>
+<div id="modalArea"></div>
+`;
+}
+
+function renderAdminCategories(){
+const rows=DB.categories.map(c=>`
+<tr>
+<td style="font-size:24px">${c.icon}</td>
+<td><strong>${c.name}</strong></td>
+<td><div style="width:24px;height:24px;border-radius:6px;background:${c.color}"></div></td>
+<td>
+<button class="btn btn-outline btn-sm" onclick="editCategory('${c.id}')">${t('edit')}</button>
+<button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')">${t('delete')}</button>
+</td>
+</tr>
+`).join('');
+return `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+<h2 style="font-size:20px;font-weight:700">🏷️ ${t('categories')}</h2>
+<button class="btn btn-primary" onclick="openCategoryModal()">+ ${t('add')}</button>
+</div>
+<div class="card"><div class="table-wrap"><table>
+<thead><tr><th>Icon</th><th>${t('name')}</th><th>${'Rang'}</th><th>${t('actions')}</th></tr></thead>
+<tbody>${rows}</tbody>
+</table></div></div>
+<div id="modalArea"></div>
+`;
+}
+
+function renderAdminSettings(){
+return `
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">⚙️ ${t('settings')}</h2>
+<div class="card" style="max-width:600px">
+<div class="form-group"><label>${t('name')} ${t('shop')||'Do\'kon'}</label><input value="Online Store Guliston" id="setAppName"></div>
+<div class="form-group"><label>Telegram Bot Token</label><input placeholder="123456:ABC..." id="setTelegram"></div>
+<div class="form-group"><label>Weather API Key</label><input placeholder="OpenWeather API" id="setWeather"></div>
+<div class="form-group"><label>Yetkazish narxi (so'm)</label><input type="number" value="6000" id="setDeliveryFee"></div>
+<div class="form-group"><label>${t('dark')}/${t('light')}</label>
+<div style="display:flex;gap:8px">
+<button class="btn ${state.theme==='light'?'btn-primary':'btn-outline'}" onclick="state.theme='light';applyTheme();save()">${t('light')}</button>
+<button class="btn ${state.theme==='dark'?'btn-primary':'btn-outline'}" onclick="state.theme='dark';applyTheme();save()">${t('dark')}</button>
+</div></div>
+<div class="form-group"><label>${'Til'}</label>
+<div style="display:flex;gap:8px">
+<button class="btn ${state.lang==='uz'?'btn-primary':'btn-outline'}" onclick="state.lang='uz';applyTheme();save();render()">O'zbek</button>
+<button class="btn ${state.lang==='ru'?'btn-primary':'btn-outline'}" onclick="state.lang='ru';applyTheme();save();render()">Русский</button>
+<button class="btn ${state.lang==='en'?'btn-primary':'btn-outline'}" onclick="state.lang='en';applyTheme();save();render()">English</button>
+</div></div>
+<button class="btn btn-primary" onclick="toast('${t('save')||'Saqlandi'}!')">${t('save')}</button>
+</div>
+`;
+}
+
+// ============ STATUS ============
+function statusLabel(s){
+return {pending:'Kutilmoqda',confirmed:'Tasdiqlangan',preparing:'Tayyorlanmoqda',ready:'Tayyor',outForDelivery:'Yo\'lda',delivered:'Yetkazildi',cancelled:'Bekor qilindi',active:'Faol',inactive:'Nofaol'}[s]||s;
+}
+
+function updateOrderStatus(oid,status){
+const o=state.orders.find(x=>x.id===oid);
+if(o){o.status=status;save();render();toast('Status yangilandi: '+statusLabel(status))}
+}
+
+// ============ MODALS ============
+function openModal(html){document.getElementById('modalArea').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`}
+function closeModal(){const m=document.getElementById('modalArea');if(m)m.innerHTML=''}
+
+function openShopModal(shop){
+const s=shop||{};
+openModal(`
+<div class="modal-header"><h2>${s.id?t('edit'):t('add')} — ${t('shop')}</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+<div class="form-group"><label>${t('name')}</label><input id="mShopName" value="${s.name||''}"></div>
+<div class="form-group"><label>${t('address')}</label><input id="mShopAddr" value="${s.address||''}"></div>
+<div class="form-group"><label>${t('phone')}</label><input id="mShopPhone" value="${s.phone||''}"></div>
+<div class="form-group"><label>${t('category')}</label><input id="mShopCat" value="${s.category||''}"></div>
+<div class="form-group"><label>${t('open')||'Soat'}</label><input id="mShopHours" value="${s.hours||'08:00-22:00'}"></div>
+<button class="btn btn-primary" style="width:100%" onclick="saveShop('${s.id||''}')">${t('save')}</button>
+`);
+}
+function saveShop(id){
+const data={name:$('#mShopName').value,address:$('#mShopAddr').value,phone:$('#mShopPhone').value,category:$('#mShopCat').value,hours:$('#mShopHours').value};
+if(id){const s=DB.shops.find(x=>x.id===id);Object.assign(s,data)}
+else{DB.shops.push({id:'s'+Date.now(),...data,lat:40.6,lng:68.78,img:'',open:true,rating:4.5})}
+save();closeModal();render();toast(t('save')+'!');
+}
+function editShop(id){openShopModal(DB.shops.find(x=>x.id===id))}
+function deleteShop(id){if(confirm(t('delete')+'?')){DB.shops=DB.shops.filter(x=>x.id!==id);save();render();toast(t('delete'))}}
+
+function openProductModal(prod){
+const p=prod||{};
+openModal(`
+<div class="modal-header"><h2>${p.id?t('edit'):t('add')} — ${t('products')}</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+<div class="form-group"><label>${t('name')}</label><input id="mProdName" value="${p.name||''}"></div>
+<div class="form-group"><label>${t('price')}</label><input id="mProdPrice" type="number" value="${p.price||''}"></div>
+<div class="form-group"><label>${t('unit')||'Birlik'}</label><input id="mProdUnit" value="${p.unit||'dona'}"></div>
+<div class="form-group"><label>${t('category')}</label><input id="mProdCat" value="${p.cat||''}"></div>
+<div class="form-group"><label>${t('shop')}</label><select id="mProdShop">${DB.shops.map(s=>`<option value="${s.id}" ${p.shopId===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+<div class="form-group"><label>${t('stock')}</label><input id="mProdStock" type="number" value="${p.stock||100}"></div>
+<button class="btn btn-primary" style="width:100%" onclick="saveProduct('${p.id||''}')">${t('save')}</button>
+`);
+}
+function saveProduct(id){
+const data={name:$('#mProdName').value,price:Number($('#mProdPrice').value),unit:$('#mProdUnit').value,cat:$('#mProdCat').value,shopId:$('#mProdShop').value,stock:Number($('#mProdStock').value)};
+if(id){const p=DB.products.find(x=>x.id===id);Object.assign(p,data)}
+else{DB.products.push({id:'p'+Date.now(),...data,img:'',desc:'',avail:true})}
+save();closeModal();render();toast(t('save')+'!');
+}
+function editProduct(id){openProductModal(DB.products.find(x=>x.id===id))}
+function deleteProduct(id){if(confirm(t('delete')+'?')){DB.products=DB.products.filter(x=>x.id!==id);save();render();toast(t('delete'))}}
+
+function openCourierModal(c){
+const cr=c||{};
+openModal(`
+<div class="modal-header"><h2>${cr.id?t('edit'):t('add')} — ${t('courier')}</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+<div class="form-group"><label>${t('name')}</label><input id="mCourName" value="${cr.name||''}"></div>
+<div class="form-group"><label>${t('phone')}</label><input id="mCourPhone" value="${cr.phone||''}"></div>
+<div class="form-group"><label>${t('status')}</label><select id="mCourStatus"><option value="active" ${cr.status==='active'?'selected':''}>${t('active')}</option><option value="inactive" ${cr.status==='inactive'?'selected':''}>${t('inactive')}</option></select></div>
+<button class="btn btn-primary" style="width:100%" onclick="saveCourier('${cr.id||''}')">${t('save')}</button>
+`);
+}
+function saveCourier(id){
+const data={name:$('#mCourName').value,phone:$('#mCourPhone').value,status:$('#mCourStatus').value};
+if(id){const c=DB.couriers.find(x=>x.id===id);Object.assign(c,data)}
+else{DB.couriers.push({id:'cr'+Date.now(),...data})}
+save();closeModal();render();toast(t('save')+'!');
+}
+function editCourier(id){openCourierModal(DB.couriers.find(x=>x.id===id))}
+function deleteCourier(id){if(confirm(t('delete')+'?')){DB.couriers=DB.couriers.filter(x=>x.id!==id);save();render();toast(t('delete'))}}
+
+function openCategoryModal(cat){
+const c=cat||{};
+openModal(`
+<div class="modal-header"><h2>${c.id?t('edit'):t('add')} — ${t('category')}</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+<div class="form-group"><label>Icon</label><input id="mCatIcon" value="${c.icon||'📦'}"></div>
+<div class="form-group"><label>${t('name')}</label><input id="mCatName" value="${c.name||''}"></div>
+<div class="form-group"><label>${'Rang'}</label><input id="mCatColor" type="color" value="${c.color||'#16a34a'}"></div>
+<button class="btn btn-primary" style="width:100%" onclick="saveCategory('${c.id||''}')">${t('save')}</button>
+`);
+}
+function saveCategory(id){
+const data={icon:$('#mCatIcon').value,name:$('#mCatName').value,color:$('#mCatColor').value};
+if(id){const c=DB.categories.find(x=>x.id===id);Object.assign(c,data)}
+else{DB.categories.push({id:'c'+Date.now(),...data,sortOrder:DB.categories.length})}
+save();closeModal();render();toast(t('save')+'!');
+}
+function editCategory(id){openCategoryModal(DB.categories.find(x=>x.id===id))}
+function deleteCategory(id){if(confirm(t('delete')+'?')){DB.categories=DB.categories.filter(x=>x.id!==id);save();render();toast(t('delete'))}}
+
+// ============ START ============
+init();
+</script>
+</body>
+</html>

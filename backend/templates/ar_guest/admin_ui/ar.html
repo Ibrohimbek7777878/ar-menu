@@ -1,0 +1,126 @@
+{% extends "admin_panel/base.html" %}{% load i18n static %}
+{% block title %}{% trans "3D / AR modellar" %}{% endblock %}
+{% block heading %}🎯 {% trans "3D / AR Modellar Boshqaruvi" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'admin_ui/css/ar.css' %}?v=1">
+{% endblock %}
+
+{% block content %}
+<div class="a-ar">
+  <header class="a-ar__head">
+    <h1>🎯 {% trans "3D / AR modellar" %}</h1>
+    <div class="a-ar__stat">
+      <span class="pill pill--ok">✅ <b id="cReady">0</b> {% trans "tayyor" %}</span>
+      <span class="pill pill--warn">⏳ <b id="cProc">0</b> {% trans "jarayonda" %}</span>
+      <span class="pill pill--off">❌ <b id="cNone">0</b> {% trans "yo'q" %}</span>
+      <span class="pill pill--lib">📚 <b id="cLib">0</b> {% trans "kutubxonadan" %}</span>
+    </div>
+  </header>
+
+  <div class="a-ar__filters">
+    <input type="search" id="fSearch" placeholder="{% trans 'Taom qidirish…' %}">
+    <select id="fStatus">
+      <option value="">{% trans "Barcha holat" %}</option>
+      <option value="ready">{% trans "Tayyor" %}</option>
+      <option value="processing">{% trans "Jarayonda" %}</option>
+      <option value="none">{% trans "Model yo'q" %}</option>
+      <option value="failed">{% trans "Xato" %}</option>
+    </select>
+  </div>
+
+  <div class="a-ar__list" id="modelList"></div>
+</div>
+
+<!-- ⚡ Karta shabloni -->
+<template id="tplModel">
+  <article class="mcard" data-dish="">
+    <div class="mcard__prev"><img alt=""><span class="mcard__pct" hidden></span></div>
+    <div class="mcard__body">
+      <div class="mcard__row">
+        <h3 class="mcard__name"></h3>
+        <span class="mcard__badge"></span>
+      </div>
+      <p class="mcard__src"></p>
+      <p class="mcard__meta"></p>
+      <p class="mcard__an"></p>
+      <p class="mcard__err" hidden></p>
+      <div class="mcard__act"></div>
+    </div>
+  </article>
+</template>
+
+<!-- 🤖 AI yaratish modali -->
+<div class="a-modal" id="genModal" hidden>
+  <div class="a-modal__box">
+    <h3>🤖 {% trans "AI bilan 3D AR model yaratish" %}</h3>
+    <p class="a-modal__hint" style="color:var(--text-muted); font-size:13px; margin:6px 0 12px 0; line-height:1.4;">
+      {% trans "Taom yoki jismning 4 ta burchagidan (Old, O'ng, Orqa, Chap) olingan fotosuratlarini yuklang. AI tizimi fotogrammetriya orqali avtomatik to'liq 3D AR model generatsiya qiladi!" %}
+    </p>
+    <input type="file" id="genImages" accept="image/*" multiple style="width:100%; margin-bottom:8px;">
+    <small style="display:block; color:#10B981; font-weight:600; margin-bottom:10px;">📸 Kamida 4 ta burchakdan rasm tanlash tavsiya etiladi</small>
+    <div id="genPrev" class="a-modal__prev"></div>
+
+    <label class="a-modal__lbl">
+      📏 {% trans "Taomning haqiqiy o'lchami" %}
+      <span class="a-modal__crit">⚡ {% trans "AR aniqligi shunga bog'liq!" %}</span>
+    </label>
+    <div class="a-modal__size">
+      <input type="number" id="genSize" value="25" min="3" max="200" step="0.5">
+      <span>{% trans "sm" %}</span>
+      <div class="a-modal__quick">
+        <button data-size="18">{% trans "Kichik tarelka 18" %}</button>
+        <button data-size="25">{% trans "Tarelka 25" %}</button>
+        <button data-size="32">{% trans "Lagan 32" %}</button>
+        <button data-size="40">{% trans "Katta lagan 40" %}</button>
+      </div>
+    </div>
+
+    <label class="a-modal__chk">
+      <input type="checkbox" id="genLib" checked>
+      📚 {% trans "Avval kutubxonadan qidirilsin (bepul va tez)" %}
+    </label>
+
+    <div class="a-modal__foot">
+      <button class="btn btn--ghost" data-close>{% trans "Bekor" %}</button>
+      <button class="btn btn--pri" id="genGo">🤖 {% trans "Yaratish" %}</button>
+    </div>
+  </div>
+</div>
+
+<!-- 📚 Kutubxona modali -->
+<div class="a-modal" id="libModal" hidden>
+  <div class="a-modal__box">
+    <h3>📚 {% trans "Kutubxonadan tanlash" %}</h3>
+    <input type="search" id="libQ" placeholder="{% trans 'Nomi bo\'yicha…' %}">
+    <div id="libRes" class="a-modal__libres"></div>
+    <div class="a-modal__foot">
+      <button class="btn btn--ghost" data-close>{% trans "Yopish" %}</button>
+    </div>
+  </div>
+</div>
+
+<!-- 👁 Ko'rish modali -->
+<div class="a-modal a-modal--wide" id="viewModal" hidden>
+  <div class="a-modal__box">
+    <h3 id="viewName">—</h3>
+    <div id="viewStage" class="a-modal__stage"></div>
+    <p class="a-modal__note" id="viewNote"></p>
+    <div class="a-modal__foot">
+      <button class="btn btn--ghost" data-close>{% trans "Yopish" %}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.AR_ADMIN = {
+    token: localStorage.getItem('admin_token') || '',
+    wsUrl: "{{ ws_scheme|default:'ws' }}://{{ request.get_host }}/ws/admin/" +
+           (localStorage.getItem('admin_token') || '') + "/",
+  };
+</script>
+<script src="{% static 'common/js/reliable-ws.js' %}?v=1"></script>
+<script src="{% static 'admin_ui/js/ar.js' %}?v=1"></script>
+{% endblock %}

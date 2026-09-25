@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:store_guliston/main.dart';
+import 'package:store_guliston/models/shop.dart';
+import 'package:store_guliston/models/product.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('Shop model creates correctly', () {
+    final shop = Shop(
+      id: 'test_1',
+      name: 'Test Shop',
+      address: 'Test Address',
+      phone: '+998901234567',
+      latitude: 40.5966,
+      longitude: 68.7786,
+      category: 'oziq-ovqat',
+      imageUrl: '',
+      workingHours: '08:00 - 22:00',
+      isOpen: true,
+      rating: 4.5,
+    );
+    expect(shop.id, 'test_1');
+    expect(shop.name, 'Test Shop');
+    expect(shop.isOpen, true);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('Product model creates correctly', () {
+    final product = Product(
+      id: 'prod_test',
+      name: 'Test Product',
+      price: 12000,
+      imageUrl: '',
+      unit: 'kg',
+      description: 'Test description',
+      shopId: 'test_1',
+      category: 'Mevalar',
+      isAvailable: true,
+      stock: 100,
+    );
+    expect(product.id, 'prod_test');
+    expect(product.price, 12000);
+    expect(product.isAvailable, true);
   });
 }

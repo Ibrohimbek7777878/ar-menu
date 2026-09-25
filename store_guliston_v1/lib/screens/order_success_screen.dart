@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/order.dart';
-import 'home_screen.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
   final Order order;
@@ -59,7 +59,7 @@ class OrderSuccessScreen extends StatelessWidget {
                           children: [
                             const Text('Buyurtma raqami:'),
                             Text(
-                              '#${order.id.substring(order.id.length - 6)}',
+                              order.orderNumber ?? '#${order.id.substring(order.id.length - 6)}',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -70,7 +70,7 @@ class OrderSuccessScreen extends StatelessWidget {
                           children: [
                             const Text('Jami summa:'),
                             Text(
-                              '${order.totalAmount.toStringAsFixed(0)} so\'m',
+                              '${order.finalAmount.toStringAsFixed(0)} so\'m',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
@@ -170,12 +170,7 @@ class OrderSuccessScreen extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          // TODO: Navigate to order tracking
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Buyurtma kuzatuv tez orada qo\'shiladi'),
-                            ),
-                          );
+                          GoRouter.of(context).go('/orders');
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -187,10 +182,7 @@ class OrderSuccessScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const HomeScreen()),
-                            (route) => false,
-                          );
+                          GoRouter.of(context).go('/home');
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),

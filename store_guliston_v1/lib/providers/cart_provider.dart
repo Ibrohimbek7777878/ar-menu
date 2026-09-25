@@ -48,12 +48,12 @@ class CartProvider with ChangeNotifier {
     } else {
       _items[product.id] = CartItem(product: product);
     }
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   void removeItem(String productId) {
     _items.remove(productId);
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   void updateQuantity(String productId, int quantity) {
@@ -62,7 +62,7 @@ class CartProvider with ChangeNotifier {
         removeItem(productId);
       } else {
         _items[productId]!.quantity = quantity;
-        notifyListeners();
+        Future.microtask(() => notifyListeners());
       }
     }
   }
@@ -70,7 +70,7 @@ class CartProvider with ChangeNotifier {
   void incrementQuantity(String productId) {
     if (_items.containsKey(productId)) {
       _items[productId]!.quantity++;
-      notifyListeners();
+      Future.microtask(() => notifyListeners());
     }
   }
 
@@ -81,7 +81,7 @@ class CartProvider with ChangeNotifier {
       } else {
         removeItem(productId);
       }
-      notifyListeners();
+      Future.microtask(() => notifyListeners());
     }
   }
 
@@ -95,7 +95,7 @@ class CartProvider with ChangeNotifier {
 
   void clearCart() {
     _items.clear();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   // Convert cart to order items

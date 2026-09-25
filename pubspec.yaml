@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   
   # Firebase packages
   firebase_core: ^2.15.0
@@ -34,10 +36,10 @@ dependencies:
   flutter_svg: ^2.0.10
 
   # Development dependencies
-  dev_dependencies:
-    flutter_test:
-      sdk: flutter
-    flutter_lints: ^3.0.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

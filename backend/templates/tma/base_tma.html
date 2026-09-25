@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Online Store Guliston — Telegram Mini App{% endblock %}</title>
+    <!-- Telegram WebApp JS SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f8fafc);
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #0f172a);
+            --hint-color: var(--tg-theme-hint-color, #64748b);
+            --primary: var(--tg-theme-button-color, #059669);
+            --primary-text: var(--tg-theme-button-text-color, #ffffff);
+            --border-color: rgba(226, 232, 240, 0.8);
+            --radius-md: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Top Header */
+        .tma-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+        }
+        .tma-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-color);
+            text-decoration: none;
+        }
+        .tma-brand span {
+            color: var(--primary);
+        }
+        .tma-user-badge {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Container */
+        .tma-content {
+            padding: 14px 16px;
+        }
+
+        /* Bottom Nav Bar */
+        .tma-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 200;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+        }
+        .tma-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--hint-color);
+            font-size: 11px;
+            font-weight: 600;
+            position: relative;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+        .tma-nav-item.active {
+            color: var(--primary);
+        }
+        .tma-nav-icon {
+            font-size: 20px;
+        }
+        .tma-badge {
+            position: absolute;
+            top: 2px;
+            right: 8px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            height: 16px;
+            min-width: 16px;
+            line-height: 16px;
+            text-align: center;
+            border-radius: 999px;
+            padding: 0 4px;
+        }
+
+        /* Reusable UI Components */
+        .tma-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+        .tma-btn-primary {
+            display: block;
+            width: 100%;
+            background: var(--primary);
+            color: var(--primary-text);
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+            transition: opacity 0.2s;
+        }
+        .tma-btn-primary:active {
+            opacity: 0.85;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="tma-header">
+        <a href="{% url 'tma_home' %}" class="tma-brand">
+            🌿 <span>Guliston</span> TMA
+        </a>
+        <div id="tg-user-greeting" class="tma-user-badge">
+            Telegram WebApp
+        </div>
+    </header>
+
+    {% if table %}
+    <!-- Active Restaurant Table Bar -->
+    <div style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(5,150,105,0.2);">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span>🍽</span>
+            <span>Stol №{{ table.number }} ({{ table.hall.name }})</span>
+        </div>
+        <div style="display:flex;gap:4px;">
+            <button type="button" onclick="callTmaTableService('tea')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🫖 Choy</button>
+            <button type="button" onclick="callTmaTableService('bread')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🍞 Non</button>
+            <button type="button" onclick="callTmaTableService('waiter')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🔔 Xodim</button>
+            <button type="button" onclick="callTmaTableService('bill')" style="background:#f59e0b;border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Hisob</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="tma-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="tma-bottom-bar">
+        <a href="{% url 'tma_home' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
+            <span class="tma-nav-icon">🏠</span>
+            <span>Asosiy</span>
+        </a>
+        <a href="{% url 'tma_catalog' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_catalog' %}active{% endif %}">
+            <span class="tma-nav-icon">🔍</span>
+            <span>Katalog</span>
+        </a>
+        <a href="/ar/" class="tma-nav-item {% if request.path == '/ar/' %}active{% endif %}">
+            <span class="tma-nav-icon">🥽</span>
+            <span>3D / AR</span>
+        </a>
+        <a href="{% url 'tma_cart' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_cart' %}active{% endif %}">
+            <span class="tma-nav-icon">🛒</span>
+            <span>Savat</span>
+            <span id="tma-cart-count" class="tma-badge" style="{% if not cart_count %}display: none;{% endif %}">
+                {{ cart_count|default:0 }}
+            </span>
+        </a>
+        <a href="{% url 'tma_orders' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_orders' %}active{% endif %}">
+            <span class="tma-nav-icon">📦</span>
+            <span>Buyurtmalar</span>
+        </a>
+    </nav>
+
+    <!-- Telegram Init Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tg = window.Telegram?.WebApp;
+            if (tg) {
+                tg.ready();
+                tg.expand();
+
+                // Native BackButton
+                if (window.location.pathname !== '/tma/' && tg.BackButton) {
+                    tg.BackButton.show();
+                    tg.BackButton.onClick(() => {
+                        window.history.back();
+                    });
+                } else if (tg.BackButton) {
+                    tg.BackButton.hide();
+                }
+                
+                // Telegram user malumotlarini olish
+                const user = tg.initDataUnsafe?.user;
+                if (user && user.first_name) {
+                    const badge = document.getElementById('tg-user-greeting');
+                    if (badge) {
+                        badge.innerText = `👋 ${user.first_name}`;
+                    }
+                }
+            }
+        });
+
+        // TMA Stol xizmat chaqirish
+        function callTmaTableService(serviceType) {
+            const tg = window.Telegram?.WebApp;
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+            fetch('/api/v1/flutter/table/service-call/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: '{{ table_token }}',
+                    service_type: serviceType
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (tg?.showAlert) {
+                        tg.showAlert(data.message || 'Xabar ofitsiantga yetkazildi!');
+                    } else {
+                        alert(data.message || 'Xabar ofitsiantga yetkazildi!');
+                    }
+                } else {
+                    alert(data.error || 'Xatolik yuz berdi');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Aloqa xatosi yuz berdi.');
+            });
+        }
+
+        // Haptic feedback & savat AJAX yordamchisi
+        function tmaAddToCart(productId) {
+            const tg = window.Telegram?.WebApp;
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+
+            fetch('/tma/api/cart/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'add', product_id: productId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById('tma-cart-count');
+                    if (badge) {
+                        badge.innerText = data.cart_count;
+                        badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
+                    }
+                    if (tg?.showScanQrPopup) {
+                        // Success toast
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

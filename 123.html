@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS AI — MVP PRODUCTION ARCHITECTURE & SPECIFICATION</title>
+    <style>
+        :root {
+            --bg-deep: #05050a;
+            --bg-surface: #0b0f19;
+            --bg-card: #121826;
+            --bg-code: #030712;
+            --neon-cyan: #00f5d4;
+            --neon-blue: #00bbf9;
+            --neon-purple: #9b5de5;
+            --neon-pink: #f15bb5;
+            --text-pure: #ffffff;
+            --text-main: #cbd5e1;
+            --text-muted: #64748b;
+            --alert-red: #ef4444;
+            --alert-green: #22c55e;
+        }
+
+        body {
+            font-family: 'Fira Code', 'Segoe UI', Monaco, monospace;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 50px 20px;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--bg-card);
+            padding-bottom: 50px;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 3.5em;
+            color: var(--neon-cyan);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 30px rgba(0, 245, 212, 0.4);
+        }
+
+        header p {
+            font-size: 1.3em;
+            color: var(--text-muted);
+            margin: 15px 0 0 0;
+        }
+
+        .architecture-blueprint {
+            background-color: var(--bg-surface);
+            border-left: 5px solid var(--neon-purple);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 50px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .faza-container {
+            background-color: var(--bg-surface);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .faza-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .faza-title {
+            font-size: 2em;
+            color: var(--neon-blue);
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .faza-badge {
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+            color: var(--text-pure);
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .grid-blocks {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-blocks {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .block-card {
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .block-card h4 {
+            margin-top: 0;
+            color: var(--neon-cyan);
+            font-size: 1.2em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        .critical-warning {
+            background-color: rgba(239, 68, 68, 0.07);
+            border: 1px solid var(--alert-red);
+            border-left: 6px solid var(--alert-red);
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .critical-warning h5 {
+            margin: 0 0 10px 0;
+            color: var(--alert-red);
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        pre {
+            background-color: var(--bg-code);
+            padding: 25px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 25px 0;
+        }
+
+        code {
+            font-family: 'Fira Code', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+            color: #e2e8f0;
+        }
+
+        .c-keyword {
+            color: #f15bb5;
+        }
+
+        .c-func {
+            color: #00bbf9;
+        }
+
+        .c-str {
+            color: #00f5d4;
+        }
+
+        .c-comm {
+            color: #4b5563;
+            font-style: italic;
+        }
+
+        .c-num {
+            color: #ffb703;
+        }
+
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .tech-table th,
+        .tech-table td {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            text-align: left;
+        }
+
+        .tech-table th {
+            background-color: var(--bg-code);
+            color: var(--neon-cyan);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🎙️ JARVIS AUTONOMOUS SYSTEM ARCHITECTURE</h1>
+            <p>Ishlab chiqarish darajasidagi, nol budjetli, xatolardan to'liq himoyalangan Telegram Mini App ekotizimi
+            </p>
+        </header>
+
+        <div class="architecture-blueprint">
+            <h2>🌐 1. TIZIMNING ZERO-CRASH FALSAFASI VA DATA-FLOW</h2>
+            <p>Jarvis tizimining bosh qoidasi: <strong>Foydalanuvchi interfeysda hech qachon xatolik belgisini yoki
+                    botning jim bo'lib qolganini ko'rmasligi shart.</strong> Agar biror xizmat (masalan, LLM API yoki
+                STT provayderi) o'chib qolsa, tizim xatoni o'zi tahlil qiladi (Self-healing), dasturchiga yashirin xabar
+                beradi va foydalanuvchiga muammoni bildirmasdan navbatga qo'yadi (Asynchronous Fallback Queue).</p>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>Komponent</th>
+                        <th>Vazifasi</th>
+                        <th>Nol Mablag' Texnologiyasi (MVP Stack)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Ingress Server</strong></td>
+                        <td>Telegram Webhook so'rovlarini qabul qilish va 1 soniyada javob qaytarish</td>
+                        <td>FastAPI (Python) + Uvicorn (Asynchronous ASGI)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Background Worker</strong></td>
+                        <td>Asosiy og'ir vazifalarni (ovoz qayta ishlash, AI o'ylashi) fonda bajarish</td>
+                        <td>FastAPI BackgroundTasks (RAM asosidagi sodda asinxron navbat)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Monitoring</strong></td>
+                        <td>Xatolarni ishlab chiquvchining guruhiga real vaqtda yetkazish</td>
+                        <td>Telegram Log-Shipper Middleware + Sentry (Free Tier)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="faza-container">
+            <div class="faza-header">
+                <div class="faza-title">FAZA 1: Ingress Webhook Controller va Global Error Handling Shield</div>
+                <div class="faza-badge">Alvido Crashlar</div>
+            </div>
+
+            <div class="grid-blocks">
+                <div class="block-card">
+                    <h4>🔗 Fazalararo Bog'liqlik</h4>
+                    <p><strong>Oldingi Bosqich:</strong> Mavjud emas (Tizimga kirish nuqtasi).</p>
+                    <p><strong>Keyingi Bosqich:</strong> Bu faza kelgan ma'lumotni tozalab, asinxron tarzda Faza 3 (Ovoz
+                        processing) va Faza 4 (AI miyasi) ga uzatadi.</p>
+                </div>
+                <div class="block-card">
+                    <h4>🎯 Diqqat Nuqtalari (Nuqta-Verguligacha)</h4>
+                    <ul>
+                        <li>Telegram serverlariga 1 soniyadan kechikib javob qaytarsa, ular so'rovni takroran yuboradi.
+                            Shuning uchun kodda og'ir mantiq boshlanishidan oldin <code>HTTP 200 OK</code> qaytarish
+                            majburiy.</li>
+                        <li>Barcha kiruvchi so'rovlar global <code>try/except</code> bloki orqali o'tishi shart.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="critical-warning">
+                <h5>⚠️ KRITIK QOIDA (SECURITY & PERFORMANCE)</h5>
+                Har bir so'rov tarkibidagi <code>update_id</code> xotirada tekshirilishi kerak. Bir xil ID ga ega
+                so'rovlar takroran kelsa, server ularni qayta ishlamay tashlab yuborishi shart (Idempotency Key).
+            </div>
+
+            <pre><code><span class="c-keyword">import</span> logging
+<span class="c-keyword">from</span> fastapi <span class="c-keyword">import</span> FastAPI, Request, BackgroundTasks, status
+<span class="c-keyword">from</span> fastapi.responses <span class="c-keyword">import</span> JSONResponse
+
+app = FastAPI(title=<span class="c-str">"Jarvis Core"</span>)
+DEV_CHAT_ID = <span class="c-string">"123456789"</span>  <span class="c-comm"># Dasturchining Telegram kanali IDsi</span>
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">async_jarvis_worker</span>(payload: dict):
+    <span class="c-keyword">try</span>:
+        <span class="c-comm"># Bu yerda Faza 3 va Faza 4 mantiqi ishga tushadi</span>
+        <span class="c-keyword">pass</span>
+    <span class="c-keyword">except</span> Exception <span class="c-keyword">as</span> worker_err:
+        <span class="c-comm"># Fondagi xatoni dasturchiga yuborish</span>
+        <span class="c-keyword">await</span> send_log_to_dev(str(worker_err))
+
+<span class="c-keyword">@app.post</span>(<span class="c-str">"/v1/telegram/webhook"</span>)
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">ingress_webhook</span>(request: Request, bg_tasks: BackgroundTasks):
+    <span class="c-keyword">try</span>:
+        payload = <span class="c-keyword">await</span> request.json()
+        
+        <span class="c-comm"># 1. Tezkorlikni ta'minlash uchun og'ir ishni fonga olyapmiz</span>
+        bg_tasks.add_task(async_jarvis_worker, payload)
+        
+        <span class="c-comm"># 2. Telegram kutayotgan 200 OK javobini darhol beramiz</span>
+        <span class="c-keyword">return</span> JSONResponse(status_code=status.HTTP_200_OK, content={<span class="c-str">"status"</span>: <span class="c-str">"queued"</span>})
+    <span class="c-keyword">except</span> Exception <span class="c-keyword">as</span> fatal_err:
+        <span class="c-comm"># Tizim mutloqo crash bo'lganda dasturchini ogohlantirish</span>
+        bg_tasks.add_task(send_log_to_dev, f<span class="c-str">"CRITICAL CRASH: {str(fatal_err)}"</span>)
+        <span class="c-keyword">return</span> JSONResponse(status_code=status.HTTP_200_OK, content={<span class="c-str">"status"</span>: <span class="c-str">"shield_active"</span>})</code></pre>
+        </div>
+
+        <div class="faza-container">
+            <div class="faza-header">
+                <div class="faza-title">FAZA 2: Telegram Mini App va Home Screen (PWA) Avtonom Interfeysi</div>
+                <div class="faza-badge">UX O'limiga Qarshi</div>
+            </div>
+
+            <div class="grid-blocks">
+                <div class="block-card">
+                    <h4>🔗 Fazalararo Bog'liqlik</h4>
+                    <p><strong>Oldingi Bosqich:</strong> Faza 1 dagi bot foydalanuvchiga Mini App havolasini ochib
+                        beradi.</p>
+                    <p><strong>Keyingi Bosqich:</strong> Mini App ichidagi mikrofondan yozilgan audio to'g'ridan-to'g'ri
+                        Faza 3 (STT API) ga jo'natiladi.</p>
+                </div>
+                <div class="block-card">
+                    <h4>🎯 Diqqat Nuqtalari (Nuqta-Verguligacha)</h4>
+                    <ul>
+                        <li>Foydalanuvchi ilovani yuklab olishga erinmasligi uchun u <code>standalone</code> rejimida,
+                            huddi native ilovadek ochilishi kerak.</li>
+                        <li>Buning uchun <code>manifest.json</code> va Serviceworker kesh mexanizmi ideal darajada
+                            yozilishi shart.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="critical-warning">
+                <h5>⚠️ PWA CHEKLOVI</h5>
+                Ilova telefon ekraniga o'rnatilgandan so'ng ham Telegram kontekstini (initData) yo'qotib qo'ymasligi
+                uchun ma'lumotlarni brauzerning <code>localStorage</code> xotirasiga birinchi kirgandayoq yozib qo'yish
+                lozim.
+            </div>
+
+            <pre><code><span class="c-comm">&lt;!-- manifest.json fayli tarkibi --&gt;</span>
+{
+  <span class="c-keyword">"name"</span>: <span class="c-str">"Jarvis Autonomous Assistant"</span>,
+  <span class="c-keyword">"short_name"</span>: <span class="c-str">"Jarvis"</span>,
+  <span class="c-keyword">"start_url"</span>: <span class="c-str">"/index.html?launcher=homescreen"</span>,
+  <span class="c-keyword">"display"</span>: <span class="c-str">"standalone"</span>,
+  <span class="c-keyword">"background_color"</span>: <span class="c-str">"#05050a"</span>,
+  <span class="c-keyword">"theme_color"</span>: <span class="c-str">"#00f5d4"</span>,
+  <span class="c-keyword">"icons"</span>: [
+    {
+      <span class="c-keyword">"src"</span>: <span class="c-str">"/assets/jarvis-logo.png"</span>,
+      <span class="c-keyword">"sizes"</span>: <span class="c-str">"512x512"</span>,
+      <span class="c-keyword">"type"</span>: <span class="c-str">"image/png"</span>
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <div class="faza-container">
+            <div class="faza-header">
+                <div class="faza-title">FAZA 3: Ovozli Processing va Deepgram Asynchronous STT</div>
+                <div class="faza-badge">Ovoz Miyasi</div>
+            </div>
+
+            <div class="grid-blocks">
+                <div class="block-card">
+                    <h4>🔗 Fazalararo Bog'liqlik</h4>
+                    <p><strong>Oldingi Bosqich:</strong> Faza 1 (Bot ichidagi ovozli xabar) yoki Faza 2 (Mini App
+                        mikrofoni) orqali olingan audio fayl oqimi.</p>
+                    <p><strong>Keyingi Bosqich:</strong> Matnga o'girilgan ma'lumot Faza 4 dagi Dinamik promptlar
+                        bazasiga (RAG) uzatiladi.</p>
+                </div>
+                <div class="block-card">
+                    <h4>🎯 Diqqat Nuqtalari (Nuqta-Verguligacha)</h4>
+                    <ul>
+                        <li>Telegram ovozni <code>.ogg</code> formatida yuboradi. Uni server diskiga yozish disk
+                            xotirasini tezda to'ldiradi.</li>
+                        <li>Shuning uchun audioni faqat operativ xotirada (RAM buffer, <code>BytesIO</code>) ushlash va
+                            Deepgram API ga yuborish shart.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <pre><code><span class="c-keyword">import</span> httpx
+<span class="c-keyword">import</span> io
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">process_voice_to_text</span>(tg_file_bytes: bytes) -> str:
+    <span class="c-comm"># Deepgram API sozlamalari, O'zbek tili, eng oxirgi Nova-2 modeli</span>
+    api_url = <span class="c-str">"https://api.deepgram.com/v1/listen?model=nova-2&language=uz&smart_format=true"</span>
+    headers = {
+        <span class="c-str">"Authorization"</span>: <span class="c-str">"Token KEYNI_SHU_YERGA_QO'YING"</span>,
+        <span class="c-str">"Content-Type"</span>: <span class="c-str">"audio/ogg"</span>
+    }
+    
+    <span class="c-keyword">async</span> <span class="c-keyword">with</span> httpx.AsyncClient() <span class="c-keyword">as</span> client:
+        <span class="c-comm"># Ovozli faylni xotiradan (RAM) stream ko'rinishida yuborish</span>
+        response = <span class="c-keyword">await</span> client.post(api_url, headers=headers, content=tg_file_bytes)
+        
+        <span class="c-keyword">if</span> response.status_code == <span class="c-num">200</span>:
+            data = response.json()
+            <span class="c-keyword">return</span> data[<span class="c-str">"results"</span>][<span class="c-str">"channels"</span>][<span class="c-num">0</span>][<span class="c-str">"alternatives"</span>][<span class="c-num">0</span>][<span class="c-str">"transcript"</span>]
+        <span class="c-keyword">else</span>:
+            <span class="c-keyword">raise</span> Exception(f<span class="c-str">"DEEPGRAM_STT_ERROR: Status {response.status_code}"</span>)</code></pre>
+        </div>
+
+        <div class="faza-container">
+            <div class="faza-header">
+                <div class="faza-title">FAZA 4: Dinamik Biznes Kontekst (RAG) va Proaktiv Action Detection</div>
+                <div class="faza-badge">Jarvis Ongi</div>
+            </div>
+
+            <div class="grid-blocks">
+                <div class="block-card">
+                    <h4>🔗 Fazalararo Bog'liqlik</h4>
+                    <p><strong>Oldingi Bosqich:</strong> Faza 3 dan tozalangan o'zbekcha matn kirib keladi.</p>
+                    <p><strong>Keyingi Bosqich:</strong> AI qabul qilgan qaror asosida ma'lumotlar bazasiga yoziladi
+                        yoki Faza 1 dagi bot orqali proaktiv bildirishnoma (Push) yuboriladi.</p>
+                </div>
+                <div class="block-card">
+                    <h4>🎯 Diqqat Nuqtalari (Nuqta-Verguligacha)</h4>
+                    <ul>
+                        <li>Biznes ma'lumotlarini qattiq kodlash taqiqlanadi. Har bir biznesning konteksti dinamik
+                            yuklanishi kerak.</li>
+                        <li>AI shunchaki javob yozmasdan, bajarilishi kerak bo'lgan amalni (Action) maxsus belgilar
+                            bilan ajratib berishi kerak.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="critical-warning">
+                <h5>⚠️ TONNY STARK PRINSIPI (PROAKTIVLIK)</h5>
+                Tizim har kuni belgilangan vaqtda (CRON scheduler yordamida) biznes egasiga o'zi birinchi bo'lib kunlik
+                hisobotni taqdim etishi shart. Foydalanuvchi so'rashini kutib o'tirmasligi kerak.
+            </div>
+
+            <pre><code><span class="c-keyword">import</span> openai
+
+<span class="c-keyword">async</span> <span class="c-keyword">def</span> <span class="c-func">get_jarvis_decision</span>(cleaned_text: str, business_rules: str) -> str:
+    system_prompt = f<span class="c-str">"""Siz Tony Starkning Jarvis sun'iy intellekt tizimisiz.
+    Siz hozir boshqarayotgan va avtomatlashtirayotgan korxona qoidalari va ma'lumotlari:
+    {business_rules}
+    
+    Qoidalar:
+    1. Foydalanuvchi bilan xuddi yaqin do'st va professional boshqaruvchi kabi o'zbek tilida gaplash.
+    2. Agar mijoz buyurtma qilmoqchi bo'lsa yoki bazaga nimadir yozish kerak bo'lsa, javobingiz oxiriga [ACTION:SAVE_TO_DB] kalit so'zini qo'shing.
+    """</span>
+    
+    <span class="c-comm"># Nol mablag' uchun eng tezkor va juda arzon model - gpt-4o-mini</span>
+    response = <span class="c-keyword">await</span> openai.ChatCompletion.acreate(
+        model=<span class="c-str">"gpt-4o-mini"</span>,
+        messages=[
+            {<span class="c-str">"role"</span>: <span class="c-str">"system"</span>, <span class="c-str">"content"</span>: system_prompt},
+            {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: cleaned_text}
+        ],
+        temperature=<span class="c-num">0.3</span>  <span class="c-comm"># Fantziya qilmasdan aniq faktlar bilan ishlashi uchun</span>
+    )
+    
+    <span class="c-keyword">return</span> response.choices[<span class="c-num">0</span>].message.content</code></pre>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,508 @@
+{% extends 'seller/base_seller.html' %}
+
+{% block title %}NFC Smart Stendlar & Kartalar — {{ shop.name }}{% endblock %}
+{% block page_title %}NFC Smart Stendlar & Kartalar{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="nfcDashboard()">
+
+    <!-- Header & Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-5 rounded-2xl border border-amber-500/20">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="p-2 rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/30">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12 18.75a.75.75 0 100-1.5.75.75 0 000 1.5z" />
+                    </svg>
+                </span>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Smart NFC Stendlar Tizimi</h2>
+            </div>
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 mt-1">
+                Mehmon telefonini stendga tekkizishi bilan menyu va 3D taomlar 1 soniyada ochiladi (hech qanday ilova kerak emas).
+            </p>
+        </div>
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <a href="{% url 'seller_nfc_print_stands_web' %}" target="_blank" class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-neutral-200 text-xs sm:text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>🖨️ Stendlarni Chop Etish</span>
+            </a>
+            <button @click="openAddModal()" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-2 shadow-lg shadow-amber-500/25">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Yangi NFC Karta / Stend</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white dark:bg-neutral-900 border border-gray-100 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
+            <span class="text-xs font-semibold text-gray-400 dark:text-neutral-400 block">Jami NFC Kartalar</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{{ stats.total_cards }}</span>
+                <span class="text-xs text-gray-400">dona</span>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-neutral-900 border border-gray-100 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
+            <span class="text-xs font-semibold text-gray-400 dark:text-neutral-400 block">Jami Tekkizishlar (Taps)</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl sm:text-3xl font-black text-amber-500">{{ stats.total_taps }}</span>
+                <span class="text-xs text-amber-600 font-medium">marta ochilgan</span>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-neutral-900 border border-gray-100 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
+            <span class="text-xs font-semibold text-gray-400 dark:text-neutral-400 block">Stollar Qamrovi</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl sm:text-3xl font-black text-emerald-500">{{ stats.covered_tables_pct }}%</span>
+                <span class="text-xs text-gray-400">({{ stats.total_tables }} stoldan)</span>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-neutral-900 border border-gray-100 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
+            <span class="text-xs font-semibold text-gray-400 dark:text-neutral-400 block">Faol Holatda</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-2xl sm:text-3xl font-black text-blue-500">{{ stats.active_cards }}</span>
+                <span class="text-xs text-blue-600 font-medium">ishlamoqda</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web NFC Browser Support Alert / Banner -->
+    <div x-show="webNfcSupported" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 p-3.5 rounded-2xl text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <span class="text-lg">📲</span>
+            <span><strong>Web NFC faol:</strong> Ushbu qurilma orqali to'g'ridan-to'g'ri brauzerdan NFC chipga 1 tugma bilan yozishingiz mumkin!</span>
+        </div>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold text-[10px]">TAYYOR</span>
+    </div>
+
+    <!-- Cards List Table -->
+    <div class="bg-white dark:bg-neutral-900 border border-gray-100 dark:border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
+        <div class="p-4 sm:p-5 border-b border-gray-100 dark:border-neutral-800 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-gray-900 dark:text-white text-sm sm:text-base">Mavjud NFC Stendlar & Kartalar</h3>
+                <p class="text-xs text-gray-400 dark:text-neutral-500">Har bir stend uchun unikal NFC havola va QR kod generatsiya qilingan</p>
+            </div>
+            <span class="text-xs text-gray-400">{{ cards|length }} ta stend</span>
+        </div>
+
+        {% if cards %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-gray-50/75 dark:bg-neutral-800/50 text-gray-500 dark:text-neutral-400 text-[11px] font-semibold uppercase tracking-wider">
+                    <tr>
+                        <th class="py-3 px-4">Stend / Karta Nomi</th>
+                        <th class="py-3 px-4">Bog'langan Stol</th>
+                        <th class="py-3 px-4">Dizayn Uslubi</th>
+                        <th class="py-3 px-4">Tekkizishlar</th>
+                        <th class="py-3 px-4">Wi-Fi Ma'lumoti</th>
+                        <th class="py-3 px-4">Holat</th>
+                        <th class="py-3 px-4 text-right">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-neutral-800 font-medium">
+                    {% for card in cards %}
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-neutral-800/30 transition">
+                        <!-- Name & Code -->
+                        <td class="py-3.5 px-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs
+                                    {% if card.design_theme == 'gold_black' %}bg-neutral-900 text-amber-400 border border-amber-500/40
+                                    {% elif card.design_theme == 'emerald_minimal' %}bg-emerald-600 text-white
+                                    {% elif card.design_theme == 'wooden_rustic' %}bg-amber-800 text-amber-100
+                                    {% else %}bg-purple-600 text-white{% endif %} shadow-sm">
+                                    NFC
+                                </div>
+                                <div>
+                                    <div class="font-bold text-gray-900 dark:text-white">{{ card.name }}</div>
+                                    <div class="text-[11px] text-gray-400 font-mono mt-0.5">Kod: {{ card.code }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Table -->
+                        <td class="py-3.5 px-4">
+                            {% if card.table %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white font-bold text-xs">
+                                <span>🪑</span> Stol #{{ card.table.number }}
+                                {% if card.table.hall %}<span class="text-[10px] font-normal text-gray-400">({{ card.table.hall.name }})</span>{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-xs text-gray-400 italic">Bog'lanmagan (Umumiy)</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Design Theme -->
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold
+                                {% if card.design_theme == 'gold_black' %}bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300
+                                {% elif card.design_theme == 'emerald_minimal' %}bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300
+                                {% elif card.design_theme == 'wooden_rustic' %}bg-amber-900/10 text-amber-900 dark:text-amber-200
+                                {% else %}bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300{% endif %}">
+                                {{ card.get_design_theme_display }}
+                            </span>
+                        </td>
+
+                        <!-- Tap Count -->
+                        <td class="py-3.5 px-4">
+                            <div class="font-bold text-gray-900 dark:text-white">{{ card.tap_count }} marta</div>
+                            <div class="text-[10px] text-gray-400 mt-0.5">
+                                {% if card.last_tapped_at %}
+                                Oxirgi: {{ card.last_tapped_at|timesince }} oldin
+                                {% else %}
+                                Hali tekkizilmagan
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Wi-Fi -->
+                        <td class="py-3.5 px-4 text-xs text-gray-500 dark:text-neutral-400">
+                            {% if card.wifi_name %}
+                            <div>📶 {{ card.wifi_name }}</div>
+                            {% if card.wifi_password %}<div class="text-[10px] text-gray-400">Kalit: {{ card.wifi_password }}</div>{% endif %}
+                            {% else %}
+                            <span class="text-gray-300 dark:text-neutral-600">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Status -->
+                        <td class="py-3.5 px-4">
+                            <a href="{% url 'seller_nfc_toggle_web' card.pk %}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {% if card.is_active %}bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800{% else %}bg-gray-100 text-gray-500 dark:bg-neutral-800 dark:text-neutral-400 border border-gray-200 dark:border-neutral-700{% endif %}" title="Holatni almashtirish">
+                                <span class="w-1.5 h-1.5 rounded-full {% if card.is_active %}bg-emerald-500 animate-pulse{% else %}bg-gray-400{% endif %}"></span>
+                                {% if card.is_active %}Faol{% else %}Nofaol{% endif %}
+                            </a>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="py-3.5 px-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <!-- Web NFC Write Button -->
+                                <button @click="writeToNfc('{{ card.get_tap_url }}', '{{ card.name|escapejs }}')" class="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white dark:text-amber-400 transition" title="📲 Ushbu telefon bilan NFC chipga yozish">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Copy Link -->
+                                <button @click="copyUrl('{{ card.get_tap_url }}')" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-500 dark:text-neutral-400 transition" title="Havoladan nusxa olish">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Print Stand -->
+                                <a href="{% url 'seller_nfc_print_stands_web' %}?id={{ card.id }}" target="_blank" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-500 dark:text-neutral-400 transition" title="Chop etish">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                </a>
+
+                                <!-- Edit Modal Trigger -->
+                                <button @click="openEditModal({{ card.id }}, '{{ card.name|escapejs }}', '{{ card.table_id|default:'' }}', '{{ card.card_type }}', '{{ card.design_theme }}', '{{ card.wifi_name|escapejs }}', '{{ card.wifi_password|escapejs }}', '{{ card.custom_note|escapejs }}')" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-500 dark:text-neutral-400 transition" title="Tahrirlash">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Delete -->
+                                <form action="{% url 'seller_nfc_delete_web' card.pk %}" method="post" onsubmit="return confirm('Haqiqatan ham ushbu NFC kartani o\'chirmoqchimisiz?');" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="O'chirish">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-16 px-4">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-amber-50 dark:bg-amber-950/30 text-amber-500 flex items-center justify-center text-3xl mb-4">
+                📲
+            </div>
+            <h4 class="font-bold text-gray-900 dark:text-white text-base">Hozircha NFC stendlar qo'shilmagan</h4>
+            <p class="text-xs text-gray-500 dark:text-neutral-400 max-w-sm mx-auto mt-1 mb-6">
+                Restoraningizdagi stollar uchun NFC stendlarini yarating. Mehmonlar bir tekkizishda menyuni ochib, 3D taomlarni ko'rishadi!
+            </p>
+            <button @click="openAddModal()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold transition shadow-lg shadow-amber-500/25">
+                ➕ Birinchi NFC Stendni Qo'shish
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- NFC Writing Modal (Web NFC API) -->
+    <div x-show="showNfcWriteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white dark:bg-neutral-900 rounded-3xl max-w-sm w-full p-6 text-center border border-gray-100 dark:border-neutral-800 shadow-2xl space-y-4">
+            <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+                <span class="absolute inset-0 rounded-full bg-amber-500/20 animate-ping"></span>
+                <span class="w-20 h-20 rounded-full bg-amber-500 text-white flex items-center justify-center text-3xl shadow-xl shadow-amber-500/30">
+                    📲
+                </span>
+            </div>
+
+            <div>
+                <h3 class="font-bold text-gray-900 dark:text-white text-base" x-text="nfcModalTitle">NFC Chipni Tekkizing</h3>
+                <p class="text-xs text-gray-500 dark:text-neutral-400 mt-1" x-text="nfcModalStatus">
+                    Telefoningiz orqa qismiga bo'sh NFC chipni (NTAG213/215/216) tekkizing...
+                </p>
+            </div>
+
+            <div class="p-3 bg-gray-50 dark:bg-neutral-800/60 rounded-xl text-left">
+                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Yozilayotgan havola:</div>
+                <div class="text-xs font-mono text-gray-700 dark:text-neutral-300 break-all mt-1" x-text="nfcWritingUrl"></div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button @click="cancelNfcWrite()" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 text-xs font-semibold text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition">
+                    Bekor qilish
+                </button>
+                <button @click="copyUrl(nfcWritingUrl)" class="flex-1 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-gray-900 text-xs font-semibold transition">
+                    📋 Nusxalash
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add NFC Stand Modal -->
+    <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white dark:bg-neutral-900 rounded-3xl max-w-lg w-full p-6 border border-gray-100 dark:border-neutral-800 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-neutral-800 mb-5">
+                <div class="flex items-center gap-2.5">
+                    <span class="p-2 rounded-xl bg-amber-500/10 text-amber-500 font-bold">📲</span>
+                    <h3 class="font-bold text-gray-900 dark:text-white text-base">Yangi NFC Stend Qo'shish</h3>
+                </div>
+                <button @click="showAddModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-xl">✖</button>
+            </div>
+
+            <form action="{% url 'seller_nfc_create_web' %}" method="post" class="space-y-4 text-xs sm:text-sm">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Bog'lanadigan Stol</label>
+                    <select name="table_id" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500">
+                        <option value="">-- Stol tanlang (yoki umumiy stend) --</option>
+                        {% for t in tables %}
+                        <option value="{{ t.id }}">Stol #{{ t.number }} ({{ t.hall.name|default:"Zal" }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Stend / Karta Nomi (ixtiyoriy)</label>
+                    <input type="text" name="name" placeholder="Masalan: Stol #5 Oltin Akril Stend" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Karta Turi</label>
+                        <select name="card_type" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500">
+                            <option value="table_stand">Stol Akril Stendi</option>
+                            <option value="table_sticker">Stol Stikeri (Yog'och/Metall)</option>
+                            <option value="waiter_badge">Ofitsiant Beydji</option>
+                            <option value="vip_guest">VIP Doimiy Mehmon Kartasi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Dizayn Uslubi</label>
+                        <select name="design_theme" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500">
+                            <option value="gold_black">Luxury Black & Gold</option>
+                            <option value="emerald_minimal">Emerald Green Minimal</option>
+                            <option value="wooden_rustic">Wooden Rustic (Milliy)</option>
+                            <option value="neon_cyber">Neon Modern</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Wi-Fi Nomi</label>
+                        <input type="text" name="wifi_name" placeholder="Masalan: Registon_Free_WiFi" class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Wi-Fi Paroli</label>
+                        <input type="text" name="wifi_password" placeholder="Masalan: registon2026" class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex gap-3">
+                    <button type="button" @click="showAddModal = false" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 font-semibold text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition">
+                        Bekor qilish
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition shadow-lg shadow-amber-500/25">
+                        Saqlash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit NFC Stand Modal -->
+    <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white dark:bg-neutral-900 rounded-3xl max-w-lg w-full p-6 border border-gray-100 dark:border-neutral-800 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-neutral-800 mb-5">
+                <div class="flex items-center gap-2.5">
+                    <span class="p-2 rounded-xl bg-blue-500/10 text-blue-500 font-bold">✏️</span>
+                    <h3 class="font-bold text-gray-900 dark:text-white text-base">NFC Stendni Tahrirlash</h3>
+                </div>
+                <button @click="showEditModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-xl">✖</button>
+            </div>
+
+            <form :action="'/seller/nfc/' + editForm.id + '/edit/'" method="post" class="space-y-4 text-xs sm:text-sm">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Bog'langan Stol</label>
+                    <select name="table_id" x-model="editForm.table_id" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Stol tanlang (yoki umumiy stend) --</option>
+                        {% for t in tables %}
+                        <option value="{{ t.id }}">Stol #{{ t.number }} ({{ t.hall.name|default:"Zal" }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Stend Nomi</label>
+                    <input type="text" name="name" x-model="editForm.name" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Karta Turi</label>
+                        <select name="card_type" x-model="editForm.card_type" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+                            <option value="table_stand">Stol Akril Stendi</option>
+                            <option value="table_sticker">Stol Stikeri</option>
+                            <option value="waiter_badge">Ofitsiant Beydji</option>
+                            <option value="vip_guest">VIP Mehmon Kartasi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Dizayn Uslubi</label>
+                        <select name="design_theme" x-model="editForm.design_theme" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+                            <option value="gold_black">Luxury Black & Gold</option>
+                            <option value="emerald_minimal">Emerald Green Minimal</option>
+                            <option value="wooden_rustic">Wooden Rustic</option>
+                            <option value="neon_cyber">Neon Modern</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Wi-Fi Nomi</label>
+                        <input type="text" name="wifi_name" x-model="editForm.wifi_name" class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 dark:text-neutral-300 mb-1">Wi-Fi Paroli</label>
+                        <input type="text" name="wifi_password" x-model="editForm.wifi_password" class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex gap-3">
+                    <button type="button" @click="showEditModal = false" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-neutral-700 font-semibold text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition">
+                        Bekor qilish
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition shadow-lg shadow-blue-600/25">
+                        O'zgarishlarni Saqlash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function nfcDashboard() {
+    return {
+        webNfcSupported: ('NDEFReader' in window),
+        showNfcWriteModal: false,
+        showAddModal: false,
+        showEditModal: false,
+        nfcModalTitle: 'NFC Chipga Yozish',
+        nfcModalStatus: '',
+        nfcWritingUrl: '',
+        ndefAbortController: null,
+        editForm: {
+            id: '',
+            name: '',
+            table_id: '',
+            card_type: 'table_stand',
+            design_theme: 'gold_black',
+            wifi_name: '',
+            wifi_password: '',
+            custom_note: ''
+        },
+
+        openAddModal() {
+            this.showAddModal = true;
+        },
+
+        openEditModal(id, name, table_id, card_type, design_theme, wifi_name, wifi_password, custom_note) {
+            this.editForm = { id, name, table_id, card_type, design_theme, wifi_name, wifi_password, custom_note };
+            this.showEditModal = true;
+        },
+
+        async writeToNfc(url, name) {
+            this.nfcWritingUrl = url;
+            this.showNfcWriteModal = true;
+
+            if (!('NDEFReader' in window)) {
+                this.nfcModalTitle = 'Havola Tayyor!';
+                this.nfcModalStatus = 'Ushbu qurilmada Web NFC to\'g\'ridan-to\'g\'ri qo\'llab-quvvatlanmaydi (masalan iOS Safari yoki Kompyuter). Havoladan nusxa olib, "NFC Tools" bepul ilovasi orqali chipga yozishingiz mumkin.';
+                return;
+            }
+
+            try {
+                this.nfcModalTitle = 'NFC Chipni Tekkizing';
+                this.nfcModalStatus = name + ' uchun telefoningizni chipga yaqinlashtiring...';
+
+                this.ndefAbortController = new AbortController();
+                const ndef = new NDEFReader();
+
+                await ndef.write({
+                    records: [{ recordType: "url", data: url }]
+                }, { signal: this.ndefAbortController.signal });
+
+                if (navigator.vibrate) {
+                    navigator.vibrate([100, 50, 100]);
+                }
+
+                this.nfcModalTitle = '✅ Muvaffaqiyatli Yozildi!';
+                this.nfcModalStatus = name + ' NFC chipiga menyu havolasi muvaffaqiyatli yozildi.';
+                setTimeout(() => {
+                    this.showNfcWriteModal = false;
+                }, 2500);
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    this.nfcModalTitle = '⚠️ Xatolik Yuz Berdi';
+                    this.nfcModalStatus = 'NFC yozishda xatolik: ' + err.message + '. Qayta urinib ko\'ring yoki havoladan nusxa oling.';
+                }
+            }
+        },
+
+        cancelNfcWrite() {
+            if (this.ndefAbortController) {
+                this.ndefAbortController.abort();
+            }
+            this.showNfcWriteModal = false;
+        },
+
+        copyUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Havola nusxalandi: ' + url);
+            }).catch(() => {
+                prompt('Havolani nusxalang:', url);
+            });
+        }
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,141 @@
+{
+  "common": {
+    "back": "Back", "close": "Close", "save": "Save",
+    "cancel": "Cancel", "confirm": "Confirm", "delete": "Delete",
+    "edit": "Edit", "add": "Add", "search": "Search",
+    "loading": "Loading...", "error": "Error", "retry": "Retry",
+    "yes": "Yes", "no": "No", "all": "All", "sum": "UZS",
+    "min": "min", "gram": "g", "pcs": "pcs", "offline": "No connection"
+  },
+  "menu": {
+    "title": "Menu", "search_placeholder": "Search dishes...",
+    "no_results": "Nothing found", "category_all": "All",
+    "sold_out": "Sold out", "hit": "Popular", "new": "New",
+    "cook_time": "{n} min", "weight": "{n} g", "calories": "{n} kcal",
+    "empty_title": "Menu is empty", "search_empty_title": "No dishes found",
+    "search_empty_desc": "Try searching with different keywords"
+  },
+  "dish": {
+    "ingredients": "Ingredients", "allergens": "Allergens",
+    "no_allergens": "No allergens", "modifiers": "Add-ons",
+    "note_placeholder": "Note (e.g. not spicy)",
+    "add_to_cart": "Add to cart", "view_ar": "View in AR",
+    "view_3d": "View in 3D", "rating": "{n} ({cnt} reviews)",
+    "added": "Added to cart"
+  },
+  "ar": {
+    "button": "📱 Place it on your table",
+    "loading": "Loading 3D model...",
+    "not_supported": "Your device does not support AR",
+    "not_supported_hint": "You can still rotate it in 3D",
+    "error": "3D model failed to load",
+    "instruction": "Point your phone at the table",
+    "real_size": "Real size",
+    "preparing": "3D model is being prepared..."
+  },
+  "cart": {
+    "title": "Cart", "empty": "Your cart is empty",
+    "empty_hint": "Pick a dish from the menu",
+    "subtotal": "Dishes", "service_fee": "Service ({pct}%)",
+    "discount": "Discount", "total": "TOTAL",
+    "note_placeholder": "General note",
+    "submit": "Place order", "cross_sell": "Add these too",
+    "remove_confirm": "Remove from cart?",
+    "sending": "Sending...",
+    "added": "Added to cart"
+  },
+  "order": {
+    "created": "Your order has been accepted!",
+    "number": "Order {n}", "table": "Table {n}",
+    "status_new": "Sent", "status_accepted": "Accepted",
+    "status_cooking": "Cooking", "status_ready": "Ready",
+    "status_served": "Served", "status_paid": "Paid",
+    "eta": "About {n} min left",
+    "ready_title": "🎉 Your order is ready!",
+    "add_more": "Order more", "request_bill": "Request bill",
+    "unavailable": "{dish} is sold out. A waiter is coming."
+  },
+  "call": {
+    "title": "What do you need?", "waiter": "Waiter", "bill": "Bill",
+    "water": "Water", "clean": "Clean up",
+    "sent": "Waiter called ✓",
+    "cooldown": "Please wait a moment",
+    "resolved": "The waiter has arrived",
+    "btn": "Call",
+    "sending": "Sending...",
+    "done": "Waiter is coming!",
+    "error": "Error occurred",
+    "wait_seconds": "Please wait {n}s"
+  },
+  "payment": {
+    "title": "Payment", "method": "Payment method", "cash": "Cash (to waiter)",
+    "payme": "Payme", "click": "Click", "uzum": "Uzum",
+    "use_bonus": "Use bonus points", "pay": "Pay — {amount}",
+    "success": "✅ Payment accepted", "failed": "Payment failed",
+    "split": "Split the bill", "receipt": "Receipt"
+  },
+  "tips": {
+    "title": "Enjoyed the service?", "waiter_label": "Your waiter",
+    "give": "💝 Leave a tip", "skip": "Skip",
+    "custom": "Other amount", "thanks": "Thank you! 🎉"
+  },
+  "review": {
+    "title": "Rate us", "food": "Food", "service": "Service",
+    "ambience": "Ambience", "comment_placeholder": "Your comment...",
+    "submit": "Submit", "thanks": "Thank you! 🎉",
+    "google_prompt": "Rate us on Google too?",
+    "google_button": "Go to Google",
+    "sorry": "We're sorry. What went wrong?"
+  },
+  "chat": {
+    "title": "Assistant", "greeting": "Hi! Any questions about the menu?",
+    "placeholder": "Type your question...", "thinking": "Thinking...",
+    "error": "Sorry, I can't answer right now. Please call a waiter.",
+    "view_dish": "View", "order_dish": "Order"
+  },
+  "errors": {
+    "qr_invalid": "Invalid QR code. Please contact the waiter.",
+    "restaurant_inactive": "Restaurant is temporarily unavailable",
+    "table_inactive": "This table is temporarily unavailable",
+    "dish_unavailable": "This dish is currently unavailable",
+    "price_changed": "Prices have changed. Please check your cart.",
+    "network": "No connection. Retrying...",
+    "server": "Something went wrong. Please call a waiter.",
+    "rate_limited": "Too many requests. Please wait.",
+    "not_found": "Page not found. The requested page does not exist.",
+    "maintenance": "Scheduled maintenance in progress. We'll be back shortly.",
+    "retry": "Reload"
+  },
+  "staff": {
+    "login": "Staff login", "pin": "PIN code", "wrong_pin": "Wrong PIN",
+    "blocked": "Blocked. Try again in {n} min.",
+    "new_orders": "New orders", "my_tables": "My tables",
+    "hall": "Hall", "calls": "Calls", "stats": "Stats",
+    "accept": "✅ Accepted", "serve": "🍽 Served",
+    "shift_start": "Start shift", "shift_end": "End shift",
+    "today": "Today", "tables_served": "{n} tables", "tips_earned": "Tips"
+  },
+  "kds": {
+    "title": "Kitchen", "new": "NEW", "cooking": "COOKING",
+    "ready": "READY", "start": "START", "mark_ready": "READY ✓",
+    "served": "SERVED", "late": "LATE", "avg_time": "Average"
+  },
+  "admin": {
+    "dashboard": "Dashboard", "menu": "Menu", "tables": "Tables",
+    "orders": "Orders", "staff": "Staff", "reports": "Reports",
+    "ar_models": "3D/AR models", "settings": "Settings",
+    "today_revenue": "Today's revenue", "orders_count": "Orders",
+    "avg_check": "Average check", "tables_busy": "Busy tables",
+    "ar_views": "AR views"
+  },
+  "diet": {
+    "halal": "Halal", "vegetarian": "Vegetarian", "vegan": "Vegan",
+    "spicy": "Spicy", "no_spicy": "Not spicy",
+    "lactose_free": "Lactose free", "gluten_free": "Gluten free"
+  },
+  "allergen": {
+    "nuts": "Nuts", "gluten": "Gluten", "dairy": "Dairy",
+    "eggs": "Eggs", "fish": "Fish", "shellfish": "Shellfish",
+    "soy": "Soy", "sesame": "Sesame"
+  }
+}

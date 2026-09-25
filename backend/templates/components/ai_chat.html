@@ -1,0 +1,95 @@
+{% load i18n_tags %}
+<div x-data="aiChat()" x-cloak class="fixed bottom-5 right-5 z-50">
+    <div x-show="open" x-transition.scale.origin.bottom.right
+         class="w-[min(92vw,380px)] h-[min(70vh,560px)] bg-white rounded-3xl shadow-lift border border-border flex flex-col overflow-hidden">
+        <div class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-t-3xl">
+            <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                <span class="material-icons-outlined text-[20px]">smart_toy</span>
+            </div>
+            <div class="flex-1">
+                <p class="font-semibold text-sm leading-tight">{{ t.ai_chat_title }}</p>
+                <p class="text-[11px] text-white/80" x-text="typing ? '{{ t.ai_chat_typing }}' : 'Guliston Market'"></p>
+            </div>
+            <button @click="open=false" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center">
+                <span class="material-icons-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <div id="ai-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-background">
+            <template x-for="m in messages" :key="m.id">
+                <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                    <div :class="m.role === 'user'
+                        ? 'bg-primary text-white rounded-2xl rounded-br-md max-w-[80%] px-3.5 py-2 text-sm'
+                        : 'bg-white border border-border rounded-2xl rounded-bl-md max-w-[80%] px-3.5 py-2 text-sm whitespace-pre-line'"
+                        x-text="m.text"></div>
+                </div>
+            </template>
+            <div x-show="typing" class="flex justify-start">
+                <div class="bg-white border border-border rounded-2xl rounded-bl-md px-3.5 py-2 text-sm text-muted">…</div>
+            </div>
+        </div>
+
+        <form @submit.prevent="send()" class="p-3 border-t border-border bg-white flex items-center gap-2">
+            <input x-model="draft" type="text" placeholder="{{ t.ai_chat_placeholder }}"
+                   class="flex-1 px-4 py-2.5 rounded-full bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+            <button type="submit" :disabled="!draft.trim() || typing"
+                    class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-40">
+                <span class="material-icons-outlined text-[20px]">send</span>
+            </button>
+        </form>
+    </div>
+
+    <button x-show="!open" @click="open=true" x-transition
+            class="w-14 h-14 rounded-full bg-primary text-white shadow-lift flex items-center justify-center hover:scale-105 transition">
+        <span class="material-icons-outlined text-[26px]">smart_toy</span>
+    </button>
+
+    <script>
+        function aiChat() {
+            return {
+                open: false,
+                draft: '',
+                typing: false,
+                sessionKey: localStorage.getItem('ai_session_key') || '',
+                messages: [{id: 0, role: 'assistant', text: '{{ t.ai_chat_welcome|escapejs }}'}],
+                nextId: 1,
+                send() {
+                    const text = this.draft.trim();
+                    if (!text || this.typing) return;
+                    this.messages.push({id: this.nextId++, role: 'user', text});
+                    this.draft = '';
+                    this.typing = true;
+                    this.$nextTick(() => this.scroll());
+                    const lang = document.documentElement.lang || 'uz';
+                    fetch('/api/v1/ai/chat/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Session-Key': this.sessionKey,
+                        },
+                        body: JSON.stringify({message: text, session_key: this.sessionKey, lang: lang}),
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.session_key) {
+                            this.sessionKey = d.session_key;
+                            localStorage.setItem('ai_session_key', d.session_key);
+                        }
+                        this.messages.push({id: this.nextId++, role: 'assistant', text: d.reply || '{{ t.ai_chat_no_reply }}'});
+                    })
+                    .catch(() => {
+                        this.messages.push({id: this.nextId++, role: 'assistant', text: '{{ t.ai_chat_error }}'});
+                    })
+                    .finally(() => {
+                        this.typing = false;
+                        this.$nextTick(() => this.scroll());
+                    });
+                },
+                scroll() {
+                    const el = document.getElementById('ai-messages');
+                    if (el) el.scrollTop = el.scrollHeight;
+                },
+            };
+        }
+    </script>
+</div>

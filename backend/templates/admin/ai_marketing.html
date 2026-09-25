@@ -1,0 +1,71 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}AI Marketing - Store Admin{% endblock %}
+{% block page_title %}AI Marketing{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+
+    <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <p class="eyebrow mb-1">Avtomatik kontent</p>
+            <h2 class="font-display text-base font-semibold">IJtimoiy tarmoq posti generatsiyasi</h2>
+            <p class="text-sm text-gray-500 mt-1">Do'koningiz uchun mahsulot yoki umumiy reklama postini AI yordamida yarating. Har bir generatsiya 1 ta AI kredit oladi (faqat Pro/Business).</p>
+        </div>
+        <div class="p-6">
+            <!-- Shop tanlov (GET orqali qayta yuklash) -->
+            <form method="GET" class="mb-4">
+                <label class="field">{{ t.shop_label }}</label>
+                <select name="shop" onchange="this.form.submit()" class="max-w-xs">
+                    {% for s in shops %}
+                    <option value="{{ s.pk }}" {% if selected_shop == s.pk|stringformat:'i' %}selected{% endif %}>{{ s.name }} — {{ s.plan }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <!-- Generatsiya formi -->
+            <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="shop" value="{{ selected_shop }}">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="field">Mahsulot (ixtiyoriy)</label>
+                        <select name="product">
+                            <option value="">Umumiy reklama (do'kon)</option>
+                            {% for p in products %}
+                            <option value="{{ p.pk }}">{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field">Kanal</label>
+                        <select name="channel">
+                            <option value="telegram">{{ t.telegram_label }}</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">✨ Post yaratish</button>
+            </form>
+        </div>
+    </div>
+
+    {% if result %}
+    <div class="card p-6 fade-in">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-semibold">Natija <span class="text-xs font-normal text-gray-400">(manba: {{ result.source }})</span></p>
+            <span class="pill bg-accent text-primary">Qolgan kredit: {{ result.credits_left }}</span>
+        </div>
+        <textarea id="ai-result" rows="8" class="w-full font-mono text-sm bg-sand rounded-xl p-4 border border-border" readonly>{{ result.text }}</textarea>
+        <div class="flex items-center gap-3 mt-3">
+            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('ai-result').value)" class="btn btn-outline !py-2 !text-sm">Nusxalash</button>
+            <a href="https://t.me/marketing_orign_bot" target="_blank" class="btn btn-primary !py-2 !text-sm">Telegram ga yuborish</a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="msg msg-error">{{ error }}</div>
+    {% endif %}
+</div>
+{% endblock %}

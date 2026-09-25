@@ -1,0 +1,160 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}To'lov va Rasmiylashtirish — Telegram Mini App{% endblock %}
+
+{% block extra_head %}
+<style>
+    .tma-form-group {
+        margin-bottom: 14px;
+    }
+    .tma-form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: var(--text-color);
+    }
+    .tma-form-control {
+        width: 100%;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        color: var(--text-color);
+        outline: none;
+    }
+    .tma-payment-methods {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .tma-pay-radio {
+        display: none;
+    }
+    .tma-pay-label {
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 12px 8px;
+        text-align: center;
+        cursor: pointer;
+        background: var(--card-bg);
+        transition: all 0.2s;
+        font-weight: 700;
+        font-size: 13px;
+    }
+    .tma-pay-radio:checked + .tma-pay-label {
+        border-color: var(--primary);
+        background: rgba(5, 150, 105, 0.08);
+        color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 14px;">📝 Buyurtmani Rasmiylashtirish</h2>
+
+    {% if error %}
+        <div style="background:#fee2e2;color:#ef4444;padding:12px;border-radius:12px;font-weight:600;margin-bottom:14px;font-size:13px;">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'tma_checkout' %}" id="tma-checkout-form">
+        {% csrf_token %}
+        <input type="hidden" name="telegram_id" id="tma-telegram-id">
+
+        <div class="tma-card">
+            <div class="tma-form-group">
+                <label class="tma-form-label">Ismingiz *</label>
+                <input type="text" name="name" id="tma-input-name" required class="tma-form-control" placeholder="Ismingizni kiriting">
+            </div>
+
+            <div class="tma-form-group">
+                <label class="tma-form-label">Telefon raqamingiz *</label>
+                <input type="tel" name="phone" id="tma-input-phone" required class="tma-form-control" placeholder="+998 90 123 45 67">
+            </div>
+
+            <div class="tma-form-group">
+                <label class="tma-form-label">{% if table %}Xizmat ko'rsatish joyi (Stol){% else %}Yetkazib berish manzili *{% endif %}</label>
+                <input type="text" name="address" required class="tma-form-control" 
+                       value="{% if table %}Stol №{{ table.number }} ({{ table.hall.name }}){% endif %}"
+                       placeholder="Shahar, ko'cha, uy/xonadon raqami" {% if table %}readonly style="background:#f1f5f9;"{% endif %}>
+            </div>
+
+            <div class="tma-form-group" style="margin-bottom:0;">
+                <label class="tma-form-label">Izoh (ixtiyoriy)</label>
+                <input type="text" name="notes" class="tma-form-control" placeholder="Podezd, domofon yoki qo'shimcha istaklar">
+            </div>
+        </div>
+
+        <div class="tma-form-group">
+            <label class="tma-form-label">To'lov Usuli</label>
+            <div class="tma-payment-methods">
+                <label>
+                    <input type="radio" name="payment_method" value="click" checked class="tma-pay-radio">
+                    <div class="tma-pay-label">
+                        <span style="font-size:18px;">💳</span><br>Click
+                    </div>
+                </label>
+                <label>
+                    <input type="radio" name="payment_method" value="payme" class="tma-pay-radio">
+                    <div class="tma-pay-label">
+                        <span style="font-size:18px;">💎</span><br>Payme
+                    </div>
+                </label>
+                <label>
+                    <input type="radio" name="payment_method" value="cash" class="tma-pay-radio">
+                    <div class="tma-pay-label">
+                        <span style="font-size:18px;">💵</span><br>Naqd
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="tma-card" style="margin-bottom: 20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:var(--hint-color);">
+                <span>Mahsulotlar:</span>
+                <span>{{ total_amount|floatformat:0 }} so'm</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--hint-color);">
+                <span>{% if table %}Xizmat ko'rsatish:{% else %}Yetkazib berish:{% endif %}</span>
+                <span>{% if table %}0 so'm (Stolda){% elif delivery_fee %}{{ delivery_fee|floatformat:0 }} so'm{% else %}Bepul 🎉{% endif %}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:1px dashed var(--border-color);padding-top:10px;">
+                <span>Jami to'lov:</span>
+                <span style="color:var(--primary);">{{ final_amount|floatformat:0 }} so'm</span>
+            </div>
+        </div>
+
+        <button type="submit" class="tma-btn-primary">
+            ✅ Buyurtmani Tasdiqlash
+        </button>
+    </form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                if (user.first_name) {
+                    const nameInput = document.getElementById('tma-input-name');
+                    if (nameInput && !nameInput.value) {
+                        nameInput.value = `${user.first_name} ${user.last_name || ''}`.trim();
+                    }
+                }
+                if (user.id) {
+                    const idInput = document.getElementById('tma-telegram-id');
+                    if (idInput) {
+                        idInput.value = user.id;
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

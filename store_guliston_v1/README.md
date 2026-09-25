@@ -1,17 +1,53 @@
-# store_guliston
+# Online Store Guliston
 
-A new Flutter project.
+O'zbekiston (Yangi Yer, Guliston) kichik do'konlari uchun local e-commerce mobil ilova.
 
-## Getting Started
+## Texnologiya
 
-This project is a starting point for a Flutter application.
+- Flutter + Dart
+- Provider (state management)
+- GoRouter (navigation)
+- SQLite (offline-first database)
 
-A few resources to get you started if this is your first Flutter project:
+## Loyiha holati
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- MVP prototip — 25% tayyor
+- Backend yo'q — SQLite offline cache
+- Admin panel: CRUD (do'kon, mahsulot, buyurtma)
+- Customer flow: katalog → savat → buyurtma
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## O'rnatish
+
+```bash
+cd store_guliston_v1
+flutter pub get
+flutter run
+```
+
+## Loyiha tuzilishi
+
+```
+lib/
+├── config/       # Theme, routing, colors
+├── database/     # SQLite helper
+├── models/       # Data models (Shop, Product, Order)
+├── providers/    # Provider state management
+├── repositories/ # Data access layer
+├── screens/      # UI screens (admin + customer)
+├── services/     # Business logic
+├── utils/        # Helper functions
+└── widgets/      # Reusable components
+```
+
+## Admin kirish
+
+Home ekranda logotipni **uzoq bosish (long-press)** orqali admin panelga kirish mumkin.
+
+## Keyingi qadamlar
+
+- [ ] Firebase/Supabase backend qo'shish
+- [ ] Telegram bot integratsiyasi
+- [ ] Haqiqiy rasmlar qo'shish
+- [ ] Dark theme
+- [ ] Push notification
+- [ ] Release APK build

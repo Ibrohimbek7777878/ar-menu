@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.order_management }} - {{ t.admin_panel }}{% endblock %}
+{% block page_title %}{{ t.order_title }}{% endblock %}
+
+{% block content %}
+<!-- Sarlavha -->
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div>
+        <p class="eyebrow mb-1">{{ t.order_management }}</p>
+        <h1 class="font-display text-2xl font-semibold text-ink">{{ t.order_title }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ orders|length }} ta buyurtma</p>
+    </div>
+</div>
+
+<div class="flex flex-wrap items-center gap-2 mb-6">
+    <a href="{% url 'admin_orders' %}" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if not status_filter %}bg-brand-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-ink{% endif %}">{{ t.all }}</a>
+    <a href="{% url 'admin_orders' %}?status=pending" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'pending' %}bg-amber-500 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-amber-200 hover:text-amber-700{% endif %}">{{ t.order_pending }}</a>
+    <a href="{% url 'admin_orders' %}?status=confirmed" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'confirmed' %}bg-blue-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-blue-200 hover:text-blue-700{% endif %}">{{ t.order_confirmed }}</a>
+    <a href="{% url 'admin_orders' %}?status=preparing" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'preparing' %}bg-indigo-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-indigo-200 hover:text-indigo-700{% endif %}">{{ t.order_preparing }}</a>
+    <a href="{% url 'admin_orders' %}?status=ready" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'ready' %}bg-cyan-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-cyan-200 hover:text-cyan-700{% endif %}">{{ t.order_ready }}</a>
+    <a href="{% url 'admin_orders' %}?status=out_for_delivery" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'out_for_delivery' %}bg-violet-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-violet-200 hover:text-violet-700{% endif %}">{{ t.order_delivering }}</a>
+    <a href="{% url 'admin_orders' %}?status=delivered" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'delivered' %}bg-brand-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-brand-200 hover:text-brand-700{% endif %}">{{ t.order_delivered }}</a>
+    <a href="{% url 'admin_orders' %}?status=cancelled" class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition {% if status_filter == 'cancelled' %}bg-red-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-700{% endif %}">{{ t.order_cancelled }}</a>
+</div>
+
+<div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="tbl w-full min-w-[720px]">
+            <thead>
+                <tr>
+                    <th>{{ t.order_number }}</th>
+                    <th>{{ t.customers }}</th>
+                    <th>{{ t.store_management_short }}</th>
+                    <th>{{ t.couriers }}</th>
+                    <th>{{ t.order_amount }}</th>
+                    <th>{{ t.order_status }}</th>
+                    <th>{{ t.date }}</th>
+                    <th class="!text-right">{{ t.actions }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="group hover:!bg-brand-50/40 transition-colors">
+                    <td>
+                        <span class="inline-flex items-center gap-2 font-semibold text-ink">
+                            <span class="material-icons-outlined !text-base text-gray-300">receipt</span>
+                            {{ order.order_number }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="inline-flex items-center gap-2 text-gray-600">
+                            <span class="grid size-6 place-items-center rounded-full bg-brand-50 text-brand-700 text-[10px] font-bold uppercase shrink-0">{{ order.customer_name|slice:":1" }}</span>
+                            {{ order.customer_name }}
+                        </span>
+                    </td>
+                    <td class="text-gray-600">{{ order.shop.name }}</td>
+                    <td class="text-gray-600">{{ order.courier.name|default:"—" }}</td>
+                    <td class="font-semibold text-ink whitespace-nowrap">{{ order.final_amount|uznum }} {{ t.catalog_som }}</td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                        <span class="pill text-amber-700 bg-amber-50"><span class="size-1.5 rounded-full bg-amber-500"></span>{{ t.order_pending }}</span>
+                        {% elif order.status == 'confirmed' %}
+                        <span class="pill text-blue-700 bg-blue-50"><span class="size-1.5 rounded-full bg-blue-500"></span>{{ t.order_confirmed }}</span>
+                        {% elif order.status == 'preparing' %}
+                        <span class="pill text-indigo-700 bg-indigo-50"><span class="size-1.5 rounded-full bg-indigo-500"></span>{{ t.order_preparing }}</span>
+                        {% elif order.status == 'ready' %}
+                        <span class="pill text-cyan-700 bg-cyan-50"><span class="size-1.5 rounded-full bg-cyan-500"></span>{{ t.order_ready }}</span>
+                        {% elif order.status == 'out_for_delivery' %}
+                        <span class="pill text-violet-700 bg-violet-50"><span class="size-1.5 rounded-full bg-violet-500"></span>{{ t.order_delivering }}</span>
+                        {% elif order.status == 'delivered' %}
+                        <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.order_delivered }}</span>
+                        {% elif order.status == 'cancelled' %}
+                        <span class="pill text-red-700 bg-red-50"><span class="size-1.5 rounded-full bg-red-500"></span>{{ t.order_cancelled }}</span>
+                        {% else %}
+                        <span class="pill text-gray-600 bg-gray-100">{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-gray-500 whitespace-nowrap">{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                    <td class="!text-right">
+                        <a href="{% url 'admin_order_detail' order.pk %}" class="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-800 group-hover:gap-1.5 transition-all">
+                            {{ t.view }}
+                            <span class="material-icons-outlined !text-sm">arrow_forward</span>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="py-14 text-center">
+                        <span class="grid size-14 place-items-center mx-auto rounded-2xl bg-gray-50 text-gray-300 mb-3">
+                            <span class="material-icons-outlined !text-3xl">inbox</span>
+                        </span>
+                        <p class="text-sm font-medium text-gray-500">{{ t.order_not_found }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ t.filter }}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{# product_carousel.html — Slayd reklama: scroll-snap + avto-aylanish #}
+{% load uznum %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-4">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="font-display text-xl font-semibold">{{ title }}</h3>
+    <div class="flex gap-1">
+      <button onclick="crScroll('{{ cid }}',-1)" class="w-8 h-8 rounded-full border border-border bg-card hover:border-primary">‹</button>
+      <button onclick="crScroll('{{ cid }}',1)" class="w-8 h-8 rounded-full border border-border bg-card hover:border-primary">›</button>
+    </div>
+  </div>
+  <div id="{{ cid }}" class="flex gap-3 overflow-x-auto pb-2" style="scroll-snap-type:x mandatory;scrollbar-width:none">
+    {% for p in items %}
+    <a href="{% url 'customer_product' p.slug %}" class="shrink-0 w-44 rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lift transition" style="scroll-snap-align:start">
+      <div class="h-28 bg-sand flex items-center justify-center overflow-hidden">
+        {% if p.image %}<img src="{{ p.image.url }}" class="w-full h-full object-cover" loading="lazy" alt="{{ p.name }}">
+        {% else %}<span class="text-3xl">🛍️</span>{% endif %}
+      </div>
+      <div class="p-2.5">
+        <p class="text-xs font-semibold truncate">{{ p.name }}</p>
+        <p class="text-sm font-bold text-primary mt-0.5">{{ p.price|uznum }} {{ t.catalog_som }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+<script>
+(function(){var el=document.getElementById('{{ cid }}');var d=1;var t=setInterval(function(){
+ if(!document.body.contains(el))return clearInterval(t);
+ if(el.scrollLeft>=el.scrollWidth-el.clientWidth-8)d=-1;
+ if(el.scrollLeft<=8)d=1; el.scrollBy({left:d*160,behavior:'smooth'});},3500);})();
+function crScroll(id,d){document.getElementById(id).scrollBy({left:d*360,behavior:'smooth'});}
+</script>

@@ -1,0 +1,102 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.nav_search }} — {{ t.site_name }}{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <form method="get" class="mb-8">
+        <div class="card-surface flex items-center gap-3 px-5 py-3.5">
+            <svg class="size-5 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            <input type="text" name="q" value="{{ query }}" placeholder="{{ t.search_placeholder }}" class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted">
+            <button type="submit" class="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.search }}</button>
+        </div>
+    </form>
+
+    {% if query %}
+        {% if categories %}
+        <div class="mb-8">
+            <p class="eyebrow mb-3">{{ t.categories }}</p>
+            <div class="flex flex-wrap gap-2">
+                {% for cat in categories %}
+                <a href="{% url 'customer_catalog' %}?category={{ cat.id }}" class="rounded-full border border-primary/20 bg-accent px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-white">
+                    {% if cat.icon %}<span class="material-icons-outlined text-sm align-middle mr-1">{{ cat.icon }}</span>{% endif %}
+                    {{ cat.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if shops %}
+        <div class="mb-8">
+            <p class="eyebrow mb-3">{{ t.store_management_short }}</p>
+            <div class="space-y-3">
+                {% for shop in shops %}
+                <a href="{% url 'customer_shop_detail' shop.slug %}" class="card-surface flex items-center gap-4 p-4 transition-shadow hover:shadow-lift">
+                    <div class="w-12 h-12 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                        <span class="material-icons-outlined text-primary text-xl">storefront</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold">{{ shop.name }}</p>
+                        <p class="text-xs text-muted">⭐ {{ shop.rating|default:"0" }} · {{ shop.address|truncatechars:50 }}</p>
+                    </div>
+                    <svg class="size-4 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if products %}
+        <div>
+            <p class="eyebrow mb-3">{{ t.products }} ({{ products|length }})</p>
+            <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
+                {% for p in products %}
+                <div class="card-surface group relative flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
+                    <a href="{% url 'customer_product' p.slug %}" class="flex flex-1 flex-col">
+                        <div class="relative aspect-square overflow-hidden bg-sand">
+                            {% if p.image %}
+                            <img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy" class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]">
+                            {% endif %}
+                        </div>
+                        <div class="flex flex-1 flex-col gap-1 p-3">
+                            {% if p.shop %}<p class="truncate text-xs text-muted">{{ p.shop.name }}</p>{% endif %}
+                            <h3 class="text-sm font-semibold line-clamp-2">{{ p.name }}</h3>
+                            <div class="mt-2 flex items-baseline gap-2">
+                                <span class="text-sm font-semibold text-primary">{{ p.price|uznum }} {{ t.catalog_som }}</span>
+                                {% if p.old_price %}<span class="text-xs text-muted line-through">{{ p.old_price|uznum }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    <form method="POST" action="{% url 'customer_cart_add' %}" class="absolute bottom-3 right-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ p.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-lift transition-transform active:scale-95">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-20">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-sand flex items-center justify-center">
+                <span class="material-icons-outlined text-muted text-3xl">search_off</span>
+            </div>
+            <h3 class="font-display text-xl font-semibold mb-2">{{ t.search_nothing_found }}</h3>
+            <p class="text-sm text-muted mb-6">{{ t.search_try_other_word }}</p>
+            <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.view_products }}</a>
+        </div>
+        {% endif %}
+    {% else %}
+    <div class="text-center py-20">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-accent flex items-center justify-center">
+            <span class="material-icons-outlined text-primary text-3xl">search</span>
+        </div>
+        <h3 class="font-display text-xl font-semibold mb-2">{{ t.search }}</h3>
+        <p class="text-sm text-muted">{{ t.search_enter_query }}</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,268 @@
+{% load uznum %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Chek #{{ order.order_number }} - {{ shop.name }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace, monospace;
+            color: #000;
+        }
+        body {
+            background: #f3f4f6;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .receipt-container {
+            background: #fff;
+            width: 80mm;
+            padding: 4mm 5mm;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+        .receipt-container.size-58mm {
+            width: 58mm;
+            font-size: 11px;
+            padding: 3mm 3mm;
+        }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .bold { font-weight: bold; }
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 6px 0;
+        }
+        .double-divider {
+            border-top: 2px solid #000;
+            margin: 6px 0;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0;
+        }
+        .items-table th {
+            text-align: left;
+            border-bottom: 1px solid #000;
+            padding-bottom: 3px;
+            font-size: 11px;
+        }
+        .items-table td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 15px;
+            font-weight: 900;
+            padding: 4px 0;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            background: #111827;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-outline {
+            background: #fff;
+            color: #111827;
+            border: 1px solid #d1d5db;
+        }
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .controls {
+                display: none !important;
+            }
+            .receipt-container {
+                box-shadow: none;
+                width: 100% !important;
+                padding: 0;
+            }
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button onclick="window.print()" class="btn">
+            🖨️ Chop etish (Print)
+        </button>
+        <button onclick="toggleSize()" class="btn btn-outline" id="sizeToggleBtn">
+            📏 O'lcham: 80mm
+        </button>
+        {% if receipt_type == 'kitchen' %}
+        <a href="?type=customer" class="btn btn-outline">👤 Kassa cheki ko'rinishi</a>
+        {% else %}
+        <a href="?type=kitchen" class="btn btn-outline">🍳 Oshpaz cheki ko'rinishi</a>
+        {% endif %}
+        <button onclick="window.close()" class="btn btn-outline">✖ Yopish</button>
+    </div>
+
+    <!-- Receipt Ticket -->
+    <div class="receipt-container" id="receiptCard">
+        
+        <!-- Header -->
+        <div class="center">
+            {% if receipt_type == 'kitchen' %}
+            <div class="bold" style="font-size: 16px; margin-bottom: 4px;">🍳 OSHXONA / KDS BUYURTMASI</div>
+            <div class="bold" style="font-size: 20px; background: #000; color: #fff; padding: 2px 8px; display: inline-block; margin: 4px 0;">
+                STOL #{{ order.table_number|default:'1' }}
+            </div>
+            {% else %}
+            <div class="bold" style="font-size: 16px; text-transform: uppercase;">{{ shop.name }}</div>
+            {% if shop.address %}<div style="font-size: 11px;">{{ shop.address }}</div>{% endif %}
+            {% if shop.phone %}<div style="font-size: 11px;">Tel: {{ shop.phone }}</div>{% endif %}
+            {% endif %}
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Meta info -->
+        <div style="font-size: 11px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Chek: #{{ order.order_number }}</span>
+                <span>{{ order.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            {% if order.table_number %}
+            <div class="bold" style="font-size: 12px; margin-top: 2px;">
+                Stol: #{{ order.table_number }}
+            </div>
+            {% endif %}
+            {% if order.customer_name %}
+            <div>Mijoz: {{ order.customer_name }}</div>
+            {% endif %}
+            {% if order.delivery_address and receipt_type != 'kitchen' %}
+            <div>Manzil: {{ order.delivery_address }}</div>
+            {% endif %}
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 55%;">Nomi</th>
+                    <th class="center" style="width: 20%;">Miqdor</th>
+                    {% if receipt_type != 'kitchen' %}
+                    <th class="right" style="width: 25%;">Summa</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="bold">
+                        {{ item.product_name }}
+                    </td>
+                    <td class="center bold" style="font-size: 14px;">
+                        x{{ item.quantity }}
+                    </td>
+                    {% if receipt_type != 'kitchen' %}
+                    <td class="right">
+                        {{ item.total|uznum }}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="double-divider"></div>
+
+        {% if receipt_type != 'kitchen' %}
+        <!-- Totals -->
+        <div style="font-size: 12px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Mahsulotlar jami:</span>
+                <span>{{ order.total_amount|uznum }} so'm</span>
+            </div>
+            {% if order.delivery_fee %}
+            <div style="display: flex; justify-content: space-between;">
+                <span>Yetkazib berish:</span>
+                <span>{{ order.delivery_fee|uznum }} so'm</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="total-row">
+            <span>JAMI TO'LOV:</span>
+            <span>{{ order.final_amount|uznum }} SO'M</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Payment method -->
+        <div style="font-size: 11px; margin-top: 4px;">
+            <div>To'lov holati: <b>{{ order.get_status_display }}</b></div>
+            <div>To'lov shakli: <b>{{ order.payment_method|default:'Naqd pul'|upper }}</b></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="center" style="margin-top: 12px; font-size: 11px;">
+            <p class="bold">Xaridingiz uchun rahmat!</p>
+            <p style="font-size: 10px; color: #555; margin-top: 3px;">Tizim: Online Store Guliston (AR Menu OS)</p>
+        </div>
+        {% else %}
+        <!-- Kitchen Notes -->
+        {% if order.notes %}
+        <div style="background: #eee; padding: 4px 6px; font-size: 12px; margin-top: 6px;">
+            <b>Izoh:</b> {{ order.notes }}
+        </div>
+        {% endif %}
+        <div class="center bold" style="margin-top: 10px; font-size: 13px;">
+            --- OSHPAZGA TAYYORLASH UCHUN ---
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        function toggleSize() {
+            const card = document.getElementById('receiptCard');
+            const btn = document.getElementById('sizeToggleBtn');
+            if (card.classList.contains('size-58mm')) {
+                card.classList.remove('size-58mm');
+                btn.textContent = "📏 O'lcham: 80mm";
+            } else {
+                card.classList.add('size-58mm');
+                btn.textContent = "📏 O'lcham: 58mm";
+            }
+        }
+    </script>
+</body>
+</html>

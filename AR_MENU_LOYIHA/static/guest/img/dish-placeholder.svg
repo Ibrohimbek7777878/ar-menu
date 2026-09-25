@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="16" fill="#1A1F2C"/>
+  <circle cx="100" cy="100" r="60" fill="#242B3D" stroke="#3A435E" stroke-width="2"/>
+  <!-- Cloche / Plate silhouette -->
+  <path d="M65 115 C65 85, 135 85, 135 115 Z" fill="#E85D2A" opacity="0.85"/>
+  <circle cx="100" cy="80" r="6" fill="#FFA372"/>
+  <rect x="58" y="117" width="84" height="6" rx="3" fill="#E85D2A"/>
+  <text x="100" y="150" fill="#8E9CB2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" text-anchor="middle">ARMENU</text>
+</svg>

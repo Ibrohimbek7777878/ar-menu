@@ -1,0 +1,1085 @@
+{% extends "admin_panel/base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Menyu va Taomlar Boshqaruvi" %}{% endblock %}
+{% block heading %}🍽 {% trans "Menyu va Taomlar Boshqaruvi" %}{% endblock %}
+
+{% block content %}
+<!-- Yuqori panel: Tugmalar va havola -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="openAddDishModal()">➕ {% trans "Yangi Taom Qo'shish" %}</button>
+    <button class="btn btn-ghost" onclick="openAddCatModal()">📁 {% trans "Yangi Kategoriya" %}</button>
+  </div>
+  <div>
+    <a href="/m/{{ restaurant.slug }}/" target="_blank" class="btn btn-ghost" style="color:#22c55e; border:1px solid rgba(34,197,94,0.3);">
+      👁 {% trans "Menyuni Mijoz Ko'rinishida Ochish" %} ↗
+    </a>
+  </div>
+</div>
+
+<!-- Qidiruv va filtr boshqaruvi -->
+<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+  <div style="position:relative; flex:1; min-width:260px; max-width:420px;">
+    <input type="text" id="dishSearchInput" oninput="filterDishes()" placeholder="🔍 Taom yoki mahsulot nomini qidirish..." class="input" style="width:100%; padding:8px 14px; font-size:13px; border-radius:8px;">
+  </div>
+  <div id="dishesStatsSummary" style="font-size:12px; color:var(--muted); font-weight:600;">
+    Jami taomlar: <b style="color:var(--text);" id="visibleDishesCount">{{ dishes|length }}</b> ta
+  </div>
+</div>
+
+<!-- Kategoriyalar filtri va boshqaruvi -->
+<div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; margin-bottom:20px; align-items:center;">
+  <button class="btn btn-sm btn-primary cat-filter-btn" data-cat="all" onclick="selectCategoryFilter('all', this)">
+    Barchasi ({{ dishes|length }})
+  </button>
+  {% for c in categories %}
+    <div class="cat-pill-wrapper" style="display:inline-flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:2px 6px;">
+      <button class="btn btn-sm btn-ghost cat-filter-btn" data-cat="{{ c.id }}" onclick="selectCategoryFilter('{{ c.id }}', this)" style="border:none; padding:4px 8px;">
+        {{ c.icon }} {{ c.name_uz }} ({{ c.dishes.count }})
+      </button>
+      <button class="btn btn-sm btn-ghost" title="{% trans 'Kategoriyani tahrirlash' %}" 
+        onclick="openEditCatModal('{{ c.id }}', '{{ c.name_uz|escapejs }}', '{{ c.name_ru|default:''|escapejs }}', '{{ c.name_en|default:''|escapejs }}', '{{ c.icon|escapejs }}', '{{ c.order }}')" 
+        style="padding:2px 5px; font-size:12px; opacity:0.8;">✏️</button>
+      <button class="btn btn-sm btn-ghost" title="{% trans 'Kategoriyani o\'chirish' %}" 
+        onclick="deleteCategory('{{ c.id }}', '{{ c.name_uz|escapejs }}', {{ c.dishes.count }})" 
+        style="padding:2px 5px; font-size:12px; color:#ef4444; opacity:0.8;">🗑</button>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Taomlar Grid -->
+<div id="dishesGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px;">
+  {% for d in dishes %}
+    <div class="dish-item-card card" id="dish-card-{{ d.id }}" 
+      data-cat-id="{{ d.category_id }}"
+      data-name-uz="{{ d.name_uz|lower }}"
+      data-name-ru="{{ d.name_ru|default:''|lower }}"
+      data-name-en="{{ d.name_en|default:''|lower }}"
+      data-desc-uz="{{ d.desc_uz|default:''|lower }}"
+      style="background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+      
+      <div style="position:relative; height:160px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        {% if d.image %}
+          <img src="{{ d.image.url }}" alt="{{ d.name_uz }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}
+          <span style="font-size:48px;">🍽</span>
+        {% endif %}
+        
+        <div style="position:absolute; top:8px; right:8px; display:flex; gap:4px; flex-wrap:wrap;">
+          {% if d.has_3d %}
+            <span style="padding:3px 7px; border-radius:6px; background:#22c55e; color:#fff; font-size:11px; font-weight:700;">🎯 3D AR</span>
+          {% endif %}
+          {% if d.is_hit %}
+            <span style="padding:3px 7px; border-radius:6px; background:#E85D2A; color:#fff; font-size:11px; font-weight:700;">🔥 Xit</span>
+          {% endif %}
+          {% if d.is_new %}
+            <span style="padding:3px 7px; border-radius:6px; background:#3B82F6; color:#fff; font-size:11px; font-weight:700;">✨ Yangi</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="padding:16px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="font-size:11px; color:#E85D2A; font-weight:700; text-transform:uppercase; margin-bottom:4px;">
+            {{ d.category.name_uz }}
+          </div>
+          <h4 style="margin:0 0 6px 0; font-size:16px;" class="dish-title">{{ d.name_uz }}</h4>
+          <p class="muted" style="font-size:12px; margin:0 0 10px 0; line-height:1.4;">
+            {{ d.desc_uz|default:"Tavsif berilmagan"|truncatechars:70 }}
+          </p>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <b style="font-size:16px; color:#22c55e;">{{ d.price|floatformat:0 }} so'm</b>
+              {% if d.old_price %}
+                <span style="font-size:12px; text-decoration:line-through; color:var(--muted); margin-left:4px;">{{ d.old_price|floatformat:0 }}</span>
+              {% endif %}
+            </div>
+            <button class="btn btn-sm {% if d.is_available %}btn-ghost{% else %}btn-primary{% endif %}" onclick="toggleAvailability({{ d.id }}, this)" style="font-size:11px;">
+              {% if d.is_available %}🟢 Mavjud{% else %}🔴 Tugagan{% endif %}
+            </button>
+          </div>
+
+          <div style="display:flex; gap:6px; border-top:1px solid var(--border); padding-top:10px;">
+            <button class="btn btn-sm btn-ghost" 
+              onclick="openEditDishModal(this)"
+              data-id="{{ d.id }}"
+              data-category="{{ d.category_id }}"
+              data-name-uz="{{ d.name_uz|escape }}"
+              data-name-ru="{{ d.name_ru|default:''|escape }}"
+              data-name-en="{{ d.name_en|default:''|escape }}"
+              data-desc-uz="{{ d.desc_uz|default:''|escape }}"
+              data-desc-ru="{{ d.desc_ru|default:''|escape }}"
+              data-desc-en="{{ d.desc_en|default:''|escape }}"
+              data-ingredients-uz="{{ d.ingredients_uz|default:''|escape }}"
+              data-price="{{ d.price|floatformat:0 }}"
+              data-old-price="{{ d.old_price|default:'' }}"
+              data-cook-min="{{ d.cook_min|default:15 }}"
+              data-weight-g="{{ d.weight_g|default:'' }}"
+              data-calories="{{ d.calories|default:'' }}"
+              data-is-available="{% if d.is_available %}1{% else %}0{% endif %}"
+              data-is-hit="{% if d.is_hit %}1{% else %}0{% endif %}"
+              data-is-new="{% if d.is_new %}1{% else %}0{% endif %}"
+              data-has-3d="{% if d.has_3d %}1{% else %}0{% endif %}"
+              data-image-url="{% if d.image %}{{ d.image.url }}{% endif %}"
+              style="flex:2; text-align:center;">
+              ✏️ {% trans "Tahrirlash" %}
+            </button>
+            <a href="/admin/ar/" class="btn btn-sm btn-ghost" title="3D ko'rish va sozlash" style="flex:1; text-align:center;">
+              🎯 3D
+            </a>
+            <button class="btn btn-sm btn-ghost" style="color:#ef4444; padding:4px 8px;" title="{% trans "O'chirish" %}" onclick="deleteDish({{ d.id }}, '{{ d.name_uz|escapejs }}')">
+              🗑
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div style="grid-column:1/-1; text-align:center; padding:48px 16px; background:var(--surface); border:1px dashed var(--border); border-radius:12px;">
+      <span style="font-size:48px; display:block; margin-bottom:8px;">🍽</span>
+      <h3 style="margin:0 0 6px 0;">Sizda hali birorta ham taom yo'q</h3>
+      <p class="muted" style="margin:0 0 16px 0; font-size:13px;">Yangi taom qo'shish tugmasi orqali ilk taomingizni kiritishingiz mumkin.</p>
+      <button class="btn btn-primary" onclick="openAddDishModal()">➕ Birinchi Taomni Qo'shish</button>
+    </div>
+  {% endfor %}
+</div>
+<div id="noDishesFound" style="display:none; text-align:center; padding:48px 16px; color:var(--muted); font-size:14px;">
+  🔍 Qidiruv bo'yicha hech qanday taom topilmadi.
+</div>
+
+<!-- ➕ Yangi Taom Qo'shish Modali -->
+<div id="addDishModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:600px; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-size:18px;">➕ {% trans "Yangi Taom / Mahsulot Qo'shish" %}</h3>
+      <button onclick="closeAddDishModal()" class="btn btn-ghost" style="font-size:18px;">✕</button>
+    </div>
+
+    <form id="addDishForm" enctype="multipart/form-data">
+      <!-- 1-Bo'lim: Asosiy Ma'lumotlar -->
+      <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <div style="font-size:12px; text-transform:uppercase; font-weight:700; color:var(--muted); margin-bottom:10px;">
+          📋 1. Asosiy parametrlar
+        </div>
+        
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Kategoriya:" %} <span style="color:#ef4444;">*</span></label>
+          <select id="dishCat" name="category" class="input" style="width:100%;" required>
+            {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.icon }} {{ c.name_uz }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Nomi (O'zbekcha):" %} <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="dishNameUz" name="name_uz" class="input" style="width:100%;" placeholder="Masalan: Tandir Kabob" required>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Ruscha):" %}</label>
+            <input type="text" id="dishNameRu" name="name_ru" class="input" style="width:100%;" placeholder="Тандыр шашлык">
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Inglizcha):" %}</label>
+            <input type="text" id="dishNameEn" name="name_en" class="input" style="width:100%;" placeholder="Tandoor Kebab">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Narxi (so'm):" %} <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="dishPrice" name="price" class="input" style="width:100%;" placeholder="45000" min="0" required>
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Eski Narxi (so'm):" %}</label>
+            <input type="number" id="dishOldPrice" name="old_price" class="input" style="width:100%;" placeholder="55000 (aksiya bo'lsa)" min="0">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Vaqti (daq.):" %}</label>
+            <input type="number" id="dishCook" name="cook_min" value="15" min="1" class="input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Og'irligi (g):" %}</label>
+            <input type="number" id="dishWeight" name="weight_g" placeholder="300" min="0" class="input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Kaloriya (kkal):" %}</label>
+            <input type="number" id="dishCalories" name="calories" placeholder="420" min="0" class="input" style="width:100%;">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600;">
+            <input type="checkbox" id="dishAvailable" name="is_available" checked style="width:18px; height:18px;">
+            <span>🟢 Mavjud</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600;">
+            <input type="checkbox" id="dishIsHit" name="is_hit" style="width:18px; height:18px;">
+            <span>🔥 Xit taom</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600;">
+            <input type="checkbox" id="dishIsNew" name="is_new" style="width:18px; height:18px;">
+            <span>✨ Yangi taom</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2-Bo'lim: Tavsif va Tarkibi -->
+      <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <div style="font-size:12px; text-transform:uppercase; font-weight:700; color:var(--muted); margin-bottom:10px;">
+          📝 2. Tavsifi va Tarkibi
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tavsifi (O'zbekcha):" %}</label>
+          <textarea id="dishDescUz" name="desc_uz" class="input" style="width:100%; height:55px;" placeholder="Taom haqida qisqacha ma'lumot..."></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tavsifi (Ruscha):" %}</label>
+            <textarea id="dishDescRu" name="desc_ru" class="input" style="width:100%; height:45px;" placeholder="Описание блюда..."></textarea>
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tavsifi (Inglizcha):" %}</label>
+            <textarea id="dishDescEn" name="desc_en" class="input" style="width:100%; height:45px;" placeholder="Dish description..."></textarea>
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tarkibi (masalan: Go'sht, un, piyoz, ziravorlar):" %}</label>
+          <input type="text" id="dishIngredients" name="ingredients_uz" class="input" style="width:100%;" placeholder="Go'sht, piyoz, ziravorlar">
+        </div>
+      </div>
+
+      <!-- 3-Bo'lim: Rasm va 3D Modellar -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; text-transform:uppercase; font-weight:700; color:var(--muted); margin-bottom:10px;">
+          🎯 3. Fotosurat va 3D Model
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">📸 {% trans "Taom Fotosurati:" %}</label>
+          <input type="file" id="dishImage" name="image" accept="image/*" class="input" style="width:100%;" onchange="previewImage(this, 'addDishImgPreviewBox', 'addDishImgPreview')">
+          <div id="addDishImgPreviewBox" style="display:none; margin-top:8px;">
+            <img id="addDishImgPreview" src="" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px; padding:12px; background:rgba(37,99,235,0.08); border:1px dashed #2563EB; border-radius:8px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px; color:#2563EB;">🎯 {% trans "Tayyor 3D Model (.glb fayli):" %}</label>
+          <input type="file" id="dishGlb" accept=".glb" class="input" style="width:100%;" onchange="showFileInfo(this, 'addGlbInfo')">
+          <div id="addGlbInfo" style="display:none; margin-top:6px; font-size:12px; font-weight:600; color:#2563EB;"></div>
+          <small class="muted" style="display:block; margin-top:4px;">Tayyor .glb faylingiz bo'lsa darhol AR formatida ochiladi.</small>
+        </div>
+
+        <div style="margin-bottom:16px; padding:12px; background:rgba(16,185,129,0.08); border:1px dashed #10B981; border-radius:8px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px; color:#10B981;">🤖 {% trans "Yoki AI 3D Model: 4 ta burchakdan olingan fotosuratlar:" %}</label>
+          <input type="file" id="dishAiImages" accept="image/*" multiple class="input" style="width:100%;" onchange="previewMultiImages(this, 'addAiPreviews')">
+          <div id="addAiPreviews" style="display:none; gap:6px; margin-top:8px; flex-wrap:wrap;"></div>
+          <small class="muted" style="display:block; margin-top:4px;">Kamida 4 ta burchakdan fotosurat tanlang — tizim avtomatik 3D model generatsiya qiladi.</small>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" onclick="closeAddDishModal()" class="btn btn-ghost">{% trans "Bekor qilish" %}</button>
+        <button type="submit" id="btnSubmitDish" class="btn btn-primary">💾 {% trans "Saqlash" %}</button>
+      </div>
+      <div id="modalStatus" style="margin-top:10px; font-weight:600; font-size:13px;"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ✏️ Taomni Tahrirlash Modali -->
+<div id="editDishModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:600px; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-size:18px;">✏️ {% trans "Taomni Tahrirlash" %}</h3>
+      <button onclick="closeEditDishModal()" class="btn btn-ghost" style="font-size:18px;">✕</button>
+    </div>
+
+    <form id="editDishForm" enctype="multipart/form-data">
+      <input type="hidden" id="editDishId" name="dish_id">
+
+      <!-- 1-Bo'lim: Asosiy Ma'lumotlar -->
+      <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <div style="font-size:12px; text-transform:uppercase; font-weight:700; color:var(--muted); margin-bottom:10px;">
+          📋 1. Asosiy parametrlar
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Kategoriya:" %} <span style="color:#ef4444;">*</span></label>
+          <select id="editDishCat" name="category" class="input" style="width:100%;" required>
+            {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.icon }} {{ c.name_uz }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Nomi (O'zbekcha):" %} <span style="color:#ef4444;">*</span></label>
+          <input type="text" id="editDishNameUz" name="name_uz" class="input" style="width:100%;" required>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Ruscha):" %}</label>
+            <input type="text" id="editDishNameRu" name="name_ru" class="input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Inglizcha):" %}</label>
+            <input type="text" id="editDishNameEn" name="name_en" class="input" style="width:100%;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Narxi (so'm):" %} <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="editDishPrice" name="price" class="input" style="width:100%;" min="0" required>
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Eski Narxi (so'm):" %}</label>
+            <input type="number" id="editDishOldPrice" name="old_price" class="input" style="width:100%;" min="0">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Vaqti (daq.):" %}</label>
+            <input type="number" id="editDishCook" name="cook_min" class="input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Og'irligi (g):" %}</label>
+            <input type="number" id="editDishWeight" name="weight_g" class="input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Kaloriya (kkal):" %}</label>
+            <input type="number" id="editDishCalories" name="calories" class="input" style="width:100%;">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600;">
+            <input type="checkbox" id="editDishAvailable" name="is_available" style="width:18px; height:18px;">
+            <span>🟢 Mavjud</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600;">
+            <input type="checkbox" id="editDishIsHit" name="is_hit" style="width:18px; height:18px;">
+            <span>🔥 Xit taom</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600;">
+            <input type="checkbox" id="editDishIsNew" name="is_new" style="width:18px; height:18px;">
+            <span>✨ Yangi taom</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2-Bo'lim: Tavsif va Tarkibi -->
+      <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <div style="font-size:12px; text-transform:uppercase; font-weight:700; color:var(--muted); margin-bottom:10px;">
+          📝 2. Tavsifi va Tarkibi
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tavsifi (O'zbekcha):" %}</label>
+          <textarea id="editDishDescUz" name="desc_uz" class="input" style="width:100%; height:55px;"></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tavsifi (Ruscha):" %}</label>
+            <textarea id="editDishDescRu" name="desc_ru" class="input" style="width:100%; height:45px;"></textarea>
+          </div>
+          <div>
+            <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tavsifi (Inglizcha):" %}</label>
+            <textarea id="editDishDescEn" name="desc_en" class="input" style="width:100%; height:45px;"></textarea>
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Tarkibi:" %}</label>
+          <input type="text" id="editDishIngredients" name="ingredients_uz" class="input" style="width:100%;">
+        </div>
+      </div>
+
+      <!-- 3-Bo'lim: Rasm va 3D Modellar -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; text-transform:uppercase; font-weight:700; color:var(--muted); margin-bottom:10px;">
+          🎯 3. Fotosurat va 3D Model
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">📸 {% trans "Rasmni Yangilash (ixtiyoriy):" %}</label>
+          <div id="editImagePreview" style="margin-bottom:6px;"></div>
+          <input type="file" id="editDishImage" name="image" accept="image/*" class="input" style="width:100%;" onchange="previewImage(this, 'editImagePreviewBox', 'editImagePreviewImg')">
+          <div id="editImagePreviewBox" style="display:none; margin-top:6px;">
+            <img id="editImagePreviewImg" src="" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border);">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px; padding:12px; background:rgba(37,99,235,0.08); border:1px dashed #2563EB; border-radius:8px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px; color:#2563EB;">🎯 {% trans "3D Model (.glb fayl) Yangilash:" %}</label>
+          <div id="edit3dStatus" style="font-size:12px; font-weight:600; margin-bottom:6px;"></div>
+          <input type="file" id="editDishGlb" accept=".glb" class="input" style="width:100%;" onchange="showFileInfo(this, 'editGlbInfo')">
+          <div id="editGlbInfo" style="display:none; margin-top:6px; font-size:12px; font-weight:600; color:#2563EB;"></div>
+        </div>
+
+        <div style="margin-bottom:16px; padding:12px; background:rgba(16,185,129,0.08); border:1px dashed #10B981; border-radius:8px;">
+          <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px; color:#10B981;">🤖 {% trans "Yoki Yangi 4 ta burchakdan fotosuratlar (AI 3D):" %}</label>
+          <input type="file" id="editDishAiImages" accept="image/*" multiple class="input" style="width:100%;" onchange="previewMultiImages(this, 'editAiPreviews')">
+          <div id="editAiPreviews" style="display:none; gap:6px; margin-top:8px; flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" onclick="closeEditDishModal()" class="btn btn-ghost">{% trans "Bekor qilish" %}</button>
+        <button type="submit" id="btnSubmitEditDish" class="btn btn-primary">💾 {% trans "O'zgarishlarni Saqlash" %}</button>
+      </div>
+      <div id="editModalStatus" style="margin-top:10px; font-weight:600; font-size:13px;"></div>
+    </form>
+  </div>
+</div>
+
+<!-- 📁 Yangi Kategoriya Qo'shish Modali -->
+<div id="addCatModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:460px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-size:18px;">📁 {% trans "Yangi Kategoriya Qo'shish" %}</h3>
+      <button onclick="closeAddCatModal()" class="btn btn-ghost" style="font-size:18px;">✕</button>
+    </div>
+    <form id="addCatForm">
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Belgi / Emoji:" %}</label>
+        <input type="text" id="catIcon" name="icon" class="input" style="width:100%;" value="🍽" placeholder="Masalan: 🍲, 🥩, 🥗, ☕️">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Nomi (O'zbekcha):" %} <span style="color:#ef4444;">*</span></label>
+        <input type="text" id="catNameUz" name="name_uz" class="input" style="width:100%;" placeholder="Masalan: Asosiy Taomlar" required>
+      </div>
+      <div style="grid-template-columns:1fr 1fr; display:grid; gap:10px; margin-bottom:12px;">
+        <div>
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Ruscha):" %}</label>
+          <input type="text" id="catNameRu" name="name_ru" class="input" style="width:100%;" placeholder="Основные блюда">
+        </div>
+        <div>
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Inglizcha):" %}</label>
+          <input type="text" id="catNameEn" name="name_en" class="input" style="width:100%;" placeholder="Main Dishes">
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Tartib raqami:" %}</label>
+        <input type="number" id="catOrder" name="order" class="input" style="width:100%;" value="0">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" onclick="closeAddCatModal()" class="btn btn-ghost">{% trans "Bekor qilish" %}</button>
+        <button type="submit" id="btnSubmitCat" class="btn btn-primary">💾 {% trans "Qo'shish" %}</button>
+      </div>
+      <div id="catModalStatus" style="margin-top:10px; font-weight:600; font-size:13px;"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ✏️ Kategoriyani Tahrirlash Modali -->
+<div id="editCatModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:460px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-size:18px;">✏️ {% trans "Kategoriyani Tahrirlash" %}</h3>
+      <button onclick="closeEditCatModal()" class="btn btn-ghost" style="font-size:18px;">✕</button>
+    </div>
+    <form id="editCatForm">
+      <input type="hidden" id="editCatId">
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Belgi / Emoji:" %}</label>
+        <input type="text" id="editCatIcon" class="input" style="width:100%;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Nomi (O'zbekcha):" %} <span style="color:#ef4444;">*</span></label>
+        <input type="text" id="editCatNameUz" class="input" style="width:100%;" required>
+      </div>
+      <div style="grid-template-columns:1fr 1fr; display:grid; gap:10px; margin-bottom:12px;">
+        <div>
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Ruscha):" %}</label>
+          <input type="text" id="editCatNameRu" class="input" style="width:100%;">
+        </div>
+        <div>
+          <label style="font-weight:600; font-size:12px; display:block; margin-bottom:4px;">{% trans "Nomi (Inglizcha):" %}</label>
+          <input type="text" id="editCatNameEn" class="input" style="width:100%;">
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">{% trans "Tartib raqami:" %}</label>
+        <input type="number" id="editCatOrder" class="input" style="width:100%;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" onclick="closeEditCatModal()" class="btn btn-ghost">{% trans "Bekor qilish" %}</button>
+        <button type="submit" id="btnSubmitEditCat" class="btn btn-primary">💾 {% trans "Saqlash" %}</button>
+      </div>
+      <div id="editCatModalStatus" style="margin-top:10px; font-weight:600; font-size:13px;"></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCategoryFilter = 'all';
+
+// --- Fayl preview yordamchilari ---
+function previewImage(input, boxId, imgId) {
+  const box = document.getElementById(boxId);
+  const img = document.getElementById(imgId);
+  if (input.files && input.files[0]) {
+    img.src = URL.createObjectURL(input.files[0]);
+    box.style.display = 'block';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function showFileInfo(input, infoId) {
+  const el = document.getElementById(infoId);
+  if (input.files && input.files[0]) {
+    const f = input.files[0];
+    const mb = (f.size / (1024 * 1024)).toFixed(2);
+    el.textContent = `🎯 Fayl tanlandi: ${f.name} (${mb} MB)`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function previewMultiImages(input, containerId) {
+  const box = document.getElementById(containerId);
+  box.innerHTML = '';
+  if (input.files && input.files.length > 0) {
+    box.style.display = 'flex';
+    [...input.files].slice(0, 6).forEach((f, idx) => {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      img.style.width = '60px';
+      img.style.height = '60px';
+      img.style.objectFit = 'cover';
+      img.style.borderRadius = '6px';
+      img.style.border = '1px solid var(--border)';
+      img.title = `Burchak #${idx + 1}`;
+      box.appendChild(img);
+    });
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+// --- Xatolik matnini formatlash ---
+function formatErrorMessage(data) {
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+  if (data.error && data.error.message_uz) return data.error.message_uz;
+  if (data.error && typeof data.error === 'string') return data.error;
+  
+  const parts = [];
+  for (const k in data) {
+    let v = data[k];
+    if (Array.isArray(v)) v = v.join(', ');
+    if (typeof v === 'object') v = JSON.stringify(v);
+    
+    // Do'stona maydon nomlari
+    let fieldName = k;
+    if (k === 'price') fieldName = 'Narx';
+    if (k === 'old_price') fieldName = 'Eski narx';
+    if (k === 'name_uz') fieldName = 'Nomi';
+    if (k === 'category') fieldName = 'Kategoriya';
+    
+    parts.push(`${fieldName}: ${v}`);
+  }
+  return parts.join(' | ') || "Noma'lum xatolik yuz berdi";
+}
+
+// --- Modallar Boshqaruvi ---
+function openAddDishModal() {
+  document.getElementById('addDishModal').style.display = 'flex';
+}
+function closeAddDishModal() {
+  document.getElementById('addDishModal').style.display = 'none';
+}
+
+function openAddCatModal() {
+  document.getElementById('addCatModal').style.display = 'flex';
+}
+function closeAddCatModal() {
+  document.getElementById('addCatModal').style.display = 'none';
+}
+
+function openEditCatModal(id, nameUz, nameRu, nameEn, icon, order) {
+  document.getElementById('editCatId').value = id;
+  document.getElementById('editCatIcon').value = icon;
+  document.getElementById('editCatNameUz').value = nameUz;
+  document.getElementById('editCatNameRu').value = nameRu || '';
+  document.getElementById('editCatNameEn').value = nameEn || '';
+  document.getElementById('editCatOrder').value = order || 0;
+  document.getElementById('editCatModalStatus').textContent = '';
+  document.getElementById('editCatModal').style.display = 'flex';
+}
+function closeEditCatModal() {
+  document.getElementById('editCatModal').style.display = 'none';
+}
+
+function openEditDishModal(btn) {
+  const d = btn.dataset;
+  document.getElementById('editDishId').value = d.id;
+  document.getElementById('editDishCat').value = d.category;
+  document.getElementById('editDishNameUz').value = d.nameUz || '';
+  document.getElementById('editDishNameRu').value = d.nameRu || '';
+  document.getElementById('editDishNameEn').value = d.nameEn || '';
+  document.getElementById('editDishPrice').value = d.price || '';
+  document.getElementById('editDishOldPrice').value = d.oldPrice || '';
+  document.getElementById('editDishCook').value = d.cookMin || '15';
+  document.getElementById('editDishWeight').value = d.weightG || '';
+  document.getElementById('editDishCalories').value = d.calories || '';
+  document.getElementById('editDishDescUz').value = d.descUz || '';
+  document.getElementById('editDishDescRu').value = d.descRu || '';
+  document.getElementById('editDishDescEn').value = d.descEn || '';
+  document.getElementById('editDishIngredients').value = d.ingredientsUz || '';
+  document.getElementById('editDishAvailable').checked = d.isAvailable === '1';
+  document.getElementById('editDishIsHit').checked = d.isHit === '1';
+  document.getElementById('editDishIsNew').checked = d.isNew === '1';
+
+  const preview = document.getElementById('editImagePreview');
+  if (d.imageUrl) {
+    preview.innerHTML = `<img src="${d.imageUrl}" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid var(--border);">`;
+  } else {
+    preview.innerHTML = '<span class="muted" style="font-size:12px;">Rasm yuklanmagan</span>';
+  }
+
+  const st3d = document.getElementById('edit3dStatus');
+  if (d.has3d === '1') {
+    st3d.innerHTML = '<span style="color:#22c55e;">✅ Ushbu taomda 3D model mavjud. Yangi .glb tanlasangiz, almashtiriladi.</span>';
+  } else {
+    st3d.innerHTML = '<span style="color:#F59E0B;">⚠️ Hozirda 3D model yo\'q. .glb yuklab biriktirishingiz mumkin.</span>';
+  }
+
+  document.getElementById('editModalStatus').textContent = '';
+  document.getElementById('editDishModal').style.display = 'flex';
+}
+function closeEditDishModal() {
+  document.getElementById('editDishModal').style.display = 'none';
+}
+
+// --- Filtrlash va Jonli Qidiruv ---
+function selectCategoryFilter(catId, btn) {
+  currentCategoryFilter = catId;
+  document.querySelectorAll('.cat-filter-btn').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-ghost');
+  });
+  btn.classList.remove('btn-ghost');
+  btn.classList.add('btn-primary');
+  filterDishes();
+}
+
+function filterDishes() {
+  const query = (document.getElementById('dishSearchInput').value || '').trim().toLowerCase();
+  const cards = document.querySelectorAll('.dish-item-card');
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const cardCat = card.dataset.catId;
+    const nameUz = card.dataset.nameUz || '';
+    const nameRu = card.dataset.nameRu || '';
+    const nameEn = card.dataset.nameEn || '';
+    const descUz = card.dataset.descUz || '';
+
+    const matchesCat = (currentCategoryFilter === 'all' || cardCat === currentCategoryFilter);
+    const matchesQuery = !query || nameUz.includes(query) || nameRu.includes(query) || nameEn.includes(query) || descUz.includes(query);
+
+    if (matchesCat && matchesQuery) {
+      card.style.display = 'flex';
+      visibleCount++;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+
+  document.getElementById('visibleDishesCount').textContent = visibleCount;
+  const noDishes = document.getElementById('noDishesFound');
+  if (noDishes) {
+    noDishes.style.display = (visibleCount === 0 && cards.length > 0) ? 'block' : 'none';
+  }
+}
+
+// --- Mavjudlikni Almashtirish ---
+async function toggleAvailability(dishId, btn) {
+  try {
+    const isNowAvail = !btn.textContent.includes('Mavjud');
+    const res = await fetch(`/v1/admin/dishes/${dishId}/`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': window.csrfToken
+      },
+      body: JSON.stringify({ is_available: isNowAvail })
+    });
+    if (res.ok) {
+      if (isNowAvail) {
+        btn.innerHTML = '🟢 Mavjud';
+        btn.className = 'btn btn-sm btn-ghost';
+      } else {
+        btn.innerHTML = '🔴 Tugagan';
+        btn.className = 'btn btn-sm btn-primary';
+      }
+    } else {
+      location.reload();
+    }
+  } catch (e) {
+    alert('Xatolik yuz berdi');
+  }
+}
+
+// --- Taomni O'chirish ---
+async function deleteDish(id, name) {
+  if (!confirm(`Haqiqatan ham "${name}" taomini butunlay o'chirmoqchimisiz?`)) return;
+
+  try {
+    const res = await fetch(`/v1/admin/dishes/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRFToken': window.csrfToken
+      }
+    });
+    if (res.ok) {
+      const card = document.getElementById(`dish-card-${id}`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          card.remove();
+          filterDishes();
+        }, 300);
+      }
+    } else {
+      alert('Taomni o\'chirishda xatolik yuz berdi');
+    }
+  } catch (e) {
+    alert('Tarmoq xatosi');
+  }
+}
+
+// --- Yangi Taom Saqlash ---
+document.getElementById('addDishForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('modalStatus');
+  const btn = document.getElementById('btnSubmitDish');
+
+  const priceVal = parseFloat(document.getElementById('dishPrice').value || 0);
+  const oldPriceVal = parseFloat(document.getElementById('dishOldPrice').value || 0);
+
+  if (priceVal < 0) {
+    statusEl.textContent = '❌ Narx 0 dan katta bo\'lishi kerak!';
+    statusEl.style.color = '#EF4444';
+    return;
+  }
+  if (oldPriceVal > 0 && oldPriceVal <= priceVal) {
+    statusEl.textContent = '❌ Eski aksiya narxi joriy narxdan katta bo\'lishi kerak!';
+    statusEl.style.color = '#EF4444';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Saqlanmoqda...';
+  statusEl.style.color = '#F59E0B';
+
+  const formData = new FormData();
+  formData.append('category', document.getElementById('dishCat').value);
+  formData.append('name_uz', document.getElementById('dishNameUz').value.trim());
+  formData.append('name_ru', document.getElementById('dishNameRu').value.trim());
+  formData.append('name_en', document.getElementById('dishNameEn').value.trim());
+  formData.append('price', priceVal);
+  if (oldPriceVal > 0) formData.append('old_price', oldPriceVal);
+  formData.append('cook_min', document.getElementById('dishCook').value || 15);
+  const w = document.getElementById('dishWeight').value;
+  if (w) formData.append('weight_g', w);
+  const cal = document.getElementById('dishCalories').value;
+  if (cal) formData.append('calories', cal);
+  formData.append('desc_uz', document.getElementById('dishDescUz').value.trim());
+  formData.append('desc_ru', document.getElementById('dishDescRu').value.trim());
+  formData.append('desc_en', document.getElementById('dishDescEn').value.trim());
+  formData.append('ingredients_uz', document.getElementById('dishIngredients').value.trim());
+  formData.append('is_available', document.getElementById('dishAvailable').checked ? 'true' : 'false');
+  formData.append('is_hit', document.getElementById('dishIsHit').checked ? 'true' : 'false');
+  formData.append('is_new', document.getElementById('dishIsNew').checked ? 'true' : 'false');
+  
+  const imgFile = document.getElementById('dishImage').files[0];
+  if (imgFile) formData.append('image', imgFile);
+
+  try {
+    const res = await fetch('/v1/admin/dishes/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': window.csrfToken },
+      body: formData
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // 3D GLB model
+      const glbFile = document.getElementById('dishGlb').files[0];
+      if (glbFile && data.id) {
+        statusEl.textContent = '3D model (.glb) yuklanmoqda va o\'lcham tekshirilmoqda...';
+        const glbData = new FormData();
+        glbData.append('dish_id', data.id);
+        glbData.append('glb', glbFile);
+        glbData.append('real_size_cm', 25);
+        await fetch('/v1/admin/ar/upload/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window.csrfToken },
+          body: glbData
+        });
+      }
+
+      // AI 4-photo 3D generatsiya
+      const aiFiles = document.getElementById('dishAiImages') ? document.getElementById('dishAiImages').files : null;
+      if (aiFiles && aiFiles.length > 0 && data.id) {
+        statusEl.textContent = '🤖 3D AI generatsiyasi navbatga qo\'yilmoqda...';
+        const aiData = new FormData();
+        aiData.append('dish_id', data.id);
+        aiData.append('real_size_cm', 25);
+        aiData.append('prefer_library', true);
+        [...aiFiles].slice(0, 6).forEach(f => aiData.append('images', f));
+        await fetch('/v1/admin/ar/generate/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window.csrfToken },
+          body: aiData
+        });
+      }
+
+      statusEl.textContent = '✅ Taom muvaffaqiyatli qo\'shildi!';
+      statusEl.style.color = '#22c55e';
+      setTimeout(() => location.reload(), 600);
+    } else {
+      statusEl.textContent = '❌ ' + formatErrorMessage(data);
+      statusEl.style.color = '#EF4444';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Tarmoq xatosi';
+    statusEl.style.color = '#EF4444';
+    btn.disabled = false;
+  }
+});
+
+// --- Taomni Tahrirlashni Saqlash ---
+document.getElementById('editDishForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('editDishId').value;
+  const statusEl = document.getElementById('editModalStatus');
+  const btn = document.getElementById('btnSubmitEditDish');
+
+  const priceVal = parseFloat(document.getElementById('editDishPrice').value || 0);
+  const oldPriceVal = parseFloat(document.getElementById('editDishOldPrice').value || 0);
+
+  if (priceVal < 0) {
+    statusEl.textContent = '❌ Narx 0 dan katta bo\'lishi kerak!';
+    statusEl.style.color = '#EF4444';
+    return;
+  }
+  if (oldPriceVal > 0 && oldPriceVal <= priceVal) {
+    statusEl.textContent = '❌ Eski aksiya narxi joriy narxdan katta bo\'lishi kerak!';
+    statusEl.style.color = '#EF4444';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Saqlanmoqda...';
+  statusEl.style.color = '#F59E0B';
+
+  const formData = new FormData();
+  formData.append('category', document.getElementById('editDishCat').value);
+  formData.append('name_uz', document.getElementById('editDishNameUz').value.trim());
+  formData.append('name_ru', document.getElementById('editDishNameRu').value.trim());
+  formData.append('name_en', document.getElementById('editDishNameEn').value.trim());
+  formData.append('price', priceVal);
+  formData.append('old_price', oldPriceVal > 0 ? oldPriceVal : '');
+  formData.append('cook_min', document.getElementById('editDishCook').value || 15);
+  const w = document.getElementById('editDishWeight').value;
+  formData.append('weight_g', w || '');
+  const cal = document.getElementById('editDishCalories').value;
+  formData.append('calories', cal || '');
+  formData.append('desc_uz', document.getElementById('editDishDescUz').value.trim());
+  formData.append('desc_ru', document.getElementById('editDishDescRu').value.trim());
+  formData.append('desc_en', document.getElementById('editDishDescEn').value.trim());
+  formData.append('ingredients_uz', document.getElementById('editDishIngredients').value.trim());
+  formData.append('is_available', document.getElementById('editDishAvailable').checked ? 'true' : 'false');
+  formData.append('is_hit', document.getElementById('editDishIsHit').checked ? 'true' : 'false');
+  formData.append('is_new', document.getElementById('editDishIsNew').checked ? 'true' : 'false');
+
+  const imgFile = document.getElementById('editDishImage').files[0];
+  if (imgFile) formData.append('image', imgFile);
+
+  try {
+    const res = await fetch(`/v1/admin/dishes/${id}/`, {
+      method: 'PATCH',
+      headers: { 'X-CSRFToken': window.csrfToken },
+      body: formData
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // 3D model yangilangan bo'lsa
+      const glbFile = document.getElementById('editDishGlb').files[0];
+      if (glbFile) {
+        statusEl.textContent = '3D model yuklanmoqda...';
+        const glbData = new FormData();
+        glbData.append('dish_id', id);
+        glbData.append('glb', glbFile);
+        glbData.append('real_size_cm', 25);
+        await fetch('/v1/admin/ar/upload/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window.csrfToken },
+          body: glbData
+        });
+      }
+
+      // AI fotosuratlar yangilangan bo'lsa
+      const aiFiles = document.getElementById('editDishAiImages').files;
+      if (aiFiles && aiFiles.length > 0) {
+        statusEl.textContent = '🤖 3D AI generatsiyasi yuborilmoqda...';
+        const aiData = new FormData();
+        aiData.append('dish_id', id);
+        aiData.append('real_size_cm', 25);
+        aiData.append('prefer_library', true);
+        [...aiFiles].slice(0, 6).forEach(f => aiData.append('images', f));
+        await fetch('/v1/admin/ar/generate/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window.csrfToken },
+          body: aiData
+        });
+      }
+
+      statusEl.textContent = '✅ Taom muvaffaqiyatli yangilandi!';
+      statusEl.style.color = '#22c55e';
+      setTimeout(() => location.reload(), 600);
+    } else {
+      statusEl.textContent = '❌ ' + formatErrorMessage(data);
+      statusEl.style.color = '#EF4444';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Tarmoq xatosi';
+    statusEl.style.color = '#EF4444';
+    btn.disabled = false;
+  }
+});
+
+// --- Yangi Kategoriya Saqlash ---
+document.getElementById('addCatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('catModalStatus');
+  const btn = document.getElementById('btnSubmitCat');
+  btn.disabled = true;
+  statusEl.textContent = 'Saqlanmoqda...';
+  statusEl.style.color = '#F59E0B';
+
+  const body = {
+    icon: document.getElementById('catIcon').value || '🍽',
+    name_uz: document.getElementById('catNameUz').value.trim(),
+    name_ru: document.getElementById('catNameRu').value.trim(),
+    name_en: document.getElementById('catNameEn').value.trim(),
+    order: parseInt(document.getElementById('catOrder').value || 0)
+  };
+
+  try {
+    const res = await fetch('/v1/admin/categories/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': window.csrfToken
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      statusEl.textContent = '✅ Kategoriya yaratildi!';
+      statusEl.style.color = '#22c55e';
+      setTimeout(() => location.reload(), 500);
+    } else {
+      statusEl.textContent = '❌ ' + formatErrorMessage(data);
+      statusEl.style.color = '#EF4444';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Tarmoq xatosi';
+    statusEl.style.color = '#EF4444';
+    btn.disabled = false;
+  }
+});
+
+// --- Kategoriyani Tahrirlashni Saqlash ---
+document.getElementById('editCatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('editCatId').value;
+  const statusEl = document.getElementById('editCatModalStatus');
+  const btn = document.getElementById('btnSubmitEditCat');
+  btn.disabled = true;
+  statusEl.textContent = 'Saqlanmoqda...';
+  statusEl.style.color = '#F59E0B';
+
+  const body = {
+    icon: document.getElementById('editCatIcon').value || '🍽',
+    name_uz: document.getElementById('editCatNameUz').value.trim(),
+    name_ru: document.getElementById('editCatNameRu').value.trim(),
+    name_en: document.getElementById('editCatNameEn').value.trim(),
+    order: parseInt(document.getElementById('editCatOrder').value || 0)
+  };
+
+  try {
+    const res = await fetch(`/v1/admin/categories/${id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': window.csrfToken
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      statusEl.textContent = '✅ Kategoriya yangilandi!';
+      statusEl.style.color = '#22c55e';
+      setTimeout(() => location.reload(), 500);
+    } else {
+      statusEl.textContent = '❌ ' + formatErrorMessage(data);
+      statusEl.style.color = '#EF4444';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Tarmoq xatosi';
+    statusEl.style.color = '#EF4444';
+    btn.disabled = false;
+  }
+});
+
+// --- Kategoriyani O'chirish ---
+async function deleteCategory(id, name, count) {
+  if (count > 0) {
+    alert(`Ushbu "${name}" kategoriyasida ${count} ta taom bor. O'chirishdan oldin taomlarni boshqa kategoriyaga ko'chiring yoki o'chiring.`);
+    return;
+  }
+  if (!confirm(`Haqiqatan ham "${name}" kategoriyasini o'chirmoqchimisiz?`)) return;
+
+  try {
+    const res = await fetch(`/v1/admin/categories/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRFToken': window.csrfToken
+      }
+    });
+    if (res.ok) {
+      location.reload();
+    } else {
+      const data = await res.json();
+      alert('Xato: ' + formatErrorMessage(data));
+    }
+  } catch (e) {
+    alert('Tarmoq xatosi');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if product %}Mahsulotni tahrirlash{% else %}Yangi mahsulot{% endif %} - Store Admin{% endblock %}
+{% block page_title %}{% if product %}Mahsulotni tahrirlash{% else %}Yangi mahsulot{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">{{ t.product_info_title }}</p>
+                <h2 class="font-display text-base font-semibold">{{ t.main_info }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label class="field">{{ t.product_shop }} *</label>
+                    <select name="shop" required>
+                        <option value="">{{ t.choose }}</option>
+                        {% for s in shops %}
+                        <option value="{{ s.pk }}" {% if product.shop_id == s.pk %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_category }}</label>
+                    <select name="category">
+                        <option value="">{{ t.not_selected }}</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.pk }}" {% if product.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_name }} *</label>
+                    <input type="text" name="name" value="{{ product.name|default:'' }}" required placeholder="Mahsulot nomi">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_desc }}</label>
+                    <textarea name="description" rows="3" placeholder="Mahsulot tavsifi">{{ product.description|default:'' }}</textarea>
+                </div>
+                <div>
+                    <label class="field">{{ t.product_price }} *</label>
+                    <input type="number" name="price" value="{{ product.price|default:'' }}" required placeholder="0">
+                </div>
+                <div>
+                    <label class="field">{{ t.product_old_price }}</label>
+                    <input type="number" name="old_price" value="{{ product.old_price|default:'' }}" placeholder="0">
+                </div>
+                <div>
+                    <label class="field">{{ t.product_unit }}</label>
+                    <input type="text" name="unit" value="{{ product.unit|default:'dona' }}">
+                </div>
+                <div>
+                    <label class="field">{{ t.product_stock }}</label>
+                    <input type="number" name="stock" value="{{ product.stock|default:0 }}">
+                </div>
+                <div>
+                    <label class="field">{{ t.product_brand }}</label>
+                    <input type="text" name="brand" value="{{ product.brand|default:'' }}" placeholder="Brend nomi">
+                </div>
+                <div>
+                    <label class="field">{{ t.product_barcode }}</label>
+                    <input type="text" name="barcode" value="{{ product.barcode|default:'' }}" placeholder="Barkod">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.product_tags }}</label>
+                    <input type="text" name="tags" value="{{ product.tags|default:'' }}" placeholder="yangi, organik, chegirma">
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">Rasmlar</p>
+                <h2 class="font-display text-base font-semibold">{{ t.product_gallery }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                    <label class="field">{{ t.product_main_image }}</label>
+                    <input type="file" name="image" accept="image/*">
+                    {% if product.image %}
+                    <p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ product.image.name }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="field">{{ t.product_second_image }}</label>
+                    <input type="file" name="image2" accept="image/*">
+                    {% if product.image2 %}
+                    <p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ product.image2.name }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="field">{{ t.product_third_image }}</label>
+                    <input type="file" name="image3" accept="image/*">
+                    {% if product.image3 %}
+                    <p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ product.image3.name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">{{ t.product_ar_section }}</p>
+                <h2 class="font-display text-base font-semibold">{{ t.product_ar_title }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.product_ar_external }}</label>
+                    <input type="text" name="ar_model" value="{{ product.ar_model|default:'' }}" placeholder="https://.../model.glb">
+                    <p class="text-xs text-gray-400 mt-1">{{ t.product_ar_demo }}</p>
+                </div>
+                <div>
+                    <label class="field">{{ t.product_ar_glb }}</label>
+                    <input type="file" name="glb_file" accept=".glb,model/gltf-binary">
+                    {% if product.asset_3d and product.asset_3d.glb_file %}<p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ product.asset_3d.glb_file.name }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="field">{{ t.product_ar_usdz }}</label>
+                    <input type="file" name="usdz_file" accept=".usdz">
+                    {% if product.asset_3d and product.asset_3d.usdz_file %}<p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ product.asset_3d.usdz_file.name }}</p>{% endif %}
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.product_ar_poster }}</label>
+                    <input type="file" name="poster_image" accept="image/*">
+                    {% if product.asset_3d and product.asset_3d.poster_image %}<p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ product.asset_3d.poster_image.name }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_available" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if product.is_available or not product %}checked{% endif %}> Mavjud
+                </label>
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_featured" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if product.is_featured %}checked{% endif %}> Tavsiya etilgan
+                </label>
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_organic" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if product.is_organic %}checked{% endif %}> Organik
+                </label>
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_halal" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if product.is_halal %}checked{% endif %}> Halol
+                </label>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3">
+            <a href="{% url 'admin_products' %}" class="btn btn-outline !py-2.5 !text-sm">{{ t.cancel }}</a>
+            <button type="submit" class="btn btn-primary !py-2.5 !text-sm">{% if product %}Saqlash{% else %}Yaratish{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

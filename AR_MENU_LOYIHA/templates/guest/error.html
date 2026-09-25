@@ -1,0 +1,161 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ lang|default:'uz' }}" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>ARMENU — Xatolik</title>
+  <link rel="stylesheet" href="{% static 'guest/css/theme.css' %}?v={{ static_version|default:'1' }}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-primary, #0f172a);
+      color: var(--text-primary, #f8fafc);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .err-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      padding: 32px 24px;
+      background: var(--surface-card, rgba(30, 41, 59, 0.7));
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    .err-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 200px;
+      opacity: 0.05;
+      filter: blur(3px);
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    }
+    .err-code {
+      font-size: 56px;
+      font-weight: 900;
+      color: var(--color-primary, #E85D2A);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .err-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary, #ffffff);
+    }
+    .err-desc {
+      font-size: 15px;
+      color: var(--text-secondary, #94a3b8);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .err-langs {
+      margin-bottom: 24px;
+      padding: 12px;
+      background: rgba(0,0,0,0.15);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary, #94a3b8);
+      text-align: left;
+    }
+    .err-langs div {
+      margin-bottom: 6px;
+    }
+    .err-langs div:last-child {
+      margin-bottom: 0;
+    }
+    .err-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 12px 24px;
+      background: var(--color-primary, #E85D2A);
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn-retry:active {
+      opacity: 0.85;
+    }
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 12px 24px;
+      background: transparent;
+      color: var(--text-secondary, #94a3b8);
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="err-watermark" aria-hidden="true">🍽</div>
+
+  <div class="err-wrap">
+    <div class="err-code">{{ error_code|default:"400" }}</div>
+    <div class="err-title" id="err-title">
+      {% if error_code == '404' %}Sahifa topilmadi
+      {% elif error_code == '503' %}Xizmat vaqtincha to'xtatilgan
+      {% elif error_code == '500' %}Server xatosi
+      {% else %}Xatolik yuz berdi{% endif %}
+    </div>
+    <div class="err-desc" id="err-desc" data-i18n="errors.{{ error_code|default:'server' }}">
+      {{ error_message|default:"Kutilmagan xatolik yuz berdi. Iltimos, qayta urinib ko'ring." }}
+    </div>
+
+    <div class="err-langs">
+      <div><strong>🇺🇿 UZ:</strong> {% if error_code == '404' %}Sahifa topilmadi. Qidirilayotgan sahifa mavjud emas.{% elif error_code == '503' %}Texnik profilaktika olib borilmoqda. Tez orada qaytamiz.{% else %}Serverda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.{% endif %}</div>
+      <div><strong>🇷🇺 RU:</strong> {% if error_code == '404' %}Страница не найдена. Запрашиваемая страница не существует.{% elif error_code == '503' %}Проводятся технические работы. Скоро вернемся.{% else %}Произошла ошибка на сервере. Пожалуйста, повторите попытку.{% endif %}</div>
+      <div><strong>🇬🇧 EN:</strong> {% if error_code == '404' %}Page not found. The requested page does not exist.{% elif error_code == '503' %}Scheduled maintenance in progress. We'll be back shortly.{% else %}An error occurred on the server. Please try again.{% endif %}</div>
+    </div>
+
+    <div class="err-actions">
+      <button class="btn-retry" onclick="location.reload()">
+        🔄 <span data-i18n="errors.retry">Qayta yuklash / Повторить / Reload</span>
+      </button>
+      <a class="btn-home" href="/">
+        🏠 Bosh sahifa / На главную / Home
+      </a>
+    </div>
+  </div>
+
+  <script>window.ARMENU_LANG = "{{ lang|default:'uz' }}";</script>
+  <script src="{% static 'guest/js/i18n.js' %}?v={{ static_version|default:'1' }}"></script>
+  <script>
+    loadI18n(window.ARMENU_LANG).then(applyI18n).catch(function(){});
+  </script>
+</body>
+</html>

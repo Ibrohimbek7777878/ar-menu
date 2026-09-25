@@ -1,0 +1,107 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if shop %}Do'konni tahrirlash{% else %}Yangi do'kon{% endif %} - Store Admin{% endblock %}
+{% block page_title %}{% if shop %}Do'konni tahrirlash{% else %}Yangi do'kon{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">{{ t.shop_label }}</p>
+                <h2 class="font-display text-base font-semibold">{{ t.main_info }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_name }} *</label>
+                    <input type="text" name="name" value="{{ shop.name|default:'' }}" required placeholder="Do'kon nomi">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_desc }}</label>
+                    <textarea name="description" rows="3" placeholder="Do'kon haqida">{{ shop.description|default:'' }}</textarea>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_address }} *</label>
+                    <textarea name="address" rows="2" required placeholder="Do'kon manzili">{{ shop.address|default:'' }}</textarea>
+                </div>
+                <div>
+                    <label class="field">{{ t.phone }} *</label>
+                    <input type="text" name="phone" value="{{ shop.phone|default:'' }}" required placeholder="+998 XX XXX XX XX">
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_phone2 }}</label>
+                    <input type="text" name="phone2" value="{{ shop.phone2|default:'' }}" placeholder="+998 XX XXX XX XX">
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_category }}</label>
+                    <select name="category">
+                        <option value="">{{ t.not_selected }}</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.pk }}" {% if shop.category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_working_hours }}</label>
+                    <input type="text" name="working_hours" value="{{ shop.working_hours|default:'08:00-22:00' }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-900">
+                <p class="eyebrow mb-1">{{ t.delivery_label }}</p>
+                <h2 class="font-display text-base font-semibold">{{ t.shop_delivery_geo }}</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label class="field">{{ t.shop_lat }}</label>
+                    <input type="number" step="any" name="latitude" value="{{ shop.latitude|default:'' }}" placeholder="40.12">
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_lng }}</label>
+                    <input type="number" step="any" name="longitude" value="{{ shop.longitude|default:'' }}" placeholder="68.78">
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_min_order }}</label>
+                    <input type="number" name="min_order" value="{{ shop.min_order|default:20000 }}">
+                </div>
+                <div>
+                    <label class="field">{{ t.shop_delivery_fee }}</label>
+                    <input type="number" name="delivery_fee" value="{{ shop.delivery_fee|default:6000 }}">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_free_delivery }}</label>
+                    <input type="number" name="free_delivery_from" value="{{ shop.free_delivery_from|default:50000 }}">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="field">{{ t.shop_image }}</label>
+                    <input type="file" name="image" accept="image/*">
+                    {% if shop.image %}
+                    <p class="text-xs text-gray-400 mt-1 truncate">Joriy: {{ shop.image.name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_open" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if shop.is_open %}checked{% endif %}> Ochiq
+                </label>
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_featured" class="w-4.5 h-4.5 rounded text-brand-600 focus:ring-brand-500" {% if shop.is_featured %}checked{% endif %}> Tavsiya etilgan
+                </label>
+                <label class="flex items-center gap-2.5 text-sm font-medium cursor-pointer">
+                    <input type="checkbox" name="is_fast_delivery" class="w-4.5 h-4.5 rounded text-amber-600 focus:ring-amber-500" {% if shop.is_fast_delivery %}checked{% endif %}> ⚡ Tezkor yetkazib berish (30 daqiqa)
+                </label>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3">
+            <a href="{% url 'admin_shops' %}" class="btn btn-outline !py-2.5 !text-sm">{{ t.cancel }}</a>
+            <button type="submit" class="btn btn-primary !py-2.5 !text-sm">{% if shop %}Saqlash{% else %}Yaratish{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

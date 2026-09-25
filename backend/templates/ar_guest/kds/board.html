@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KDS — {{ restaurant.name }}</title>
+<link rel="stylesheet" href="{% static 'kds/css/board.css' %}?v=1">
+</head>
+<body>
+<div id="kds-app">
+  <header class="kds-header">
+    <h1>{{ restaurant.name }}</h1>
+    <div class="kds-clock" id="clock"></div>
+    <div class="kds-stats">
+      <div class="kds-status" id="kds-status">
+        <span class="kds-status-dot" id="ws-dot"></span>
+        <span id="ws-status-text">Online</span>
+      </div>
+      <span class="stat" id="stat-new">0 yangi</span>
+      <span class="stat" id="stat-cooking">0 tayyorlanmoqda</span>
+      <span class="stat" id="stat-ready">0 tayyor</span>
+    </div>
+  </header>
+
+  <main class="kds-grid" id="board">
+    <!-- Kartochkalar JS tomonidan qo'shiladi -->
+    <div class="kds-empty" id="empty-msg">Buyurtmalar yo'q</div>
+  </main>
+</div>
+
+<script>
+window.KDS = {
+  token: '{{ kds_token }}',
+  restaurantId: {{ restaurant.id }},
+  wsScheme: '{{ ws_scheme }}',
+  host: location.hostname,
+};
+</script>
+<script src="{% static 'kds/js/board.js' %}?v=1"></script>
+</body>
+</html>

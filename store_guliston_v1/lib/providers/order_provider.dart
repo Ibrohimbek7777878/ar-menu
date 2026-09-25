@@ -62,7 +62,7 @@ class OrderProvider with ChangeNotifier {
 
   Future<bool> updateOrderStatus(String id, OrderStatus status) async {
     try {
-      final updatedOrder = await _orderService.updateOrderStatus(id, status);
+      final updatedOrder = await _orderService.updateOrderStatus(id, status.value);
       if (updatedOrder != null) {
         final index = _orders.indexWhere((order) => order.id == id);
         if (index != -1) {
@@ -83,7 +83,7 @@ class OrderProvider with ChangeNotifier {
   void filterByStatus(OrderStatus? status) {
     _selectedStatus = status;
     _applyFilters();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   void _applyFilters() {
@@ -125,29 +125,43 @@ class OrderProvider with ChangeNotifier {
   void clearFilters() {
     _selectedStatus = null;
     _applyFilters();
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
   void clearError() {
     _error = null;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 
-  // Demo order creation
-  Future<Order?> createDemoOrder({
+  // Create order from checkout form
+  Future<Order?> createOrderFromForm({
     required String customerName,
     required List<String> customerPhones,
     required String deliveryAddress,
     required List<OrderItem> items,
     required double totalAmount,
+    String? shopId,
+    String? shopName,
+    String? notes,
+    bool isPickup = false,
+    double? deliveryLat,
+    double? deliveryLng,
+    String? couponCode,
   }) async {
     try {
-      final order = await _orderService.createDemoOrder(
+      final order = await _orderService.createOrderFromForm(
         customerName: customerName,
         customerPhones: customerPhones,
         deliveryAddress: deliveryAddress,
         items: items,
         totalAmount: totalAmount,
+        shopId: shopId,
+        shopName: shopName,
+        notes: notes,
+        isPickup: isPickup,
+        deliveryLat: deliveryLat,
+        deliveryLng: deliveryLng,
+        couponCode: couponCode,
       );
 
       if (order != null) {

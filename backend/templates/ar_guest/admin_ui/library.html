@@ -1,0 +1,52 @@
+{% extends "admin_ui/base.html" %}{% load i18n static %}
+{% block title %}{% trans "3D kutubxona" %}{% endblock %}
+
+{% block content %}
+<div class="p-lib">
+  <header class="p-lib__head">
+    <h1>📚 {% trans "Global 3D kutubxona" %}</h1>
+    <p class="p-lib__sub">
+      {% trans "Loyihaning eng qimmatli aktivi — barcha restoranlar foydalanadi" %}
+    </p>
+  </header>
+
+  <div class="p-lib__kpi">
+    <div class="kpi"><span>{% trans "Modellar" %}</span><b id="kTotal">0</b></div>
+    <div class="kpi"><span>{% trans "Foydalanish" %}</span><b id="kUsage">0</b></div>
+    <div class="kpi kpi--green">
+      <span>⚡ {% trans "Tejalgan" %}</span><b id="kSaved">$0</b>
+    </div>
+    <div class="kpi"><span>{% trans "O'rt. sifat" %}</span><b id="kQ">0</b></div>
+    <div class="kpi"><span>{% trans "O'rt. GLB" %}</span><b id="kMB">0 MB</b></div>
+  </div>
+
+  <div class="p-lib__bar">
+    <input type="search" id="lq" placeholder="{% trans 'Qidirish (nom/alias)…' %}">
+    <select id="lcat">
+      <option value="">{% trans "Barcha kategoriya" %}</option>
+      <option value="national">{% trans "Milliy" %}</option>
+      <option value="salad">{% trans "Salatlar" %}</option>
+      <option value="soup">{% trans "Sho'rvalar" %}</option>
+      <option value="grill">{% trans "Grill" %}</option>
+      <option value="bakery">{% trans "Novvoyxona" %}</option>
+      <option value="dessert">{% trans "Shirinlik" %}</option>
+      <option value="drink">{% trans "Ichimlik" %}</option>
+    </select>
+    <button class="btn btn--pri" id="btnNew">+ {% trans "Yangi model" %}</button>
+  </div>
+
+  <table class="p-lib__tbl">
+    <thead><tr>
+      <th></th><th>{% trans "Nomi" %}</th><th>{% trans "Kalit" %}</th>
+      <th>{% trans "Aliaslar" %}</th><th>📏</th><th>{% trans "Hajm" %}</th>
+      <th>⭐</th><th>🏪</th><th></th>
+    </tr></thead>
+    <tbody id="libBody"></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.LIB = {token: localStorage.getItem('super_token') || ''};</script>
+<script src="{% static 'admin_ui/js/library.js' %}?v=1"></script>
+{% endblock %}

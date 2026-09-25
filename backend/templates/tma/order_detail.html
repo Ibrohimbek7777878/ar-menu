@@ -1,0 +1,73 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}Buyurtma #{{ order.order_number }} — Telegram Mini App{% endblock %}
+
+{% block content %}
+    <div style="margin-bottom: 14px;">
+        <a href="{% url 'tma_orders' %}" style="text-decoration:none;color:var(--hint-color);font-size:13px;font-weight:600;">&larr; Buyurtmalar ro'yxatiga</a>
+    </div>
+
+    <div class="tma-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h2 style="font-size:18px;font-weight:800;">#{{ order.order_number }}</h2>
+            <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;
+                {% if order.status == 'delivered' %}background:#dcfce7;color:#16a34a;
+                {% elif order.status == 'cancelled' %}background:#fee2e2;color:#ef4444;
+                {% else %}background:#fef3c7;color:#d97706;{% endif %}">
+                {{ order.get_status_display }}
+            </span>
+        </div>
+        <div style="font-size:12px;color:var(--hint-color);margin-bottom:12px;">
+            Sana: {{ order.created_at|date:"d.m.Y H:i" }} &bull; Do'kon: <b>{{ order.shop.name }}</b>
+        </div>
+
+        <div style="border-top:1px solid var(--border-color);padding-top:10px;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px;">Yetkazib berish manzili:</div>
+            <div style="font-size:13px;color:var(--text-color);">{{ order.delivery_address }}</div>
+            <div style="font-size:12px;color:var(--hint-color);margin-top:2px;">Mijoz: {{ order.customer_name }} ({{ order.customer_phone_1 }})</div>
+        </div>
+
+        {% if order.notes %}
+            <div style="border-top:1px solid var(--border-color);padding-top:8px;margin-bottom:10px;font-size:12px;color:var(--hint-color);">
+                <b>Izoh:</b> {{ order.notes }}
+            </div>
+        {% endif %}
+    </div>
+
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Buyurtma tarkibi</h3>
+    <div class="tma-card" style="padding:10px;">
+        {% for it in order.items.all %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--border-color);{% endif %}">
+                <div>
+                    <div style="font-size:13px;font-weight:700;">{{ it.product_name }}</div>
+                    <div style="font-size:11px;color:var(--hint-color);">{{ it.price|floatformat:0 }} so'm &times; {{ it.quantity }} {{ it.unit }}</div>
+                </div>
+                <div style="font-size:13px;font-weight:800;color:var(--text-color);">
+                    {{ it.total|floatformat:0 }} so'm
+                </div>
+            </div>
+        {% endfor %}
+
+        <div style="border-top:1px dashed var(--border-color);padding-top:10px;margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--hint-color);margin-bottom:4px;">
+                <span>Yetkazib berish:</span>
+                <span>{{ order.delivery_fee|floatformat:0 }} so'm</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:var(--primary);margin-top:6px;">
+                <span>Jami:</span>
+                <span>{{ order.final_amount|floatformat:0 }} so'm</span>
+            </div>
+        </div>
+    </div>
+
+    {% if order.payment_status == 'unpaid' and order.status != 'cancelled' %}
+        <div class="tma-card" style="text-align:center;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:#d97706;">
+                ⏳ Buyurtma to'lanmagan
+            </div>
+            <a href="{% url 'customer_order_pay' order.id %}" class="tma-btn-primary">
+                💳 Hozir to'lash (Click / Payme)
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}Savat — Telegram Mini App{% endblock %}
+
+{% block extra_head %}
+<style>
+    .tma-cart-item {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        margin-bottom: 10px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    .tma-cart-img {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-sm);
+        object-fit: cover;
+        background: #f1f5f9;
+        flex-shrink: 0;
+    }
+    .tma-cart-info {
+        flex-grow: 1;
+    }
+    .tma-cart-title {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+    .tma-cart-price {
+        color: var(--primary);
+        font-weight: 700;
+        font-size: 13px;
+    }
+    .tma-qty-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 4px 8px;
+        border-radius: 999px;
+    }
+    .tma-qty-btn {
+        background: none;
+        border: none;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-color);
+    }
+    .tma-summary-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-top: 16px;
+    }
+    .tma-summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: var(--hint-color);
+    }
+    .tma-summary-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text-color);
+        border-top: 1px dashed var(--border-color);
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 14px;">🛒 Savatcha</h2>
+
+    {% if items %}
+        {% if shop_name %}
+            <div style="font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 10px;">
+                🏪 Do'kon: {{ shop_name }}
+            </div>
+        {% endif %}
+
+        {% for item in items %}
+            <div class="tma-cart-item" id="item-row-{{ item.product_id }}">
+                {% if item.image %}
+                    <img src="{{ item.image }}" alt="{{ item.name }}" class="tma-cart-img">
+                {% else %}
+                    <div class="tma-cart-img" style="display:flex;align-items:center;justify-content:center;font-size:24px;">🛍</div>
+                {% endif %}
+                <div class="tma-cart-info">
+                    <div class="tma-cart-title">{{ item.name }}</div>
+                    <div class="tma-cart-price">{{ item.price|floatformat:0 }} so'm</div>
+                </div>
+                <div class="tma-qty-controls">
+                    <button class="tma-qty-btn" onclick="tmaCartChange('decrease', '{{ item.product_id }}')">-</button>
+                    <span style="font-size: 13px; font-weight: 700;" id="qty-{{ item.product_id }}">{{ item.quantity }}</span>
+                    <button class="tma-qty-btn" onclick="tmaCartChange('add', '{{ item.product_id }}')">+</button>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="tma-summary-card">
+            <div class="tma-summary-row">
+                <span>Mahsulotlar soni:</span>
+                <span>{{ items|length }} ta</span>
+            </div>
+            <div class="tma-summary-total">
+                <span>Jami:</span>
+                <span id="tma-cart-total">{{ total_amount|floatformat:0 }} so'm</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <a href="{% url 'tma_checkout' %}" class="tma-btn-primary">
+                Buyurtma berish &rarr;
+            </a>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 60px 20px;">
+            <div style="font-size: 48px; margin-bottom: 14px;">🛒</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Savatingiz bo'sh</h3>
+            <p style="font-size: 13px; color: var(--hint-color); margin-bottom: 20px;">Katalogdan o'zingizga yoqqan mahsulotlarni tanlang.</p>
+            <a href="{% url 'tma_catalog' %}" class="tma-btn-primary" style="display:inline-block; width:auto; padding:12px 24px;">Katalogga o'tish</a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function tmaCartChange(action, productId) {
+        fetch('/tma/api/cart/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: action, product_id: productId})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

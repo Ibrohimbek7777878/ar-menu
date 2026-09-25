@@ -1,0 +1,55 @@
+{% extends "admin_panel/base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Restoran Sozlamalari" %}{% endblock %}
+{% block heading %}⚙️ {% trans "Restoran Sozlamalari" %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:700px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px;">
+  {% if saved %}
+    <div style="padding:12px 16px; border-radius:8px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#22c55e; font-weight:600; margin-bottom:20px;">
+      ✅ {% trans "Sozlamalar muvaffaqiyatli saqlandi!" %}
+    </div>
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    <div style="margin-bottom:18px;">
+      <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Restoran Nomi:" %}</label>
+      <input type="text" name="name" value="{{ restaurant.name }}" class="input" style="width:100%;" required>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Telefon Raqami:" %}</label>
+      <input type="text" name="phone" value="{{ restaurant.phone }}" class="input" style="width:100%;" required>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Manzil:" %}</label>
+      <textarea name="address" class="input" style="width:100%; height:80px;">{{ restaurant.address }}</textarea>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Xizmat Haqi Foizi (%):" %}</label>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="number" name="service_fee_pct" step="0.5" min="0" max="100" value="{{ restaurant.service_fee_pct }}" class="input" style="width:120px;">
+        <span class="muted">% (buyurtma chekiga avtomatik qo'shiladi)</span>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+      <div>
+        <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Asosiy Rang:" %}</label>
+        <input type="color" name="color_primary" value="{{ restaurant.color_primary }}" style="width:60px; height:40px; border:none; border-radius:6px; cursor:pointer;">
+      </div>
+      <div>
+        <label style="font-weight:600; display:block; margin-bottom:6px;">{% trans "Urg'u Rangi:" %}</label>
+        <input type="color" name="color_accent" value="{{ restaurant.color_accent }}" style="width:60px; height:40px; border:none; border-radius:6px; cursor:pointer;">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="padding:12px 24px; font-weight:700;">
+      💾 {% trans "Sozlamalarni Saqlash" %}
+    </button>
+  </form>
+</div>
+{% endblock %}

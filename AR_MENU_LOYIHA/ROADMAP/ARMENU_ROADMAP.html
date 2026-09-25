@@ -1,0 +1,3020 @@
+<!DOCTYPE html><html lang='uz'><head><meta charset='utf-8'><title>ARMENU ROADMAP</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+* { box-sizing: border-box; }
+body{font-family:'DejaVu Sans','Noto Sans',Arial,sans-serif;font-size:9.2pt;line-height:1.55;color:#1a1a20;margin:0}
+.cover{page-break-after:always;text-align:center;margin:-16mm -14mm 0 -14mm;padding:52mm 18mm 0;height:297mm;background-color:#0F0F13;color:#fff}
+.cover .logo{font-size:50pt;margin-bottom:5mm;color:#E85D2A}
+.cover h1{font-size:36pt;margin:0 0 2mm;letter-spacing:-1.5px;font-weight:800;color:#fff;border:0}
+.cover .rule{width:62mm;height:2.5pt;background-color:#E85D2A;margin:0 auto 5mm}
+.cover .sub{font-size:12.5pt;color:#E85D2A;font-weight:700;margin-bottom:12mm}
+.cover .desc{font-size:10pt;color:#d4d4de;max-width:142mm;margin:0 auto 13mm;line-height:1.85}
+.cover .box{display:inline-block;text-align:left;background-color:#1C1C28;border:1.5px solid #E85D2A;border-radius:5px;padding:7mm 12mm;font-size:9.5pt;color:#e8e8f0;line-height:2}
+.cover .box b{color:#E85D2A}
+.cover .warn{margin:12mm auto 0;max-width:145mm;background-color:#12261A;border:1.5px solid #16A34A;border-radius:5px;padding:5mm 6mm;font-size:8.8pt;color:#c8f0d4;line-height:1.7}
+.cover .warn b{color:#4ADE80}
+.part{page-break-before:always;background:#0F0F13;color:#fff;margin:-16mm -14mm 8mm -14mm;padding:16mm 14mm 10mm}
+.part .n{font-size:9pt;color:#E85D2A;letter-spacing:3px;font-weight:700}
+.part h1{font-size:20pt;margin:2mm 0 0;color:#fff;border:0;font-weight:800}
+h1{font-size:15pt;color:#0F0F13;border-bottom:2.5px solid #E85D2A;padding-bottom:2mm;margin:8mm 0 4mm}
+h2{font-size:12.5pt;color:#0F0F13;border-bottom:1px solid #ddd;padding-bottom:1.5mm;margin:6mm 0 3mm;page-break-after:avoid}
+h3{font-size:10.5pt;color:#2A2A38;margin:5mm 0 2mm;page-break-after:avoid}
+p{margin:0 0 2.5mm}
+ul,ol{margin:0 0 3mm;padding-left:6mm}
+li{margin-bottom:1mm}
+table{border-collapse:collapse;width:100%;margin:3mm 0 5mm;font-size:7.6pt;page-break-inside:avoid}
+th{background:#1C1C28;color:#fff;padding:1.8mm 2mm;text-align:left;font-weight:700;font-size:7.4pt;border:1px solid #2A2A38}
+td{padding:1.5mm 2mm;border:1px solid #dcdce4;vertical-align:top}
+tr:nth-child(even) td{background:#f7f7fa}
+pre{background:#0F0F13;color:#e6e6f0;padding:3mm 3.5mm;border-radius:4px;font-family:'DejaVu Sans Mono',monospace;font-size:6.7pt;line-height:1.45;white-space:pre;page-break-inside:avoid;margin:2.5mm 0 4mm;border-left:3px solid #E85D2A}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+code{background:#f0f0f5;color:#c0392b;padding:.4mm 1.2mm;border-radius:2px;font-family:'DejaVu Sans Mono',monospace;font-size:7.6pt}
+blockquote{border-left:3.5px solid #E85D2A;background:#FFF6F2;margin:3mm 0;padding:2.5mm 4mm;color:#4a2a1a;font-size:8.8pt;page-break-inside:avoid}
+blockquote p{margin:0 0 1.5mm}
+blockquote p:last-child{margin:0}
+</style></head><body>
+<div class="cover">
+  <div class="logo">&#128640;</div>
+  <h1>ARMENU ROADMAP</h1>
+  <div class="rule"></div>
+  <div class="sub">0 DAN 100 GACHA — BAJARILADIGAN YO&#39;L XARITASI</div>
+  <div class="desc">
+    AI yoki dasturchi shu hujjatni o&#39;qib, loyihani boshidan oxirigacha<br>
+    to&#39;xtamasdan qura oladi. Har vazifada: fayl yo&#39;li, to&#39;liq kod, tekshiruv.
+  </div>
+  <div class="box">
+    <b>Fazalar:</b> 13 ta<br>
+    <b>Vazifalar:</b> 234 ta (V-001 &#8230; V-234)<br>
+    <b>Hajm:</b> 39 650 qator<br>
+    <b>v1:</b> 15 hafta &#183; <b>v1.5:</b> 19,5 hafta<br>
+    <b>Sana:</b> 2026-09-04
+  </div>
+  <div class="warn">
+    <b>&#10004; ROADMAP TO&#39;LIQ.</b> Ishni boshlash uchun:
+    <code>cat ROADMAP/START.md</code><br>
+    Bu PDF &mdash; boshlash qismi. Fazalar (37 617 qator) alohida .md fayllarda.
+  </div>
+</div>
+<div class='part'><div class='n'>FAZALAR</div><h1>13 faza · 234 vazifa</h1></div><table><tr><th>#</th><th>Faza</th><th>Vazifalar</th><th>Soni</th><th>Qator</th><th>Muddat</th></tr><tr><td>00</td><td>Tayyorgarlik</td><td>V-001…V-012</td><td>12</td><td>852</td><td>3 kun</td></tr><tr><td>01</td><td>Tenant + Auth</td><td>V-013…V-030</td><td>18</td><td>2303</td><td>1 hafta</td></tr><tr><td>02</td><td>Menyu</td><td>V-031…V-054</td><td>24</td><td>2714</td><td>2 hafta</td></tr><tr><td>03</td><td>Stol + QR</td><td>V-055…V-066</td><td>12</td><td>1180</td><td>1 hafta</td></tr><tr><td>04</td><td>Mijoz PWA</td><td>V-067…V-092</td><td>26</td><td>3293</td><td>2 hafta</td></tr><tr><td>05</td><td>Buyurtma + realtime</td><td>V-093…V-114</td><td>22</td><td>2996</td><td>2 hafta</td></tr><tr><td>06</td><td>⚡ AR/3D</td><td>V-115…V-142</td><td>28</td><td>4977</td><td>2,5 hafta</td></tr><tr><td>07</td><td>Zal plani</td><td>V-143…V-150</td><td>8</td><td>1589</td><td>1 hafta</td></tr><tr><td>08</td><td>Admin panel</td><td>V-151…V-170</td><td>20</td><td>4598</td><td>1,5 hafta</td></tr><tr><td>09</td><td>AI + MCP → v1 ✅</td><td>V-171…V-186</td><td>16</td><td>3420</td><td>1,5 hafta</td></tr><tr><td>10</td><td>To'lov + fiskal</td><td>V-187…V-204</td><td>18</td><td>3035</td><td>2 hafta</td></tr><tr><td>11</td><td>Sodiqlik + analitika</td><td>V-205…V-218</td><td>14</td><td>3160</td><td>1,5 hafta</td></tr><tr><td>12</td><td>Deploy → v1.5 ✅</td><td>V-219…V-234</td><td>16</td><td>3500</td><td>1 hafta</td></tr></table><blockquote><p>Har faza alohida <code>.md</code> faylda: <code>ROADMAP/01_FAZALAR/FAZA_XX_....md</code></p><p>Har vazifada: <b>Fayl:</b> yo'li &middot; to'liq ishlaydigan kod &middot; ✅ Tekshirish buyrug'i. Placeholder yo'q.</p></blockquote><div class='part'><div class='n'>01</div><h1>Loyiha xaritasi</h1></div><blockquote>
+<p>Restoran stolidagi QR ni skanerlagan mijoz taomni telefon kamerasida<br />
+<strong>real o'lchamda 3D ko'radi</strong>, buyurtma beradi; ofitsiant stol raqamini<br />
+darhol ko'radi; admin hammasini real vaqtda nazorat qiladi.</p>
+</blockquote>
+<hr />
+<h2>🚀 ISHNI BOSHLASH</h2>
+<h3>AI / dasturchi uchun — 1 ta buyruq</h3>
+<pre><code class="language-bash">cat ROADMAP/START.md
+</code></pre>
+<p><strong>Boshqa hech narsa o'qish shart emas.</strong> <code>START.md</code> sizni qadam-baqadam olib boradi:<br />
+holatni aniqlash → kontekst → muhit → faza → ishlash → tekshirish.</p>
+<h3>Odam uchun — loyihani tushunish</h3>
+<pre><code class="language-bash">cat ROADMAP/00_BOSHLASH/01_LOYIHA_5_DAQIQADA.md
+</code></pre>
+<p>Yoki to'liq hujjat: <strong><a href="TZ_MASTER/ARMENU_TZ_MASTER.pdf">ARMENU_TZ_MASTER.pdf</a></strong> (89 sahifa)</p>
+<hr />
+<h2>📁 PAPKA STRUKTURASI</h2>
+<pre><code>AR_MENU_LOYIHA/
+│
+├── README.md                    ← siz shu yerdasiz
+│
+├── ROADMAP/                     ⚡ BAJARILADIGAN — AI shu yerdan ishlaydi
+│   ├── START.md                 ⭐ KIRISH NUQTASI — birinchi shu o'qiladi
+│   │
+│   ├── 00_BOSHLASH/
+│   │   ├── 01_LOYIHA_5_DAQIQADA.md      loyiha nima (bir marta o'qiladi)
+│   │   ├── 02_QOIDALAR.md               qanday kod yoziladi
+│   │   └── 03_MUHIT_TAYYORLASH.md       nusxa-ko'chir buyruqlar
+│   │
+│   ├── 01_FAZALAR/              ⚡ 13 faza · 234 vazifa · 37 617 qator
+│   │   ├── FAZA_00_TAYYORGARLIK.md       V-001…V-012  12 vazifa   852 q.
+│   │   ├── FAZA_01_TENANT_AUTH.md        V-013…V-030  18 vazifa  2303 q.
+│   │   ├── FAZA_02_MENYU.md              V-031…V-054  24 vazifa  2714 q.
+│   │   ├── FAZA_03_STOL_QR.md            V-055…V-066  12 vazifa  1180 q.
+│   │   ├── FAZA_04_MIJOZ_PWA.md          V-067…V-092  26 vazifa  3293 q.
+│   │   ├── FAZA_05_BUYURTMA_REALTIME.md  V-093…V-114  22 vazifa  2996 q.
+│   │   ├── FAZA_06_AR_3D.md         ⚡   V-115…V-142  28 vazifa  4977 q.
+│   │   ├── FAZA_07_ZAL_PLAN.md           V-143…V-150   8 vazifa  1589 q.
+│   │   ├── FAZA_08_ADMIN.md              V-151…V-170  20 vazifa  4598 q.
+│   │   ├── FAZA_09_AI_MCP.md             V-171…V-186  16 vazifa  3420 q. → v1 ✅
+│   │   ├── FAZA_10_TOLOV_FISKAL.md       V-187…V-204  18 vazifa  3035 q.
+│   │   ├── FAZA_11_SODIQLIK.md           V-205…V-218  14 vazifa  3160 q.
+│   │   └── FAZA_12_DEPLOY.md             V-219…V-234  16 vazifa  3500 q. → v1.5 ✅
+│   │
+│   ├── 02_MALUMOTNOMA/
+│   │   ├── INDEKS.md            🔍 qaysi javob qaysi faylda (token tejash)
+│   │   ├── TEZ_YORDAM.md        ⚡ takrorlanadigan kod naqshlari
+│   │   └── TESTLAR.md           🧪 test strategiyasi, majburiy testlar
+│   │
+│   └── 03_HOLAT/
+│       ├── PROGRESS.md          📊 qayerda to'xtaganini ko'rsatadi
+│       ├── update_progress.py   🔧 avtomatik yangilash skripti
+│       └── tekshir.sh           ✅ roadmap butunligini tekshiradi
+│
+├── TZ_MASTER/                   📖 MA'LUMOTNOMA — kerak bo'lganda o'qiladi
+│   ├── ARMENU_TZ_MASTER.pdf     89 sahifa, to'liq hujjat
+│   ├── 01_KIRISH_VA_BIZNES.md   biznes, bozor, investor
+│   ├── 02_SAHIFALAR_VA_TUGMALAR.md  har sahifa, har tugma
+│   ├── 03_ARXITEKTURA.md        masshtablash, chidamlilik
+│   ├── 04_DATA_MODEL_VA_API.md  DB, API, WebSocket
+│   ├── 05_KOD_YOZISH_TARTIBI.md fayl strukturasi
+│   ├── 06_TARJIMA_VA_UI.md      3 til, dizayn
+│   ├── 07_AI_MCP.md             8 AI provayder
+│   └── 08_DEPLOY_REJA_RISK.md   deploy, risk, savollar
+│
+├── BOZOR_TAHLIL.md              bozor: fiskalizatsiya, delivery, turizm
+├── _ARXIV/                      eski versiyalar
+└── ai agent.mp4                 foydalanuvchi bergan video
+</code></pre>
+<hr />
+<h2>📊 HOZIRGI HOLAT</h2>
+<pre><code class="language-bash"># Qayerda to'xtaganini ko'rish
+python3 ROADMAP/03_HOLAT/update_progress.py --status
+
+# Roadmap butunligini tekshirish
+bash ROADMAP/03_HOLAT/tekshir.sh
+</code></pre>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Roadmap</strong></td>
+<td>✅ TO'LIQ — 13 faza, 234 vazifa, 39 650 qator</td>
+</tr>
+<tr>
+<td><strong>Kod</strong></td>
+<td>🔴 Boshlanmagan — ruxsat kutilmoqda</td>
+</tr>
+<tr>
+<td><strong>Keyingi vazifa</strong></td>
+<td>V-001 (muhit tayyorlash)</td>
+</tr>
+<tr>
+<td><strong>v1 muddat</strong></td>
+<td>15 hafta (186 vazifa)</td>
+</tr>
+<tr>
+<td><strong>v1.5 muddat</strong></td>
+<td>19,5 hafta (234 vazifa)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>⚡ ASOSIY FAKTLAR</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stack</strong></td>
+<td>Django 5 + DRF + Channels · PostgreSQL + pgvector · Redis</td>
+</tr>
+<tr>
+<td><strong>Frontend</strong></td>
+<td>PWA (ilova YO'Q) · Telegram Mini App</td>
+</tr>
+<tr>
+<td><strong>AR</strong></td>
+<td><code>&lt;model-viewer&gt;</code> → iOS: USDZ · Android: GLB</td>
+</tr>
+<tr>
+<td><strong>3 rol</strong></td>
+<td>Mijoz (QR) · Ofitsiant (PIN) · Admin (login)</td>
+</tr>
+<tr>
+<td><strong>Tillar</strong></td>
+<td>O'zbek · Rus · Ingliz (100% qamrov)</td>
+</tr>
+<tr>
+<td><strong>AI</strong></td>
+<td>8 provayder MCP orqali (fallback zanjiri)</td>
+</tr>
+<tr>
+<td><strong>To'lov</strong></td>
+<td>Payme · Click · Uzum (<code>paytechuz</code>)</td>
+</tr>
+<tr>
+<td><strong>Fiskal</strong></td>
+<td>UZKASSA · e-POS (OFD) + IKPU</td>
+</tr>
+<tr>
+<td><strong>Port</strong></td>
+<td>web <code>8060</code> · ws <code>8061</code></td>
+</tr>
+<tr>
+<td><strong>DB</strong></td>
+<td><code>armenu_db</code> · Redis <code>db=5/6</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>⛔ IZOLYATSIYA (o'zgarmas qoida)</h2>
+<p>Bu <strong>alohida loyiha</strong>. <code>mebelcity_platform</code> ga hech qanday tegish yo'q:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ARMENU</th>
+<th>mebelcity_platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Papka</td>
+<td><code>/home/user/armenu/</code></td>
+<td>TEGILMAYDI</td>
+</tr>
+<tr>
+<td>DB</td>
+<td><code>armenu_db</code></td>
+<td><code>tenant_*</code> TEGILMAYDI</td>
+</tr>
+<tr>
+<td>Redis</td>
+<td><code>db=5</code>, <code>db=6</code></td>
+<td><code>db=0..4</code> TEGILMAYDI</td>
+</tr>
+<tr>
+<td>Port</td>
+<td>8060, 8061</td>
+<td>8040, 8041 TEGILMAYDI</td>
+</tr>
+<tr>
+<td>Servis</td>
+<td><code>armenu*.service</code></td>
+<td><code>bittada-*</code> TEGILMAYDI</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🎯 BOZOR (qisqacha)</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O'zbekistonda ovqatlanish korxonalari</td>
+<td><strong>27 312</strong></td>
+</tr>
+<tr>
+<td>Sektor daromadi (I chorak 2026)</td>
+<td><strong>49,8 trln so'm</strong> (+8,2%)</td>
+</tr>
+<tr>
+<td>Xalqaro turistlar (7 oy 2026)</td>
+<td><strong>7,75 mln</strong> (+22,6%)</td>
+</tr>
+<tr>
+<td><strong>AR/3D raqobatchi</strong></td>
+<td><strong>0 ta</strong> ✅</td>
+</tr>
+<tr>
+<td>Break-even</td>
+<td>11-oy</td>
+</tr>
+<tr>
+<td>3-yil prognoz</td>
+<td>~2,6 mlrd so'm daromad</td>
+</tr>
+</tbody>
+</table>
+<p>Batafsil: <a href="BOZOR_TAHLIL.md">BOZOR_TAHLIL.md</a></p>
+<hr />
+<h2>❓ KOD BOSHLASHDAN OLDIN</h2>
+<p>12 ta savolga javob kerak — <a href="TZ_MASTER/08_DEPLOY_REJA_RISK.md">TZ_MASTER/08_DEPLOY_REJA_RISK.md</a> §7.</p>
+<p>Eng muhim 5 tasi:<br />
+1. Server: alohida VPS? <em>(tavsiya: ha)</em><br />
+2. Domen va brend nomi?<br />
+3. Pilot restoran bormi? <em>(5 ta kerak)</em><br />
+4. Kim yozadi? <em>(2 dasturchi — 15 hafta)</em><br />
+5. AI API kalitlari bormi? <em>(kamida 3 ta)</em></p><div class='part'><div class='n'>02</div><h1>START — kirish nuqtasi</h1></div><blockquote>
+<p><strong>AI/dasturchi uchun:</strong> Bu loyihaning <strong>yagona kirish nuqtasi</strong>.<br />
+Boshqa hech qanday faylni oldin o'qima. Quyidagi 6 qadamni bajar.</p>
+</blockquote>
+<hr />
+<h2>⚡ QADAM 1 — HOLATNI ANIQLA (30 soniya)</h2>
+<pre><code class="language-bash">cat ROADMAP/03_HOLAT/PROGRESS.md
+</code></pre>
+<p>Bu faylda <strong>oxirgi bajarilgan vazifa raqami</strong> yozilgan. Masalan:</p>
+<pre><code>OXIRGI_BAJARILGAN: V-042
+KEYINGI: V-043
+FAZA: 2 (Menyu)
+</code></pre>
+<p><strong>Agar <code>PROGRESS.md</code> da <code>V-000</code> bo'lsa</strong> → loyiha hali boshlanmagan, QADAM 2 ga o't.<br />
+<strong>Agar boshqa raqam bo'lsa</strong> → QADAM 4 ga sakra (davom ettirish).</p>
+<hr />
+<h2>⚡ QADAM 2 — 15 DAQIQALIK KONTEKST (faqat bir marta)</h2>
+<p>Loyihani tushunish uchun <strong>faqat shu 2 ta faylni</strong> o'qi (jami ~12 KB):</p>
+<pre><code class="language-bash">cat ROADMAP/00_BOSHLASH/01_LOYIHA_5_DAQIQADA.md    # nima quriladi
+cat ROADMAP/00_BOSHLASH/02_QOIDALAR.md             # qanday kod yoziladi
+</code></pre>
+<blockquote>
+<p>⛔ <strong><code>TZ_MASTER/</code> papkasidagi fayllarni HOZIR O'QIMA.</strong><br />
+Ular ma'lumotnoma — faqat kerak bo'lganda, kerakli bo'limini o'qiysan.<br />
+Hammasini o'qish = 260 KB = ~70 000 token behuda sarflanadi.</p>
+</blockquote>
+<hr />
+<h2>⚡ QADAM 3 — MUHITNI TAYYORLA</h2>
+<pre><code class="language-bash">cat ROADMAP/00_BOSHLASH/03_MUHIT_TAYYORLASH.md
+</code></pre>
+<p>Bu faylda <strong>nusxa ko'chirib ishga tushiriladigan buyruqlar</strong> bor.<br />
+Bajar, natijani tekshir, keyin QADAM 4 ga o't.</p>
+<hr />
+<h2>⚡ QADAM 4 — FAZANI OCH VA ISHLA</h2>
+<p>Hozirgi fazani <code>PROGRESS.md</code> dan bilib olding. Shu faza faylini och:</p>
+<table>
+<thead>
+<tr>
+<th>Faza</th>
+<th>Fayl</th>
+<th>Vazifalar</th>
+<th>Muddat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>01_FAZALAR/FAZA_00_TAYYORGARLIK.md</code></td>
+<td>V-001…V-012</td>
+<td>3 kun</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>01_FAZALAR/FAZA_01_TENANT_AUTH.md</code></td>
+<td>V-013…V-030</td>
+<td>1 hafta</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>01_FAZALAR/FAZA_02_MENYU.md</code></td>
+<td>V-031…V-054</td>
+<td>2 hafta</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>01_FAZALAR/FAZA_03_STOL_QR.md</code></td>
+<td>V-055…V-066</td>
+<td>1 hafta</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>01_FAZALAR/FAZA_04_MIJOZ_PWA.md</code></td>
+<td>V-067…V-092</td>
+<td>2 hafta</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>01_FAZALAR/FAZA_05_BUYURTMA_REALTIME.md</code></td>
+<td>V-093…V-114</td>
+<td>2 hafta</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>01_FAZALAR/FAZA_06_AR_3D.md</code> ⚡</td>
+<td>V-115…V-142</td>
+<td>2,5 hafta</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>01_FAZALAR/FAZA_07_ZAL_PLAN.md</code></td>
+<td>V-143…V-150</td>
+<td>1 hafta</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>01_FAZALAR/FAZA_08_ADMIN.md</code></td>
+<td>V-151…V-170</td>
+<td>1,5 hafta</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>01_FAZALAR/FAZA_09_AI_MCP.md</code></td>
+<td>V-171…V-186</td>
+<td>1,5 hafta</td>
+</tr>
+<tr>
+<td>—</td>
+<td><strong>v1 TUGADI</strong></td>
+<td></td>
+<td><strong>15 hafta</strong></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>01_FAZALAR/FAZA_10_TOLOV_FISKAL.md</code></td>
+<td>V-187…V-204</td>
+<td>2 hafta</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>01_FAZALAR/FAZA_11_SODIQLIK.md</code></td>
+<td>V-205…V-218</td>
+<td>1,5 hafta</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>01_FAZALAR/FAZA_12_DEPLOY.md</code></td>
+<td>V-219…V-234</td>
+<td>1 hafta</td>
+</tr>
+<tr>
+<td>—</td>
+<td><strong>v1.5 TUGADI</strong></td>
+<td></td>
+<td><strong>19,5 hafta</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Faza faylida <strong>har bir vazifa uchun</strong>:<br />
+- 📁 Qaysi fayl yaratiladi<br />
+- 💻 Nima kod yoziladi (namuna bilan)<br />
+- ✅ Qanday tekshiriladi<br />
+- ➡️ Keyingi qadam</p>
+<hr />
+<h2>⚡ QADAM 5 — HAR VAZIFADAN KEYIN</h2>
+<pre><code class="language-bash"># 1. Testni ishga tushir
+pytest tests/ -x -q
+
+# 2. Progress'ni yangila
+python3 ROADMAP/03_HOLAT/update_progress.py V-043 ok
+
+# 3. Commit
+git add -A &amp;&amp; git commit -m &quot;V-043: menyu API keshi&quot;
+</code></pre>
+<p>⚠️ <strong>Test o'tmasa keyingi vazifaga O'TMA.</strong> Tuzat, keyin davom et.</p>
+<hr />
+<h2>⚡ QADAM 6 — FAZA TUGAGANDA</h2>
+<pre><code class="language-bash">cat ROADMAP/01_FAZALAR/FAZA_XX_....md   # oxiridagi &quot;FAZA QABULI&quot; bo'limi
+</code></pre>
+<p>U yerda faza qabul mezonlari bor. Hammasi ✅ bo'lsa — keyingi fazaga o't.</p>
+<hr />
+<h1>📖 MA'LUMOTNOMA — QACHON NIMANI O'QISH</h1>
+<blockquote>
+<p>⚡ <strong>Token tejash qoidasi:</strong> faqat KERAK bo'lganda, faqat KERAKLI bo'limini o'qi.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Savol tug'ilsa</th>
+<th>O'qi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Bu tugma nima qiladi?"</td>
+<td><code>TZ_MASTER/02_SAHIFALAR_VA_TUGMALAR.md</code> — kerakli sahifa (M-xx / O-xx / A-xx)</td>
+</tr>
+<tr>
+<td>"Bu jadvalda qanday maydonlar?"</td>
+<td><code>TZ_MASTER/04_DATA_MODEL_VA_API.md</code> §1</td>
+</tr>
+<tr>
+<td>"API javob formati qanday?"</td>
+<td><code>TZ_MASTER/04_DATA_MODEL_VA_API.md</code> §2</td>
+</tr>
+<tr>
+<td>"WebSocket xabar turi qanday?"</td>
+<td><code>TZ_MASTER/04_DATA_MODEL_VA_API.md</code> §3</td>
+</tr>
+<tr>
+<td>"Masshtablash qanday?"</td>
+<td><code>TZ_MASTER/03_ARXITEKTURA.md</code> §4</td>
+</tr>
+<tr>
+<td>"Xato bo'lsa nima qilinadi?"</td>
+<td><code>TZ_MASTER/03_ARXITEKTURA.md</code> §5</td>
+</tr>
+<tr>
+<td>"Rang/shrift qanday?"</td>
+<td><code>TZ_MASTER/06_TARJIMA_VA_UI.md</code> §2</td>
+</tr>
+<tr>
+<td>"Tarjima qanday ishlaydi?"</td>
+<td><code>TZ_MASTER/06_TARJIMA_VA_UI.md</code> §1</td>
+</tr>
+<tr>
+<td>"AI provayder qanday qo'shiladi?"</td>
+<td><code>TZ_MASTER/07_AI_MCP.md</code> §4</td>
+</tr>
+<tr>
+<td>"Nima uchun bu qaror qabul qilingan?"</td>
+<td><code>TZ_MASTER/01_KIRISH_VA_BIZNES.md</code></td>
+</tr>
+<tr>
+<td>"Deploy qanday?"</td>
+<td><code>TZ_MASTER/08_DEPLOY_REJA_RISK.md</code> §1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tez qidiruv:</strong></p>
+<pre><code class="language-bash">grep -n &quot;izlagan_narsangiz&quot; ROADMAP/02_MALUMOTNOMA/INDEKS.md
+</code></pre>
+<hr />
+<h1>⛔ QAT'IY QOIDALAR (buzilmaydi)</h1>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Qoida</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>⛔ <strong><code>mebelcity_platform</code> ga TEGMA</strong> — alohida repo, DB, port, servis</td>
+</tr>
+<tr>
+<td>2</td>
+<td>⛔ <strong>Vazifa tartibini buzma</strong> — V-043 dan oldin V-042 bajarilishi shart</td>
+</tr>
+<tr>
+<td>3</td>
+<td>⛔ <strong>Test o'tmasa davom etma</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>⛔ <strong>TZ_MASTER ni to'liq o'qima</strong> — faqat kerakli bo'limni</td>
+</tr>
+<tr>
+<td>5</td>
+<td>✅ <strong>Har vazifadan keyin PROGRESS.md yangilanadi</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>✅ <strong>Har model tenant-scoped</strong> (<code>restaurant_id</code> filtri)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>✅ <strong>Har UI 3 tilda + dark/light</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>✅ <strong>Miqdor butun son</strong> (<code>Math.ceil()</code>)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>✅ <strong>Narx serverda hisoblanadi</strong> — frontendga ishonilmaydi</td>
+</tr>
+<tr>
+<td>10</td>
+<td>✅ <strong>Uzoq ish → worker</strong>, web so'rovda emas</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1>🔁 ISH SIKLI (to'xtamasdan ishlash uchun)</h1>
+<blockquote>
+<p>Bu bo'lim AI uchun. Har vazifada <strong>aynan shu 6 qadam</strong> takrorlanadi.<br />
+Boshqa hech narsa o'ylab topish shart emas.</p>
+</blockquote>
+<pre><code>┌──────────────────────────────────────────────────────────────┐
+│  1. PROGRESS.md dan keyingi vazifa raqamini ol   (V-XXX)     │
+│     $ python3 ROADMAP/03_HOLAT/update_progress.py --status   │
+├──────────────────────────────────────────────────────────────┤
+│  2. Shu vazifa turgan faza faylini och                       │
+│     $ grep -A 60 &quot;## V-XXX&quot; ROADMAP/01_FAZALAR/FAZA_YY_*.md  │
+│     (butun faylni emas — faqat shu vazifani)                 │
+├──────────────────────────────────────────────────────────────┤
+│  3. Kodni yoz (fayl yo'li va kod vazifada berilgan)          │
+│     Savol tug'ilsa → ROADMAP/02_MALUMOTNOMA/INDEKS.md        │
+├──────────────────────────────────────────────────────────────┤
+│  4. Tekshir                                                   │
+│     $ pytest tests/ -x -q                                     │
+│     ❌ o'tmadi → TUZAT, 3-qadamga qayt                        │
+│     ✅ o'tdi  → 5-qadam                                       │
+├──────────────────────────────────────────────────────────────┤
+│  5. Yozib qo'y                                                │
+│     $ git add -A &amp;&amp; git commit -m &quot;V-XXX: &lt;tavsif&gt;&quot;          │
+│     $ python3 ROADMAP/03_HOLAT/update_progress.py V-XXX ok   │
+├──────────────────────────────────────────────────────────────┤
+│  6. 1-qadamga qayt  ← TO'XTAMA, keyingi vazifaga o't         │
+│     V-234 tugaguncha yoki foydalanuvchi to'xtatguncha        │
+└──────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2>⛔ Qachon TO'XTASH kerak</h2>
+<table>
+<thead>
+<tr>
+<th>Holat</th>
+<th>Nima qilish</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Test 3 marta ketma-ket o'tmadi</td>
+<td>To'xta, muammoni PROGRESS.md ga yoz, foydalanuvchiga ayt</td>
+</tr>
+<tr>
+<td>Vazifada API kaliti kerak, lekin <code>.env</code> bo'sh</td>
+<td>Shu vazifani <code>skip</code> qil, keyingisiga o't, oxirida ayt</td>
+</tr>
+<tr>
+<td>Vazifa TZ da noaniq</td>
+<td>INDEKS orqali qidir; topilmasa — eng oddiy variantni tanla va PROGRESS ga yoz</td>
+</tr>
+<tr>
+<td>Faza tugadi</td>
+<td>Faza qabul checklistini tekshir, keyin keyingi fazaga o't</td>
+</tr>
+<tr>
+<td>V-234 tugadi</td>
+<td>🎉 To'xta, hisobot ber</td>
+</tr>
+</tbody>
+</table>
+<h2>⚡ TOKEN TEJASH (majburiy)</h2>
+<table>
+<thead>
+<tr>
+<th>❌ Qilma</th>
+<th>✅ Qil</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cat TZ_MASTER/*.md</code> (260 KB)</td>
+<td><code>grep -A 45 "class Order" TZ_MASTER/04_*.md</code> (2 KB)</td>
+</tr>
+<tr>
+<td>Butun faza faylini o'qish</td>
+<td><code>grep -A 60 "## V-043" FAZA_02_MENYU.md</code></td>
+</tr>
+<tr>
+<td>Har vazifada qoidalarni qayta o'qish</td>
+<td>Bir marta o'qib, yodda tut</td>
+</tr>
+<tr>
+<td>Yozgan kodni qayta o'qish</td>
+<td>Edit natijasiga ishon</td>
+</tr>
+<tr>
+<td>Bir necha vazifani bitta commitga</td>
+<td>1 vazifa = 1 commit (kontekst toza)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Taxminiy token sarfi:</strong></p>
+<pre><code>START.md + qoidalar (bir marta)        ~ 6 000 token
+Har vazifa (grep + kod yozish)         ~ 3 000 token
+234 vazifa                             ~700 000 token
+</code></pre>
+<hr />
+<h1>🎯 LOYIHA MAQSADI (1 jumla)</h1>
+<blockquote>
+<p>Restoran stolidagi QR ni skanerlagan mijoz taomni telefon kamerasida<br />
+<strong>real o'lchamda 3D ko'radi</strong>, buyurtma beradi; ofitsiant stol raqamini<br />
+darhol ko'radi; admin hammasini real vaqtda nazorat qiladi.</p>
+</blockquote>
+<hr />
+<p><strong>Hozir nima qilish kerak:</strong> ⬆️ QADAM 1 dan boshla.</p><div class='part'><div class='n'>03</div><h1>Loyiha 5 daqiqada</h1></div><blockquote>
+<p>Bu faylni <strong>bir marta</strong> o'qi. Loyihani tushunish uchun shu yetarli.</p>
+</blockquote>
+<hr />
+<h2>1. NIMA QURILADI</h2>
+<p><strong>ARMENU</strong> — restoran/choyxona uchun AR/3D menyu platformasi.</p>
+<pre><code>Mijoz stolga o'tiradi
+   │
+   ├─ Stoldagi QR ni skanerlaydi  ────► telefonida menyu ochiladi (3 tilda)
+   │
+   ├─ Taomni bosadi ───► &quot;AR'da ko'rish&quot; ───► kamera ochiladi
+   │                                          taom stol ustida REAL O'LCHAMDA
+   │                                          paydo bo'ladi, aylantiriladi
+   │
+   ├─ Yoqdi ───► savatga ───► buyurtma
+   │
+   ▼
+Ofitsiant telefoniga: 🔔 &quot;STOL 5 — yangi buyurtma&quot;
+Oshxona monitoriga:   buyurtma kanban taxtasiga tushadi
+Admin ekraniga:       jonli oqimda ko'rinadi
+   │
+   ▼
+Oshpaz tayyorlaydi ──► &quot;Tayyor&quot; ──► ofitsiant olib boradi ──► mijoz to'laydi
+</code></pre>
+<hr />
+<h2>2. 3 ROL</h2>
+<table>
+<thead>
+<tr>
+<th>Rol</th>
+<th>Kirish</th>
+<th>Nima qiladi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>👤 <strong>Mijoz</strong></td>
+<td>QR skanerlash (auth yo'q)</td>
+<td>Menyu ko'radi, AR'da ko'radi, buyurtma beradi, to'laydi</td>
+</tr>
+<tr>
+<td>🧑‍🍳 <strong>Ofitsiant</strong></td>
+<td>PIN kod</td>
+<td>Buyurtmani ko'radi, <strong>stol raqamini</strong> biladi, olib boradi</td>
+</tr>
+<tr>
+<td>👨‍💼 <strong>Admin</strong></td>
+<td>Login</td>
+<td>Menyu, stol, xodim, hisobot — hammasini boshqaradi</td>
+</tr>
+</tbody>
+</table>
+<p>Qo'shimcha: 🍳 <strong>KDS</strong> (oshxona TV monitori), 💵 <strong>Kassa</strong>, 🔧 <strong>Super-admin</strong> (platforma egasi).</p>
+<hr />
+<h2>3. TEXNOLOGIYALAR</h2>
+<pre><code>Backend    Django 5 + DRF + Channels (WebSocket)
+DB         PostgreSQL (+ pgvector) + Redis
+Frontend   PWA (ilova YO'Q) — vanilla JS / Vue 3
+AR/3D      &lt;model-viewer&gt;  →  iOS: USDZ (AR Quick Look)
+                              Android: GLB (Scene Viewer)
+3D yaratish Meshy / Tripo API (rasm → 3D)
+To'lov     paytechuz (Payme + Click + Uzum)
+Fiskal     UZKASSA / e-POS (OFD)
+AI         8 provayder MCP orqali (Claude, Gemini, GPT, Groq, ...)
+Deploy     systemd + nginx + gunicorn + daphne
+</code></pre>
+<hr />
+<h2>4. ⚡ ENG MUHIM 5 TA G'OYA</h2>
+<h3>4.1 AR real o'lchamda bo'lishi SHART</h3>
+<p>Model <strong>metrda</strong> modellanadi (lagan Ø32 sm = <code>0.32 m</code>), <code>ar-scale="fixed"</code>.<br />
+Noto'g'ri o'lcham = butun loyiha ma'nosini yo'qotadi.</p>
+<h3>4.2 3D kutubxona — asosiy aktiv</h3>
+<p>Umumiy o'zbek taomlari bazasi (osh, manti, somsa...). Yangi restoran kelsa —<br />
+model <strong>tayyor</strong>, 0 xarajat. Bu raqobatchi 2-3 yilda takrorlay olmaydigan ustunlik.</p>
+<pre><code>1-restoran:   kontent 1 250 000 so'm  →  marja 62%
+100-restoran: kontent    50 000 so'm  →  marja 85%
+</code></pre>
+<h3>4.3 Multi-tenant izolyatsiya — xavfsizlik #1</h3>
+<p>Har so'rovda <code>restaurant_id</code> filtri. Restoran A restoran B ma'lumotini<br />
+<strong>hech qachon</strong> ko'rmasligi kerak. CI'da test majburiy.</p>
+<h3>4.4 Mijozga WebSocket faqat buyurtmadan keyin</h3>
+<p>Menyu ko'rayotgan mijozga WS <strong>kerak emas</strong>. Bu 1 mln foydalanuvchida<br />
+WS ulanishni 1 mln dan ~90 000 ga tushiradi (20 server o'rniga 3 ta).</p>
+<h3>4.5 Uzoq ish → worker servis</h3>
+<p>3D generatsiya 3-40 daqiqa. Web so'rovda <strong>hech qachon</strong> qilinmaydi.<br />
+Redis navbat → alohida worker servis.</p>
+<hr />
+<h2>5. FAZALAR (0 → 100)</h2>
+<pre><code>FAZA 0   Tayyorgarlik        3 kun     Django skelet ishlaydi
+FAZA 1   Tenant + Auth       1 hafta   Restoran, xodim, PIN kirish
+FAZA 2   Menyu               2 hafta   Kategoriya, taom, 3 til, kesh
+FAZA 3   Stol + QR           1 hafta   Noyob QR, PDF chop
+FAZA 4   Mijoz PWA           2 hafta   Menyu ko'rish, savat
+FAZA 5   Buyurtma + realtime 2 hafta   Buyurtma, KDS, ofitsiant
+FAZA 6   ⚡ AR/3D           2,5 hafta  AR ISHLAYDI ← asosiy
+FAZA 7   Zal plani           1 hafta   2D drag&amp;drop
+FAZA 8   Admin panel        1,5 hafta  Dashboard, hisobot
+FAZA 9   AI + MCP           1,5 hafta  Chatbot, avto-tarjima
+─────────────────────────────────────────────────────
+                         v1 = 15 hafta  ✅ ISHLAYDIGAN MAHSULOT
+FAZA 10  To'lov + fiskal     2 hafta   Payme/Click, OFD chek
+FAZA 11  Sodiqlik + analitika 1,5 hafta Keshbek, otziv, menyu-injiniring
+FAZA 12  Deploy + kuzatuv    1 hafta   Production, monitoring
+─────────────────────────────────────────────────────
+                       v1.5 = 19,5 hafta ✅ SOTUVGA TAYYOR
+</code></pre>
+<hr />
+<h2>6. ⛔ IZOLYATSIYA (eng muhim ogohlantirish)</h2>
+<p>Bu <strong>alohida loyiha</strong>. <code>mebelcity_platform</code> ga hech qanday tegish yo'q:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ARMENU</th>
+<th>mebelcity_platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Papka</td>
+<td><code>/home/user/armenu/</code></td>
+<td>TEGILMAYDI</td>
+</tr>
+<tr>
+<td>DB</td>
+<td><code>armenu_db</code></td>
+<td><code>tenant_*</code> TEGILMAYDI</td>
+</tr>
+<tr>
+<td>Redis</td>
+<td><code>db=5</code></td>
+<td><code>db=0..4</code> TEGILMAYDI</td>
+</tr>
+<tr>
+<td>Port</td>
+<td>8060 (web), 8061 (ws)</td>
+<td>8040/8041 TEGILMAYDI</td>
+</tr>
+<tr>
+<td>Servis</td>
+<td><code>armenu*.service</code></td>
+<td><code>bittada-*</code> TEGILMAYDI</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>7. FAYL STRUKTURASI (qisqacha)</h2>
+<pre><code>armenu/
+├── config/settings/{base,dev,prod,test}.py
+├── core/           ← umumiy: middleware, mixin, resilience, queue, ws
+├── apps/
+│   ├── tenants/    ← Restaurant (asosiy tenant)
+│   ├── accounts/   ← User, Staff, JWT, PIN
+│   ├── menu/       ← Category, Dish, Modifier
+│   ├── tables/     ← Hall, Table, QR
+│   ├── guest/      ← Guest, GuestSession
+│   ├── orders/     ← Order, holat mashinasi, KDS
+│   ├── ar3d/       ← ⚡ DishModel3D, DishLibrary, pipeline
+│   ├── payments/   ← Payme, Click, Uzum
+│   ├── fiscal/     ← OFD, IKPU
+│   ├── ai/         ← ⚡ MCP router, chatbot
+│   └── ...
+├── static/{guest,staff,kds,admin_ui}/
+├── templates/
+├── locale/{uz,ru,en}/
+└── tests/
+</code></pre>
+<hr /><div class='part'><div class='n'>04</div><h1>Qoidalar</h1></div><blockquote>
+<p>Bu faylni <strong>bir marta</strong> o'qi va butun loyiha davomida shu qoidalarga amal qil.</p>
+</blockquote>
+<hr />
+<h2>1. ⛔ 10 TA BUZILMAS QOIDA</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Qoida</th>
+<th>Nima uchun</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong><code>mebelcity_platform</code> ga tegma</strong></td>
+<td>Alohida loyiha</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Vazifa tartibini buzma</strong> (V-042 → V-043)</td>
+<td>Bog'liqlik</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Test o'tmasa davom etma</strong></td>
+<td>Sifat</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Har tenant modeli <code>restaurant_id</code> bilan filtrlanadi</strong></td>
+<td>Xavfsizlik #1</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Narx faqat serverda hisoblanadi</strong></td>
+<td>Frontendga ishonilmaydi</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Miqdor butun son</strong> — <code>Math.ceil()</code></td>
+<td>Biznes qoidasi</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Uzoq ish (&gt;2s) → worker navbat</strong></td>
+<td>Web bloklanmaydi</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Har UI 3 tilda + dark/light</strong></td>
+<td>Talab</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Har yozuv operatsiyasi idempotent</strong></td>
+<td>Retry xavfsiz</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Tashqi API → circuit breaker + fallback</strong></td>
+<td>Chidamlilik</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. 🔒 MULTI-TENANT (eng muhim)</h2>
+<h3>✅ TO'G'RI</h3>
+<pre><code class="language-python"># View'da mixin ishlatiladi
+class DishViewSet(TenantScopedMixin, ModelViewSet):
+    queryset = Dish.objects.all()      # mixin avtomatik filtrlaydi
+
+# Yoki qo'lda — DOIM restaurant_id bilan
+dish = Dish.objects.get(pk=pk, restaurant_id=request.restaurant_id)
+</code></pre>
+<h3>❌ NOTO'G'RI</h3>
+<pre><code class="language-python">dish = Dish.objects.get(pk=pk)         # ⛔ boshqa restoranniki bo'lishi mumkin!
+dishes = Dish.objects.all()            # ⛔ hamma restoran taomlari!
+</code></pre>
+<h3>Har yangi model uchun</h3>
+<pre><code class="language-python">class YangiModel(TenantModel):          # TenantModel = restaurant FK bor
+    ...
+</code></pre>
+<p>Va <code>tests/test_tenant_isolation.py</code> ga qo'shiladi.</p>
+<hr />
+<h2>3. 🗄 DATABASE QOIDALARI</h2>
+<h3>N+1 query oldini olish</h3>
+<pre><code class="language-python"># ❌ NOTO'G'RI — har buyurtma uchun alohida so'rov
+for order in Order.objects.all():
+    print(order.table.number)
+
+# ✅ TO'G'RI
+for order in Order.objects.select_related('table', 'guest'):
+    print(order.table.number)
+
+# ✅ M2M / teskari FK uchun
+Order.objects.prefetch_related('items__dish')
+</code></pre>
+<h3>Katta ma'lumot</h3>
+<pre><code class="language-python"># ❌ list(qs) — xotiraga hammasi
+# ✅ qs.iterator(chunk_size=500)
+</code></pre>
+<h3>Transaksiya</h3>
+<pre><code class="language-python">with transaction.atomic():
+    order = Order.objects.create(...)
+    OrderItem.objects.bulk_create(items)     # bitta so'rov
+
+# Post-commit hook — transaksiya MUVAFFAQIYATLI bo'lgandan keyin
+transaction.on_commit(lambda: send_ws_notification(order))
+</code></pre>
+<h3>Indeks</h3>
+<p>Har <code>filter()</code> da ishlatiladigan maydonga indeks:</p>
+<pre><code class="language-python">class Meta:
+    indexes = [
+        models.Index(fields=['restaurant', 'status', '-created_at']),
+    ]
+</code></pre>
+<hr />
+<h2>4. 🌐 API QOIDALARI</h2>
+<h3>Javob formati</h3>
+<pre><code class="language-python"># Muvaffaqiyat
+return Response({'id': 1, 'name': '...'}, status=200)
+
+# Xato — DOIM 3 tilda
+raise DishUnavailable(dish)     # core/exceptions.py handler formatlaydi
+</code></pre>
+<h3>Idempotency (POST/PUT)</h3>
+<pre><code class="language-python">idem_key = request.headers.get('X-Idempotency-Key')
+existing = check_idempotency(idem_key)
+if existing:
+    return Response(existing)        # dublikat yaratilmaydi
+</code></pre>
+<h3>Validatsiya tartibi (qat'iy)</h3>
+<pre><code>1. Idempotency
+2. Tenant tekshiruvi (restaurant_id)
+3. Obyekt mavjudligi
+4. Biznes qoidalari (stop-list, limit)
+5. ⚡ Narx serverda qayta hisoblanadi
+6. Transaksiya
+7. Post-commit hooks (WS, navbat)
+</code></pre>
+<hr />
+<h2>5. ⚡ REAL-TIME (WebSocket)</h2>
+<h3>Guruh nomlari — DOIM restoran-scoped</h3>
+<pre><code class="language-python">ws_send(f'rest_{restaurant_id}_kds',     'order.new', data)
+ws_send(f'rest_{restaurant_id}_waiters', 'order.new', data)
+ws_send(f'guest_{session_id}',           'order.created', data)
+
+# ❌ HECH QACHON global guruh: ws_send('all_orders', ...)
+</code></pre>
+<h3>Xabar formati</h3>
+<pre><code class="language-python">{'type': 'order.new', 'ts': '...', 'data': {...}, 'seq': 1047}
+</code></pre>
+<h3>Mijozga WS qachon</h3>
+<pre><code>❌ Menyu ko'rayotganda — KERAK EMAS
+✅ Buyurtma bergandan KEYIN — kerak
+</code></pre>
+<hr />
+<h2>6. 🎨 FRONTEND QOIDALARI</h2>
+<h3>Tarjima</h3>
+<pre><code class="language-javascript">// ❌ NOTO'G'RI
+btn.textContent = &quot;Savatga qo'shish&quot;;
+
+// ✅ TO'G'RI
+btn.textContent = t('dish.add_to_cart');
+// yoki HTML'da: &lt;button data-i18n=&quot;dish.add_to_cart&quot;&gt;&lt;/button&gt;
+</code></pre>
+<h3>Tema</h3>
+<pre><code class="language-css">/* ❌ NOTO'G'RI */
+.card { background: #fff; color: #000; }
+
+/* ✅ TO'G'RI */
+.card { background: var(--bg-card); color: var(--text); }
+</code></pre>
+<h3>Miqdor</h3>
+<pre><code class="language-javascript">// ✅ DOIM
+const qty = Math.max(1, Math.min(99, Math.ceil(rawQty)));
+</code></pre>
+<h3>Statik fayl versiyasi</h3>
+<pre><code class="language-html">&lt;script src=&quot;/static/guest/js/menu.js?v=12&quot;&gt;&lt;/script&gt;
+</code></pre>
+<hr />
+<h2>7. 🧪 TEST QOIDALARI</h2>
+<h3>Har vazifadan keyin</h3>
+<pre><code class="language-bash">pytest tests/ -x -q          # -x = birinchi xatoda to'xtaydi
+</code></pre>
+<h3>Har yangi model uchun majburiy test</h3>
+<pre><code class="language-python">def test_&lt;model&gt;_tenant_isolation(api_client, restaurant, restaurant2, token):
+    obj = &lt;Model&gt;Factory(restaurant=restaurant2)
+    r = api_client.get(f'/v1/admin/&lt;endpoint&gt;/{obj.id}/',
+                       HTTP_AUTHORIZATION=f'Bearer {token}')
+    assert r.status_code in (403, 404)      # 200 BO'LMASLIGI SHART
+</code></pre>
+<h3>Qamrov</h3>
+<pre><code>Umumiy ≥ 75%
+orders, payments, tenants ≥ 90%
+</code></pre>
+<hr />
+<h2>8. 📁 FAYL VA NOM QOIDALARI</h2>
+<table>
+<thead>
+<tr>
+<th>Nima</th>
+<th>Uslub</th>
+<th>Namuna</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python fayl</td>
+<td>snake_case</td>
+<td><code>order_service.py</code></td>
+</tr>
+<tr>
+<td>Django app</td>
+<td>lowercase</td>
+<td><code>apps/ar3d/</code></td>
+</tr>
+<tr>
+<td>Model</td>
+<td>PascalCase</td>
+<td><code>DishModel3D</code></td>
+</tr>
+<tr>
+<td>Funksiya</td>
+<td>snake_case</td>
+<td><code>create_order()</code></td>
+</tr>
+<tr>
+<td>Konstanta</td>
+<td>UPPER_SNAKE</td>
+<td><code>MAX_GLB_SIZE</code></td>
+</tr>
+<tr>
+<td>JS fayl</td>
+<td>kebab-case</td>
+<td><code>ar-detect.js</code></td>
+</tr>
+<tr>
+<td>CSS klass</td>
+<td>kebab-case</td>
+<td><code>.dish-card</code></td>
+</tr>
+<tr>
+<td>i18n kalit</td>
+<td>dot.case</td>
+<td><code>dish.add_to_cart</code></td>
+</tr>
+<tr>
+<td>API endpoint</td>
+<td>kebab-case</td>
+<td><code>/v1/admin/qr-pdf/</code></td>
+</tr>
+<tr>
+<td>WS xabar</td>
+<td>dot.case</td>
+<td><code>order.new</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>9. 💬 COMMIT QOIDALARI</h2>
+<pre><code class="language-bash">git commit -m &quot;V-043: menyu API Redis keshi qo'shildi&quot;
+git commit -m &quot;V-115: DishLibrary modeli + pgvector indeks&quot;
+git commit -m &quot;fix V-098: idempotency key tekshiruvi tuzatildi&quot;
+</code></pre>
+<p>Format: <code>V-XXX: &lt;qisqa tavsif&gt;</code> yoki <code>fix V-XXX: &lt;nima tuzatildi&gt;</code></p>
+<hr />
+<h2>10. 🚨 XATO QAYTA ISHLASH</h2>
+<h3>Har tashqi chaqiruv</h3>
+<pre><code class="language-python">from core.resilience import CircuitBreaker
+
+breaker = CircuitBreaker('ofd', fail_threshold=3, timeout=120)
+
+result = breaker.call(
+    ofd_api.send, receipt,
+    fallback=lambda: enqueue('fiscal', receipt.id, delay=300)
+)
+</code></pre>
+<h3>Log darajalari</h3>
+<pre><code class="language-python">log.debug()    # ishlab chiqishda
+log.info()     # muhim hodisa (buyurtma yaratildi)
+log.warning()  # muammo, lekin ishlaydi (provayder yiqildi, fallback)
+log.error()    # xato, aralashuv kerak
+log.exception()# xato + stack trace
+</code></pre>
+<hr />
+<h2>11. ⚡ TOKEN TEJASH (AI uchun)</h2>
+<p>Bu loyihada ishlayotgan AI uchun:</p>
+<table>
+<thead>
+<tr>
+<th>Qoida</th>
+<th>Nima uchun</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TZ_MASTER/</code> ni <strong>to'liq o'qima</strong></td>
+<td>260 KB = ~70k token behuda</td>
+</tr>
+<tr>
+<td>Faqat faza faylini o'qi</td>
+<td>~15 KB = ~4k token</td>
+</tr>
+<tr>
+<td>Ma'lumotnomadan <strong>faqat kerakli §</strong> ni</td>
+<td><code>sed -n '120,180p' fayl.md</code></td>
+</tr>
+<tr>
+<td>Kod yozishdan oldin mavjud faylni o'qi</td>
+<td>Takrorlamaslik uchun</td>
+</tr>
+<tr>
+<td><code>grep</code> bilan qidir, butun fayl o'qima</td>
+<td>Tez va arzon</td>
+</tr>
+<tr>
+<td>Bir vazifa = bir commit</td>
+<td>Kontekst toza qoladi</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Namuna — to'g'ri qidirish:</strong></p>
+<pre><code class="language-bash"># ❌ cat TZ_MASTER/04_DATA_MODEL_VA_API.md          (36 KB)
+# ✅ grep -A 40 &quot;class Order&quot; TZ_MASTER/04_DATA_MODEL_VA_API.md   (2 KB)
+</code></pre>
+<hr />
+<h2>12. ✅ "TUGALLANGAN" TA'RIFI</h2>
+<p>Vazifa faqat quyidagilar bajarilgandagina tugallangan:</p>
+<pre><code>[ ] Kod yozilgan va ishlaydi
+[ ] Test yozilgan va o'tadi
+[ ] Tenant izolyatsiyasi tekshirilgan (tenant modeli bo'lsa)
+[ ] 3 til (UI bo'lsa)
+[ ] Dark + Light (UI bo'lsa)
+[ ] Xato holatlari qayta ishlangan
+[ ] PROGRESS.md yangilangan
+[ ] Commit qilingan
+</code></pre>
+<hr /><div class='part'><div class='n'>05</div><h1>Muhit tayyorlash</h1></div><blockquote>
+<p>Buyruqlarni <strong>ketma-ket</strong> bajar. Har blokdan keyin tekshiruvni ishga tushir.</p>
+</blockquote>
+<hr />
+<h2>0. OLDINDAN KERAK</h2>
+<table>
+<thead>
+<tr>
+<th>Nima</th>
+<th>Versiya</th>
+<th>Tekshirish</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.12+</td>
+<td><code>python3 --version</code></td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td>15+</td>
+<td><code>psql --version</code></td>
+</tr>
+<tr>
+<td>Redis</td>
+<td>7+</td>
+<td><code>redis-server --version</code></td>
+</tr>
+<tr>
+<td>Node.js</td>
+<td>20+</td>
+<td><code>node --version</code> (3D optimizatsiya uchun)</td>
+</tr>
+<tr>
+<td>Git</td>
+<td>—</td>
+<td><code>git --version</code></td>
+</tr>
+</tbody>
+</table>
+<p>Yo'q bo'lsa:</p>
+<pre><code class="language-bash">sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3-pip \
+     postgresql postgresql-contrib redis-server git nodejs npm \
+     libpq-dev build-essential
+</code></pre>
+<hr />
+<h2>1. LOYIHA PAPKASI</h2>
+<pre><code class="language-bash"># ⚠️ mebelcity_platform DAN TASHQARIDA
+mkdir -p /home/user/armenu
+cd /home/user/armenu
+git init
+</code></pre>
+<p><strong>Tekshirish:</strong> <code>pwd</code> → <code>/home/user/armenu</code></p>
+<hr />
+<h2>2. VIRTUAL MUHIT</h2>
+<pre><code class="language-bash">cd /home/user/armenu
+python3.12 -m venv venv
+source venv/bin/activate
+python -m pip install --upgrade pip
+</code></pre>
+<p><strong>Tekshirish:</strong> <code>which python</code> → <code>/home/user/armenu/venv/bin/python</code></p>
+<hr />
+<h2>3. PAKETLAR</h2>
+<pre><code class="language-bash">cat &gt; requirements.txt &lt;&lt;'EOF'
+Django==5.0.9
+djangorestframework==3.15.2
+channels[daphne]==4.1.0
+channels-redis==4.2.0
+psycopg[binary]==3.2.3
+redis==5.1.1
+django-redis==5.4.0
+django-cors-headers==4.4.0
+drf-spectacular==0.27.2
+python-decouple==3.8
+Pillow==10.4.0
+qrcode[pil]==7.4.2
+reportlab==4.2.2
+pgvector==0.3.3
+gunicorn==22.0.0
+sentry-sdk==2.14.0
+paytechuz==0.4.0
+requests==2.32.3
+anthropic==0.40.0
+google-genai==0.3.0
+openai==1.54.0
+groq==0.11.0
+pygltflib==1.16.2
+python-slugify==8.0.4
+bcrypt==4.2.0
+PyJWT==2.9.0
+pyotp==2.9.0
+EOF
+
+cat &gt; requirements-dev.txt &lt;&lt;'EOF'
+pytest==8.3.3
+pytest-django==4.9.0
+pytest-cov==5.0.0
+pytest-asyncio==0.24.0
+factory-boy==3.3.1
+ruff==0.7.0
+black==24.10.0
+bandit==1.7.10
+EOF
+
+pip install -r requirements.txt -r requirements-dev.txt
+</code></pre>
+<p><strong>Tekshirish:</strong> <code>python -c "import django, channels, rest_framework; print('OK')"</code></p>
+<hr />
+<h2>4. NODE PAKETLARI (3D optimizatsiya)</h2>
+<pre><code class="language-bash">cd /home/user/armenu
+npm init -y
+npm install --save-dev @gltf-transform/cli
+</code></pre>
+<p><strong>Tekshirish:</strong> <code>npx gltf-transform --version</code></p>
+<hr />
+<h2>5. MA'LUMOTLAR BAZASI</h2>
+<pre><code class="language-bash">sudo -u postgres psql &lt;&lt;'EOF'
+CREATE DATABASE armenu_db;
+CREATE USER armenu WITH PASSWORD 'CHANGE_ME_STRONG_PASSWORD';
+ALTER ROLE armenu SET client_encoding TO 'utf8';
+ALTER ROLE armenu SET default_transaction_isolation TO 'read committed';
+ALTER ROLE armenu SET timezone TO 'Asia/Tashkent';
+GRANT ALL PRIVILEGES ON DATABASE armenu_db TO armenu;
+\c armenu_db
+GRANT ALL ON SCHEMA public TO armenu;
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS btree_gin;
+EOF
+</code></pre>
+<p><strong>Tekshirish:</strong></p>
+<pre><code class="language-bash">PGPASSWORD='CHANGE_ME_STRONG_PASSWORD' psql -h localhost -U armenu -d armenu_db \
+  -c &quot;SELECT extname FROM pg_extension;&quot;
+# vector, pg_trgm, btree_gin ko'rinishi kerak
+</code></pre>
+<hr />
+<h2>6. REDIS</h2>
+<p>⚠️ <strong><code>db=5</code> ishlatiladi</strong> — mebelcity <code>db=0..4</code> ni band qilgan.</p>
+<pre><code class="language-bash">redis-cli -n 5 SET armenu_test &quot;ok&quot;
+redis-cli -n 5 GET armenu_test
+redis-cli -n 5 DEL armenu_test
+</code></pre>
+<p><strong>Tekshirish:</strong> <code>ok</code> chiqishi kerak.</p>
+<hr />
+<h2>7. .env FAYL</h2>
+<pre><code class="language-bash">cd /home/user/armenu
+cat &gt; .env &lt;&lt;'EOF'
+# --- Asosiy ---
+DEBUG=True
+SECRET_KEY=CHANGE_ME_GENERATE_RANDOM_50_CHARS
+ALLOWED_HOSTS=localhost,127.0.0.1
+PUBLIC_DOMAIN=localhost:8060
+
+# --- Ma'lumotlar bazasi ---
+DB_NAME=armenu_db
+DB_USER=armenu
+DB_PASSWORD=CHANGE_ME_STRONG_PASSWORD
+DB_HOST=127.0.0.1
+DB_PORT=5432
+
+# --- Redis (⚠️ db=5) ---
+REDIS_URL=redis://127.0.0.1:6379/5
+REDIS_CHANNEL_URL=redis://127.0.0.1:6379/6
+
+# --- AI provayderlar (kamida 2 tasi to'ldirilsin) ---
+ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
+OPENAI_API_KEY=
+GROQ_API_KEY=
+DEEPSEEK_API_KEY=
+MISTRAL_API_KEY=
+
+# --- 3D generatsiya ---
+MESHY_API_KEY=
+TRIPO_API_KEY=
+
+# --- AI limitlari ---
+AI_DAILY_LIMIT_PER_RESTAURANT=2.0
+AI_MONTHLY_LIMIT_TOTAL=500.0
+
+# --- To'lov (FAZA 10 da) ---
+PAYME_MERCHANT_ID=
+PAYME_KEY=
+CLICK_SERVICE_ID=
+CLICK_SECRET=
+UZUM_MERCHANT_ID=
+UZUM_SECRET=
+
+# --- Fiskal (FAZA 10 da) ---
+OFD_PROVIDER=
+OFD_LOGIN=
+OFD_PASSWORD=
+
+# --- Telegram ---
+TELEGRAM_BOT_TOKEN=
+
+# --- Sentry (ixtiyoriy) ---
+SENTRY_DSN=
+EOF
+
+cat &gt; .gitignore &lt;&lt;'EOF'
+venv/
+__pycache__/
+*.pyc
+.env
+*.sqlite3
+media/
+staticfiles/
+node_modules/
+.pytest_cache/
+htmlcov/
+.coverage
+*.log
+.DS_Store
+EOF
+</code></pre>
+<p>⚠️ <strong><code>SECRET_KEY</code> generatsiya:</strong></p>
+<pre><code class="language-bash">python -c &quot;import secrets; print(secrets.token_urlsafe(50))&quot;
+</code></pre>
+<p>Natijani <code>.env</code> ga qo'y.</p>
+<p><strong>Tekshirish:</strong> <code>grep -c "=" .env</code> → 30 dan ko'p</p>
+<hr />
+<h2>8. DJANGO SKELET</h2>
+<pre><code class="language-bash">cd /home/user/armenu
+django-admin startproject config .
+mkdir -p core apps static templates locale tests scripts deploy
+touch core/__init__.py apps/__init__.py
+</code></pre>
+<p><strong>Tekshirish:</strong> <code>ls</code> → <code>config/ core/ apps/ manage.py</code> bor</p>
+<hr />
+<h2>9. PYTEST SOZLAMASI</h2>
+<pre><code class="language-bash">cat &gt; pytest.ini &lt;&lt;'EOF'
+[pytest]
+DJANGO_SETTINGS_MODULE = config.settings.test
+python_files = test_*.py
+addopts = --reuse-db --nomigrations -q
+testpaths = tests
+EOF
+</code></pre>
+<hr />
+<h2>10. MAKEFILE (qulaylik)</h2>
+<pre><code class="language-bash">cat &gt; Makefile &lt;&lt;'EOF'
+.PHONY: run ws worker test lint migrate shell
+
+run:
+    python manage.py runserver 0.0.0.0:8060
+
+ws:
+    daphne -b 0.0.0.0 -p 8061 config.asgi:application
+
+worker:
+    python manage.py run_worker --queue=$(Q)
+
+test:
+    pytest -x -q
+
+test-cov:
+    pytest --cov=apps --cov=core --cov-report=term-missing
+
+lint:
+    ruff check . &amp;&amp; black --check .
+
+fmt:
+    ruff check --fix . &amp;&amp; black .
+
+migrate:
+    python manage.py makemigrations &amp;&amp; python manage.py migrate
+
+shell:
+    python manage.py shell
+
+seed:
+    python manage.py loaddata scripts/demo.json
+EOF
+</code></pre>
+<hr />
+<h2>11. BIRINCHI COMMIT</h2>
+<pre><code class="language-bash">cd /home/user/armenu
+git add -A
+git commit -m &quot;V-001: loyiha skeleti, muhit tayyorlandi&quot;
+</code></pre>
+<hr />
+<h2>✅ YAKUNIY TEKSHIRUV</h2>
+<p>Quyidagi skriptni ishga tushir — hammasi ✅ bo'lishi kerak:</p>
+<pre><code class="language-bash">cat &gt; scripts/check_env.sh &lt;&lt;'EOF'
+#!/bin/bash
+ok(){ echo &quot;✅ $1&quot;; }
+no(){ echo &quot;❌ $1&quot;; FAIL=1; }
+
+[ -d venv ] &amp;&amp; ok &quot;venv&quot; || no &quot;venv yo'q&quot;
+python -c &quot;import django&quot; 2&gt;/dev/null &amp;&amp; ok &quot;Django&quot; || no &quot;Django yo'q&quot;
+python -c &quot;import channels&quot; 2&gt;/dev/null &amp;&amp; ok &quot;Channels&quot; || no &quot;Channels yo'q&quot;
+python -c &quot;import pgvector&quot; 2&gt;/dev/null &amp;&amp; ok &quot;pgvector&quot; || no &quot;pgvector yo'q&quot;
+[ -f .env ] &amp;&amp; ok &quot;.env&quot; || no &quot;.env yo'q&quot;
+[ -f manage.py ] &amp;&amp; ok &quot;manage.py&quot; || no &quot;manage.py yo'q&quot;
+redis-cli -n 5 PING &gt;/dev/null 2&gt;&amp;1 &amp;&amp; ok &quot;Redis db=5&quot; || no &quot;Redis yo'q&quot;
+PGPASSWORD=$(grep DB_PASSWORD .env|cut -d= -f2) psql -h 127.0.0.1 -U armenu \
+  -d armenu_db -c &quot;SELECT 1&quot; &gt;/dev/null 2&gt;&amp;1 &amp;&amp; ok &quot;PostgreSQL&quot; || no &quot;PostgreSQL yo'q&quot;
+npx gltf-transform --version &gt;/dev/null 2&gt;&amp;1 &amp;&amp; ok &quot;gltf-transform&quot; || no &quot;gltf-transform yo'q&quot;
+
+[ -z &quot;$FAIL&quot; ] &amp;&amp; echo -e &quot;\n🎉 MUHIT TAYYOR — FAZA 0 ga o'ting&quot; || echo -e &quot;\n⚠️ Xatolarni tuzating&quot;
+EOF
+chmod +x scripts/check_env.sh
+./scripts/check_env.sh
+</code></pre>
+<hr />
+<h2>🎯 KEYINGI QADAM</h2>
+<pre><code class="language-bash">cat ROADMAP/01_FAZALAR/FAZA_00_TAYYORGARLIK.md
+</code></pre>
+<p>Va <code>PROGRESS.md</code> da <code>V-001</code> ni belgilash:</p>
+<pre><code class="language-bash">python3 ROADMAP/03_HOLAT/update_progress.py V-001 ok
+</code></pre><div class='part'><div class='n'>06</div><h1>Ma'lumotnoma indeksi</h1></div><blockquote>
+<p><strong>Maqsad:</strong> Butun faylni o'qimasdan, aynan kerakli bo'limni topish.<br />
+<code>TZ_MASTER/</code> fayllari jami 260 KB (~70 000 token). To'liq o'qish — <strong>isrof</strong>.<br />
+Bu indeks orqali 2-5 KB o'qib, javobni topasan.</p>
+</blockquote>
+<hr />
+<h2>⚡ QANDAY ISHLATILADI</h2>
+<pre><code class="language-bash"># 1. Indeksdan bo'lim raqamini top
+grep -i &quot;izlagan_narsang&quot; ROADMAP/02_MALUMOTNOMA/INDEKS.md
+
+# 2. Faqat o'sha bo'limni o'qi
+sed -n '340,420p' &quot;TZ_MASTER/04_DATA_MODEL_VA_API.md&quot;
+
+# yoki
+grep -A 45 &quot;class Order&quot; &quot;TZ_MASTER/04_DATA_MODEL_VA_API.md&quot;
+</code></pre>
+<hr />
+<h2>📁 FAYL 01 — <code>TZ_MASTER/01_KIRISH_VA_BIZNES.md</code> (24 KB)</h2>
+<p><strong>Qachon kerak:</strong> biznes qarori, narx, bozor raqami, investor savoli</p>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Mavzu</th>
+<th>Kalit so'zlar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Hujjat haqida</td>
+<td>kim o'qiydi, printsip</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Loyiha mohiyati</td>
+<td>nima quriladi, nima uchun ishlaydi</td>
+</tr>
+<tr>
+<td>3</td>
+<td>⛔ Izolyatsiya kafolati</td>
+<td>mebelcity, port, DB, servis</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Biznes-model</td>
+<td>daromad oqimi, <strong>tarif narxlari</strong>, birlik iqtisodiyoti, LTV/CAC</td>
+</tr>
+<tr>
+<td>4.4</td>
+<td><strong>6/12/24 oylik maqsad</strong></td>
+<td>viloyat, respublika, qo'shni davlat</td>
+</tr>
+<tr>
+<td>4.5</td>
+<td><strong>5 yil himoya devorlari</strong></td>
+<td>moat, kutubxona, platforma effekti</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Bozor raqamlari</td>
+<td>27312 korxona, turizm, TAM/SAM/SOM</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Raqobat matritsasi</td>
+<td>Dastur-xon, Zoomda, iiko, pozitsiyalash</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Sotuv strategiyasi</td>
+<td>pitch, kanallar, CAC</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Investor</td>
+<td>investitsiya, metrika, exit</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Restoran egasi</td>
+<td>"men nima olaman", xavotirlar</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Davlat</td>
+<td>fiskalizatsiya, qonun</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Foydalanuvchi</td>
+<td>mijoz hikoyasi, turist</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 02 — <code>TZ_MASTER/02_SAHIFALAR_VA_TUGMALAR.md</code> (68 KB) ⭐ eng ko'p kerak</h2>
+<p><strong>Qachon kerak:</strong> "bu tugma nima qiladi", "bu sahifada nima bor"</p>
+<h3>Mijoz sahifalari</h3>
+<table>
+<thead>
+<tr>
+<th>Kod</th>
+<th>Sahifa</th>
+<th>Qidiruv</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M-01</td>
+<td>QR kirish (redirect)</td>
+<td><code>grep -A 60 "## M-01"</code></td>
+</tr>
+<tr>
+<td>M-02</td>
+<td>Menyu (bosh sahifa)</td>
+<td><code>grep -A 70 "## M-02"</code></td>
+</tr>
+<tr>
+<td>M-04</td>
+<td>Taom kartochkasi (modal)</td>
+<td><code>grep -A 60 "## M-04"</code></td>
+</tr>
+<tr>
+<td><strong>M-05</strong></td>
+<td>⚡ <strong>AR ko'rish</strong></td>
+<td><code>grep -A 90 "## M-05"</code></td>
+</tr>
+<tr>
+<td>M-06</td>
+<td>Savat + submitOrder()</td>
+<td><code>grep -A 80 "## M-06"</code></td>
+</tr>
+<tr>
+<td>M-08</td>
+<td>Buyurtma holati (real-time)</td>
+<td><code>grep -A 40 "## M-08"</code></td>
+</tr>
+<tr>
+<td>M-09</td>
+<td>Chaqiruv</td>
+<td><code>grep -A 25 "## M-09"</code></td>
+</tr>
+<tr>
+<td>M-10</td>
+<td>Hisob va to'lov</td>
+<td><code>grep -A 70 "## M-10"</code></td>
+</tr>
+<tr>
+<td>M-11</td>
+<td>Choychaqa (tips)</td>
+<td><code>grep -A 25 "## M-11"</code></td>
+</tr>
+<tr>
+<td>M-12</td>
+<td>Otziv + Google filtri</td>
+<td><code>grep -A 45 "## M-12"</code></td>
+</tr>
+<tr>
+<td>M-13</td>
+<td>AI chatbot</td>
+<td><code>grep -A 55 "## M-13"</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Ofitsiant</h3>
+<table>
+<thead>
+<tr>
+<th>Kod</th>
+<th>Sahifa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O-01</td>
+<td>PIN kirish</td>
+</tr>
+<tr>
+<td>O-02</td>
+<td>Bosh ekran (yangi buyurtmalar)</td>
+</tr>
+<tr>
+<td>O-05</td>
+<td>2D zal plani</td>
+</tr>
+</tbody>
+</table>
+<h3>KDS / Admin / Super-admin</h3>
+<table>
+<thead>
+<tr>
+<th>Kod</th>
+<th>Sahifa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>K-01</td>
+<td>Oshxona monitori (kanban)</td>
+</tr>
+<tr>
+<td>A-01</td>
+<td>Dashboard</td>
+</tr>
+<tr>
+<td><strong>A-04</strong></td>
+<td>⚡ 3D model boshqaruvi + AI yaratish zanjiri</td>
+</tr>
+<tr>
+<td>A-05</td>
+<td>Stollar va QR</td>
+</tr>
+<tr>
+<td>A-10</td>
+<td>AR analitika</td>
+</tr>
+<tr>
+<td>A-15</td>
+<td>Tarjima boshqaruvi</td>
+</tr>
+<tr>
+<td>P-02</td>
+<td>3D kutubxona (super-admin)</td>
+</tr>
+<tr>
+<td>P-04</td>
+<td>Tizim salomatligi</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 03 — <code>TZ_MASTER/03_ARXITEKTURA.md</code> (36 KB)</h2>
+<p><strong>Qachon kerak:</strong> masshtablash, xato, tiklanish, xavfsizlik</p>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Mavzu</th>
+<th>Kalit so'zlar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Arxitektura printsiplari</td>
+<td>stateless, idempotency, circuit breaker</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Umumiy arxitektura</td>
+<td>CDN, LB, web, WS, DB, worker</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Modullar</td>
+<td>Django app'lar, bog'liqlik</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Masshtablash</strong></td>
+<td>S0…S5 bosqichlar</td>
+</tr>
+<tr>
+<td>4.2</td>
+<td>⚡ <strong>1 mln bir vaqtda</strong></td>
+<td>WS optimizatsiya, DB, narx</td>
+</tr>
+<tr>
+<td>4.3</td>
+<td>Kod qoidalari</td>
+<td>N+1, iterator, cache</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Xatolarga chidamlilik</strong></td>
+<td>yiqilish matritsasi</td>
+</tr>
+<tr>
+<td>5.2</td>
+<td>Circuit breaker (kod)</td>
+<td>CLOSED/OPEN/HALF_OPEN</td>
+</tr>
+<tr>
+<td>5.3</td>
+<td>Retry siyosati</td>
+<td>urinish, kechikish</td>
+</tr>
+<tr>
+<td>5.4</td>
+<td>Graceful degradation</td>
+<td>fallback zanjirlari</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Self-healing</strong></td>
+<td>15 mexanizm, daemon kodi</td>
+</tr>
+<tr>
+<td>6.3</td>
+<td>Chaos engineering</td>
+<td>atayin yiqitish</td>
+</tr>
+<tr>
+<td>7</td>
+<td>SLA/SLO</td>
+<td>javob vaqti, mavjudlik, RPO/RTO</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Xavfsizlik</td>
+<td>qatlamlar, tenant izolyatsiya, rate limit</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Kuzatuv</td>
+<td>Prometheus metrikalar, alertlar</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Backup</td>
+<td>chastota, tiklash</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 04 — <code>TZ_MASTER/04_DATA_MODEL_VA_API.md</code> (36 KB) ⭐ eng ko'p kerak</h2>
+<p><strong>Qachon kerak:</strong> model maydonlari, API format, WS xabar</p>
+<h3>Modellar (§1)</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Qidiruv</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Restaurant</td>
+<td><code>grep -A 55 "class Restaurant"</code></td>
+</tr>
+<tr>
+<td>Hall, Table</td>
+<td><code>grep -A 45 "class Table"</code></td>
+</tr>
+<tr>
+<td>Category, Dish</td>
+<td><code>grep -A 60 "class Dish"</code></td>
+</tr>
+<tr>
+<td><strong>DishLibrary</strong> ⚡</td>
+<td><code>grep -A 40 "class DishLibrary"</code></td>
+</tr>
+<tr>
+<td>DishModel3D</td>
+<td><code>grep -A 25 "class DishModel3D"</code></td>
+</tr>
+<tr>
+<td>ARView</td>
+<td><code>grep -A 20 "class ARView"</code></td>
+</tr>
+<tr>
+<td><strong>Order</strong></td>
+<td><code>grep -A 45 "class Order"</code></td>
+</tr>
+<tr>
+<td>Holat mashinasi</td>
+<td><code>grep -A 30 "ALLOWED = {"</code></td>
+</tr>
+<tr>
+<td>Qolgan jadvallar</td>
+<td><code>grep -A 20 "Qolgan jadvallar"</code></td>
+</tr>
+</tbody>
+</table>
+<h3>API (§2)</h3>
+<table>
+<thead>
+<tr>
+<th>Nima</th>
+<th>Qidiruv</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Umumiy qoidalar</td>
+<td><code>grep -A 15 "2.1 Umumiy qoidalar"</code></td>
+</tr>
+<tr>
+<td><strong>Xato formati + kodlar</strong></td>
+<td><code>grep -A 30 "2.2 Xato formati"</code></td>
+</tr>
+<tr>
+<td>Endpoint ro'yxati (to'liq)</td>
+<td><code>grep -A 80 "2.3 Endpointlar"</code></td>
+</tr>
+<tr>
+<td><strong>GET /v1/menu/{slug}/</strong></td>
+<td><code>grep -A 55 "GET /v1/menu"</code></td>
+</tr>
+<tr>
+<td><strong>POST /v1/orders/</strong></td>
+<td><code>grep -A 90 "POST /v1/orders/"</code></td>
+</tr>
+<tr>
+<td>create_order() to'liq kod</td>
+<td><code>grep -A 70 "def create_order"</code></td>
+</tr>
+</tbody>
+</table>
+<h3>WebSocket (§3)</h3>
+<table>
+<thead>
+<tr>
+<th>Nima</th>
+<th>Qidiruv</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ulanish nuqtalari</td>
+<td><code>grep -A 12 "3.1 Ulanish"</code></td>
+</tr>
+<tr>
+<td>Xabar turlari</td>
+<td><code>grep -A 25 "3.3 Xabar turlari"</code></td>
+</tr>
+<tr>
+<td>ReliableWS klient</td>
+<td><code>grep -A 40 "class ReliableWS"</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 05 — <code>TZ_MASTER/05_KOD_YOZISH_TARTIBI.md</code> (28 KB)</h2>
+<p><strong>Qachon kerak:</strong> fayl strukturasi, vazifa ro'yxati</p>
+<blockquote>
+<p>⚠️ Bu fayl <strong>eskirgan</strong> — vazifalar endi <code>ROADMAP/01_FAZALAR/</code> da to'liq yozilgan.<br />
+Faqat <strong>fayl strukturasi</strong> (§0) uchun kerak bo'lishi mumkin.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Mavzu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><strong>Fayl strukturasi</strong> (to'liq daraxt)</td>
+</tr>
+<tr>
+<td>1-12</td>
+<td>Vazifalar ro'yxati (→ FAZALAR papkasiga ko'chirilgan)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 06 — <code>TZ_MASTER/06_TARJIMA_VA_UI.md</code> (24 KB)</h2>
+<p><strong>Qachon kerak:</strong> tarjima, rang, shrift, komponent</p>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Mavzu</th>
+<th>Kalit so'zlar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>3 tilli tizim</td>
+<td>qamrov, 3 qatlam</td>
+</tr>
+<tr>
+<td>1.3</td>
+<td>⚡ <strong>i18n JSON tuzilmasi</strong></td>
+<td>to'liq lug'at namunasi</td>
+</tr>
+<tr>
+<td>1.4</td>
+<td>JS t() funksiyasi</td>
+<td>loadI18n, applyI18n, switchLang</td>
+</tr>
+<tr>
+<td>1.5</td>
+<td>CI tekshiruvi</td>
+<td>kalitlar mos, bo'sh yo'q</td>
+</tr>
+<tr>
+<td>1.6</td>
+<td>AI avto-tarjima</td>
+<td>prompt, servis</td>
+</tr>
+<tr>
+<td>2.2</td>
+<td>⚡ <strong>Rang tizimi (CSS)</strong></td>
+<td><code>:root</code>, dark, light</td>
+</tr>
+<tr>
+<td>2.3</td>
+<td>Tipografiya</td>
+<td>shrift, o'lchamlar</td>
+</tr>
+<tr>
+<td>2.4</td>
+<td>KDS uslubi</td>
+<td>neon, katta shrift</td>
+</tr>
+<tr>
+<td>2.5</td>
+<td>Komponentlar</td>
+<td>button, card, modal, toast</td>
+</tr>
+<tr>
+<td>2.6</td>
+<td>Animatsiyalar</td>
+<td>davomiylik</td>
+</tr>
+<tr>
+<td>2.8</td>
+<td>Ochiqlik</td>
+<td>kontrast, ARIA</td>
+</tr>
+<tr>
+<td>3</td>
+<td>PWA</td>
+<td>manifest, service worker, offline</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 07 — <code>TZ_MASTER/07_AI_MCP.md</code> (28 KB)</h2>
+<p><strong>Qachon kerak:</strong> AI provayder, chatbot, tarjima</p>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Mavzu</th>
+<th>Kalit so'zlar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>MCP arxitekturasi</td>
+<td>diagramma</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>8 provayder ro'yxati</strong></td>
+<td>narx, env kalit, vazifalar</td>
+</tr>
+<tr>
+<td>4.1</td>
+<td>MCPProvider baza sinf</td>
+<td>ABC, Request, Response</td>
+</tr>
+<tr>
+<td>4.2</td>
+<td>Claude provayder (kod)</td>
+<td>namuna</td>
+</tr>
+<tr>
+<td>4.3</td>
+<td>Meshy provayder (kod)</td>
+<td>3D, poll</td>
+</tr>
+<tr>
+<td>4.4</td>
+<td>⚡ <strong>MCPRouter (kod)</strong></td>
+<td>fallback, kesh, byudjet</td>
+</tr>
+<tr>
+<td>4.5</td>
+<td>Ishlatilishi</td>
+<td><code>mcp.run(...)</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>API key boshqaruvi</td>
+<td>.env, xavfsizlik</td>
+</tr>
+<tr>
+<td>6</td>
+<td>AI vazifalari + xarajat</td>
+<td>oylik $</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Chatbot</strong></td>
+<td>system prompt, servis, kontekst</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Testlar</td>
+<td>fallback, byudjet</td>
+</tr>
+<tr>
+<td>9</td>
+<td>AI kuzatuvi</td>
+<td>P-05 sahifasi</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📁 FAYL 08 — <code>TZ_MASTER/08_DEPLOY_REJA_RISK.md</code> (20 KB)</h2>
+<p><strong>Qachon kerak:</strong> deploy, konfig, risk, savol</p>
+<table>
+<thead>
+<tr>
+<th>§</th>
+<th>Mavzu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.2</td>
+<td>⚡ <strong>systemd servislar</strong> (to'liq konfig)</td>
+</tr>
+<tr>
+<td>1.3</td>
+<td><strong>nginx konfig</strong> (to'liq)</td>
+</tr>
+<tr>
+<td>1.4</td>
+<td>CI/CD (GitHub Actions)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>To'liq reja (hafta-hafta)</td>
+</tr>
+<tr>
+<td>2.4</td>
+<td>6/12/24 oylik yo'l xaritasi</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Jamoa</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Risk matritsasi</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Sifat nazorati, test qamrovi</td>
+</tr>
+<tr>
+<td>6</td>
+<td>⚡ <strong>Qabul mezonlari (v1)</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>12 ta ochiq savol</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🎯 TEZ JAVOBLAR (eng ko'p so'raladigan)</h2>
+<table>
+<thead>
+<tr>
+<th>Savol</th>
+<th>Javob</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Port qaysi?</td>
+<td>web <strong>8060</strong>, ws <strong>8061</strong></td>
+</tr>
+<tr>
+<td>Redis DB?</td>
+<td><code>db=5</code> (cache), <code>db=6</code> (channels)</td>
+</tr>
+<tr>
+<td>DB nomi?</td>
+<td><code>armenu_db</code></td>
+</tr>
+<tr>
+<td>GLB maks hajm?</td>
+<td><strong>3 MB</strong></td>
+</tr>
+<tr>
+<td>USDZ maks hajm?</td>
+<td><strong>5 MB</strong></td>
+</tr>
+<tr>
+<td>AR o'lcham atributi?</td>
+<td><code>ar-scale="fixed"</code> + model <strong>metrda</strong></td>
+</tr>
+<tr>
+<td>WS guruh nomi?</td>
+<td><code>rest_&lt;id&gt;_kds</code>, <code>rest_&lt;id&gt;_waiters</code>, <code>guest_&lt;sid&gt;</code></td>
+</tr>
+<tr>
+<td>Tarif narxlari?</td>
+<td>FREE 0 / START 199k / PRO 590k / FISKAL 890k</td>
+</tr>
+<tr>
+<td>Test qamrovi?</td>
+<td>≥75% umumiy, ≥90% orders/payments/tenants</td>
+</tr>
+<tr>
+<td>Buyurtma holatlari?</td>
+<td>new→accepted→cooking→ready→served→paid</td>
+</tr>
+<tr>
+<td>Tillar?</td>
+<td>uz, ru, en</td>
+</tr>
+<tr>
+<td>AI provayderlar?</td>
+<td>Claude, Gemini, OpenAI, Groq, DeepSeek, Mistral, Meshy, Tripo</td>
+</tr>
+<tr>
+<td>Chaqiruv cooldown?</td>
+<td>60 soniya</td>
+</tr>
+<tr>
+<td>Idempotency TTL?</td>
+<td>24 soat</td>
+</tr>
+<tr>
+<td>Menyu kesh TTL?</td>
+<td>60 soniya</td>
+</tr>
+</tbody>
+</table><div class='part'><div class='n'>07</div><h1>Tez yordam</h1></div><blockquote>
+<p>Bu faylni ochiq tut. Har vazifada takrorlanadigan naqshlar shu yerda.<br />
+Boshqa faylga qarash shart emas.</p>
+</blockquote>
+<hr />
+<h2>1. YANGI MODEL YARATISH</h2>
+<pre><code class="language-python"># apps/&lt;app&gt;/models.py
+from django.db import models
+from core.models import TenantModel        # ⚡ restaurant FK bor
+
+class Yangi(TenantModel):
+    name_uz = models.CharField(max_length=200)
+    name_ru = models.CharField(max_length=200, blank=True)
+    name_en = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['restaurant', 'is_active'])]
+
+    def __str__(self):
+        return f'{self.name_uz} ({self.restaurant_id})'
+</code></pre>
+<pre><code class="language-bash">python manage.py makemigrations &lt;app&gt; &amp;&amp; python manage.py migrate
+</code></pre>
+<hr />
+<h2>2. YANGI VIEWSET (tenant-scoped)</h2>
+<pre><code class="language-python"># apps/&lt;app&gt;/views.py
+from rest_framework.viewsets import ModelViewSet
+from core.mixins import TenantScopedMixin
+from core.permissions import IsRestAdmin
+
+class YangiViewSet(TenantScopedMixin, ModelViewSet):     # ⚡ mixin SHART
+    queryset = Yangi.objects.all()
+    serializer_class = YangiSerializer
+    permission_classes = [IsRestAdmin]
+</code></pre>
+<pre><code class="language-python"># apps/&lt;app&gt;/urls.py
+from rest_framework.routers import DefaultRouter
+router = DefaultRouter()
+router.register('yangi', YangiViewSet, basename='yangi')
+urlpatterns = router.urls
+</code></pre>
+<pre><code class="language-python"># config/urls.py ga qo'shish
+path('v1/admin/', include('apps.&lt;app&gt;.urls')),
+</code></pre>
+<hr />
+<h2>3. TENANT IZOLYATSIYA TESTI (har model uchun MAJBURIY)</h2>
+<pre><code class="language-python"># tests/test_tenant_isolation.py ga qo'shiladi
+@pytest.mark.django_db
+def test_yangi_tenant_isolation(api_client, restaurant, restaurant2, admin_token):
+    obj = Yangi.objects.create(restaurant=restaurant2, name_uz='B ning obyekti')
+    r = api_client.get(f'/v1/admin/yangi/{obj.id}/',
+                       HTTP_AUTHORIZATION=f'Bearer {admin_token}')
+    assert r.status_code in (403, 404)      # ⛔ 200 BO'LMASLIGI SHART
+</code></pre>
+<hr />
+<h2>4. 3 TILLI MATN</h2>
+<pre><code class="language-python"># Backend
+from core.i18n import t
+name = t(dish, 'name', lang)        # dish.name_ru → bo'sh bo'lsa name_uz
+</code></pre>
+<pre><code class="language-javascript">// Frontend
+btn.textContent = t('dish.add_to_cart');
+// yoki HTML: &lt;button data-i18n=&quot;dish.add_to_cart&quot;&gt;&lt;/button&gt;
+</code></pre>
+<pre><code class="language-json">// static/i18n/uz.json, ru.json, en.json — 3 tasida ham bir xil kalit
+{&quot;dish&quot;: {&quot;add_to_cart&quot;: &quot;Savatga qo'shish&quot;}}
+</code></pre>
+<hr />
+<h2>5. DARK + LIGHT TEMA</h2>
+<pre><code class="language-css">/* ❌ hard-code YO'Q */
+.card { background: #fff; }
+
+/* ✅ o'zgaruvchi */
+.card {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+</code></pre>
+<p>Mavjud o'zgaruvchilar: <code>--bg --bg-soft --bg-card --border --text --text-soft
+--text-muted --brand --success --warning --danger --info</code></p>
+<hr />
+<h2>6. WEBSOCKET XABAR YUBORISH</h2>
+<pre><code class="language-python">from core.ws import ws_send, g_kds, g_waiters, g_admin, g_guest
+
+ws_send(g_kds(order.restaurant_id),     'order.new', serialize(order))
+ws_send(g_waiters(order.restaurant_id), 'order.new', {'table': 5, 'id': order.id})
+ws_send(g_guest(session_id),            'order.created', {'id': order.id})
+</code></pre>
+<pre><code class="language-javascript">// Klient
+ws.onmessage = (e) =&gt; {
+  const m = JSON.parse(e.data);
+  if (m.type === 'order.new') { /* ... */ }
+};
+</code></pre>
+<hr />
+<h2>7. NAVBATGA QO'YISH (uzoq ish)</h2>
+<pre><code class="language-python">from core.queue import enqueue
+
+# Web so'rovda — DARHOL qaytadi
+enqueue('model3d', 'generate', dish_id=15, images=[url])
+enqueue('fiscal',  'send_receipt', order_id=42, delay=0)
+enqueue('notify',  'telegram', chat_id=..., text=..., delay=5)
+</code></pre>
+<p>Navbatlar: <code>model3d</code>, <code>fiscal</code>, <code>notify</code>, <code>ai</code>, <code>analytics</code></p>
+<hr />
+<h2>8. TASHQI API (circuit breaker bilan)</h2>
+<pre><code class="language-python">from core.resilience import CircuitBreaker
+
+breaker = CircuitBreaker('ofd', fail_threshold=3, timeout=120)
+
+result = breaker.call(
+    ofd_api.send, receipt,
+    fallback=lambda: enqueue('fiscal', 'retry', receipt_id=receipt.id, delay=300)
+)
+</code></pre>
+<hr />
+<h2>9. KESH</h2>
+<pre><code class="language-python">from django.core.cache import cache
+from core.cache import bump_menu_version
+
+# O'qish
+data = cache.get(key)
+if data is None:
+    data = expensive_query()
+    cache.set(key, data, 60)
+
+# Menyu o'zgarganda — kesh eskiradi
+bump_menu_version(restaurant_id)
+</code></pre>
+<hr />
+<h2>10. TRANZAKSIYA + POST-COMMIT</h2>
+<pre><code class="language-python">from django.db import transaction
+
+with transaction.atomic():
+    order = Order.objects.create(...)
+    OrderItem.objects.bulk_create(items)
+
+# ⚡ Transaksiya MUVAFFAQIYATLI bo'lgandan keyin
+transaction.on_commit(lambda: ws_send(...))
+transaction.on_commit(lambda: enqueue('notify', ...))
+</code></pre>
+<hr />
+<h2>11. IDEMPOTENCY</h2>
+<pre><code class="language-python">from core.idempotency import check_idempotency, save_idempotency
+
+idem_key = request.headers.get('X-Idempotency-Key')
+existing = check_idempotency(idem_key)
+if existing:
+    return Response(existing)          # dublikat yaratilmaydi
+
+# ... yaratish ...
+save_idempotency(idem_key, result)
+</code></pre>
+<hr />
+<h2>12. XATO CHIQARISH</h2>
+<pre><code class="language-python">from core.exceptions import DishUnavailable, PlanLimit, TenantMismatch
+
+if not dish.is_available:
+    raise DishUnavailable({'dish_id': dish.id, 'dish_name': dish.name_uz})
+</code></pre>
+<p>Javob avtomatik 3 tilda formatlanadi.</p>
+<hr />
+<h2>13. AI CHAQIRUV</h2>
+<pre><code class="language-python">from apps.ai.mcp import mcp, MCPRequest
+
+resp = mcp.run(MCPRequest(
+    task='chat',                    # chat|translate|vision|image_to_3d
+    system=SYSTEM_PROMPT,
+    prompt=question,
+    max_tokens=350,
+), restaurant_id=rid)
+
+if resp.ok:
+    answer = resp.content
+else:
+    answer = t('chat.error')        # fallback
+</code></pre>
+<hr />
+<h2>14. MIQDOR (butun son)</h2>
+<pre><code class="language-javascript">const qty = Math.max(1, Math.min(99, Math.ceil(rawQty)));
+</code></pre>
+<pre><code class="language-python">qty = max(1, min(99, math.ceil(raw_qty)))
+</code></pre>
+<hr />
+<h2>15. NARX HISOBI (⚡ faqat serverda)</h2>
+<pre><code class="language-python"># ❌ NOTO'G'RI — frontenddan kelgan summa
+total = request.data['total']
+
+# ✅ TO'G'RI — serverda qayta hisoblanadi
+subtotal = sum((d.price + mod_sum) * qty for ...)
+service_fee = subtotal * restaurant.service_fee_pct / 100
+total = subtotal + service_fee
+</code></pre>
+<hr />
+<h2>16. FOYDALI BUYRUQLAR</h2>
+<pre><code class="language-bash"># Ishga tushirish
+make run                    # web  :8060
+make ws                     # ws   :8061
+make worker Q=model3d       # worker
+
+# Test
+make test                   # tez
+make test-cov               # qamrov bilan
+pytest tests/test_orders.py -v -k &quot;idempotency&quot;
+
+# Kod
+make fmt                    # formatlash
+make lint                   # tekshirish
+
+# DB
+make migrate
+python manage.py shell
+python manage.py dbshell
+
+# Progress
+python3 ROADMAP/03_HOLAT/update_progress.py V-043 ok
+python3 ROADMAP/03_HOLAT/update_progress.py --status
+</code></pre>
+<hr />
+<h2>17. QIDIRUV (token tejash)</h2>
+<pre><code class="language-bash"># ❌ butun fayl (36 KB)
+cat &quot;TZ_MASTER/04_DATA_MODEL_VA_API.md&quot;
+
+# ✅ faqat kerakli qism (2 KB)
+grep -A 45 &quot;class Order&quot; &quot;TZ_MASTER/04_DATA_MODEL_VA_API.md&quot;
+grep -A 30 &quot;ALLOWED = {&quot; &quot;TZ_MASTER/04_DATA_MODEL_VA_API.md&quot;
+sed -n '340,400p' &quot;TZ_MASTER/04_DATA_MODEL_VA_API.md&quot;
+
+# Indeksdan topish
+grep -i &quot;order&quot; ROADMAP/02_MALUMOTNOMA/INDEKS.md
+</code></pre>
+<hr />
+<h2>18. TIPIK XATOLAR VA YECHIM</h2>
+<table>
+<thead>
+<tr>
+<th>Xato</th>
+<th>Sabab</th>
+<th>Yechim</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Restoran aniqlanmadi</code></td>
+<td><code>TenantMiddleware</code> restaurant topmadi</td>
+<td>URL <code>/m/&lt;slug&gt;/</code> yoki JWT tekshir</td>
+</tr>
+<tr>
+<td><code>RelatedObjectDoesNotExist</code></td>
+<td><code>select_related</code> yo'q</td>
+<td><code>.select_related('table')</code> qo'sh</td>
+</tr>
+<tr>
+<td>WS xabar kelmayapti</td>
+<td>Guruh nomi noto'g'ri</td>
+<td><code>rest_&lt;id&gt;_kds</code> formatini tekshir</td>
+</tr>
+<tr>
+<td>Kesh eskirmayapti</td>
+<td><code>bump_menu_version()</code> chaqirilmagan</td>
+<td>Signal qo'sh</td>
+</tr>
+<tr>
+<td>Test <code>200</code> qaytdi</td>
+<td><code>TenantScopedMixin</code> yo'q</td>
+<td>Mixin qo'sh</td>
+</tr>
+<tr>
+<td>GLB &gt; 3 MB</td>
+<td>Optimizatsiya yetarli emas</td>
+<td><code>--ratio 0.3</code> bilan qayta</td>
+</tr>
+<tr>
+<td>AR o'lchami noto'g'ri</td>
+<td><code>ar-scale</code> yoki masshtab</td>
+<td><code>ar-scale="fixed"</code> + metrda</td>
+</tr>
+<tr>
+<td>Migratsiya konflikt</td>
+<td>Parallel branch</td>
+<td><code>makemigrations --merge</code></td>
+</tr>
+</tbody>
+</table><div class='part'><div class='n'>08</div><h1>Test strategiyasi</h1></div><blockquote>
+<p>Testlar <strong>kod bilan birga</strong> yoziladi, oxirida emas.<br />
+Har vazifa tugaganda test o'tishi shart.</p>
+</blockquote>
+<hr />
+<h2>1. TEST PIRAMIDASI</h2>
+<pre><code>           ▲
+          ╱ ╲         E2E (5%)  — to'liq oqim, sekin
+         ╱───╲                     QR→menyu→AR→buyurtma→to'lov
+        ╱     ╲
+       ╱───────╲      Integratsiya (25%) — API + DB + WS
+      ╱         ╲                          endpoint, consumer
+     ╱───────────╲
+    ╱             ╲   Unit (70%) — funksiya, servis, model
+   ╱───────────────╲                narx hisobi, holat mashinasi
+</code></pre>
+<hr />
+<h2>2. TEST TURLARI VA QACHON</h2>
+<table>
+<thead>
+<tr>
+<th>Tur</th>
+<th>Qachon yoziladi</th>
+<th>Fayl</th>
+<th>Tezlik</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Unit</strong></td>
+<td>Har servis/funksiya bilan</td>
+<td><code>tests/unit/</code></td>
+<td>~1ms</td>
+</tr>
+<tr>
+<td><strong>Integratsiya</strong></td>
+<td>Har endpoint bilan</td>
+<td><code>tests/api/</code></td>
+<td>~50ms</td>
+</tr>
+<tr>
+<td><strong>WS</strong></td>
+<td>Har consumer bilan</td>
+<td><code>tests/ws/</code></td>
+<td>~100ms</td>
+</tr>
+<tr>
+<td><strong>E2E</strong></td>
+<td>Faza oxirida</td>
+<td><code>tests/e2e/</code></td>
+<td>~2s</td>
+</tr>
+<tr>
+<td><strong>Yuklama</strong></td>
+<td>Reliz oldidan</td>
+<td><code>tests/load/</code></td>
+<td>daqiqalar</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. ⛔ 5 TA MAJBURIY TEST (deploy bloklaydi)</h2>
+<p>CI'da bu testlar o'tmasa <strong>deploy to'xtatiladi</strong>:</p>
+<h3>3.1 Tenant izolyatsiya</h3>
+<p><strong>Fayl:</strong> <code>tests/test_tenant_isolation.py</code></p>
+<pre><code class="language-python">import pytest
+from django.apps import apps
+
+# Barcha tenant modellari avtomatik topiladi
+TENANT_MODELS = [
+    m for m in apps.get_models()
+    if any(f.name == 'restaurant' for f in m._meta.fields)
+]
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('model', TENANT_MODELS, ids=lambda m: m.__name__)
+def test_model_has_restaurant_fk(model):
+    &quot;&quot;&quot;Har tenant modelida restaurant FK bo'lishi shart&quot;&quot;&quot;
+    assert any(f.name == 'restaurant' for f in model._meta.fields)
+
+
+@pytest.mark.django_db
+def test_cross_tenant_dish_forbidden(api_client, restaurant, restaurant2, admin_token):
+    from apps.menu.models import Dish, Category
+    cat = Category.objects.create(restaurant=restaurant2, name_uz='B')
+    dish = Dish.objects.create(category=cat, restaurant=restaurant2,
+                               name_uz='B taomi', price=1000)
+    r = api_client.get(f'/v1/admin/dishes/{dish.id}/',
+                       HTTP_AUTHORIZATION=f'Bearer {admin_token}')
+    assert r.status_code in (403, 404), &quot;⛔ Cross-tenant kirish ochiq!&quot;
+
+
+@pytest.mark.django_db
+def test_cross_tenant_order_forbidden(api_client, restaurant, restaurant2, staff_token):
+    ...  # xuddi shunday Order uchun
+
+
+@pytest.mark.django_db
+def test_qr_token_scoped(api_client, restaurant, restaurant2):
+    &quot;&quot;&quot;Boshqa restoran QR tokeni bilan kirilsa — o'sha restoran menyusi&quot;&quot;&quot;
+    ...
+</code></pre>
+<h3>3.2 Tarjima to'liqligi</h3>
+<p><strong>Fayl:</strong> <code>tests/test_i18n_completeness.py</code></p>
+<pre><code class="language-python">import json, pathlib, re
+
+BASE = pathlib.Path('static/i18n')
+LANGS = ['uz', 'ru', 'en']
+
+def flatten(d, prefix=''):
+    out = {}
+    for k, v in d.items():
+        key = f'{prefix}.{k}' if prefix else k
+        if isinstance(v, dict): out.update(flatten(v, key))
+        else: out[key] = v
+    return out
+
+def load(lang):
+    return flatten(json.load(open(BASE / f'{lang}.json', encoding='utf-8')))
+
+def test_all_langs_same_keys():
+    base = load('uz')
+    for lang in LANGS[1:]:
+        other = load(lang)
+        missing = set(base) - set(other)
+        extra   = set(other) - set(base)
+        assert not missing, f&quot;{lang} da yo'q: {sorted(missing)[:10]}&quot;
+        assert not extra,   f&quot;{lang} da ortiqcha: {sorted(extra)[:10]}&quot;
+
+def test_no_empty_values():
+    for lang in LANGS:
+        empty = [k for k, v in load(lang).items() if not str(v).strip()]
+        assert not empty, f&quot;{lang} bo'sh: {empty[:10]}&quot;
+
+def test_placeholders_match():
+    &quot;&quot;&quot;{n}, {amount} — 3 tilda bir xil bo'lishi kerak&quot;&quot;&quot;
+    base = load('uz')
+    for lang in LANGS[1:]:
+        other = load(lang)
+        for k, v in base.items():
+            p1 = set(re.findall(r'\{(\w+)\}', str(v)))
+            p2 = set(re.findall(r'\{(\w+)\}', str(other.get(k, ''))))
+            assert p1 == p2, f&quot;{k}: uz={p1} {lang}={p2}&quot;
+</code></pre>
+<h3>3.3 Buyurtma holat mashinasi</h3>
+<p><strong>Fayl:</strong> <code>tests/test_order_state.py</code></p>
+<pre><code class="language-python">import pytest
+from apps.orders.state import transition, ALLOWED
+from core.exceptions import InvalidTransition
+
+@pytest.mark.django_db
+def test_valid_flow(order):
+    for st in ['accepted', 'cooking', 'ready', 'served', 'paid']:
+        transition(order, st)
+        assert order.status == st
+
+@pytest.mark.django_db
+def test_invalid_transition_rejected(order):
+    with pytest.raises(InvalidTransition):
+        transition(order, 'paid')          # new → paid MUMKIN EMAS
+
+@pytest.mark.django_db
+def test_paid_is_terminal(order):
+    for st in ['accepted','cooking','ready','served','paid']:
+        transition(order, st)
+    with pytest.raises(InvalidTransition):
+        transition(order, 'cancelled')
+
+@pytest.mark.django_db
+def test_timestamps_recorded(order):
+    transition(order, 'accepted')
+    assert order.accepted_at is not None
+</code></pre>
+<h3>3.4 Narx hisobi (serverda)</h3>
+<p><strong>Fayl:</strong> <code>tests/test_price_calculation.py</code></p>
+<pre><code class="language-python">@pytest.mark.django_db
+def test_price_from_server_not_client(api_client, guest_session, dish):
+    &quot;&quot;&quot;Frontenddan yuborilgan narx E'TIBORGA OLINMAYDI&quot;&quot;&quot;
+    dish.price = 50000; dish.save()
+    r = api_client.post('/v1/orders/', {
+        'session_id': guest_session.id, 'table_id': guest_session.table_id,
+        'items': [{'dish_id': dish.id, 'qty': 2, 'price': 1}],   # ⚡ soxta narx
+    }, format='json', HTTP_X_IDEMPOTENCY_KEY='k1')
+    assert r.status_code == 201
+    assert r.data['subtotal'] == 100000       # 50000 × 2, soxta narx emas
+
+@pytest.mark.django_db
+def test_qty_is_integer(api_client, guest_session, dish):
+    r = api_client.post('/v1/orders/', {..., 'items': [{'dish_id': dish.id, 'qty': 2.7}]},
+                        format='json', HTTP_X_IDEMPOTENCY_KEY='k2')
+    assert r.data['items'][0]['qty'] == 3     # Math.ceil
+
+@pytest.mark.django_db
+def test_service_fee_applied(api_client, guest_session, dish, restaurant):
+    restaurant.service_fee_pct = 10; restaurant.save()
+    ...
+    assert r.data['service_fee'] == r.data['subtotal'] * 0.10
+</code></pre>
+<h3>3.5 To'lov idempotentligi</h3>
+<p><strong>Fayl:</strong> <code>tests/test_payment_idempotency.py</code></p>
+<pre><code class="language-python">@pytest.mark.django_db
+def test_duplicate_order_not_created(api_client, guest_session, dish):
+    payload = {...}
+    r1 = api_client.post('/v1/orders/', payload, format='json',
+                         HTTP_X_IDEMPOTENCY_KEY='same-key')
+    r2 = api_client.post('/v1/orders/', payload, format='json',
+                         HTTP_X_IDEMPOTENCY_KEY='same-key')
+    assert r1.data['id'] == r2.data['id']
+    assert Order.objects.count() == 1
+
+@pytest.mark.django_db
+def test_webhook_processed_once(api_client, payment):
+    for _ in range(3):
+        api_client.post('/v1/payments/webhook/payme/', webhook_payload, format='json')
+    payment.refresh_from_db()
+    assert payment.status == 'paid'
+    assert Payment.objects.filter(order=payment.order, status='paid').count() == 1
+</code></pre>
+<hr />
+<h2>4. FAZA BO'YICHA TEST TALABLARI</h2>
+<table>
+<thead>
+<tr>
+<th>Faza</th>
+<th>Majburiy testlar</th>
+<th>Qamrov</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>resilience, exceptions</td>
+<td>60%</td>
+</tr>
+<tr>
+<td>1</td>
+<td>⛔ <strong>tenant izolyatsiya</strong>, auth, JWT, PIN blok</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>menyu API, kesh, 3 til, filtr, ⛔ i18n to'liqlik</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>QR noyob, PDF, grace period</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>QR→menyu oqimi, savat, PWA</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>⛔ <strong>holat mashinasi</strong>, ⛔ <strong>narx</strong>, ⛔ <strong>idempotency</strong>, WS</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>6</td>
+<td>AR API, fayl limiti, o'lcham, fallback, kutubxona</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>7</td>
+<td>zal plan saqlash, stol holati</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>8</td>
+<td>hisobotlar, eksport</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>9</td>
+<td>MCP fallback, byudjet, chatbot validatsiya</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>10</td>
+<td>⛔ <strong>to'lov idempotency</strong>, webhook imzo, fiskal retry</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>11</td>
+<td>keshbek, otziv filtri</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>12</td>
+<td>health, self-healing, yuklama</td>
+<td>70%</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. FIXTURE'LAR (<code>tests/conftest.py</code>)</h2>
+<pre><code class="language-python">import pytest
+from rest_framework.test import APIClient
+
+@pytest.fixture
+def api_client(): return APIClient()
+
+@pytest.fixture
+def restaurant(db):
+    from apps.tenants.models import Restaurant
+    return Restaurant.objects.create(slug='test-rest', name='Test',
+        phone='998901234567', city='Toshkent', plan='pro', is_active=True)
+
+@pytest.fixture
+def restaurant2(db):
+    &quot;&quot;&quot;⚡ Cross-tenant testlar uchun&quot;&quot;&quot;
+    from apps.tenants.models import Restaurant
+    return Restaurant.objects.create(slug='test-2', name='Ikkinchi',
+        phone='998901234568', city='Samarqand', plan='start', is_active=True)
+
+@pytest.fixture
+def hall(restaurant):
+    from apps.tables.models import Hall
+    return Hall.objects.create(restaurant=restaurant, name='1-qavat')
+
+@pytest.fixture
+def table(hall, restaurant):
+    from apps.tables.models import Table
+    return Table.objects.create(hall=hall, restaurant=restaurant, number='5', capacity=4)
+
+@pytest.fixture
+def category(restaurant):
+    from apps.menu.models import Category
+    return Category.objects.create(restaurant=restaurant, name_uz='Milliy',
+                                   name_ru='Национальные', name_en='National')
+
+@pytest.fixture
+def dish(category, restaurant):
+    from apps.menu.models import Dish
+    return Dish.objects.create(category=category, restaurant=restaurant,
+        name_uz='Osh', name_ru='Плов', name_en='Pilaf', price=45000,
+        cook_min=20, is_available=True)
+
+@pytest.fixture
+def staff(restaurant, django_user_model):
+    from apps.accounts.models import Staff
+    from apps.accounts.services import hash_pin
+    u = django_user_model.objects.create_user('waiter1', password='x')
+    return Staff.objects.create(restaurant=restaurant, user=u, role='waiter',
+                                pin_hash=hash_pin('1234'))
+
+@pytest.fixture
+def staff_token(staff):
+    from apps.accounts.tokens import make_token
+    return make_token(staff)
+
+@pytest.fixture
+def admin_token(restaurant, django_user_model):
+    from apps.accounts.models import Staff
+    from apps.accounts.tokens import make_token
+    u = django_user_model.objects.create_user('admin1', password='x')
+    s = Staff.objects.create(restaurant=restaurant, user=u, role='admin')
+    return make_token(s)
+
+@pytest.fixture
+def guest_session(restaurant, table):
+    from apps.guest.models import Guest, GuestSession
+    g = Guest.objects.create(restaurant=restaurant, device_token='dev-1')
+    return GuestSession.objects.create(guest=g, table=table, restaurant=restaurant)
+
+@pytest.fixture
+def order(restaurant, table, guest_session, dish):
+    from apps.orders.models import Order, OrderItem
+    o = Order.objects.create(restaurant=restaurant, table=table,
+        session_id=str(guest_session.id), number='#001',
+        subtotal=45000, total=45000)
+    OrderItem.objects.create(order=o, dish=dish, qty=1, price=45000)
+    return o
+</code></pre>
+<hr />
+<h2>6. E2E TESTLAR (faza oxirida)</h2>
+<p><strong>Fayl:</strong> <code>tests/e2e/test_full_flow.py</code></p>
+<pre><code class="language-python">@pytest.mark.django_db
+def test_qr_to_order_flow(api_client, table, dish):
+    &quot;&quot;&quot;QR → menyu → savat → buyurtma → KDS → ofitsiant → to'lov&quot;&quot;&quot;
+
+    # 1. QR skanerlash
+    r = api_client.get(f'/t/{table.qr_token}', follow=True)
+    assert r.status_code == 200
+
+    # 2. Menyu olish
+    r = api_client.get(f'/v1/menu/{table.restaurant.slug}/?lang=uz')
+    assert r.status_code == 200
+    assert any(d['id'] == dish.id for d in r.data['dishes'])
+
+    # 3. Buyurtma
+    r = api_client.post('/v1/orders/', {...}, format='json',
+                        HTTP_X_IDEMPOTENCY_KEY='e2e-1')
+    assert r.status_code == 201
+    order_id = r.data['id']
+
+    # 4. Ofitsiant qabul qiladi
+    r = api_client.post(f'/v1/staff/orders/{order_id}/accept/', ...)
+    assert r.status_code == 200
+
+    # 5. Oshpaz: cooking → ready
+    api_client.post(f'/v1/staff/orders/{order_id}/cook/', ...)
+    api_client.post(f'/v1/staff/orders/{order_id}/ready/', ...)
+
+    # 6. Ofitsiant olib boradi
+    api_client.post(f'/v1/staff/orders/{order_id}/serve/', ...)
+
+    from apps.orders.models import Order
+    assert Order.objects.get(id=order_id).status == 'served'
+</code></pre>
+<hr />
+<h2>7. YUKLAMA TESTI (reliz oldidan)</h2>
+<p><strong>Fayl:</strong> <code>tests/load/menu.js</code> (k6)</p>
+<pre><code class="language-javascript">import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '2m', target: 500 },
+    { duration: '5m', target: 2000 },
+    { duration: '2m', target: 5000 },
+    { duration: '3m', target: 0 },
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)&lt;250'],
+    http_req_failed: ['rate&lt;0.01'],
+  },
+};
+
+export default function () {
+  const r = http.get(`${__ENV.BASE_URL}/v1/menu/test-rest/?lang=uz`);
+  check(r, {
+    'status 200': (x) =&gt; x.status === 200,
+    'has dishes': (x) =&gt; JSON.parse(x.body).dishes.length &gt; 0,
+  });
+  sleep(1);
+}
+</code></pre>
+<pre><code class="language-bash">k6 run -e BASE_URL=https://stage.armenu.uz tests/load/menu.js
+</code></pre>
+<hr />
+<h2>8. CHAOS TESTI (oyiga 1 marta, staging'da)</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Buyruq</th>
+<th>Kutilgan natija</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web node o'chirish</td>
+<td><code>systemctl stop armenu</code> (1 ta)</td>
+<td>Foydalanuvchi sezmaydi</td>
+</tr>
+<tr>
+<td>Redis o'chirish</td>
+<td><code>systemctl stop redis</code></td>
+<td>Menyu ishlaydi (DB'dan), WS uziladi va tiklanadi</td>
+</tr>
+<tr>
+<td>DB primary o'chirish</td>
+<td><code>systemctl stop postgresql</code></td>
+<td>30-60s yozish yo'q, o'qish uzilmaydi</td>
+</tr>
+<tr>
+<td>AI provayder bloklash</td>
+<td>firewall</td>
+<td>Keyingi provayderga o'tadi</td>
+</tr>
+<tr>
+<td>Disk to'ldirish 95%</td>
+<td><code>fallocate</code></td>
+<td>Auto-cleanup ishlaydi</td>
+</tr>
+<tr>
+<td>Worker o'ldirish</td>
+<td><code>kill -9</code></td>
+<td>Job qayta navbatga (60s)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>9. BUYRUQLAR</h2>
+<pre><code class="language-bash"># Tez (ishlab chiqishda)
+pytest -x -q
+
+# To'liq + qamrov
+pytest --cov=apps --cov=core --cov-report=term-missing --cov-fail-under=75
+
+# Faqat majburiy testlar (CI)
+pytest tests/test_tenant_isolation.py tests/test_i18n_completeness.py \
+       tests/test_order_state.py tests/test_price_calculation.py \
+       tests/test_payment_idempotency.py -v
+
+# Bitta test
+pytest tests/test_orders.py::test_idempotency -v
+
+# Sekin testlarni chetlab o'tish
+pytest -m &quot;not slow&quot;
+
+# Parallel (tez)
+pytest -n auto
+</code></pre></body></html>
