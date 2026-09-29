@@ -3,6 +3,7 @@ from . import views
 from . import telegram_webhook
 from . import health
 from . import tma_views
+from ar3d import views as ar3d_views
 
 urlpatterns = [
     # Health check
@@ -98,12 +99,34 @@ urlpatterns = [
     path('t/<uuid:token>/', views.table_menu_redirect, name='table_menu_redirect'),
     path('m/<slug:slug>/', views.ar_menu_page, name='ar_menu_page'),
 
-    # Telegram Mini App (TMA)
+    # Telegram Mini App (TMA) & Web Menyu (Restoran Mahsulot #1 - Mustaqil va to'liq responsiv)
+    path('restaurant/', tma_views.tma_home, name='restaurant_home'),
+    path('restaurant/catalog/', tma_views.tma_catalog, name='restaurant_catalog'),
+    path('restaurant/cart/', tma_views.tma_cart, name='restaurant_cart'),
+    path('restaurant/checkout/', tma_views.tma_checkout, name='restaurant_checkout'),
+    path('restaurant/table/', tma_views.tma_table_hub, name='restaurant_table_hub'),
+    path('restaurant/orders/', tma_views.tma_orders, name='restaurant_orders'),
+
+    # O'zbekcha va qisqa aliaslar
+    path('restoran/', tma_views.tma_home, name='restoran_home'),
+    path('ar-menu/', tma_views.tma_home, name='ar_menu_home'),
+
+    # Orqaga moslik uchun /menu/ va /tma/ yo'llari
     path('tma/', tma_views.tma_home, name='tma_home'),
+    path('menu/', tma_views.tma_home, name='tma_menu'),
+    path('menu/catalog/', tma_views.tma_catalog, name='tma_menu_catalog'),
+    path('menu/cart/', tma_views.tma_cart, name='tma_menu_cart'),
+    path('menu/checkout/', tma_views.tma_checkout, name='tma_menu_checkout'),
+    path('menu/table/', tma_views.tma_table_hub, name='tma_menu_table'),
+    path('menu/orders/', tma_views.tma_orders, name='tma_menu_orders'),
     path('tma/catalog/', tma_views.tma_catalog, name='tma_catalog'),
     path('tma/cart/', tma_views.tma_cart, name='tma_cart'),
     path('tma/api/cart/', tma_views.tma_cart_api, name='tma_cart_api'),
     path('tma/checkout/', tma_views.tma_checkout, name='tma_checkout'),
+    path('tma/table/', tma_views.tma_table_hub, name='tma_table_hub'),
     path('tma/orders/', tma_views.tma_orders, name='tma_orders'),
     path('tma/order/<int:pk>/', tma_views.tma_order_detail, name='tma_order_detail'),
+
+    # 3D Studio & Servis (Mahsulot #3)
+    path('studio/', ar3d_views.print_3d_studio_page, name='studio_home'),
 ]

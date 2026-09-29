@@ -1,25 +1,150 @@
 {% extends "base.html" %}
-{% block title %}To'lov muvaffaqiyatli — Online Store Guliston{% endblock %}
+{% load humanize %}
+{% block title %}To'lov Muvaffaqiyatli Qabul Qilindi — Online Store Guliston{% endblock %}
 
 {% block content %}
-<div style="max-width:480px;margin:0 auto;padding:48px 16px;text-align:center;">
-  <div style="
-    width:80px;height:80px;border-radius:50%;background:#f0fdf4;
-    display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
-  ">
-    <span style="font-size:40px;">✅</span>
-  </div>
+<div class="min-h-[75vh] flex items-center justify-center py-12 px-4 relative overflow-hidden">
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
 
-  <h1 style="font-family:'Fraunces',serif;font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">
-    To'lov muvaffaqiyatli!
-  </h1>
-  <p style="color:#6b7280;font-size:15px;margin-bottom:32px;">
-    Buyurtmangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.
-  </p>
+    <div class="max-w-md w-full space-y-6 text-center relative z-10">
 
-  <a href="/orders/" style="
-    display:inline-block;padding:12px 32px;background:#16a34a;color:white;
-    border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;
-  ">Buyurtmalarim</a>
+        <!-- Muvaffaqiyat nishoni -->
+        <div class="w-20 h-20 rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 flex items-center justify-center mx-auto text-4xl shadow-lg shadow-emerald-500/10 animate-bounce">
+            🎉
+        </div>
+
+        <div class="space-y-2">
+            <h1 class="font-display font-black text-2xl sm:text-3xl text-ink">
+                To'lov Muvaffaqiyatli!
+            </h1>
+            <p class="text-xs sm:text-sm text-muted max-w-sm mx-auto leading-relaxed">
+                Buyurtmangiz to'lovi qabul qilindi. Oshxona va ofitsiantga yangi buyurtma xabari yetkazildi!
+            </p>
+        </div>
+
+        <!-- Chek Kartasi -->
+        <div class="card p-5 sm:p-6 text-left border border-border space-y-3 shadow-md bg-card">
+            <div class="flex items-center justify-between border-b border-border pb-3">
+                <span class="text-xs text-muted">To'lov Holati:</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                    <span>✓</span> To'langan (Qabul qilindi)
+                </span>
+            </div>
+
+            {% if order %}
+            <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-muted">Buyurtma raqami:</span>
+                    <span class="font-mono font-bold text-ink">#{{ order.order_number }}</span>
+                </div>
+                {% if order.table %}
+                <div class="flex items-center justify-between">
+                    <span class="text-muted">Stol / Joy:</span>
+                    <span class="font-bold text-primary">Stol #{{ order.table.number }} ({{ order.table.hall.name|default:"Asosiy zal" }})</span>
+                </div>
+                {% endif %}
+                <div class="flex items-center justify-between">
+                    <span class="text-muted">Muassasa:</span>
+                    <span class="font-bold text-ink">{{ order.shop.name|default:"Online Store Guliston" }}</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-border font-bold text-sm">
+                    <span class="text-ink">Jami to'langan summa:</span>
+                    <span class="text-primary font-black">{{ order.final_amount|floatformat:0 }} so'm</span>
+                </div>
+            </div>
+            {% elif order_id %}
+            <div class="text-xs space-y-1">
+                <p class="text-muted">Buyurtma ID: <span class="font-mono font-bold text-ink">#{{ order_id }}</span></p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tugmalar -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {% if order %}
+            <a href="{% url 'order_tracking' order.order_number %}" class="btn btn-primary w-full sm:w-auto justify-center !py-2.5 !px-6 text-xs font-bold shadow-md">
+                📦 Buyurtmani Kuzatish
+            </a>
+            {% endif %}
+            <a href="/" class="btn btn-outline w-full sm:w-auto justify-center !py-2.5 !px-6 text-xs font-bold">
+                Bosh Sahifaga Qaytish
+            </a>
+        </div>
+
+    </div>
 </div>
+
+<!-- Yengil Vanilla JS Confetti Otish Animatsiyasi -->
+<script>
+(function() {
+    // Mobil haptic tebranish
+    if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([60, 50, 60]);
+    }
+
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const colors = ['#16a34a', '#eab308', '#3b82f6', '#ec4899', '#8b5cf6', '#f97316'];
+
+    for (let i = 0; i < 90; i++) {
+        particles.push({
+            x: width / 2,
+            y: height / 2 - 50,
+            r: Math.random() * 6 + 3,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vx: (Math.random() - 0.5) * 16,
+            vy: (Math.random() - 0.8) * 18,
+            gravity: 0.35,
+            opacity: 1,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 10
+        });
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, width, height);
+        let active = false;
+
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.vx *= 0.98;
+            p.opacity -= 0.009;
+            p.rotation += p.rotationSpeed;
+
+            if (p.opacity > 0) {
+                active = true;
+                ctx.save();
+                ctx.globalAlpha = p.opacity;
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.r, -p.r, p.r * 2, p.r * 1.5);
+                ctx.restore();
+            }
+        });
+
+        if (active) {
+            requestAnimationFrame(render);
+        } else {
+            ctx.clearRect(0, 0, width, height);
+        }
+    }
+
+    requestAnimationFrame(render);
+})();
+</script>
 {% endblock %}

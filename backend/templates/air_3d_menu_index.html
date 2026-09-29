@@ -21,6 +21,12 @@
     <script type="module" async src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
     <script type="module" crossorigin src="/assets/index.js?v=2.6"></script>
     <link rel="stylesheet" crossorigin href="/assets/index.css?v=2.6">
+    <style>
+      :root {
+        --color-primary: {{ shop.color_primary|default:'#10b981' }};
+        --color-accent: {{ shop.color_accent|default:'#f59e0b' }};
+      }
+    </style>
   </head>
   <body>
     <div id="root">

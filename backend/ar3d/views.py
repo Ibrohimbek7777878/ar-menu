@@ -397,9 +397,13 @@ def ar_3d_menu_page(request, slug=None):
         'lang': lang,
         'is_nfc': is_nfc,
         'csrf_token': get_token(request),
+        'color_primary': shop.color_primary if (shop and shop.color_primary) else '#10b981',
+        'color_accent': shop.color_accent if (shop and shop.color_accent) else '#f59e0b',
+        'template_style': getattr(shop, 'store_type', 'restaurant'),
     }
 
     return render(request, 'air_3d_menu_index.html', {
+        'shop': shop,
         'initial_data_json': json.dumps(initial_data)
     })
 
@@ -423,7 +427,11 @@ def v1_menu_api(request, slug):
         'slug': shop.slug if shop else 'demo',
         'name': shop.name if shop else "Registon Lounge & Restaurant",
         'logo': shop.image.url if (shop and getattr(shop, 'image', None)) else None,
-        'colors': {'primary': '#10b981', 'accent': '#f59e0b'},
+        'colors': {
+            'primary': shop.color_primary if (shop and shop.color_primary) else '#10b981',
+            'accent': shop.color_accent if (shop and shop.color_accent) else '#f59e0b'
+        },
+        'template_style': getattr(shop, 'store_type', 'restaurant'),
         'langs': ['uz', 'ru', 'en'],
         'default_lang': 'uz',
         'service_fee_pct': 10,

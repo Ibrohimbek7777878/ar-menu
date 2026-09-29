@@ -59,7 +59,7 @@ function changeModelColor(r, g, b) {
             <div class="card-surface aspect-square flex flex-col items-center justify-center p-4 overflow-hidden {% if cfg.bg_theme == 'dark' %}bg-slate-900 border-slate-800{% else %}bg-card{% endif %}" style="position:relative;">
                 <template x-if="!view3d && !showVideo">
                     <div class="w-full h-full flex flex-col items-center justify-center gap-4">
-                        <img src="{% if product.asset_3d.poster_image %}{{ product.asset_3d.poster_image.url }}{% elif product.image %}{{ product.image.url }}{% endif %}" alt="{{ product.name }}" class="max-w-full max-h-full object-contain rounded-xl">
+                        <img src="{% if product.asset_3d.poster_image %}{{ product.asset_3d.poster_image.url }}{% elif product.image %}{{ product.image.url }}{% else %}/static/images/dish-placeholder.svg{% endif %}" alt="{{ product.name }}" class="max-w-full max-h-full object-contain rounded-xl" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
                         <button @click="view3d = true" class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 shadow-md" style="background:var(--primary, #16a34a);">
                             <span class="material-icons-outlined text-lg">view_in_ar</span>
                             {{ t.ar_view|default:"3D / AR ko'rish" }}
@@ -153,7 +153,7 @@ function changeModelColor(r, g, b) {
                     </div>
                 </template>
                 <div x-show="!showVideo" class="w-full h-full flex items-center justify-center">
-                    <img x-show="active === 0" src="{% if product.image %}{{ product.image.url }}{% endif %}" alt="{{ product.name }}" x-transition class="max-w-full max-h-full object-contain">
+                    <img x-show="active === 0" src="{% if product.image %}{{ product.image.url }}{% else %}/static/images/dish-placeholder.svg{% endif %}" alt="{{ product.name }}" x-transition class="max-w-full max-h-full object-contain" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
                     {% if product.image2 %}
                     <img x-show="active === 1" src="{{ product.image2.url }}" alt="{{ product.name }}" x-transition class="max-w-full max-h-full object-contain">
                     {% endif %}
@@ -320,7 +320,7 @@ function changeModelColor(r, g, b) {
             </form>
 
             <!-- Add to cart -->
-            <form method="POST" action="{% url 'customer_cart_add' %}" class="flex items-center gap-3 mb-8" @submit.prevent="let f=$el; if(Object.keys(selectedVariants).length) { let inp=document.createElement('input'); inp.type='hidden'; inp.name='variants'; inp.value=JSON.stringify(selectedVariants); f.appendChild(inp); } f.submit();">
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="add-to-cart-form flex items-center gap-3 mb-8" @submit="if(Object.keys(selectedVariants).length) { let inp=document.createElement('input'); inp.type='hidden'; inp.name='variants'; inp.value=JSON.stringify(selectedVariants); $el.appendChild(inp); }">
                 {% csrf_token %}
                 <input type="hidden" name="product_id" value="{{ product.id }}">
                 <div class="flex items-center border border-border rounded-xl overflow-hidden bg-card">

@@ -1,25 +1,43 @@
 {% extends "tma/base_tma.html" %}
 
-{% block title %}Savat — Telegram Mini App{% endblock %}
+{% block title %}Savat — 3D Menyu{% endblock %}
 
 {% block extra_head %}
 <style>
-    .tma-cart-item {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 12px;
-        margin-bottom: 10px;
+    .cart-layout {
         display: flex;
-        gap: 12px;
+        flex-direction: column;
+        gap: 20px;
+    }
+    @media (min-width: 900px) {
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 28px;
+            align-items: start;
+        }
+    }
+
+    .tma-cart-item {
+        background: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        display: flex;
+        gap: 16px;
         align-items: center;
+        transition: border-color 0.15s;
+    }
+    .tma-cart-item:hover {
+        border-color: rgba(245, 158, 11, 0.35);
     }
     .tma-cart-img {
-        width: 64px;
-        height: 64px;
-        border-radius: var(--radius-sm);
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
         object-fit: cover;
-        background: #f1f5f9;
+        background: #0f172a;
         flex-shrink: 0;
     }
     .tma-cart-info {
@@ -27,113 +45,171 @@
     }
     .tma-cart-title {
         font-weight: 700;
-        font-size: 14px;
-        margin-bottom: 2px;
+        font-size: 15px;
+        color: #f8fafc;
+        margin-bottom: 4px;
     }
     .tma-cart-price {
-        color: var(--primary);
-        font-weight: 700;
-        font-size: 13px;
+        color: #f59e0b;
+        font-weight: 800;
+        font-size: 15px;
     }
     .tma-qty-controls {
         display: flex;
         align-items: center;
-        gap: 8px;
-        background: rgba(0, 0, 0, 0.04);
-        padding: 4px 8px;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 6px 12px;
         border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .tma-qty-btn {
         background: none;
         border: none;
-        font-size: 16px;
-        font-weight: 700;
+        font-size: 18px;
+        font-weight: 800;
         cursor: pointer;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-color);
+        color: #f59e0b;
+        transition: transform 0.1s;
+    }
+    .tma-qty-btn:active {
+        transform: scale(0.85);
     }
     .tma-summary-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 16px;
-        margin-top: 16px;
+        background: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 22px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
     .tma-summary-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 13px;
-        color: var(--hint-color);
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: #94a3b8;
     }
     .tma-summary-total {
         display: flex;
         justify-content: space-between;
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 800;
-        color: var(--text-color);
-        border-top: 1px dashed var(--border-color);
-        padding-top: 10px;
-        margin-top: 10px;
+        color: #f8fafc;
+        border-top: 1px dashed rgba(255, 255, 255, 0.12);
+        padding-top: 14px;
+        margin-top: 14px;
+    }
+    .tma-btn-primary {
+        display: block;
+        width: 100%;
+        background: #f59e0b;
+        color: #0f172a;
+        border: none;
+        border-radius: 14px;
+        padding: 14px 20px;
+        font-size: 15px;
+        font-weight: 800;
+        text-align: center;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+        transition: transform 0.1s, background-color 0.15s;
+        box-sizing: border-box;
+    }
+    .tma-btn-primary:hover {
+        background: #fbbf24;
+    }
+    .tma-btn-primary:active {
+        transform: scale(0.98);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 14px;">🛒 Savatcha</h2>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px;">
+        <h2 style="font-size: 22px; font-weight: 800; color: #f8fafc;">🛒 Buyurtma Savatchasi</h2>
+        <a href="/restaurant/" style="color: #f59e0b; font-size: 13px; font-weight: 700; text-decoration: none;">&larr; Menyu qo'shish</a>
+    </div>
 
     {% if items %}
-        {% if shop_name %}
-            <div style="font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 10px;">
-                🏪 Do'kon: {{ shop_name }}
+        {% if table %}
+            <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 14px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 14px; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                    <span>📍</span>
+                    <span>Stol №{{ table.number }} — {{ table.hall.name|default:"Asosiy zal" }}</span>
+                </div>
+                <div style="font-size: 12px; background: #059669; color: white; padding: 4px 12px; border-radius: 999px; font-weight: 700;">
+                    ✓ Stolga yetkaziladi
+                </div>
+            </div>
+        {% elif shop_name %}
+            <div style="font-size: 13px; font-weight: 700; color: #f59e0b; margin-bottom: 14px;">
+                🍽 {{ shop_name }}
             </div>
         {% endif %}
 
-        {% for item in items %}
-            <div class="tma-cart-item" id="item-row-{{ item.product_id }}">
-                {% if item.image %}
-                    <img src="{{ item.image }}" alt="{{ item.name }}" class="tma-cart-img">
-                {% else %}
-                    <div class="tma-cart-img" style="display:flex;align-items:center;justify-content:center;font-size:24px;">🛍</div>
-                {% endif %}
-                <div class="tma-cart-info">
-                    <div class="tma-cart-title">{{ item.name }}</div>
-                    <div class="tma-cart-price">{{ item.price|floatformat:0 }} so'm</div>
-                </div>
-                <div class="tma-qty-controls">
-                    <button class="tma-qty-btn" onclick="tmaCartChange('decrease', '{{ item.product_id }}')">-</button>
-                    <span style="font-size: 13px; font-weight: 700;" id="qty-{{ item.product_id }}">{{ item.quantity }}</span>
-                    <button class="tma-qty-btn" onclick="tmaCartChange('add', '{{ item.product_id }}')">+</button>
-                </div>
+        <div class="cart-layout">
+            <!-- Left: Items List -->
+            <div>
+                {% for item in items %}
+                    <div class="tma-cart-item" id="item-row-{{ item.product_id }}">
+                        {% if item.image %}
+                            <img src="{{ item.image }}" alt="{{ item.name }}" class="tma-cart-img">
+                        {% else %}
+                            <div class="tma-cart-img" style="display:flex;align-items:center;justify-content:center;font-size:28px;">🍲</div>
+                        {% endif %}
+                        <div class="tma-cart-info">
+                            <div class="tma-cart-title">{{ item.name }}</div>
+                            <div class="tma-cart-price">{{ item.price|floatformat:0 }} so'm</div>
+                        </div>
+                        <div class="tma-qty-controls">
+                            <button class="tma-qty-btn" onclick="tmaCartChange('decrease', '{{ item.product_id }}')">−</button>
+                            <span style="font-size: 14px; font-weight: 800; min-width: 20px; text-align: center; color: #f8fafc;" id="qty-{{ item.product_id }}">{{ item.quantity }}</span>
+                            <button class="tma-qty-btn" onclick="tmaCartChange('add', '{{ item.product_id }}')">+</button>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
-        {% endfor %}
 
-        <div class="tma-summary-card">
-            <div class="tma-summary-row">
-                <span>Mahsulotlar soni:</span>
-                <span>{{ items|length }} ta</span>
-            </div>
-            <div class="tma-summary-total">
-                <span>Jami:</span>
-                <span id="tma-cart-total">{{ total_amount|floatformat:0 }} so'm</span>
+            <!-- Right: Order Summary Card -->
+            <div>
+                <div class="tma-summary-card">
+                    <h3 style="font-size: 16px; font-weight: 800; color: #f8fafc; margin-bottom: 16px;">Hisob-kitob</h3>
+                    <div class="tma-summary-row">
+                        <span>Taomlar soni:</span>
+                        <span style="color: #f8fafc; font-weight: 700;">{{ items|length }} xil</span>
+                    </div>
+                    {% if table %}
+                    <div class="tma-summary-row">
+                        <span>Xizmat ko'rsatish:</span>
+                        <span style="color: #10b981; font-weight: 700;">0 so'm (0%)</span>
+                    </div>
+                    {% endif %}
+                    <div class="tma-summary-total">
+                        <span>Jami summa:</span>
+                        <span id="tma-cart-total" style="color: #f59e0b;">{{ total_amount|floatformat:0 }} so'm</span>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <a href="/restaurant/checkout/" class="tma-btn-primary">
+                            Buyurtmani tasdiqlash &rarr;
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div style="margin-top: 16px;">
-            <a href="{% url 'tma_checkout' %}" class="tma-btn-primary">
-                Buyurtma berish &rarr;
-            </a>
-        </div>
     {% else %}
-        <div style="text-align: center; padding: 60px 20px;">
-            <div style="font-size: 48px; margin-bottom: 14px;">🛒</div>
-            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Savatingiz bo'sh</h3>
-            <p style="font-size: 13px; color: var(--hint-color); margin-bottom: 20px;">Katalogdan o'zingizga yoqqan mahsulotlarni tanlang.</p>
-            <a href="{% url 'tma_catalog' %}" class="tma-btn-primary" style="display:inline-block; width:auto; padding:12px 24px;">Katalogga o'tish</a>
+        <div style="text-align: center; padding: 80px 20px; background: #1e293b; border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+            <div style="font-size: 56px; margin-bottom: 16px;">🛒</div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #f8fafc; margin-bottom: 8px;">Savatingiz hozircha bo'sh</h3>
+            <p style="font-size: 14px; color: #94a3b8; margin-bottom: 24px;">Restoran menyusidan o'zingizga yoqqan taom yoki ichimliklarni tanlang.</p>
+            <a href="/restaurant/" class="tma-btn-primary" style="display:inline-block; width:auto; padding:12px 28px;">Menyuni ko'rish</a>
         </div>
     {% endif %}
 {% endblock %}
@@ -141,6 +217,11 @@
 {% block extra_scripts %}
 <script>
     function tmaCartChange(action, productId) {
+        const tg = window.Telegram?.WebApp;
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
         fetch('/tma/api/cart/', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -149,9 +230,49 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                // Yangi miqdorni ko'rsatish
+                const qtySpan = document.getElementById(`qty-${productId}`);
+                if (qtySpan) {
+                    qtySpan.textContent = data.item_qty || 0;
+                }
+
+                // Agar miqdor 0 bo'lsa, qatorni chiroyli olib tashlash
+                if (data.item_qty <= 0) {
+                    const row = document.getElementById(`item-row-${productId}`);
+                    if (row) {
+                        row.style.transition = 'all 0.25s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(-20px)';
+                        setTimeout(() => {
+                            row.remove();
+                            // Agar savat butkul bo'shab qolsa reload qilamiz
+                            if (data.cart_count <= 0) {
+                                location.reload();
+                            }
+                        }, 250);
+                    }
+                }
+
+                // Jami summani yangilash
+                const totalDisplay = document.getElementById('tma-cart-total');
+                if (totalDisplay && data.total_sum !== undefined) {
+                    const totalNum = parseFloat(data.total_sum) || 0;
+                    totalDisplay.textContent = Math.round(totalNum).toLocaleString('uz-UZ') + " so'm";
+                }
+
+                // Savat nishonlarini yangilash
+                const badge = document.getElementById('tma-cart-count');
+                if (badge) {
+                    badge.innerText = data.cart_count;
+                    badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
+                }
+                const deskBadge = document.getElementById('tma-cart-count-desk');
+                if (deskBadge) {
+                    deskBadge.innerText = data.cart_count;
+                }
             }
-        });
+        })
+        .catch(err => console.error(err));
     }
 </script>
 {% endblock %}

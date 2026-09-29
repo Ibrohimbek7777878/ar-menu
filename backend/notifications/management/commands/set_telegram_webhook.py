@@ -28,10 +28,20 @@ class Command(BaseCommand):
             )
 
         webhook = f"{base.rstrip('/')}/telegram/webhook/"
+        webhook_payload = {'url': webhook}
+        if 'trycloudflare.com' in base:
+            import socket
+            try:
+                domain = base.replace('https://', '').replace('http://', '').strip('/').split('/')[0]
+                ip = socket.gethostbyname(domain)
+                webhook_payload['ip_address'] = ip
+            except Exception:
+                webhook_payload['ip_address'] = '104.16.230.132'
+
         try:
             resp = httpx.post(
                 f'https://api.telegram.org/bot{token}/setWebhook',
-                json={'url': webhook},
+                json=webhook_payload,
                 timeout=10,
             )
             data = resp.json()
@@ -48,7 +58,7 @@ class Command(BaseCommand):
                     json={
                         "menu_button": {
                             "type": "web_app",
-                            "text": "🛍 Do'kon (Mini App)",
+                            "text": "🍽 3D Menyu (Mini App)",
                             "web_app": {"url": tma_url}
                         }
                     },

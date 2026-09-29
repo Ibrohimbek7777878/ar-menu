@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, permissions
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -8,6 +9,10 @@ from .serializers import (
     AdminUserSerializer, RegisterSerializer, LoginSerializer,
     CustomerSerializer, CustomerCreateSerializer
 )
+
+
+class AuthRateThrottle(AnonRateThrottle):
+    rate = '10/minute'
 
 
 class IsSuperAdmin(permissions.BasePermission):
@@ -47,6 +52,7 @@ class IsShopOwner(permissions.BasePermission):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([AuthRateThrottle])
 def login_view(request):
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -61,6 +67,7 @@ def login_view(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([AuthRateThrottle])
 def register_view(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

@@ -3,6 +3,29 @@
 {% block body %}<link rel="manifest" href="/static/manifest.json"><script>navigator.serviceWorker&&navigator.serviceWorker.register("/static/sw.js?v=3").catch(()=>{});</script>
 <div class="min-h-screen flex flex-col">
 
+    <!-- Universal 3-Product Ecosystem Switcher -->
+    <div class="bg-slate-900 border-b border-slate-800 text-white text-xs py-1.5 px-3 sm:px-6">
+        <div class="max-w-7xl 2xl:max-w-[1700px] mx-auto flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-1.5 font-bold">
+                <span class="text-amber-400">🌐 Ekotizim:</span>
+                <span class="text-slate-400 hidden sm:inline">3 ta mustaqil loyiha</span>
+            </div>
+            <div class="flex items-center gap-1 sm:gap-2">
+                <a href="/restaurant/" class="px-2.5 py-1 rounded-lg transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1">
+                    <span>🍽</span> <span class="font-semibold">1. 3D Menyu (Bot)</span>
+                </a>
+                <span class="text-slate-700">|</span>
+                <a href="{% url 'customer_home' %}" class="px-2.5 py-1 rounded-lg transition bg-blue-600 text-white font-extrabold shadow-xs flex items-center gap-1">
+                    <span>🛍</span> <span>2. Online Store</span>
+                </a>
+                <span class="text-slate-700">|</span>
+                <a href="{% url 'studio_home' %}" class="px-2.5 py-1 rounded-lg transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1">
+                    <span>🖨</span> <span class="font-semibold">3. 3D Studio</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Header — saytning glass dizayn tizimiga mos -->
     <header class="sticky top-0 z-40 border-b border-border glass">
         <div class="mx-auto flex h-14 sm:h-16 max-w-7xl 2xl:max-w-[1700px] items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
@@ -20,7 +43,7 @@
                         <svg class="size-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                         <span>3D/AR Menyu</span>
                     </a>
-                    <a href="{% url 'print_3d_studio' %}" class="rounded-full px-3 py-1.5 text-sm font-bold transition-all bg-indigo-600/10 text-indigo-600 hover:bg-indigo-600/20 border border-indigo-500/25 flex items-center gap-1.5">
+                    <a href="{% url 'studio_home' %}" class="rounded-full px-3 py-1.5 text-sm font-bold transition-all bg-indigo-600/10 text-indigo-600 hover:bg-indigo-600/20 border border-indigo-500/25 flex items-center gap-1.5">
                         <svg class="size-4 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/><circle cx="18" cy="12" r="1" fill="currentColor"/></svg>
                         <span>3D Printer</span>
                         <span class="bg-amber-500 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-xs">5% Keshbek</span>
@@ -38,7 +61,11 @@
                         <svg class="size-3.5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                         <span>3D Menyu</span>
                     </a>
-                    <a href="{% url 'print_3d_studio' %}" class="rounded-full px-2.5 py-1.5 text-xs sm:text-sm font-bold transition-colors bg-indigo-600/15 text-indigo-600 hover:bg-indigo-600/25 flex items-center gap-1.5 border border-indigo-500/20">
+                    <a href="/restaurant/" class="rounded-full px-3 py-1.5 text-xs sm:text-sm font-extrabold transition-all bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 hover:brightness-110 flex items-center gap-1.5 shadow-sm">
+                        <span>🍽</span>
+                        <span>Restoran 3D Menyu (Bot)</span>
+                    </a>
+                    <a href="{% url 'studio_home' %}" class="rounded-full px-2.5 py-1.5 text-xs sm:text-sm font-bold transition-colors bg-indigo-600/15 text-indigo-600 hover:bg-indigo-600/25 flex items-center gap-1.5 border border-indigo-500/20">
                         <svg class="size-3.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
                         <span>3D Print</span> <span class="bg-amber-500 text-slate-950 text-[9px] font-extrabold px-1 py-0.2 rounded-full">5%</span>
                     </a>
@@ -97,12 +124,10 @@
                 </a>
 
                 <!-- Cart button -->
-                <a href="{% url 'customer_cart' %}" class="relative inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
-                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
+                <a href="{% url 'customer_cart' %}" id="desktop-cart-btn" class="relative inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground transition-all hover:opacity-90">
+                    <svg class="size-4 cart-icon-svg transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
                     <span class="hidden sm:inline">{{ t.nav_cart }}</span>
-                    {% if cart_count %}
-                    <span class="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[11px] font-bold">{{ cart_count }}</span>
-                    {% endif %}
+                    <span id="desktop-cart-badge" class="cart-badge-count {% if not cart_count %}hidden{% endif %} rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[11px] font-bold">{{ cart_count|default:"0" }}</span>
                 </a>
 
                 <!-- Language Selector (mobilda yashiriladi — Profil sahifasida bor) -->
@@ -180,10 +205,10 @@
                 <svg class="size-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
                 <span>{{ t.nav_search }}</span>
             </a>
-            <a href="{% url 'customer_cart' %}" class="relative flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] rounded-xl text-[11px] font-medium transition-colors {% if request.resolver_match.url_name == 'customer_cart' %}text-primary bg-accent font-bold{% else %}text-muted hover:text-foreground{% endif %}">
+            <a href="{% url 'customer_cart' %}" id="mobile-cart-btn" class="relative flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] rounded-xl text-[11px] font-medium transition-colors {% if request.resolver_match.url_name == 'customer_cart' %}text-primary bg-accent font-bold{% else %}text-muted hover:text-foreground{% endif %}">
                 <span class="relative">
-                    <svg class="size-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
-                    {% if cart_count %}<span class="absolute -right-2 -top-1 grid min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] leading-[18px] text-primary-foreground font-bold">{{ cart_count }}</span>{% endif %}
+                    <svg class="size-[22px] cart-icon-svg transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
+                    <span id="mobile-cart-badge" class="mobile-cart-badge-count {% if not cart_count %}hidden{% endif %} absolute -right-2 -top-1 grid min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] leading-[18px] text-primary-foreground font-bold">{{ cart_count|default:"0" }}</span>
                 </span>
                 <span>{{ t.nav_cart }}</span>
             </a>
@@ -198,4 +223,211 @@
         </div>
     </nav>
 </div>
+
+<!-- ── Parabolic Cart Flight Animation & Haptic Vibration ── -->
+<style>
+@keyframes cartBounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.38) rotate(-9deg); }
+  65% { transform: scale(0.92) rotate(4deg); }
+  85% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.cart-bounce-active {
+  animation: cartBounce 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+.fly-to-cart-particle {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px -4px rgba(22, 163, 74, 0.45), 0 0 0 3px rgba(255, 255, 255, 0.95);
+  will-change: transform, opacity;
+}
+.cart-fly-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  opacity: 0;
+  z-index: 99998;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.cart-fly-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+@media (min-width: 768px) {
+  .cart-fly-toast {
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    transform: translateY(30px);
+  }
+  .cart-fly-toast.show {
+    transform: translateY(0);
+  }
+}
+</style>
+
+<script>
+(function() {
+    function initParabolicCart() {
+        document.addEventListener('submit', function(e) {
+            var form = e.target.closest('form');
+            if (!form) return;
+            var action = form.getAttribute('action') || '';
+            var isCartAdd = action.indexOf('/cart/add') !== -1 || action.indexOf('customer_cart_add') !== -1 || form.classList.contains('add-to-cart-form');
+            if (!isCartAdd) return;
+
+            e.preventDefault();
+            var submitBtn = form.querySelector('button[type="submit"]') || form.querySelector('button');
+            var productCard = form.closest('.card-surface') || form.closest('[data-product-card]') || form.parentElement;
+            var imgEl = productCard ? productCard.querySelector('img') : null;
+
+            var startEl = imgEl || submitBtn || form;
+            var startRect = startEl.getBoundingClientRect();
+
+            var desktopCart = document.getElementById('desktop-cart-btn');
+            var mobileCart = document.getElementById('mobile-cart-btn');
+            var targetEl = desktopCart;
+            if (window.innerWidth < 768 && mobileCart) {
+                targetEl = mobileCart;
+            } else if (desktopCart && (desktopCart.offsetParent === null || desktopCart.offsetWidth === 0) && mobileCart) {
+                targetEl = mobileCart;
+            }
+            if (!targetEl) targetEl = desktopCart || mobileCart;
+            var targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
+
+            if (targetRect && startRect.width > 0) {
+                runFlightAnimation(startRect, targetRect, imgEl ? imgEl.src : null, targetEl);
+            }
+
+            var formData = new FormData(form);
+            formData.append('ajax', '1');
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.success) {
+                    updateCartBadges(data.cart_count);
+                    showCartToast(data.message || 'Savatga qo\'shildi!');
+                }
+            })
+            .catch(function(err) {
+                form.submit();
+            });
+        });
+
+        function runFlightAnimation(startRect, targetRect, imgSrc, targetContainer) {
+            var startX = startRect.left + startRect.width / 2;
+            var startY = startRect.top + startRect.height / 2;
+            var endX = targetRect.left + targetRect.width / 2;
+            var endY = targetRect.top + targetRect.height / 2;
+
+            var flyer = document.createElement('div');
+            flyer.className = 'fly-to-cart-particle';
+            var flyerSize = 46;
+            flyer.style.width = flyerSize + 'px';
+            flyer.style.height = flyerSize + 'px';
+            flyer.style.left = (startX - flyerSize / 2) + 'px';
+            flyer.style.top = (startY - flyerSize / 2) + 'px';
+
+            if (imgSrc) {
+                flyer.innerHTML = '<img src="' + imgSrc + '" style="width:100%;height:100%;object-fit:cover;background:#fff;" onerror="this.src=\'/static/images/dish-placeholder.svg\'">';
+            } else {
+                flyer.innerHTML = '<div style="width:100%;height:100%;background:linear-gradient(135deg,#16a34a,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;">🍲</div>';
+            }
+            document.body.appendChild(flyer);
+
+            var duration = 600;
+            var startTime = performance.now();
+            var arcHeight = Math.min(180, Math.max(90, Math.abs(startX - endX) * 0.35));
+
+            function step(now) {
+                var elapsed = now - startTime;
+                var p = Math.min(elapsed / duration, 1);
+                var curX = (endX - startX) * p;
+                var curY = (endY - startY) * p - (4 * p * (1 - p) * arcHeight);
+                var scale = 1 - 0.65 * p;
+                var opacity = 1 - 0.15 * p;
+
+                flyer.style.transform = 'translate3d(' + curX + 'px, ' + curY + 'px, 0) scale(' + scale + ') rotate(' + (p * 360) + 'deg)';
+                flyer.style.opacity = opacity;
+
+                if (p < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    flyer.remove();
+                    triggerCartImpact(targetContainer);
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function triggerCartImpact(targetContainer) {
+            if (!targetContainer) return;
+            var iconSvg = targetContainer.querySelector('.cart-icon-svg') || targetContainer;
+            iconSvg.classList.remove('cart-bounce-active');
+            void iconSvg.offsetWidth;
+            iconSvg.classList.add('cart-bounce-active');
+
+            if ('vibrate' in navigator) {
+                try { navigator.vibrate([45]); } catch(e){}
+            }
+        }
+
+        function updateCartBadges(count) {
+            var badges = [
+                document.getElementById('desktop-cart-badge'),
+                document.getElementById('mobile-cart-badge')
+            ];
+            badges.forEach(function(b) {
+                if (!b) return;
+                b.textContent = count;
+                if (count > 0) {
+                    b.classList.remove('hidden');
+                } else {
+                    b.classList.add('hidden');
+                }
+            });
+        }
+
+        function showCartToast(msg) {
+            var toast = document.getElementById('cart-floating-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'cart-floating-toast';
+                toast.className = 'cart-fly-toast';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = [
+                '<div class="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-slate-900/95 text-white backdrop-blur-md border border-white/10 shadow-2xl text-xs font-semibold">',
+                '  <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-bold">✓</span>',
+                '  <span>' + msg + '</span>',
+                '  <a href="/cart/" class="ml-1 text-emerald-400 hover:text-emerald-300 underline font-bold whitespace-nowrap">Savat →</a>',
+                '</div>'
+            ].join('');
+            toast.classList.add('show');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(function() {
+                toast.classList.remove('show');
+            }, 2600);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initParabolicCart);
+    } else {
+        initParabolicCart();
+    }
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ config.name }} Demo To'lov — Online Store Guliston{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center py-10 px-4">
+    <div class="max-w-md w-full space-y-5">
+
+        <!-- 1. YUQORI DEMO OGOHLANTIRISH BANNERI -->
+        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 shadow-sm">
+            <span class="text-2xl shrink-0">🧪</span>
+            <div class="text-xs">
+                <div class="flex items-center gap-1.5 font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-0.5">
+                    <span>SINOV (DEMO) REJIMI</span>
+                    <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-[10px]">Test Mode</span>
+                </div>
+                <p class="text-muted leading-relaxed">
+                    Hozirda <b>{{ config.name }}</b> sinov rejimida ishlamoqda. Haqiqiy pul yechilmaydi! 
+                    Tizim buyurtmani tasdiqlash, kassa kirimi va oshxona integratsiyasini to'liq sinab ko'rish imkonini beradi.
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. TO'LOV VA BUYURTMA KARTASI -->
+        <div class="card overflow-hidden shadow-xl border border-border">
+            <!-- Header with Provider Branding -->
+            <div class="p-6 bg-gradient-to-r {{ config.bg_gradient }} text-white flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-widest opacity-80 block">To'lov Tizimi</span>
+                    <h2 class="font-display font-black text-xl flex items-center gap-2">
+                        <span>{{ config.icon }}</span> {{ config.name }}
+                    </h2>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] font-bold uppercase tracking-wider opacity-80 block">Jami Summa</span>
+                    <span class="font-display font-black text-2xl tracking-tight">
+                        {{ order.final_amount|floatformat:0 }} <small class="text-xs font-bold opacity-80">so'm</small>
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <!-- Buyurtma Qisqacha Ma'lumoti -->
+                <div class="p-3.5 rounded-xl bg-sand/60 border border-border space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-muted">Buyurtma raqami:</span>
+                        <span class="font-mono font-bold text-ink">#{{ order.order_number }}</span>
+                    </div>
+                    {% if order.table %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-muted">Stol raqami:</span>
+                        <span class="font-bold text-primary">Stol #{{ order.table.number }} ({{ order.table.hall.name|default:"Asosiy zal" }})</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-muted">Muassasa / Do'kon:</span>
+                        <span class="font-bold text-ink">{{ order.shop.name|default:"Online Store Guliston" }}</span>
+                    </div>
+                    <div class="pt-2 border-t border-border flex items-center justify-between font-bold">
+                        <span class="text-ink">Taomlar / Mahsulotlar:</span>
+                        <span class="text-muted">{{ order.items.count }} xil mahsulot</span>
+                    </div>
+                </div>
+
+                <!-- Simulyatsiya qilingan Karta Ma'lumotlari -->
+                <form method="POST" action="{% url 'payment_demo_confirm' order.pk %}" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="method" value="{{ method }}">
+
+                    <div>
+                        <label class="block text-xs font-bold text-ink mb-1.5 flex items-center justify-between">
+                            <span>Karta raqami (Demo uchun tayyor):</span>
+                            <span class="text-[10px] text-muted font-normal">Avtomatik to'ldirilgan</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" value="8600 •••• •••• 1234" disabled 
+                                   class="w-full text-xs font-mono font-bold py-2.5 px-3 bg-sand/50 rounded-xl border border-border text-ink cursor-not-allowed">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-muted">UZCARD</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1">Amal qilish muddati:</label>
+                            <input type="text" value="12 / 28" disabled 
+                                   class="w-full text-xs font-mono text-center py-2 bg-sand/50 rounded-xl border border-border text-ink cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1">SMS Kod (Demo):</label>
+                            <input type="text" value="1111" disabled 
+                                   class="w-full text-xs font-mono text-center py-2 bg-emerald-500/10 text-emerald-600 font-bold rounded-xl border border-emerald-500/20 cursor-not-allowed">
+                        </div>
+                    </div>
+
+                    <!-- Tasdiqlash Tugmasi -->
+                    <div class="pt-2 space-y-2">
+                        <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2">
+                            <span>✓</span> To'lovni Tasdiqlash ({{ order.final_amount|floatformat:0 }} so'm)
+                        </button>
+                        <a href="{% if order.table %}/seller/waiter/{% else %}/cart/{% endif %}" class="w-full py-2.5 text-center text-xs font-semibold text-muted hover:text-ink block transition">
+                            Bekor qilish va qaytish
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tushuntirish taglavhasi -->
+            <div class="p-4 bg-sand/40 border-t border-border text-[11px] text-muted text-center leading-relaxed">
+                ℹ️ Restoran egasi o'zining rasmiy Click yoki Payme shartnomasi kalitlarini sozlamalarga kiritishi bilanoq, 
+                ushbu sahifa o'rniga rasmiy Click/Payme bank ekrani ochiladi va mablag' to'g'ridan-to'g'ri uning hisobiga tushadi.
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

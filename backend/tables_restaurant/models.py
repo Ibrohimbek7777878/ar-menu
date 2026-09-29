@@ -148,3 +148,40 @@ class NFCCard(models.Model):
             return f"{scheme}://{domain}/m/{self.shop.slug}/?table={self.table.number}&nfc=1"
         return f"{scheme}://{domain}/m/{self.shop.slug}/?nfc=1"
 
+
+class TableReservation(models.Model):
+    """
+    Restoran stollarini oldindan yoki joyida bron qilish (Reservation) tizimi.
+    Mijoz: Sana, vaqt, mehmonlar soni, maxsus istaklar bilan stolni band qiladi.
+    Ofitsiant / Admin: Bronni tasdiqlaydi yoki stol biriktiradi.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Kutilmoqda'),
+        ('confirmed', 'Tasdiqlangan'),
+        ('seated', 'O\'tirdi (Faol)'),
+        ('completed', 'Yakunlangan'),
+        ('cancelled', 'Bekor qilingan'),
+    ]
+
+    shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, related_name='table_reservations')
+    table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
+    hall = models.ForeignKey(Hall, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
+    customer_name = models.CharField(max_length=120, verbose_name="Mehmon ismi")
+    customer_phone = models.CharField(max_length=30, verbose_name="Telefon raqami")
+    guests_count = models.PositiveSmallIntegerField(default=2, verbose_name="Mehmonlar soni")
+    reservation_date = models.DateField(verbose_name="Bron sanasi")
+    reservation_time = models.TimeField(verbose_name="Bron vaqti")
+    notes = models.TextField(blank=True, verbose_name="Maxsus istaklar / Izoh")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'restaurant_table_reservations'
+        ordering = ['-reservation_date', '-reservation_time', '-created_at']
+
+    def __str__(self):
+        tbl = f" (Stol #{self.table.number})" if self.table else ""
+        return f"Bron: {self.customer_name} - {self.reservation_date} {self.reservation_time}{tbl}"
+
+

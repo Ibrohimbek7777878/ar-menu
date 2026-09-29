@@ -34,14 +34,24 @@ def seller_login(request):
         elif role == 'super_admin':
             return redirect('admin_dashboard')
     if request.method == 'POST':
+        from django.core.cache import cache
+        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        cache_key = f"seller_login_attempts_{ip}"
+        attempts = cache.get(cache_key, 0)
+        if attempts >= 7:
+            messages.error(request, "Xavfsizlik: Ko'p marotaba xato urinish bo'ldi. Iltimos 5 daqiqadan so'ng qayta urinib ko'ring.")
+            return render(request, 'seller/login.html')
+
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
         if user and user.is_approved and getattr(user, 'role', '') in ('shop_owner', 'shop_manager', 'super_admin'):
+            cache.delete(cache_key)
             login(request, user)
             if getattr(user, 'role', '') == 'super_admin':
                 return redirect('admin_dashboard')
             return redirect('seller_dashboard_web')
+        cache.set(cache_key, attempts + 1, timeout=300)
         messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
     return render(request, 'seller/login.html')
 
@@ -378,6 +388,23 @@ def seller_profile(request):
                 from django.contrib.auth import update_session_auth_hash
                 update_session_auth_hash(request, user)
                 messages.success(request, 'Parol muvaffaqiyatli o\'zgartirildi!')
+        elif action == 'update_shop':
+            if shop:
+                shop_name = request.POST.get('shop_name', '').strip()
+                shop_phone = request.POST.get('shop_phone', '').strip()
+                shop_address = request.POST.get('shop_address', '').strip()
+                shop_desc = request.POST.get('shop_description', '').strip()
+                is_open = request.POST.get('is_open') == 'on'
+                if shop_name:
+                    shop.name = shop_name
+                if shop_phone:
+                    shop.phone = shop_phone
+                if shop_address:
+                    shop.address = shop_address
+                shop.description = shop_desc
+                shop.is_open = is_open
+                shop.save()
+                messages.success(request, "Do'kon sozlamalari muvaffaqiyatli saqlandi!")
             return redirect('seller_profile_web')
 
         # Profil yangilash
@@ -694,6 +721,31 @@ def seller_tables(request):
                     messages.success(request, f"Stol {number} qo'shildi.")
             except Hall.DoesNotExist:
                 messages.error(request, "Zal topilmadi.")
+        elif action == 'delete_table':
+            try:
+                t = Table.objects.get(id=request.POST.get('table_id'), shop=shop)
+                num = t.number
+                t.delete()
+                messages.success(request, f"Stol #{num} o'chirildi.")
+            except Table.DoesNotExist:
+                messages.error(request, "Stol topilmadi.")
+        elif action == 'bulk_add_tables':
+            hall_id = request.POST.get('hall_id')
+            count = int(request.POST.get('count', 5))
+            capacity = int(request.POST.get('capacity', 4))
+            try:
+                hall = Hall.objects.get(id=hall_id, shop=shop)
+                existing = set(Table.objects.filter(shop=shop).values_list('number', flat=True))
+                added = 0
+                for n in range(1, count + 1):
+                    s_num = str(n)
+                    if s_num not in existing:
+                        Table.objects.create(shop=shop, hall=hall, number=s_num, capacity=capacity)
+                        existing.add(s_num)
+                        added += 1
+                messages.success(request, f"{added} ta yangi stol yaratildi.")
+            except Exception as e:
+                messages.error(request, f"Xatolik: {e}")
         elif action == 'rotate_qr':
             try:
                 t = Table.objects.get(id=request.POST.get('table_id'), shop=shop)
@@ -710,9 +762,12 @@ def seller_tables(request):
     from orders.models import Order
     import datetime as _dt
     _today = _dt.datetime.combine(_dt.date.today(), _dt.time.min, tzinfo=_dt.timezone.utc)
+    t_total = shop.restaurant_tables.count() if shop else 0
+    t_busy = shop.restaurant_tables.exclude(status='free').count() if shop else 0
     stats = {
-        'tables_busy': shop.restaurant_tables.exclude(status='free').count() if shop else 0,
-        'tables_total': shop.restaurant_tables.count() if shop else 0,
+        'tables_busy': t_busy,
+        'tables_total': t_total,
+        'tables_free': max(0, t_total - t_busy),
         'orders_today': Order.objects.filter(shop=shop, created_at__gte=_today).count() if shop else 0,
         'active_orders': Order.objects.filter(shop=shop, status__in=['pending', 'confirmed', 'preparing', 'out_for_delivery']).count() if shop else 0,
     }
@@ -912,10 +967,24 @@ def seller_kds(request):
     """KDS — oshxona ekrani: oshxonadagi buyurtmalar katta kartochkalar bilan."""
     shop = request.tenant_shop
     from orders.models import Order
+    import datetime
+    
     active = Order.objects.filter(
-        shop=shop, status__in=['pending', 'confirmed', 'preparing', 'out_for_delivery']
-    ).prefetch_related('items').order_by('created_at') if shop else []
-    return render(request, 'seller/kds.html', {'orders': active, 'shop': shop})
+        shop=shop, status__in=['pending', 'confirmed', 'preparing', 'ready']
+    ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at') if shop else []
+    
+    count_pending = sum(1 for o in active if o.status in ('pending', 'confirmed'))
+    count_preparing = sum(1 for o in active if o.status == 'preparing')
+    count_ready = sum(1 for o in active if o.status == 'ready')
+    
+    ctx = {
+        'orders': active,
+        'shop': shop,
+        'count_pending': count_pending,
+        'count_preparing': count_preparing,
+        'count_ready': count_ready,
+    }
+    return render(request, 'seller/kds.html', ctx)
 
 
 @seller_required
@@ -1129,6 +1198,340 @@ def seller_product_create(request):
 
 
 @seller_required
+def seller_products_sample_csv(request):
+    """Sotuvchilar uchun mahsulotlar namuna CSV faylini yuklab berish."""
+    import csv
+    from django.http import HttpResponse
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = 'attachment; filename="namuna_mahsulotlar.csv"'
+    # UTF-8 BOM so Excel opens it with proper Uzbek Cyrillic/Latin characters
+    response.write('\ufeff')
+    writer = csv.writer(response)
+    writer.writerow(["Nomi", "Narxi", "Kategoriya", "Tavsif", "Qoldiq", "O'lchov"])
+    writer.writerow(["To'y oshi (Maxsus)", "45000", "Milliy taomlar", "Lazer guruchli maxsus to'y oshi, mayin qo'y go'shti va no'xot bilan", "50", "porsiya"])
+    writer.writerow(["Qo'y go'shti shashlik", "22000", "Kaboblar", "Yumshoq qo'y go'shtidan qilingan tandir/kabob shashlik", "80", "dona"])
+    writer.writerow(["Tandir somsa", "12000", "Pishiriqlar", "Muzday go'shtli qatlama tandir somsa", "100", "dona"])
+    writer.writerow(["Qatlama somsa", "14000", "Pishiriqlar", "Varaqi qarsildoq qatlama somsa", "60", "dona"])
+    writer.writerow(["Manti", "38000", "Milliy taomlar", "Bug'da pishirilgan mayin qo'y go'shtli manti", "40", "porsiya"])
+    writer.writerow(["Qovurma lag'mon", "42000", "Milliy taomlar", "Qo'lda cho'zilgan xamir, qovurilgan go'sht va sabzavotlar", "40", "porsiya"])
+    writer.writerow(["Qozon kabob", "58000", "Kaboblar", "Qovurilgan kartoshka va qarsildoq barra qo'y go'shti", "30", "porsiya"])
+    writer.writerow(["Ko'za sho'rva", "36000", "Milliy taomlar", "Sopol ko'zacha ichida dimlangan barra go'shtli sho'rva", "35", "porsiya"])
+    writer.writerow(["Achchiq-chuchuk", "14000", "Salatlar", "Yangi pomidor, shirin piyoz va murchli milliy salat", "70", "porsiya"])
+    writer.writerow(["Tandir non", "5000", "Nonlar", "Issiq tandir non sedana va kunjut bilan", "150", "dona"])
+    writer.writerow(["Ko'k choy", "8000", "Ichimliklar", "Chinnigul va limon bilan damlangan xushbo'y choy", "200", "choynak"])
+    return response
+
+
+@seller_required
+def seller_products_import_csv(request):
+    """Excel/CSV fayldan mahsulotlarni ommaviy (bulk) yuklash."""
+    if request.method != 'POST':
+        return redirect('seller_products_web')
+
+    csv_file = request.FILES.get('csv_file')
+    if not csv_file:
+        messages.error(request, "Iltimos, CSV faylni tanlang.")
+        return redirect('seller_products_web')
+
+    import csv
+    import io
+    from decimal import Decimal
+    from products.models import Product
+    from categories.models import Category
+    from ar3d.services import auto_attach_library_3d
+
+    shop = request.tenant_shop
+    try:
+        content = csv_file.read()
+        # Decode trying multiple encodings common in Uzbekistan/Excel
+        decoded = None
+        for enc in ['utf-8-sig', 'utf-8', 'windows-1251', 'cp1251', 'latin-1']:
+            try:
+                decoded = content.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        if decoded is None:
+            decoded = content.decode('utf-8', errors='ignore')
+
+        # Detect delimiter
+        first_line = decoded.split('\n')[0] if decoded else ''
+        delim = ';' if ';' in first_line and first_line.count(';') >= first_line.count(',') else ','
+        if '\t' in first_line and first_line.count('\t') > first_line.count(delim):
+            delim = '\t'
+
+        reader = csv.reader(io.StringIO(decoded), delimiter=delim)
+        rows = list(reader)
+        if not rows:
+            messages.error(request, "CSV fayl bo'sh.")
+            return redirect('seller_products_web')
+
+        header = [h.strip().lower() for h in rows[0]]
+        col_name = next((i for i, h in enumerate(header) if any(k in h for k in ['nomi', 'name', 'mahsulot', 'tovar', 'title'])), 0)
+        col_price = next((i for i, h in enumerate(header) if any(k in h for k in ['narxi', 'price', 'narx', 'summa'])), 1)
+        col_cat = next((i for i, h in enumerate(header) if any(k in h for k in ['kategoriya', 'category', 'bolim'])), None)
+        col_desc = next((i for i, h in enumerate(header) if any(k in h for k in ['tavsif', 'description', 'izoh', 'haqida'])), None)
+        col_stock = next((i for i, h in enumerate(header) if any(k in h for k in ['qoldiq', 'stock', 'soni', 'mavjud'])), None)
+        col_unit = next((i for i, h in enumerate(header) if any(k in h for k in ['olchov', "o'lchov", 'unit', 'birlik'])), None)
+
+        imported_count = 0
+        categories_cache = {c.name.lower(): c for c in Category.objects.all()}
+
+        for row in rows[1:]:
+            if not row or len(row) <= col_name:
+                continue
+            name = row[col_name].strip()
+            if not name:
+                continue
+
+            raw_price = row[col_price].strip() if len(row) > col_price else '0'
+            clean_price = ''.join(c for c in raw_price if c.isdigit() or c == '.')
+            try:
+                price = Decimal(clean_price) if clean_price else Decimal('0')
+            except Exception:
+                price = Decimal('0')
+
+            cat_obj = None
+            if col_cat is not None and len(row) > col_cat:
+                cat_str = row[col_cat].strip()
+                if cat_str:
+                    cat_key = cat_str.lower()
+                    if cat_key in categories_cache:
+                        cat_obj = categories_cache[cat_key]
+                    else:
+                        cat_obj = Category.objects.create(name=cat_str)
+                        categories_cache[cat_key] = cat_obj
+
+            description = row[col_desc].strip() if col_desc is not None and len(row) > col_desc else ''
+            raw_stock = row[col_stock].strip() if col_stock is not None and len(row) > col_stock else '50'
+            stock = int(''.join(c for c in raw_stock if c.isdigit()) or '50')
+            unit = row[col_unit].strip() if col_unit is not None and len(row) > col_unit else 'dona'
+
+            product = Product.objects.create(
+                shop=shop,
+                name=name,
+                price=price,
+                category=cat_obj,
+                description=description,
+                stock=stock,
+                unit=unit or 'dona',
+                is_available=True
+            )
+            # Avtomatik 3D kutubxonadan qidirish
+            try:
+                auto_attach_library_3d(product)
+            except Exception:
+                pass
+
+            imported_count += 1
+
+        messages.success(request, f"🎉 {imported_count} ta mahsulot muvaffaqiyatli yuklandi va katalogingizga kiritildi!")
+    except Exception as e:
+        messages.error(request, f"Faylni o'qishda xatolik yuz berdi: {str(e)}")
+
+    return redirect('seller_products_web')
+
+
+@seller_required
+def seller_products_seed_starter(request):
+    """12 ta mashhur milliy taomni (rasm va 3D modellari bilan) avtomatik yuklash."""
+    if request.method != 'POST':
+        return redirect('seller_products_web')
+
+    import os
+    from decimal import Decimal
+    from django.conf import settings
+    from products.models import Product
+    from categories.models import Category
+    from ar3d.services import auto_attach_library_3d
+
+    shop = request.tenant_shop
+
+    STARTER_DISHES = [
+        {
+            'name': "To'y Oshi (Maxsus)",
+            'price': Decimal('45000'),
+            'description': "Lazer guruchidan tayyorlangan maxsus Samarqandcha to'y oshi. Mayin lahm qo'y go'shti, sariq sabzi, no'xot, mayiz va bedana tuxumi bilan.",
+            'category_name': "Milliy taomlar",
+            'calories': 820,
+            'cook_min': 15,
+            'image': 'dish/dish_palov.jpg',
+            'glb': 'plov.glb',
+            'is_hit': True,
+        },
+        {
+            'name': "Qo'y Go'shti Shashlik",
+            'price': Decimal('22000'),
+            'description': "Shirin qo'y go'shtidan ko'mir cho'g'ida pishirilgan lo'la kabob. Sirka, piyoz va murch bilan tortiladi.",
+            'category_name': "Kaboblar",
+            'calories': 380,
+            'cook_min': 20,
+            'image': 'dish/dish_shashlik.jpg',
+            'glb': 'shashlik.glb',
+            'is_hit': True,
+        },
+        {
+            'name': "Tandir Somsa",
+            'price': Decimal('12000'),
+            'description': "Loy tandirda yopilgan, mayin qo'y go'shti va duma bilan to'ldirilgan issiq qatlama somsa.",
+            'category_name': "Pishiriqlar",
+            'calories': 410,
+            'cook_min': 10,
+            'image': 'dish/dish_somsa.jpg',
+            'glb': 'somsa.glb',
+            'is_hit': True,
+        },
+        {
+            'name': "Qatlama Somsa",
+            'price': Decimal('14000'),
+            'description': "Varaqi qarsildoq qatlamali xamir va sarxil maydalangan barra go'shtli maxsus pishiriq.",
+            'category_name': "Pishiriqlar",
+            'calories': 430,
+            'cook_min': 10,
+            'image': 'dish/dish_qatlama_somsa.jpg',
+            'glb': 'somsa.glb',
+        },
+        {
+            'name': "Samarqandcha Manti",
+            'price': Decimal('38000'),
+            'description': "Yupqa qo'lda yoyilgan xamir, shirador go'sht va nozik piyoz bilan bug'da pishgan manti (5 dona).",
+            'category_name': "Milliy taomlar",
+            'calories': 560,
+            'cook_min': 25,
+            'image': 'dish/dish_manti.jpg',
+            'glb': 'manti.glb',
+            'is_hit': True,
+        },
+        {
+            'name': "Qovurma Lag'mon",
+            'price': Decimal('45000'),
+            'description': "Usta oshpaz tomonidan qo'lda cho'zilgan cho'zma xamir, yumshoq go'sht, bulg'or qalampiri va pomidorli sous.",
+            'category_name': "Milliy taomlar",
+            'calories': 680,
+            'cook_min': 15,
+            'image': 'dish/dish_lagmon.jpg',
+            'glb': 'lagmon.glb',
+            'is_hit': True,
+        },
+        {
+            'name': "Qozon Kabob",
+            'price': Decimal('58000'),
+            'description': "Qizigan cho'yan qozonda qizarguncha qovurilgan barra qo'y go'shti va qovurilgan tillarang kartoshka.",
+            'category_name': "Kaboblar",
+            'calories': 790,
+            'cook_min': 25,
+            'image': 'dish/dish_qozon_kabob.jpg',
+            'glb': 'qozon_kabob.glb',
+            'is_hit': True,
+        },
+        {
+            'name': "Ko'za Sho'rva",
+            'price': Decimal('36000'),
+            'description': "Sopol ko'zada past olovda 4 soat davomida dimlab pishirilgan barra qo'y go'shti va sabzavotli xushbo'y sho'rva.",
+            'category_name': "Milliy taomlar",
+            'calories': 450,
+            'cook_min': 10,
+            'image': 'dish/dish_shorva.jpg',
+            'glb': 'shorva.glb',
+        },
+        {
+            'name': "Achchiq-chuchuk Salati",
+            'price': Decimal('14000'),
+            'description': "Yupqa to'g'ralgan qizil pomidor, achchiq qalampir, rayhon va nozik oppoq piyozdan tayyorlangan milliy salat.",
+            'category_name': "Salatlar",
+            'calories': 85,
+            'cook_min': 5,
+            'image': 'dish/dish_salad.jpg',
+            'glb': 'salad_achichuk.glb',
+        },
+        {
+            'name': "Bahor Salati",
+            'price': Decimal('16000'),
+            'description': "Tug'ralgan barra bodring, turp, yangi ko'katlar, tuxum va yengil smetanali yangi bahor salati.",
+            'category_name': "Salatlar",
+            'calories': 110,
+            'cook_min': 5,
+            'image': 'dish/dish_bahor_salat.jpg',
+            'glb': 'salad_bahor.glb',
+        },
+        {
+            'name': "Issiq Tandir Non",
+            'price': Decimal('5000'),
+            'description': "O'tin tandirda yopilgan, ustiga sedana va kunjut sepilgan yumshoq va xushbo'y milliy non.",
+            'category_name': "Nonlar",
+            'calories': 280,
+            'cook_min': 5,
+            'image': 'dish/dish_non.jpg',
+            'glb': 'non.glb',
+        },
+        {
+            'name': "Ko'k Choy (Choynak)",
+            'price': Decimal('8000'),
+            'description': "Maxsus navli 95-ko'k choy, chinnigul, yangi novvot va limon bo'lagi bilan damlangan.",
+            'category_name': "Ichimliklar",
+            'calories': 15,
+            'cook_min': 5,
+            'image': 'dish/dish_kok_choy.jpg',
+            'glb': 'tea_cup.glb',
+        }
+    ]
+
+    added = 0
+    categories_cache = {c.name.lower(): c for c in Category.objects.all()}
+
+    for d in STARTER_DISHES:
+        if Product.objects.filter(shop=shop, name=d['name']).exists():
+            continue
+
+        cat_name = d['category_name']
+        cat_key = cat_name.lower()
+        if cat_key in categories_cache:
+            cat_obj = categories_cache[cat_key]
+        else:
+            cat_obj = Category.objects.create(name=cat_name)
+            categories_cache[cat_key] = cat_obj
+
+        # Check if dish image exists in media
+        img_rel = d['image']
+        img_full = os.path.join(settings.MEDIA_ROOT, img_rel)
+        saved_img = img_rel if os.path.exists(img_full) else ''
+
+        prod = Product.objects.create(
+            shop=shop,
+            name=d['name'],
+            price=d['price'],
+            category=cat_obj,
+            description=d['description'],
+            image=saved_img,
+            calories=d.get('calories'),
+            cook_min=d.get('cook_min', 15),
+            is_hit=d.get('is_hit', False),
+            stock=80,
+            unit="porsiya" if "Salat" not in cat_name and "Non" not in cat_name else "dona",
+            is_available=True
+        )
+
+        glb_name = d.get('glb')
+        if glb_name:
+            glb_full = os.path.join(settings.MEDIA_ROOT, 'ar/glb', glb_name)
+            if os.path.exists(glb_full):
+                prod.ar_model = f"/media/ar/glb/{glb_name}"
+                prod.has_3d = True
+                prod.save(update_fields=['ar_model', 'has_3d'])
+
+        try:
+            auto_attach_library_3d(prod)
+        except Exception:
+            pass
+
+        added += 1
+
+    messages.success(request, f"🍲 {added} ta milliy taom (rasmlar va 3D modellari bilan) do'koningizga biriktirildi!")
+    return redirect('seller_products_web')
+
+
+@seller_required
 def seller_product_delete(request, pk):
     from products.models import Product
     product = get_object_or_404(Product, pk=pk, shop=request.tenant_shop)
@@ -1142,13 +1545,165 @@ def seller_product_delete(request, pk):
 
 @seller_required
 def waiter_panel(request):
-    """Ofitsiant: buyurtmalar (stol raqami bilan), stollar holati. 10s refresh."""
+    """Ofitsiant: haqiqiy mobil/planshet POS tizimi — stollar, taomlar 3D/AR bilan, yangi buyurtma olish."""
     shop = request.tenant_shop
-    from orders.models import Order
-    orders = Order.objects.filter(shop=shop, status__in=['pending', 'confirmed', 'preparing', 'out_for_delivery']) \
-                 .prefetch_related('items').order_by('-created_at')[:30] if shop else []
-    tables = shop.restaurant_tables.all() if shop else []
-    return render(request, 'seller/waiter.html', {'orders': orders, 'tables': tables, 'shop': shop})
+    from orders.models import Order, OrderItem
+    from products.models import Product
+    from categories.models import Category
+    from tables_restaurant.models import Table, Hall
+    import json
+    import datetime
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # 1. Yangi buyurtma ochish (Stolga taomlar qo'shish)
+        if action == 'create_order':
+            table_id = request.POST.get('table_id')
+            items_json = request.POST.get('items_json')
+            note = request.POST.get('note', '')
+            table_obj = get_object_or_404(Table, pk=table_id, shop=shop) if table_id else None
+            
+            try:
+                items_data = json.loads(items_json) if items_json else []
+            except Exception:
+                items_data = []
+                
+            if items_data:
+                now = datetime.datetime.now()
+                order_num = f"GLS-{now.strftime('%Y%m%d')}-{Order.objects.filter(shop=shop).count() + 1001}"
+                total_amount = 0
+                
+                order = Order.objects.create(
+                    shop=shop,
+                    order_number=order_num,
+                    customer_name=f"Stol #{table_obj.number}" if table_obj else "Ofitsiant buyurtmasi",
+                    customer_phone_1=shop.phone or "+998000000000",
+                    table=table_obj,
+                    delivery_address=f"Zal: {table_obj.hall.name if table_obj and table_obj.hall else 'Asosiy'} · Stol {table_obj.number if table_obj else '-'}",
+                    total_amount=0,
+                    final_amount=0,
+                    status='confirmed', # Ofitsiant tasdiqlab oshxonaga uzatadi
+                    payment_status='pending',
+                    note=note,
+                )
+                
+                for it in items_data:
+                    p_id = it.get('product_id')
+                    qty = max(int(it.get('qty', 1)), 1)
+                    try:
+                        p = Product.objects.get(pk=p_id, shop=shop)
+                        line_total = p.price * qty
+                        OrderItem.objects.create(
+                            order=order, product=p,
+                            product_name=p.name, quantity=qty,
+                            unit_price=p.price, total=line_total,
+                        )
+                        total_amount += line_total
+                    except Product.DoesNotExist:
+                        continue
+                        
+                order.total_amount = total_amount
+                order.final_amount = total_amount
+                order.save(update_fields=['total_amount', 'final_amount'])
+                
+                if table_obj:
+                    table_obj.status = 'occupied'
+                    table_obj.save(update_fields=['status'])
+                    
+                # Telegram xabar oshxonaga / adminga
+                try:
+                    from notifications.services.telegram_service import send_order_created
+                    send_order_created(order)
+                except Exception:
+                    pass
+            return redirect('waiter_panel_web')
+            
+        elif action == 'update_table_status':
+            table_id = request.POST.get('table_id')
+            new_status = request.POST.get('status')
+            if table_id and new_status in ('free', 'occupied', 'ready'):
+                t = get_object_or_404(Table, pk=table_id, shop=shop)
+                t.status = new_status
+                t.save(update_fields=['status'])
+            return redirect('waiter_panel_web')
+            
+        elif action == 'update_order_status':
+            order_id = request.POST.get('order_id')
+            new_status = request.POST.get('status')
+            if order_id and new_status:
+                o = get_object_or_404(Order, pk=order_id, shop=shop)
+                o.status = new_status
+                o.save(update_fields=['status'])
+            return redirect('waiter_panel_web')
+
+        elif action == 'quick_create_tables':
+            if shop:
+                hall, _ = Hall.objects.get_or_create(shop=shop, name="Asosiy zal")
+                existing = set(Table.objects.filter(shop=shop).values_list('number', flat=True))
+                count = int(request.POST.get('count', 10))
+                added = 0
+                for n in range(1, count + 1):
+                    s_num = str(n)
+                    if s_num not in existing:
+                        Table.objects.create(shop=shop, hall=hall, number=s_num, capacity=4)
+                        existing.add(s_num)
+                        added += 1
+                messages.success(request, f"🎉 'Asosiy zal' uchun {added} ta stol (1-{count}) muvaffaqiyatli yaratildi! Endi bemalol stol tanlab buyurtma olishingiz mumkin.")
+            return redirect('waiter_panel_web')
+
+        elif action == 'add_single_table':
+            if shop:
+                number = request.POST.get('number', '').strip()
+                capacity = int(request.POST.get('capacity', 4))
+                hall_name = request.POST.get('hall_name', 'Asosiy zal').strip() or 'Asosiy zal'
+                hall, _ = Hall.objects.get_or_create(shop=shop, name=hall_name)
+                if number:
+                    Table.objects.create(shop=shop, hall=hall, number=number, capacity=capacity)
+                    messages.success(request, f"Stol #{number} qo'shildi.")
+            return redirect('waiter_panel_web')
+
+    # GET
+    orders = Order.objects.filter(shop=shop, status__in=['pending', 'confirmed', 'preparing', 'ready']) \
+                 .select_related('table', 'table__hall').prefetch_related('items').order_by('-created_at')[:35] if shop else []
+    tables = list(shop.restaurant_tables.all().select_related('hall').order_by('hall__name', 'number')) if shop else []
+    halls = Hall.objects.filter(shop=shop).order_by('name') if shop else []
+    
+    # Taomlar va 3D modellari
+    products = list(shop.products.filter(is_available=True).select_related('category', 'model3d', 'model3d__library').order_by('category__name', 'name')) if shop else []
+    cats_set = {}
+    for p in products:
+        p.glb_path = p.ar_model or (p.model3d.glb.url if hasattr(p, 'model3d') and p.model3d and p.model3d.glb else (p.model3d.library.glb_url if hasattr(p, 'model3d') and p.model3d and p.model3d.library else ''))
+        p.has_3d = bool(p.glb_path)
+        if p.category:
+            cats_set[p.category.id] = p.category.name
+
+    categories = [{'id': k, 'name': v} for k, v in cats_set.items()]
+    
+    # Stollar bo'yicha aktiv buyurtmalarni xaritaga yig'ish (Table ID -> Order)
+    table_orders = {}
+    for o in orders:
+        if o.table_id:
+            if o.table_id not in table_orders:
+                table_orders[o.table_id] = []
+            table_orders[o.table_id].append({
+                'id': o.id,
+                'number': o.order_number,
+                'status': o.status,
+                'total': float(o.total_amount or 0),
+                'items': [{'name': it.product_name, 'qty': it.quantity, 'price': float(it.unit_price or 0)} for it in o.items.all()]
+            })
+
+    ctx = {
+        'shop': shop,
+        'orders': orders,
+        'tables': tables,
+        'halls': halls,
+        'products': products,
+        'categories': categories,
+        'table_orders_json': json.dumps(table_orders),
+    }
+    return render(request, 'seller/waiter.html', ctx)
 
 
 @seller_required
@@ -1231,18 +1786,109 @@ def seller_product_ai3d(request, pk):
 
 @seller_required
 def seller_telegram(request):
-    """Telegram bot boshqaruv paneli — bot xabarlar, yuborilgan xabarlar, obunachilar."""
+    """Telegram bot boshqaruv paneli — sozlamalar tahriri, jonli xabar yozish, obunachilar va statistika."""
     shop = request.tenant_shop
-    from notifications.models import NotificationLog, TelegramSubscriber, BotMessage
+    from notifications.models import NotificationLog, TelegramSubscriber, BotMessage, AppSetting
+    from django.conf import settings
+    import urllib.request
+    import json
+
+    # 1. Sozlamalarni o'qish (AppSetting yoki settings dan)
+    def get_setting(key, fallback=''):
+        st = AppSetting.objects.filter(key=key).first()
+        return st.value if st else fallback
+
+    bot_token = get_setting('telegram_bot_token', getattr(settings, 'TELEGRAM_BOT_TOKEN', ''))
+    chat_id = get_setting('telegram_chat_id', getattr(settings, 'TELEGRAM_CHAT_ID', ''))
+    welcome_msg = get_setting('telegram_welcome_msg', f"Assalomu alaykum! {shop.name if shop else 'Online Store'} botiga xush kelibsiz! Buyurtma berish uchun quyidagi tugmani bosing.")
+    order_msg_tpl = get_setting('telegram_order_msg_tpl', f"🛍️ Yangi buyurtma!\n\nBuyurtma kodi: {{order_number}}\nMijoz: {{customer_name}}\nTelefon: {{phone}}\nJami summa: {{total}} so'm")
+
+    # POST amallari
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # 1. Bot Sozlamalarini Saqlash
+        if action == 'save_settings':
+            new_token = request.POST.get('bot_token', '').strip()
+            new_chat_id = request.POST.get('chat_id', '').strip()
+            new_welcome = request.POST.get('welcome_msg', '').strip()
+            new_order_tpl = request.POST.get('order_msg_tpl', '').strip()
+            
+            AppSetting.objects.update_or_create(key='telegram_bot_token', defaults={'value': new_token, 'category': 'telegram'})
+            AppSetting.objects.update_or_create(key='telegram_chat_id', defaults={'value': new_chat_id, 'category': 'telegram'})
+            if new_welcome:
+                AppSetting.objects.update_or_create(key='telegram_welcome_msg', defaults={'value': new_welcome, 'category': 'telegram'})
+            if new_order_tpl:
+                AppSetting.objects.update_or_create(key='telegram_order_msg_tpl', defaults={'value': new_order_tpl, 'category': 'telegram'})
+                
+            messages.success(request, "Telegram bot sozlamalari muvaffaqiyatli saqlandi!")
+            return redirect('seller_telegram_web')
+            
+        # 2. Xabar Yuborish (Rassilka / Jonli xabar)
+        elif action == 'send_broadcast':
+            text = request.POST.get('text', '').strip()
+            target = request.POST.get('target', 'admin')
+            if text:
+                from notifications.services.telegram_service import _send_message
+                send_count = 0
+                fail_count = 0
+                
+                if target == 'all_subscribers':
+                    subs = TelegramSubscriber.objects.filter(is_active=True)
+                    for sub in subs:
+                        res = _send_message(sub.chat_id, f"📢 <b>{shop.name}</b>\n\n{text}")
+                        if res.get('success'):
+                            send_count += 1
+                        else:
+                            fail_count += 1
+                    NotificationLog.objects.create(
+                        type='telegram', recipient=f"{subs.count()} obunachiga",
+                        message=text, success=bool(send_count > 0),
+                        error_message=f"{send_count} muvaffaqiyatli, {fail_count} xato" if fail_count else ''
+                    )
+                    messages.success(request, f"Xabar {send_count} ta obunachiga yuborildi!")
+                else:
+                    target_chat = chat_id or getattr(settings, 'TELEGRAM_CHAT_ID', '')
+                    if target_chat:
+                        res = _send_message(target_chat, f"📢 <b>{shop.name}</b>\n\n{text}")
+                        NotificationLog.objects.create(
+                            type='telegram', recipient=target_chat,
+                            message=text, success=res.get('success', False),
+                            error_message=res.get('error', '')
+                        )
+                        if res.get('success'):
+                            messages.success(request, "Xabar Telegram guruh/kanaliga yuborildi!")
+                        else:
+                            messages.error(request, f"Xato: {res.get('error')}")
+                    else:
+                        messages.error(request, "Chat ID kiritilmagan. Avval Sozlamalarda Chat ID ni saqlang.")
+            return redirect('seller_telegram_web')
+
+        # 3. Botni tekshirish (getMe)
+        elif action == 'test_bot':
+            if bot_token:
+                try:
+                    req_url = f"https://api.telegram.org/bot{bot_token}/getMe"
+                    with urllib.request.urlopen(req_url, timeout=5) as resp:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        if data.get('ok'):
+                            bot_user = data.get('result', {}).get('username', '')
+                            messages.success(request, f"✅ Bot faol va ulandi! Bot username: @{bot_user}")
+                        else:
+                            messages.error(request, "Bot API xato javob qaytardi.")
+                except Exception as e:
+                    messages.error(request, f"Botga ulanib bo'lmadi: {e}")
+            else:
+                messages.error(request, "Avval Bot Tokenni kiriting!")
+            return redirect('seller_telegram_web')
 
     # Filtrlar
-    msg_type = request.GET.get('type', '')  # all, command, text, broadcast
-    msg_status = request.GET.get('status', '')  # all, success, fail
+    msg_type = request.GET.get('type', '')
+    msg_status = request.GET.get('status', '')
     msg_search = request.GET.get('q', '').strip()
     date_from = request.GET.get('from', '')
     date_to = request.GET.get('to', '')
 
-    # Bot xabarlar (kelgan)
     bot_msgs = BotMessage.objects.all()
     if msg_type == 'command':
         bot_msgs = bot_msgs.filter(is_command=True)
@@ -1254,9 +1900,8 @@ def seller_telegram(request):
         bot_msgs = bot_msgs.filter(created_at__date__gte=date_from)
     if date_to:
         bot_msgs = bot_msgs.filter(created_at__date__lte=date_to)
-    bot_msgs = bot_msgs[:100]
+    bot_msgs = bot_msgs[:80]
 
-    # Yuborilgan xabarlar (chiquvchi)
     logs = NotificationLog.objects.filter(type='telegram')
     if msg_status == 'success':
         logs = logs.filter(success=True)
@@ -1266,38 +1911,15 @@ def seller_telegram(request):
         logs = logs.filter(sent_at__date__gte=date_from)
     if date_to:
         logs = logs.filter(sent_at__date__lte=date_to)
-    logs = logs.select_related('order')[:100]
+    logs = logs.select_related('order')[:80]
 
     subscribers = TelegramSubscriber.objects.filter(is_active=True)
 
-    # Statistika
     total_bot_msgs = BotMessage.objects.count()
     command_count = BotMessage.objects.filter(is_command=True).count()
     text_count = BotMessage.objects.filter(is_command=False).count()
     sent_ok = NotificationLog.objects.filter(type='telegram', success=True).count()
     sent_fail = NotificationLog.objects.filter(type='telegram', success=False).count()
-
-    # Xabar yuborish (POST)
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'send_broadcast':
-            text = request.POST.get('text', '').strip()
-            if text:
-                from notifications.services.telegram_service import _send_message
-                chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', '')
-                if chat_id:
-                    result = _send_message(chat_id, f"📢 <b>{shop.name}</b>\n\n{text}")
-                    NotificationLog.objects.create(
-                        type='telegram', recipient=chat_id,
-                        message=text, success=result.get('success', False),
-                        error_message=result.get('error', ''),
-                    )
-                    if result.get('success'):
-                        messages.success(request, 'Xabar yuborildi!')
-                    else:
-                        messages.error(request, f'Xato: {result.get("error", "Noma\'lum")}')
-                else:
-                    messages.error(request, 'TELEGRAM_CHAT_ID sozlanmagan')
 
     return render(request, 'seller/telegram.html', {
         'shop': shop,
@@ -1309,8 +1931,10 @@ def seller_telegram(request):
         'text_count': text_count,
         'sent_ok': sent_ok,
         'sent_fail': sent_fail,
-        'bot_token': getattr(settings, 'TELEGRAM_BOT_TOKEN', ''),
-        'chat_id': getattr(settings, 'TELEGRAM_CHAT_ID', ''),
+        'bot_token': bot_token,
+        'chat_id': chat_id,
+        'welcome_msg': welcome_msg,
+        'order_msg_tpl': order_msg_tpl,
         'msg_type': msg_type,
         'msg_status': msg_status,
         'msg_search': msg_search,
@@ -1663,10 +2287,38 @@ def seller_ar(request):
 
         return redirect('seller_ar_web')
 
+    category_tree = []
+    products_by_cat = {}
+    uncategorized = []
+    for p in products:
+        if p.category_id:
+            products_by_cat.setdefault(p.category_id, []).append(p)
+        else:
+            uncategorized.append(p)
+
+    for cat in categories:
+        cat_prods = products_by_cat.get(cat.id, [])
+        cat_3d_count = sum(1 for p in cat_prods if p.has_3d)
+        category_tree.append({
+            'category': cat,
+            'products': cat_prods,
+            'total_count': len(cat_prods),
+            'ar_count': cat_3d_count,
+        })
+    if uncategorized:
+        cat_3d_count = sum(1 for p in uncategorized if p.has_3d)
+        category_tree.append({
+            'category': None,
+            'products': uncategorized,
+            'total_count': len(uncategorized),
+            'ar_count': cat_3d_count,
+        })
+
     return render(request, 'seller/ar.html', {
         'shop': shop,
         'products': products,
         'categories': categories,
+        'category_tree': category_tree,
         'ar_count': ar_count,
         'no_ar_count': no_ar_count,
         'total': total,
@@ -1674,3 +2326,78 @@ def seller_ar(request):
         'recent_3d_products': recent_3d_products,
         'just_created_ar_id': just_created_ar_id,
     })
+
+
+@seller_required
+def seller_3d_studio(request):
+    """
+    Mahsulot #3: 3D Studio & Chop Etish Navbati (Print Queue).
+    3D printer buyurtmalarini ko'rish, holatini o'zgartirish va boshqarish.
+    """
+    from ar3d.models import Print3DOrder, Print3DProduct, Print3DMaterial
+    from notifications.services.print3d_notification_service import notify_customer_3d_order_ready
+    from notifications.telegram_bot import send_message
+
+    shop = getattr(request, 'tenant_shop', None)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        order_id = request.POST.get('order_id')
+        if action == 'update_status' and order_id:
+            new_status = request.POST.get('status')
+            order = Print3DOrder.objects.filter(id=order_id).first()
+            if order and new_status in dict(Print3DOrder.STATUS_CHOICES):
+                order.status = new_status
+                order.save(update_fields=['status', 'updated_at'])
+                messages.success(request, f"Buyurtma #{order.order_number} holati '{order.get_status_display()}' ga o'zgartirildi.")
+
+                if new_status == 'printing' and order.telegram_chat_id:
+                    send_message(
+                        order.telegram_chat_id,
+                        f"⚙️ <b>Xushxabar, {order.customer_name}!</b>\n\n"
+                        f"Sizning <b>#{order.order_number}</b> raqamli 3D printer buyurtmangiz hozirda usta tomonidan 3D printerda chop etilishni boshladi! 🚀\n\n"
+                        f"Tayyor bo'lishi bilan sizga fotosurat va lokatsiya yuboramiz."
+                    )
+                elif new_status == 'ready':
+                    try:
+                        notify_customer_3d_order_ready(order)
+                    except Exception as e:
+                        logger.error(f"3D notify ready error: {e}")
+            return redirect('seller_3d_studio_web')
+
+        elif action == 'add_note' and order_id:
+            admin_notes = request.POST.get('admin_notes', '').strip()
+            order = Print3DOrder.objects.filter(id=order_id).first()
+            if order:
+                order.admin_notes = admin_notes
+                order.save(update_fields=['admin_notes'])
+                messages.success(request, f"#{order.order_number} qaydlari saqlandi.")
+            return redirect('seller_3d_studio_web')
+
+    # Filtrlash
+    status_filter = request.GET.get('status', 'all')
+    orders_qs = Print3DOrder.objects.all().order_by('-created_at')
+    if status_filter and status_filter != 'all':
+        orders_qs = orders_qs.filter(status=status_filter)
+
+    total_orders = Print3DOrder.objects.count()
+    active_printing = Print3DOrder.objects.filter(status='printing').count()
+    new_orders = Print3DOrder.objects.filter(status__in=['new', 'confirmed']).count()
+    ready_orders = Print3DOrder.objects.filter(status='ready').count()
+    total_revenue = Print3DOrder.objects.filter(status__in=['ready', 'delivered']).aggregate(s=Sum('final_amount'))['s'] or 0
+
+    materials = Print3DMaterial.objects.filter(is_active=True)
+
+    context = {
+        'shop': shop,
+        'orders': orders_qs,
+        'status_filter': status_filter,
+        'total_orders': total_orders,
+        'active_printing': active_printing,
+        'new_orders': new_orders,
+        'ready_orders': ready_orders,
+        'total_revenue': total_revenue,
+        'materials': materials,
+    }
+    return render(request, 'seller/3d_studio.html', context)
+

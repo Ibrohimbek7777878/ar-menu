@@ -13,7 +13,7 @@ PRODUCT_DESIGN_TEMPLATES = [
 
 class Product(models.Model):
     shop = models.ForeignKey(
-        'shops.Shop', on_delete=models.CASCADE, related_name='products'
+        'shops.Shop', on_delete=models.PROTECT, related_name='products'
     )
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, allow_unicode=True)
@@ -118,6 +118,12 @@ class Product(models.Model):
         verbose_name = 'Mahsulot'
         verbose_name_plural = 'Mahsulotlar'
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(stock__gte=0),
+                name='product_stock_non_negative'
+            ),
+        ]
 
     def __str__(self):
         return f'{self.name} — {self.shop.name}'
@@ -137,6 +143,15 @@ class Product(models.Model):
         if self.has_discount:
             return int((1 - self.price / self.old_price) * 100)
         return 0
+
+    @property
+    def image_url_or_default(self):
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                pass
+        return '/static/images/dish-placeholder.svg'
 
     @property
     def flash_active(self):

@@ -1,96 +1,346 @@
 {% extends "seller/base_seller.html" %}
-{% load i18n_tags %}
-{% block title %}{{ t.tables_title }}{% endblock %}
-{% block page_title %}{{ t.tables_title }}{% endblock %}
+{% load i18n_tags uznum %}
+{% block title %}Stollar & Zallar — {{ shop.name }}{% endblock %}
+{% block page_title %}Stollar & Zallar Boshqaruvi{% endblock %}
+
+{% block seller_css %}
+<style>
+    .hall-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 1.25rem;
+        padding: 1.25rem;
+        transition: all 0.25s ease;
+    }
+    .table-seat-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 9999px;
+        background: var(--sand);
+        color: var(--muted);
+    }
+    .table-tile {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s;
+    }
+    .table-tile:hover {
+        transform: translateY(-2.5px);
+        box-shadow: 0 10px 24px -4px rgba(70, 45, 20, 0.08);
+        border-color: rgba(199, 91, 57, 0.4);
+    }
+    .dark .hall-card {
+        background: rgba(28, 24, 21, 0.82);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    .dark .table-seat-badge {
+        background: rgba(36, 31, 27, 0.85);
+        color: #A39789;
+    }
+    .dark .table-tile {
+        background: rgba(28, 24, 21, 0.82);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    .dark .table-tile:hover {
+        box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 0 16px rgba(199, 91, 57, 0.2);
+    }
+
+    /* Modal Backdrop */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .modal-overlay.show {
+        display: flex;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-    <p class="text-sm text-gray-500">Har stolda QR bo'ladi — mijoz skanerlab menyuni ochadi. QR ni chop etib stolga qo'ying.</p>
-    <a href="{% url 'seller_kds_web' %}" class="btn btn-primary">📺 {{ t.kds_title }}</a>
-    <a href="{% url 'seller_tables_plan_web' %}" class="btn btn-outline">🗺️ Zal plani</a>
-</div>
-
-<!-- R5: Admin nazorat statistikasi -->
-<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-    <div class="card p-4"><p class="text-xs text-gray-400">Stollar band</p><p class="font-display text-2xl font-bold">{{ stats.tables_busy }}/{{ stats.tables_total }}</p></div>
-    <div class="card p-4"><p class="text-xs text-gray-400">Bugungi buyurtma</p><p class="font-display text-2xl font-bold">{{ stats.orders_today }}</p></div>
-    <div class="card p-4"><p class="text-xs text-gray-400">Aktiv</p><p class="font-display text-2xl font-bold text-amber-600">{{ stats.active_orders }}</p></div>
-    <div class="card p-4"><p class="text-xs text-gray-400">AI xarajati (bugun)</p><p class="font-display text-2xl font-bold text-purple-600">${{ stats.ai_cost_today|floatformat:3 }}</p></div>
-    <div class="card p-4"><p class="text-xs text-gray-400">AR menyu</p><a href="/m/{{ shop.slug }}/" target="_blank" class="text-sm font-bold text-brand-600">Ochish ↗</a></div>
-</div>
-
-<!-- UMUMIY MENYU QR (stolsiz ham ochiladi — devor/stolga) -->
-<div class="card p-5 mb-5 flex flex-wrap items-center gap-5">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ general_menu_url|urlencode }}"
-         alt="Umumiy menyu QR" class="rounded-xl border border-gray-200" width="140" height="140">
-    <div class="flex-1 min-w-[220px]">
-        <p class="font-display text-lg font-semibold">📲 Umumiy menyu QR</p>
-        <p class="text-sm text-gray-500 mt-1">Stolga bog'lanmagan umumiy menyu — devorga, vitrinaga yoki kassaga qo'yish uchun. Skanerlansa 3D/AR menyu ochiladi.</p>
-        <p class="text-xs text-gray-400 mt-1 break-all">{{ general_menu_url }}</p>
-        <a href="{% url 'seller_tables_print_stands_web' %}" target="_blank" class="btn btn-primary mt-2 !py-1.5 !text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
-            <span>🖨️</span> Barcha Stollar QR Stendlarini Chop Etish (A4/A6)
-        </a>
-    </div>
-</div>
-
-<!-- Zal qo'shish -->
-<div class="card p-4 mb-5">
-    <form method="post" class="flex flex-wrap gap-3 items-end">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add_hall">
-        <div class="flex-1 min-w-[200px]">
-            <label class="field">{{ t.hall_word }} qo'shish</label>
-            <input type="text" name="hall_name" placeholder="masalan: Asosiy zal, Terasa, VIP" required>
-        </div>
-        <button class="btn btn-outline">+ Zal</button>
-    </form>
-</div>
-
-{% for hall in halls %}
-<div class="card p-5 mb-5">
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="font-display text-lg font-semibold">🏛️ {{ hall.name }} <span class="text-xs text-gray-400">({{ hall.tables.count }} {{ t.table_word|lower }})</span></h2>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {% for t in hall.tables.all %}
-        <div class="rounded-2xl border border-gray-100 p-4 bg-gray-50">
-            <div class="flex items-center justify-between mb-2">
-                <p class="font-bold">🍽️ {{ t.table_word|default:"Stol" }} {{ t.number }}</p>
-                <span class="text-xs px-2 py-0.5 rounded-full {% if t.status == 'free' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %}">{{ t.get_status_display }}</span>
+<div class="space-y-5">
+    <!-- 1. YUQORI BOSHQARUV VA TEZKOR STATISTIKA -->
+    <div class="card p-4 sm:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white flex items-center justify-center font-black text-2xl shadow-sm">
+                    🏛️
+                </div>
+                <div>
+                    <h1 class="font-display font-black text-lg sm:text-xl text-ink leading-tight">
+                        {{ shop.name }} — Stollar & Zallar
+                    </h1>
+                    <p class="text-xs text-muted mt-0.5">
+                        Har bir stolda QR & NFC stend joylashtiriladi — mijoz o'tiriboq telefonida 3D menyuni ochadi.
+                    </p>
+                </div>
             </div>
-            <p class="text-xs text-gray-400 mb-3">{{ t.capacity_word|default:"Sig'im" }}: {{ t.capacity }} kishi</p>
+
+            <!-- Boshqaruv tugmalari -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{% url 'seller_tables_print_stands_web' %}" target="_blank" class="btn btn-primary !py-2 !px-3.5 !text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
+                    <span>🖨️</span> Barcha Stollar QR Stendlarini Chop Etish (A4/A6)
+                </a>
+                <a href="{% url 'seller_nfc_dashboard_web' %}" class="btn btn-outline !py-2 !px-3 !text-xs font-bold text-amber-500 hover:text-amber-600 inline-flex items-center gap-1.5">
+                    <span>🏷️</span> NFC Smart Stendlar
+                </a>
+                <button type="button" onclick="openModal('addHallModal')" class="btn btn-outline !py-2 !px-3 !text-xs font-bold">
+                    + Yangi Zal
+                </button>
+                <button type="button" onclick="openModal('bulkTableModal')" class="btn btn-outline !py-2 !px-3 !text-xs font-bold text-primary">
+                    ⚡ 1-10 Stollarni Yaratish
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistika Panel -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-border">
+            <div class="p-3 rounded-xl bg-sand/60">
+                <p class="text-[11px] text-muted font-semibold uppercase">Jami Stollar</p>
+                <p class="font-display text-xl font-bold text-ink mt-0.5">{{ stats.tables_total }} ta</p>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <p class="text-[11px] text-emerald-600 font-semibold uppercase">Bo'sh Stollar</p>
+                <p class="font-display text-xl font-bold text-emerald-600 mt-0.5">
+                    {{ stats.tables_free }} ta
+                </p>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <p class="text-[11px] text-amber-600 font-semibold uppercase">Band Stollar</p>
+                <p class="font-display text-xl font-bold text-amber-600 mt-0.5">{{ stats.tables_busy }} ta</p>
+            </div>
+            <div class="p-3 rounded-xl bg-sand/60">
+                <p class="text-[11px] text-muted font-semibold uppercase">Bugungi Buyurtmalar</p>
+                <p class="font-display text-xl font-bold text-ink mt-0.5">{{ stats.orders_today }} ta</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. UMUMIY MENYU QR STENDI (KASSA / VITRINA UCHUN) -->
+    <div class="card p-4 sm:p-5 flex flex-wrap items-center gap-5 bg-gradient-to-br from-emerald-500/5 via-transparent to-sand/40">
+        <div class="p-2 rounded-2xl bg-white shadow-sm border border-border shrink-0">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ general_menu_url|urlencode }}"
+                 alt="Umumiy Menyu QR" width="100" height="100" class="rounded-xl">
+        </div>
+        <div class="flex-1 min-w-[220px]">
             <div class="flex items-center gap-2">
-                <button onclick="document.getElementById('qr-{{ t.id }}').classList.toggle('hidden')"
-                        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:border-brand-600">{{ t.table_qr }}</button>
-                <button onclick="window.print()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-gray-200">{{ t.table_print }}</button>
-                <form method="post" class="ml-auto" onsubmit="return confirm('QR yangilansinmi? Eski QR 24 soat ishlaydi.')">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="rotate_qr">
-                    <input type="hidden" name="table_id" value="{{ t.id }}">
-                    <button class="text-xs text-red-500 hover:underline">QR yangilash</button>
-                </form>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 text-[10px] font-bold">
+                    Vitrina & Kassa uchun
+                </span>
+                <span class="text-xs text-muted">Stol raqamisiz umumiy menyu</span>
             </div>
-            <div id="qr-{{ t.id }}" class="hidden mt-3 bg-white rounded-xl p-3 text-center">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ t.qr_url|urlencode }}"
-                     alt="QR {{ t.number }}" class="mx-auto rounded-lg" width="180" height="180">
-                <p class="text-[11px] text-gray-400 mt-2 break-all">{{ t.qr_url }}</p>
-                <p class="text-sm font-bold mt-1">{{ shop.name }} · {{ hall.name }} · {{ t.number }}</p>
-            </div>
+            <h3 class="font-display font-bold text-base text-ink mt-1">📲 Umumiy AIR 3D Menyu QR Kodi</h3>
+            <p class="text-xs text-muted mt-0.5">
+                Ushbu QR kodni vitrina, kirish eshigi yoki devorga qo'ysangiz, mijozlar telefonida 3D taomlar menyusi ochiladi.
+            </p>
+            <p class="text-[11px] font-mono text-primary mt-1 break-all">{{ general_menu_url }}</p>
         </div>
-        {% endfor %}
-        <!-- Stol qo'shish kartochkasi -->
-        <form method="post" class="rounded-2xl border border-dashed border-gray-300 p-4 flex flex-col justify-center gap-2">
+        <div class="flex items-center gap-2">
+            <a href="{{ general_menu_url }}" target="_blank" class="btn btn-outline !py-2 !px-3 !text-xs font-bold">
+                Ochib ko'rish ↗
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. ZALLAR VA STOLLAR BO'LIMI -->
+    {% for hall in halls %}
+    <div class="hall-card space-y-4">
+        <div class="flex items-center justify-between border-b border-border pb-3">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl">🚪</span>
+                <div>
+                    <h2 class="font-display font-bold text-base text-ink">
+                        {{ hall.name }}
+                    </h2>
+                    <p class="text-xs text-muted">Jami: {{ hall.tables.count }} ta stol</p>
+                </div>
+            </div>
+            <button type="button" 
+                    onclick="openAddTableModal('{{ hall.id }}', '{{ hall.name|escapejs }}')"
+                    class="btn btn-outline !py-1.5 !px-3 !text-xs font-bold">
+                + Ushbu zalga stol qo'shish
+            </button>
+        </div>
+
+        <!-- Stollar Gridi -->
+        {% if hall.tables.all %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {% for t in hall.tables.all %}
+            <div class="table-tile">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="font-display font-black text-lg text-ink">#{{ t.number }}</span>
+                        <p class="text-[11px] text-muted">{{ hall.name }}</p>
+                    </div>
+                    <span class="table-seat-badge">👥 {{ t.capacity }} kishi</span>
+                </div>
+
+                <!-- QR Kod Miniaturasi -->
+                <div class="my-3 p-2 rounded-xl bg-sand/60 flex items-center justify-center">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ t.qr_url|urlencode }}"
+                         alt="QR Stol {{ t.number }}"
+                         class="w-24 h-24 rounded-lg bg-white p-1 shadow-xs"
+                         loading="lazy">
+                </div>
+
+                <!-- Holat va Amallar -->
+                <div class="pt-2 border-t border-border flex items-center justify-between text-xs">
+                    <span class="px-2 py-0.5 rounded-full font-bold text-[10px] {% if t.status == 'free' %}bg-emerald-500/15 text-emerald-600{% else %}bg-amber-500/15 text-amber-600{% endif %}">
+                        {% if t.status == 'free' %}🟢 Bo'sh{% else %}🔴 Band{% endif %}
+                    </span>
+
+                    <div class="flex items-center gap-1.5">
+                        <a href="{{ t.qr_url }}" target="_blank" class="p-1 text-muted hover:text-primary transition" title="Menyuni ochish">
+                            ↗
+                        </a>
+                        <form method="post" onsubmit="return confirm('Stol #{{ t.number }} o\'chirilsinmi?');" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_table">
+                            <input type="hidden" name="table_id" value="{{ t.id }}">
+                            <button type="submit" class="p-1 text-muted hover:text-red-500 transition" title="Stolni o'chirish">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-muted text-xs bg-sand/40 rounded-xl">
+            Ushbu zalda hali stollar yo'q. Yuqoridagi "+ Ushbu zalga stol qo'shish" tugmasini bosing.
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="card p-12 text-center">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-3">
+            🏛️
+        </div>
+        <h3 class="font-display font-bold text-lg text-ink">Hali zallar va stollar qo'shilmagan</h3>
+        <p class="text-xs text-muted mt-1 max-w-sm mx-auto">
+            Birinchi zalni qo'shing (masalan: "Asosiy zal", "Terassa" yoki "VIP xona") va stollarni avtomatik yarating.
+        </p>
+        <button type="button" onclick="openModal('addHallModal')" class="btn btn-primary mt-4 !text-xs font-bold">
+            + Birinchi Zalni Qo'shish
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 4. MODALLAR: ZAL VA STOL QO'SHISH -->
+<!-- Zal Qo'shish Modali -->
+<div id="addHallModal" class="modal-overlay" onclick="closeModal(event, 'addHallModal')">
+    <div class="card p-5 max-w-md w-full shadow-2xl" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between border-b border-border pb-3 mb-4">
+            <h3 class="font-display font-bold text-base text-ink">🏛️ Yangi Zal Qo'shish</h3>
+            <button type="button" onclick="hideModal('addHallModal')" class="text-muted hover:text-ink font-bold">✕</button>
+        </div>
+        <form method="post" class="space-y-3">
             {% csrf_token %}
-            <input type="hidden" name="action" value="add_table">
-            <input type="hidden" name="hall_id" value="{{ hall.id }}">
-            <label class="field">{{ t.table_add }}</label>
-            <input type="text" name="number" placeholder="Raqam (masalan: M-5)" required class="!py-2">
-            <input type="number" name="capacity" value="4" min="1" max="30" class="!py-2">
-            <button class="btn btn-primary justify-center !py-2 !text-xs">+ Qo'shish</button>
+            <input type="hidden" name="action" value="add_hall">
+            <div>
+                <label class="field">Zal Nomi *</label>
+                <input type="text" name="hall_name" placeholder="masalan: Asosiy zal, Terassa, VIP" required>
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="hideModal('addHallModal')" class="btn btn-outline !py-2 !text-xs">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary !py-2 !text-xs font-bold">+ Zalni Saqlash</button>
+            </div>
         </form>
     </div>
 </div>
-{% empty %}
-<div class="card p-10 text-center text-gray-500">Hali zal qo'shilmagan — yuqorida birinchi zalni qo'shing.</div>
-{% endfor %}
+
+<!-- Yagona Stol Qo'shish Modali -->
+<div id="addTableModal" class="modal-overlay" onclick="closeModal(event, 'addTableModal')">
+    <div class="card p-5 max-w-md w-full shadow-2xl" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between border-b border-border pb-3 mb-4">
+            <h3 class="font-display font-bold text-base text-ink">🍽️ Stol Qo'shish (<span id="modalHallNameLabel"></span>)</h3>
+            <button type="button" onclick="hideModal('addTableModal')" class="text-muted hover:text-ink font-bold">✕</button>
+        </div>
+        <form method="post" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_table">
+            <input type="hidden" name="hall_id" id="modalHallIdInput" value="">
+            <div>
+                <label class="field">Stol Raqami / Nomi *</label>
+                <input type="text" name="number" placeholder="masalan: 1, 2, VIP-1" required>
+            </div>
+            <div>
+                <label class="field">O'rindiqlar Sig'imi (kishi) *</label>
+                <input type="number" name="capacity" value="4" min="1" max="50" required>
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="hideModal('addTableModal')" class="btn btn-outline !py-2 !text-xs">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary !py-2 !text-xs font-bold">+ Stolni Qo'shish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tezkor 1-10 Stol Yaratish Modali -->
+<div id="bulkTableModal" class="modal-overlay" onclick="closeModal(event, 'bulkTableModal')">
+    <div class="card p-5 max-w-md w-full shadow-2xl" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between border-b border-border pb-3 mb-4">
+            <h3 class="font-display font-bold text-base text-ink">⚡ Tezkor Stollar Generatsiyasi</h3>
+            <button type="button" onclick="hideModal('bulkTableModal')" class="text-muted hover:text-ink font-bold">✕</button>
+        </div>
+        <form method="post" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="bulk_add_tables">
+            <div>
+                <label class="field">Qaysi Zalga? *</label>
+                <select name="hall_id" required>
+                    {% for h in halls %}
+                    <option value="{{ h.id }}">{{ h.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="field">Nechta stol yaratilsin? *</label>
+                    <input type="number" name="count" value="10" min="1" max="50" required>
+                </div>
+                <div>
+                    <label class="field">Har bir stol sig'imi *</label>
+                    <input type="number" name="capacity" value="4" min="1" max="30" required>
+                </div>
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="hideModal('bulkTableModal')" class="btn btn-outline !py-2 !text-xs">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary !py-2 !text-xs font-bold">⚡ Generatsiya qilish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.add('show');
+    }
+    function hideModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+    function closeModal(e, id) {
+        if (e.target.id === id) hideModal(id);
+    }
+    function openAddTableModal(hallId, hallName) {
+        document.getElementById('modalHallIdInput').value = hallId;
+        document.getElementById('modalHallNameLabel').innerText = hallName;
+        openModal('addTableModal');
+    }
+</script>
 {% endblock %}

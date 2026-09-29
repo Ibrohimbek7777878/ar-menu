@@ -89,7 +89,7 @@ def update_env_file(new_url: str):
         log(f".env ni yangilashda xatolik: {e}", "ERROR")
 
 
-def sync_telegram_webhook(url: str, max_retries: int = 6):
+def sync_telegram_webhook(url: str, max_retries: int = 4):
     """DNS propagatsiyasini hisobga olib bir necha marta qayta urinish"""
     log(f"Telegram webhook va Mini App menyusi sozlanmoqda: {url}")
     for attempt in range(1, max_retries + 1):
@@ -99,7 +99,7 @@ def sync_telegram_webhook(url: str, max_retries: int = 6):
                 cwd=str(BACKEND_DIR),
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=90,
             )
             if res.returncode == 0:
                 log(f"✅ Telegram webhook muvaffaqiyatli ulandi:\n{res.stdout.strip()}", "SUCCESS")
@@ -112,6 +112,9 @@ def sync_telegram_webhook(url: str, max_retries: int = 6):
                 else:
                     log(f"Telegram webhook xatosi ({attempt}/{max_retries}): {err_msg}", "WARN")
                     time.sleep(3)
+        except subprocess.TimeoutExpired:
+            log(f"Telegram webhook timeout bo'ldi ({attempt}/{max_retries}), keyingi siklda davom etadi.", "WARN")
+            break
         except Exception as e:
             log(f"set_telegram_webhook chaqirishda xatolik ({attempt}/{max_retries}): {e}", "WARN")
             time.sleep(3)
@@ -159,6 +162,7 @@ def start_gunicorn():
         "--bind", "127.0.0.1:8000",
         "--workers", "2",
         "--threads", "2",
+        "--no-control-socket",
         "--reload",
         "--timeout", "60",
         "--capture-output",
@@ -251,7 +255,10 @@ def start_cloudflared():
 
         # DNS propagatsiyasini biroz kutib webhook o'rnatish
         time.sleep(2)
-        sync_telegram_webhook(tunnel_url)
+        try:
+            sync_telegram_webhook(tunnel_url)
+        except Exception as we:
+            log(f"Webhook o'rnatishda xatolik: {we}", "WARN")
     else:
         log("Tunnel URL ni olish imkoni bo'lmadi!", "WARN")
         save_status("tunnel_pending", None)
@@ -295,14 +302,18 @@ def shutdown(signum, frame):
     sys.exit(0)
 
 
+last_cf_attempt = 0
+
 def check_health():
-    global gunicorn_proc, cloudflared_proc
+    global gunicorn_proc, cloudflared_proc, last_cf_attempt
     if gunicorn_proc is None or gunicorn_proc.poll() is not None:
         log("⚠️ Gunicorn ishlamayapti! Qayta ishga tushirilmoqda...", "WARN")
         start_gunicorn()
 
-    if cloudflared_proc is None or cloudflared_proc.poll() is not None:
-        log("⚠️ Cloudflared ishlamayapti! Qayta ishga tushirilmoqda...", "WARN")
+    now = time.time()
+    if (cloudflared_proc is None or cloudflared_proc.poll() is not None) and (now - last_cf_attempt > 60):
+        last_cf_attempt = now
+        log("⚠️ Cloudflared tunnel qayta tekshirilmoqda...", "INFO")
         start_cloudflared()
 
     save_status("running", current_tunnel_url)

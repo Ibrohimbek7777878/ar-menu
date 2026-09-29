@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF7F2" />
+      <stop offset="50%" stop-color="#F4EFE6" />
+      <stop offset="100%" stop-color="#EBE3D5" />
+    </linearGradient>
+    <linearGradient id="clocheGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#D97706" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#B45309" stop-opacity="0.95" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#78350F" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" rx="20" fill="url(#bgGrad)" />
+
+  <!-- Subtle concentric decorative rings -->
+  <circle cx="200" cy="140" r="95" fill="none" stroke="#D97706" stroke-opacity="0.08" stroke-width="1.5" stroke-dasharray="4 4" />
+  <circle cx="200" cy="140" r="115" fill="none" stroke="#D97706" stroke-opacity="0.05" stroke-width="1" />
+
+  <!-- Steam wisps -->
+  <path d="M 185 85 Q 180 72 186 60 Q 192 48 186 38" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.55" />
+  <path d="M 200 80 Q 207 68 201 55 Q 195 42 202 30" fill="none" stroke="#D97706" stroke-width="3" stroke-linecap="round" stroke-opacity="0.7" />
+  <path d="M 215 85 Q 220 72 214 60 Q 208 48 214 38" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.55" />
+
+  <!-- Gourmet Cloche Dish & Tray -->
+  <g filter="url(#shadow)">
+    <!-- Cloche Handle -->
+    <ellipse cx="200" cy="98" rx="8" ry="6" fill="#B45309" />
+    <path d="M 197 104 L 203 104 L 204 110 L 196 110 Z" fill="#92400E" />
+
+    <!-- Cloche Dome -->
+    <path d="M 135 170 C 135 116 265 116 265 170 Z" fill="url(#clocheGrad)" />
+
+    <!-- Rim highlight -->
+    <ellipse cx="200" cy="170" rx="66" ry="6" fill="#FBBF24" fill-opacity="0.35" />
+
+    <!-- Serving Platter / Tray -->
+    <ellipse cx="200" cy="174" rx="82" ry="10" fill="#78350F" fill-opacity="0.15" />
+    <path d="M 120 172 Q 200 180 280 172 Q 282 176 270 178 Q 200 186 130 178 Z" fill="#92400E" />
+    <ellipse cx="200" cy="173" rx="76" ry="5" fill="#FCD34D" fill-opacity="0.6" />
+  </g>
+
+  <!-- Elegant Label -->
+  <g text-anchor="middle">
+    <text x="200" y="222" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#451A03" letter-spacing="1">TAOM RASMI</text>
+    <text x="200" y="244" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#92400E" fill-opacity="0.8">Tez kunda taqdim etiladi</text>
+  </g>
+</svg>

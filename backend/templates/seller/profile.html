@@ -1,253 +1,326 @@
 {% extends "seller/base_seller.html" %}
-{% block title %}Profil - Store Admin{% endblock %}
-{% block page_title %}Profil{% endblock %}
+{% block title %}Profil va Sozlamalar — Boshqaruv Markazi{% endblock %}
+{% block page_title %}Profil va Tizim Sozlamalari{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl space-y-6">
-    <!-- Tepa promo banner — do'kon yaratish -->
-    <div class="card overflow-hidden border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
-        <div class="p-6">
-            <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 shadow-soft">
-                    <span class="material-icons-outlined text-white text-2xl">storefront</span>
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- 1. YUQORI PROFIL KARTASI & DO'KON STATUSI -->
+    <div class="card p-5 sm:p-6 bg-gradient-to-r from-card to-sand/40 border border-border">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white text-2xl font-display font-black shadow-md shrink-0">
+                    {{ user.first_name|first|default:user.username|first|upper }}
                 </div>
-                <div class="flex-1 min-w-0">
-                    {% if shop %}
-                    <h3 class="font-display text-lg font-semibold text-ink">Do'koningiz tayyor — {{ shop.name }} 🎉</h3>
-                    <p class="text-sm text-gray-600 mt-1">Mahsulotlaringiz ham global marketplace da, ham <a href="{% url 'customer_shop_detail' shop.slug %}" class="font-medium text-brand-700 hover:underline">o'z do'koningizda</a> ko'rinmoqda.</p>
-                    {% else %}
-                    <h3 class="font-display text-lg font-semibold text-ink">O'z do'koningizni yarating — 1 daqiqada! 🎉</h3>
-                    <p class="text-sm text-gray-600 mt-1">Kodsiz, faqat yozish orqali — logotip, nom, dizayn.</p>
-                    {% endif %}
-                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                        <div class="flex gap-2 bg-white rounded-xl p-3 border border-amber-100">
-                            <span class="w-6 h-6 rounded-full bg-amber-500 text-white grid place-items-center text-xs font-bold shrink-0">1</span>
-                            <span><b>Nom & Logo</b><br><span class="text-gray-500">Do'kon nomi, tavsifi va rasmini kiriting</span></span>
-                        </div>
-                        <div class="flex gap-2 bg-white rounded-xl p-3 border border-amber-100">
-                            <span class="w-6 h-6 rounded-full bg-amber-500 text-white grid place-items-center text-xs font-bold shrink-0">2</span>
-                            <span><b>{{ t.products_label }}</b><br><span class="text-gray-500">Avtomatik ikki joyda chiqadi</span></span>
-                        </div>
-                        <div class="flex gap-2 bg-white rounded-xl p-3 border border-amber-100">
-                            <span class="w-6 h-6 rounded-full bg-amber-500 text-white grid place-items-center text-xs font-bold shrink-0">3</span>
-                            <span><b>Nashr</b><br><span class="text-gray-500">Saqlang — darhol jonli</span></span>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        {% if shop %}
-                        <a href="{% url 'seller_shop_web' %}" class="btn btn-primary shadow-soft">
-                            <span class="material-icons-outlined !text-base">palette</span>
-                            Do'konni bezash
-                        </a>
-                        <a href="{% url 'customer_shop_detail' shop.slug %}" target="_blank" class="btn btn-outline ml-2">Do'konni ko'rish</a>
-                        {% else %}
-                        <a href="{% url 'seller_shop_web' %}" class="btn btn-primary shadow-soft">
-                            <span class="material-icons-outlined !text-base">add_business</span>
-                            Do'kon yaratish — bepul
-                        </a>
-                        <span class="text-xs text-gray-500 ml-3">Majburiy emas, istalgan vaqtda</span>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h2 class="font-display font-black text-lg sm:text-xl text-ink">
+                            {{ user.get_full_name|default:user.username }}
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                            {{ user.get_role_display|default:"Tadbirkor / Sotuvchi" }}
+                        </span>
+                        {% if user.is_approved %}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            ✓ Tasdiqlangan
+                        </span>
                         {% endif %}
                     </div>
+                    <p class="text-xs text-muted mt-1 flex items-center gap-3 flex-wrap">
+                        <span>👤 @{{ user.username }}</span>
+                        {% if user.phone %}<span>📞 {{ user.phone }}</span>{% endif %}
+                        {% if shop %}<span>🏪 <b>{{ shop.name }}</b></span>{% endif %}
+                    </p>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="card overflow-hidden">
-        <div class="p-8">
-            <div class="flex items-center gap-5 mb-8">
-                <div class="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center shrink-0">
-                    <span class="text-brand-700 dark:text-brand-400 font-display font-bold text-xl">{{ user.username|first|upper }}</span>
-                </div>
-                <div>
-                    <h2 class="font-display text-2xl font-semibold">{{ user.get_full_name|default:user.username }}</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ user.get_role_display }}</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 text-sm">
-                <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.username }}</p>
-                    <p class="font-medium">{{ user.username }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.email_label }}</p>
-                    <p class="font-medium">{{ user.email|default:"—" }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.phone }}</p>
-                    <p class="font-medium">{{ user.phone|default:"—" }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.telegram_label }}</p>
-                    <p class="font-medium">{% if user.telegram_username %}<span class="inline-flex items-center gap-1.5"><span class="material-icons-outlined !text-base text-sky-500">send</span>@{{ user.telegram_username }}</span>{% else %}<span class="text-gray-400">—</span><span class="ml-2 pill bg-amber-50 text-amber-700 text-xs">Bot admin uchun qo'shing</span>{% endif %}</p>
-                    {% if not user.telegram_username %}<p class="text-xs text-gray-400 mt-1">{{ t.profile_edit_desc }}</p>{% endif %}
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">{{ t.status_label }}</p>
-                    {% if user.is_approved %}
-                    <span class="pill text-brand-700 bg-brand-50"><span class="size-1.5 rounded-full bg-brand-500"></span>{{ t.approved }}</span>
-                    {% else %}
-                    <span class="pill text-amber-700 bg-amber-50"><span class="size-1.5 rounded-full bg-amber-500"></span>{{ t.not_approved }}</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="mt-8 pt-6 border-t border-gray-100 dark:border-neutral-900">
-                <a href="{% url 'web_logout' %}" class="inline-flex items-center gap-2 text-red-600 hover:text-red-700 text-sm font-medium transition">
-                    <span class="material-icons !text-lg">logout</span>
+            <!-- Tezkor harakatlar -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {% if shop %}
+                <a href="{% url 'customer_shop_detail' shop.slug %}" target="_blank" class="btn btn-outline !py-2 !px-3 text-xs font-bold text-primary">
+                    🌐 Do'konni Ko'rish ↗
+                </a>
+                {% endif %}
+                <a href="{% url 'web_logout' %}" class="btn btn-outline !py-2 !px-3 text-xs text-red-600 border-red-200 hover:bg-red-500/10 transition">
                     Chiqish
                 </a>
             </div>
         </div>
+
+        {% if shop_stats %}
+        <!-- Statistika Ko'rsatkichlari -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-border">
+            <div class="p-3 rounded-xl bg-sand/50 text-center">
+                <span class="text-xs text-muted block mb-0.5">Mahsulotlar</span>
+                <span class="text-lg font-black text-ink">{{ shop_stats.products }} ta</span>
+            </div>
+            <div class="p-3 rounded-xl bg-sand/50 text-center">
+                <span class="text-xs text-muted block mb-0.5">Buyurtmalar</span>
+                <span class="text-lg font-black text-ink">{{ shop_stats.orders }} ta</span>
+            </div>
+            <div class="p-3 rounded-xl bg-sand/50 text-center">
+                <span class="text-xs text-muted block mb-0.5">Jami Daromad</span>
+                <span class="text-lg font-black text-primary">{{ shop_stats.revenue|floatformat:0 }} so'm</span>
+            </div>
+            <div class="p-3 rounded-xl bg-sand/50 text-center">
+                <span class="text-xs text-muted block mb-0.5">Do'kon Holati</span>
+                <span class="text-sm font-black {% if shop_stats.is_open %}text-emerald-600{% else %}text-amber-600{% endif %}">
+                    {% if shop_stats.is_open %}● Ochiq (Faol){% else %}○ Vaqtincha Yopiq{% endif %}
+                </span>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Profil tahriri -->
-    <div class="card overflow-hidden">
-        <div class="p-8">
-            <h2 class="font-display text-xl font-semibold mb-6">{{ t.profile_info }}</h2>
+    <!-- 2. TABLAR (SETTINGS NAVIGATION) -->
+    <div class="flex items-center gap-1.5 border-b border-border pb-px overflow-x-auto no-scrollbar">
+        <button type="button" onclick="switchSettingsTab('profile', this)" class="settings-tab-btn active px-4 py-2.5 text-xs font-bold rounded-t-xl transition border-b-2 flex items-center gap-1.5">
+            <span>👤</span> Shaxsiy Profil
+        </button>
+        <button type="button" onclick="switchSettingsTab('shop', this)" class="settings-tab-btn px-4 py-2.5 text-xs font-semibold text-muted hover:text-ink rounded-t-xl transition border-b-2 border-transparent flex items-center gap-1.5">
+            <span>🏪</span> Do'kon & Restoran Sozlamalari
+        </button>
+        <button type="button" onclick="switchSettingsTab('security', this)" class="settings-tab-btn px-4 py-2.5 text-xs font-semibold text-muted hover:text-ink rounded-t-xl transition border-b-2 border-transparent flex items-center gap-1.5">
+            <span>🔐</span> Xavfsizlik & Parol
+        </button>
+        <button type="button" onclick="switchSettingsTab('telegram', this)" class="settings-tab-btn px-4 py-2.5 text-xs font-semibold text-muted hover:text-ink rounded-t-xl transition border-b-2 border-transparent flex items-center gap-1.5">
+            <span>🤖</span> Telegram Bot & Bildirishnomalar
+        </button>
+    </div>
+
+    <!-- 3. TAB 1: SHAXSIY PROFIL TAHRIRI -->
+    <div id="tab-profile" class="settings-tab-pane space-y-6">
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="font-display font-black text-base text-ink">Shaxsiy ma'lumotlarni tahrirlash</h3>
+                    <p class="text-xs text-muted mt-0.5">Ism-familiyangiz va aloqa raqamlaringizni yangilang</p>
+                </div>
+            </div>
+
             <form method="POST" class="space-y-4">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="update_profile">
+                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.first_name }}</label>
-                        <input type="text" name="first_name" value="{{ user.first_name|default:'' }}"
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Ismingiz</label>
+                        <input type="text" name="first_name" value="{{ user.first_name|default:'' }}" placeholder="Masalan: Aziz" class="w-full text-xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.last_name }}</label>
-                        <input type="text" name="last_name" value="{{ user.last_name|default:'' }}"
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Familiyangiz</label>
+                        <input type="text" name="last_name" value="{{ user.last_name|default:'' }}" placeholder="Masalan: Karimov" class="w-full text-xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.username }}</label>
-                        <input type="text" value="{{ user.username }}" disabled
-                            class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-400 w-full cursor-not-allowed">
+                        <label class="block text-xs font-bold text-ink mb-1">Foydalanuvchi nomi (Login)</label>
+                        <input type="text" value="{{ user.username }}" disabled class="w-full text-xs bg-sand/60 opacity-70 cursor-not-allowed">
+                        <span class="text-[10px] text-muted mt-1 block">Tizimga kirish logini o'zgarmaydi</span>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.phone }}</label>
-                        <input type="tel" name="phone" value="{{ user.phone|default:'' }}"
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Telefon raqam</label>
+                        <input type="tel" name="phone" value="{{ user.phone|default:'' }}" placeholder="+998 90 123 45 67" class="w-full text-xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.email_label }}</label>
-                        <input type="email" name="email" value="{{ user.email|default:'' }}"
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Email elektron pochta</label>
+                        <input type="email" name="email" value="{{ user.email|default:'' }}" placeholder="admin@example.uz" class="w-full text-xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.telegram_label }}</label>
-                        <div class="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10">
-                            <span class="text-gray-400 mr-1">@</span>
-                            <input type="text" name="telegram_username" value="{{ user.telegram_username|default:'' }}"
-                                class="outline-none w-full bg-transparent" placeholder="username">
+                        <label class="block text-xs font-bold text-ink mb-1">Telegram foydalanuvchi nomi</label>
+                        <div class="flex items-center rounded-xl border border-border bg-card px-3 py-2 text-xs focus-within:border-primary">
+                            <span class="text-muted mr-1">@</span>
+                            <input type="text" name="telegram_username" value="{{ user.telegram_username|default:'' }}" placeholder="username" class="outline-none w-full bg-transparent text-xs p-0 border-none">
                         </div>
                     </div>
                 </div>
-                <div>
-                    <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700">
-                        <span class="material-icons-outlined !text-base">save</span>
-                        Saqlash
+
+                <div class="pt-3 flex justify-end">
+                    <button type="submit" class="btn btn-primary !py-2.5 !px-6 text-xs font-bold shadow-md">
+                        ✓ Profilni Saqlash
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Parol o'zgartirish -->
-    <div class="card overflow-hidden">
-        <div class="p-8">
-            <h2 class="font-display text-xl font-semibold mb-6">{{ t.change_password }}</h2>
+    <!-- 4. TAB 2: DO'KON & RESTORAN SOZLAMALARI -->
+    <div id="tab-shop" class="settings-tab-pane hidden space-y-6">
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+                <div>
+                    <h3 class="font-display font-black text-base text-ink">Do'kon / Restoran Asosiy Sozlamalari</h3>
+                    <p class="text-xs text-muted mt-0.5">Mijozlar ko'radigan do'kon ma'lumotlari, ish vaqti va manzili</p>
+                </div>
+                {% if shop %}
+                <a href="{% url 'seller_template_gallery' %}" class="btn btn-outline !py-1.5 !px-3 text-xs font-bold text-primary">
+                    🎨 Dizayn Shablonlarini O'zgartirish ↗
+                </a>
+                {% endif %}
+            </div>
+
+            {% if shop %}
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_shop">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-ink mb-1">Do'kon / Muassasa nomi *</label>
+                        <input type="text" name="shop_name" value="{{ shop.name }}" required class="w-full text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-ink mb-1">Aloqa telefoni (Mijozlar uchun)</label>
+                        <input type="tel" name="shop_phone" value="{{ shop.phone|default:'' }}" placeholder="+998 71 123 45 67" class="w-full text-xs">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-ink mb-1">Do'kon manzili (Lokatsiya)</label>
+                        <input type="text" name="shop_address" value="{{ shop.address|default:'' }}" placeholder="Toshkent sh., Chilonzor tumani..." class="w-full text-xs">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-ink mb-1">Qisqacha ta'rif yoki shior</label>
+                        <textarea name="shop_description" rows="3" class="w-full text-xs p-3 rounded-xl border border-border bg-card" placeholder="Eng mazali milliy taomlar va tezkor yetkazib berish xizmati...">{{ shop.description|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Ochiq / Yopiq rejim kaliti -->
+                <div class="p-4 rounded-xl bg-sand/60 border border-border flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-xs text-ink">Mijozlardan buyurtma qabul qilish rejimi</h4>
+                        <p class="text-[11px] text-muted mt-0.5">Agar do'kon yopiq bo'lsa, mijozlar menyuni ko'ra oladi lekin yangi buyurtma yubora olmaydi.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_open" class="sr-only peer" {% if shop.is_open %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <div class="pt-3 flex justify-end">
+                    <button type="submit" class="btn btn-primary !py-2.5 !px-6 text-xs font-bold shadow-md">
+                        ✓ Do'kon Sozlamalarini Saqlash
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="text-center py-8">
+                <p class="text-xs text-muted mb-3">Sizda hali alohida do'kon yaratilmagan.</p>
+                <a href="{% url 'seller_shop_web' %}" class="btn btn-primary text-xs font-bold">
+                    + Do'kon Yaratish
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 5. TAB 3: XAVFSIZLIK & PAROL -->
+    <div id="tab-security" class="settings-tab-pane hidden space-y-6">
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="font-display font-black text-base text-ink">Tizimga kirish parolini yangilash</h3>
+                    <p class="text-xs text-muted mt-0.5">Xavfsizligingiz uchun kuchli parol tanlang (kamida 6 ta belgi)</p>
+                </div>
+            </div>
+
             <form method="POST" class="space-y-4">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="change_password">
+
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.old_password }}</label>
-                        <input type="password" name="old_password" required
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Amaldagi eski parol *</label>
+                        <input type="password" name="old_password" required placeholder="••••••••" class="w-full text-xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.new_password }}</label>
-                        <input type="password" name="new_password" required
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Yangi parol *</label>
+                        <input type="password" name="new_password" required placeholder="••••••••" class="w-full text-xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{{ t.confirm_password }}</label>
-                        <input type="password" name="new_password_confirm" required
-                            class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 w-full">
+                        <label class="block text-xs font-bold text-ink mb-1">Yangi parolni tasdiqlang *</label>
+                        <input type="password" name="new_password_confirm" required placeholder="••••••••" class="w-full text-xs">
                     </div>
                 </div>
-                <div>
-                    <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-700">
-                        <span class="material-icons-outlined !text-base">lock_reset</span>
-                        Parolni yangilash
+
+                <div class="pt-3 flex justify-end">
+                    <button type="submit" class="btn btn-primary !py-2.5 !px-6 text-xs font-bold shadow-md">
+                        🔐 Yangi Parolni Saqlash
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    {% if shop_stats %}
-    <!-- Do'kon statistikasi -->
-    <div class="card overflow-hidden">
-        <div class="p-8">
-            <h2 class="font-display text-xl font-semibold mb-6">Do'kon statistikasi</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="rounded-2xl bg-brand-50 p-4 text-center">
-                    <p class="font-display text-2xl font-bold text-brand-700">{{ shop_stats.products }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ t.products_label }}</p>
+    <!-- 6. TAB 4: TELEGRAM BOT & BILDIRISHNOMALAR -->
+    <div id="tab-telegram" class="settings-tab-pane hidden space-y-6">
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h3 class="font-display font-black text-base text-ink">Telegram Bot Integratsiyasi</h3>
+                    <p class="text-xs text-muted mt-0.5">Buyurtmalar tushishi bilan Telegramga tezkor xabarlar keladi</p>
                 </div>
-                <div class="rounded-2xl bg-brand-50 p-4 text-center">
-                    <p class="font-display text-2xl font-bold text-brand-700">{{ shop_stats.orders }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ t.orders_count }}</p>
-                </div>
-                <div class="rounded-2xl bg-brand-50 p-4 text-center">
-                    <p class="font-display text-2xl font-bold text-brand-700">{{ shop_stats.revenue|floatformat:0 }} {{ t.catalog_som }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Daromad</p>
-                </div>
-                <div class="rounded-2xl bg-brand-50 p-4 text-center">
-                    <p class="font-display text-2xl font-bold text-brand-700">{% if shop_stats.is_open %}Ochiq{% else %}Yopiq{% endif %}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ t.status_label }}</p>
-                </div>
-            </div>
-            <div class="mt-6 flex flex-wrap gap-3">
-                <a href="{% url 'seller_shop_web' %}" class="btn btn-primary">
-                    <span class="material-icons-outlined !text-base">settings</span> Do'kon sozlamalari
+                <a href="{% url 'seller_telegram_bot_web' %}" class="btn btn-primary !py-1.5 !px-3 text-xs font-bold">
+                    🤖 Telegram Boshqaruv Markaziga O'tish ↗
                 </a>
-                <a href="{% url 'customer_shop_detail' shop_stats.slug %}" target="_blank" class="btn btn-outline">Do'konni ko'rish</a>
             </div>
-        </div>
-    </div>
-    {% endif %}
 
-    <!-- Pastki promo banner -->
-    {% if not shop %}
-    <div class="card p-5 bg-gradient-to-r from-brand-50 to-emerald-50 border-brand-100">
-        <div class="flex flex-col sm:flex-row items-center gap-4">
-            <div class="flex-1">
-                <h4 class="font-semibold text-ink flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-brand-600 text-white grid place-items-center"><span class="material-icons-outlined !text-base">lightbulb</span></span>
-                    Do'konsiz ham ishlayveradi
-                </h4>
-                <p class="text-sm text-gray-600 mt-1">Hozircha faqat o'z mahsulotlaringiz va profilingiz yetarli. Do'konni istalgan vaqtda — 1 daqiqada — yaratishingiz mumkin. Mahsulotlaringiz baribir marketplace da ko'rinadi.</p>
+            <div class="space-y-4 text-xs">
+                <div class="p-4 rounded-xl bg-sand/60 border border-border flex items-start gap-3">
+                    <span class="text-2xl">📱</span>
+                    <div>
+                        <h4 class="font-bold text-ink mb-1">Telegram Bildirishnomalari qanday ulanadi?</h4>
+                        <ol class="list-decimal list-inside space-y-1 text-muted">
+                            <li>Yuqoridagi "Shaxsiy Profil" bo'limida <b>Telegram foydalanuvchi nomingizni (@username)</b> to'g'ri kiriting.</li>
+                            <li>Tizim Telegram botiga kiring va <code class="px-1.5 py-0.5 rounded bg-sand font-mono text-primary font-bold">/start</code> tugmasini bosing.</li>
+                            <li>Yangi buyurtma tushishi bilanoq sizga, ofitsiantga va oshxonaga avtomatik bildirishnoma boradi.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-sand/60 border border-border flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-ink">Sizning ulangan Telegram hisobingiz:</p>
+                        <p class="text-xs text-muted">
+                            {% if user.telegram_username %}
+                            <span class="text-primary font-bold">@{{ user.telegram_username }}</span> (Ulangan)
+                            {% else %}
+                            <span class="text-amber-600 font-bold">Hali ulanmagan</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if not user.telegram_username %}
+                    <button type="button" onclick="switchSettingsTab('profile', document.querySelector('.settings-tab-btn'))" class="btn btn-outline !py-1.5 !px-3 text-xs font-bold text-primary">
+                        @username kiritish →
+                    </button>
+                    {% endif %}
+                </div>
             </div>
-            <a href="{% url 'seller_shop_web' %}" class="btn btn-outline bg-white whitespace-nowrap">
-                Qo'llanmani ko'rish
-                <span class="material-icons-outlined !text-base">arrow_forward</span>
-            </a>
         </div>
     </div>
-    {% else %}
-    <div class="card p-5 bg-white border-gray-100">
-        <div class="flex flex-col sm:flex-row items-center gap-4">
-            <div class="flex-1">
-                <h4 class="font-semibold text-ink">Yana mahsulot qo'shmoqchimisiz?</h4>
-                <p class="text-sm text-gray-500 mt-1">Yangi mahsulot — avtomatik ham globalda, ham do'koningizda chiqadi. Dinamik, bir zumda.</p>
-            </div>
-            <a href="{% url 'seller_products_web' %}" class="btn btn-primary whitespace-nowrap">
-                <span class="material-icons-outlined !text-base">add</span>
-                Mahsulot qo'shish
-            </a>
-        </div>
-    </div>
-    {% endif %}
+
 </div>
+
+<style>
+    .settings-tab-btn.active {
+        color: var(--primary);
+        border-color: var(--primary);
+        background: rgba(199, 91, 57, 0.08);
+    }
+</style>
+
+<script>
+    function switchSettingsTab(tabName, btn) {
+        document.querySelectorAll('.settings-tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.classList.remove('text-primary');
+            b.classList.remove('border-primary');
+            b.classList.add('text-muted');
+            b.classList.add('border-transparent');
+        });
+        btn.classList.add('active');
+        btn.classList.remove('text-muted');
+        btn.classList.remove('border-transparent');
+
+        document.querySelectorAll('.settings-tab-pane').forEach(p => p.classList.add('hidden'));
+        const activePane = document.getElementById('tab-' + tabName);
+        if (activePane) activePane.classList.remove('hidden');
+    }
+</script>
 {% endblock %}

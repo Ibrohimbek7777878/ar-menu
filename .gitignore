@@ -114,3 +114,6 @@ backend/media/
 # Node
 node_modules/
 backend/node_modules/
+
+# Runtime logs & PID
+backend/logs/

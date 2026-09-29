@@ -1,106 +1,204 @@
 {% extends "tma/base_tma.html" %}
 
-{% block title %}Katalog — Telegram Mini App{% endblock %}
+{% block title %}Taomlar Bo'limlari — 3D Menyu{% endblock %}
 
 {% block extra_head %}
 <style>
     .tma-filter-strip {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         overflow-x: auto;
         padding-bottom: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 20px;
         scrollbar-width: none;
     }
     .tma-filter-strip::-webkit-scrollbar { display: none; }
+    @media (min-width: 768px) {
+        .tma-filter-strip {
+            flex-wrap: wrap;
+            overflow-x: visible;
+        }
+    }
     .tma-filter-pill {
         flex: 0 0 auto;
-        padding: 6px 14px;
+        padding: 8px 16px;
         border-radius: 999px;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
         text-decoration: none;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        color: var(--text-color);
+        background: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        transition: all 0.2s;
+    }
+    .tma-filter-pill:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #f8fafc;
     }
     .tma-filter-pill.active {
-        background: var(--primary);
-        color: #ffffff;
-        border-color: var(--primary);
+        background: #f59e0b;
+        color: #0f172a;
+        font-weight: 700;
+        border-color: #f59e0b;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
     }
+
+    /* Fully responsive food grid across all screen sizes */
     .tma-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+        margin-bottom: 32px;
     }
+    @media (min-width: 560px) {
+        .tma-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+    }
+    @media (min-width: 768px) {
+        .tma-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+    }
+    @media (min-width: 1100px) {
+        .tma-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+    }
+    @media (min-width: 1440px) {
+        .tma-grid {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 22px;
+        }
+    }
+    @media (min-width: 1800px) {
+        .tma-grid {
+            grid-template-columns: repeat(6, 1fr);
+            gap: 24px;
+        }
+    }
+
     .tma-card-item {
-        background: var(--card-bg);
-        border-radius: var(--radius-md);
-        border: 1px solid var(--border-color);
+        background: #1e293b;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
         position: relative;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        transition: transform 0.2s, border-color 0.2s;
     }
+    .tma-card-item:hover {
+        transform: translateY(-3px);
+        border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .tma-card-img-wrap {
+        width: 100%;
+        height: 135px;
+        position: relative;
+        background: #0f172a;
+        overflow: hidden;
+    }
+    @media (min-width: 768px) {
+        .tma-card-img-wrap {
+            height: 175px;
+        }
+    }
+    @media (min-width: 1280px) {
+        .tma-card-img-wrap {
+            height: 195px;
+        }
+    }
+
     .tma-card-img {
         width: 100%;
-        height: 125px;
+        height: 100%;
         object-fit: cover;
-        background: #f1f5f9;
+        transition: transform 0.35s ease;
+    }
+    .tma-card-item:hover .tma-card-img {
+        transform: scale(1.06);
     }
     .tma-card-body {
-        padding: 10px;
+        padding: 12px 14px 14px;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
         justify-content: space-between;
     }
     .tma-card-title {
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 700;
+        color: #f8fafc;
         margin-bottom: 4px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        line-height: 1.35;
     }
     .tma-card-footer {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-top: 8px;
+        margin-top: auto;
+        padding-top: 8px;
     }
     .tma-card-price {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 800;
-        color: var(--primary);
+        color: #f59e0b;
+    }
+    @media (min-width: 768px) {
+        .tma-card-price {
+            font-size: 16px;
+        }
     }
     .tma-btn-icon {
-        background: var(--primary);
-        color: #ffffff;
+        background: #f59e0b;
+        color: #0f172a;
         border: none;
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 10px;
-        font-size: 16px;
+        font-size: 20px;
+        font-weight: 800;
         cursor: pointer;
+        transition: transform 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .tma-btn-icon:hover {
+        background: #fbbf24;
+    }
+    .tma-btn-icon:active {
+        transform: scale(0.92);
     }
 </style>
 {% endblock %}
 
 {% block content %}
     <!-- Search Form -->
-    <form action="{% url 'tma_catalog' %}" method="GET" style="margin-bottom: 12px;">
-        <input type="text" name="q" value="{{ q }}" class="tma-search-input" style="width:100%;padding:12px;border-radius:14px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);" placeholder="Qidirish...">
+    <form action="/restaurant/catalog/" method="GET" style="margin-bottom: 20px;">
+        <div style="position: relative;">
+            <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8;">🔍</span>
+            <input type="text" name="q" value="{{ q }}" style="width: 100%; padding: 14px 16px 14px 44px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); background: #1e293b; color: #f8fafc; outline: none; font-size: 14px; box-sizing: border-box;" placeholder="Taom yoki ichimlik qidirish...">
+        </div>
     </form>
 
     <!-- Filters -->
     <div class="tma-filter-strip">
-        <a href="{% url 'tma_catalog' %}" class="tma-filter-pill {% if not selected_category and not has_3d %}active{% endif %}">Barchasi</a>
-        <a href="{% url 'tma_catalog' %}?has_3d=1" class="tma-filter-pill {% if has_3d %}active{% endif %}">🥽 3D AR</a>
+        <a href="/restaurant/catalog/" class="tma-filter-pill {% if not selected_category and not has_3d %}active{% endif %}">🔥 Barchasi</a>
+        <a href="/restaurant/catalog/?has_3d=1" class="tma-filter-pill {% if has_3d %}active{% endif %}">🥽 3D AR Taomlar</a>
         {% for cat in categories %}
-            <a href="{% url 'tma_catalog' %}?category={{ cat.id }}" class="tma-filter-pill {% if selected_category == cat.id %}active{% endif %}">{{ cat.name }}</a>
+            <a href="/restaurant/catalog/?category={{ cat.id }}" class="tma-filter-pill {% if selected_category == cat.id %}active{% endif %}">{{ cat.name }}</a>
         {% endfor %}
     </div>
 
@@ -108,17 +206,21 @@
     <div class="tma-grid">
         {% for prod in products %}
             <div class="tma-card-item">
-                {% if prod.has_3d %}
-                    <span style="position:absolute;top:8px;left:8px;background:rgba(15,23,42,0.8);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">🥽 3D</span>
-                {% endif %}
-                {% if prod.image %}
-                    <img src="{{ prod.image.url }}" alt="{{ prod.name }}" class="tma-card-img" loading="lazy">
-                {% else %}
-                    <div class="tma-card-img" style="display:flex;align-items:center;justify-content:center;font-size:24px;">🛒</div>
-                {% endif %}
+                <div class="tma-card-img-wrap">
+                    {% if prod.has_3d %}
+                        <span style="position:absolute;top:8px;left:8px;background:rgba(15,23,42,0.9);border:1px solid rgba(245,158,11,0.6);color:#f59e0b;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;z-index:2;">🥽 3D AR</span>
+                    {% endif %}
+                    {% if prod.image %}
+                        <img src="{{ prod.image.url }}" alt="{{ prod.name }}" class="tma-card-img" loading="lazy">
+                    {% else %}
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;">🍲</div>
+                    {% endif %}
+                </div>
                 <div class="tma-card-body">
-                    <div class="tma-card-title">{{ prod.name }}</div>
-                    <div style="font-size:11px;color:var(--hint-color);">{{ prod.shop.name }}</div>
+                    <div>
+                        <div class="tma-card-title">{{ prod.name }}</div>
+                        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">{{ prod.category.name|default:"Taom" }}</div>
+                    </div>
                     <div class="tma-card-footer">
                         <div class="tma-card-price">{{ prod.price|floatformat:0 }} so'm</div>
                         <button class="tma-btn-icon" onclick="tmaAddToCart('{{ prod.id }}')">+</button>
@@ -126,8 +228,10 @@
                 </div>
             </div>
         {% empty %}
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--hint-color);">
-                Mahsulotlar topilmadi 🔍
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8; background: #1e293b; border-radius: 18px; border: 1px dashed rgba(255,255,255,0.1);">
+                <div style="font-size: 40px; margin-bottom: 10px;">🔍</div>
+                <div style="font-size: 16px; font-weight: 700; color: #f8fafc;">Bunday taom topilmadi</div>
+                <div style="font-size: 13px; margin-top: 4px;">Iltimos, boshqa so'z bilan qidirib ko'ring yoki toifalardan tanlang.</div>
             </div>
         {% endfor %}
     </div>

@@ -26,6 +26,76 @@
     </div>
 </div>
 
+<!-- ONBOARDING WIZARD: 4 QADAMDA TAYYORLASH -->
+<div id="seller-onboarding-wizard" class="card p-5 sm:p-6 mb-6 bg-gradient-to-r from-emerald-500/10 via-primary/5 to-amber-500/10 border-2 border-primary/25 relative overflow-hidden shadow-sm">
+    <button onclick="dismissOnboarding()" class="absolute top-4 right-4 w-7 h-7 rounded-full bg-sand/80 hover:bg-sand text-muted hover:text-ink flex items-center justify-center text-xs font-bold transition">
+        ✕
+    </button>
+    <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white text-2xl shrink-0 shadow-md">
+            🚀
+        </div>
+        <div class="flex-1 min-w-0 pr-6">
+            <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-display font-black text-base text-ink">Restoranni 5 daqiqada Sotuvga Tayyorlash Bo'yicha Yo'riqnoma</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-primary text-white tracking-wider">TEZKOR START</span>
+            </div>
+            <p class="text-xs text-muted mt-1 leading-relaxed max-w-2xl">
+                Tizim Guliston restoranlari va do'konlari uchun to'liq moslashtirilgan. Quyidagi 4 qadamni bajarib, birinchi kundan boshlab buyurtma olishni va sotuvni boshlashingiz mumkin:
+            </p>
+
+            <!-- 4 ta Qadam Gridi -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                <a href="{% url 'seller_waiter_web' %}" class="p-3.5 rounded-xl bg-card border border-border hover:border-primary transition group shadow-2xs">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center text-xs font-black">1</span>
+                        <span class="text-xs font-bold text-ink group-hover:text-primary transition truncate">Stollar Xaritasi</span>
+                    </div>
+                    <p class="text-[11px] text-muted leading-tight">10 ta stol tayyor. POS orqali buyurtma olishni sinab ko'ring.</p>
+                </a>
+
+                <a href="{% url 'seller_products_web' %}" class="p-3.5 rounded-xl bg-card border border-border hover:border-primary transition group shadow-2xs">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-purple-500/15 text-purple-600 flex items-center justify-center text-xs font-black">2</span>
+                        <span class="text-xs font-bold text-ink group-hover:text-primary transition truncate">3D/AR Menyu</span>
+                    </div>
+                    <p class="text-[11px] text-muted leading-tight">12 ta real taom va 3D modellari yuklangan va faol.</p>
+                </a>
+
+                <a href="{% url 'seller_tables_print_stands' %}" target="_blank" class="p-3.5 rounded-xl bg-card border border-border hover:border-primary transition group shadow-2xs">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center text-xs font-black">3</span>
+                        <span class="text-xs font-bold text-ink group-hover:text-primary transition truncate">QR Stendlar (A4) ↗</span>
+                    </div>
+                    <p class="text-[11px] text-muted leading-tight">Stollar ustiga qo'yish uchun A4 stendlarini chop eting.</p>
+                </a>
+
+                <a href="{% url 'seller_kds_web' %}" target="_blank" class="p-3.5 rounded-xl bg-card border border-border hover:border-primary transition group shadow-2xs">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center text-xs font-black">4</span>
+                        <span class="text-xs font-bold text-ink group-hover:text-primary transition truncate">KDS Oshxona ↗</span>
+                    </div>
+                    <p class="text-[11px] text-muted leading-tight">Oshpaz plansheti va buyurtmalarni tayyorlash ekrani.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        if (localStorage.getItem('seller_onboarding_dismissed') === 'true') {
+            const wiz = document.getElementById('seller-onboarding-wizard');
+            if (wiz) wiz.style.display = 'none';
+        }
+    })();
+    function dismissOnboarding() {
+        localStorage.setItem('seller_onboarding_dismissed', 'true');
+        const wiz = document.getElementById('seller-onboarding-wizard');
+        if (wiz) wiz.style.display = 'none';
+    }
+</script>
+
 <!-- KPI kartalar -->
     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
 

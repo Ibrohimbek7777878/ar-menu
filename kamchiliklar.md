@@ -1,569 +1,338 @@
-# 🚀 LOYIHANI 10/10 DARAJADA TIJORIY SOTUVGA TAYYORLASH VA KAMCHILIKLAR BAZASI
-> **Loyiha:** Online Store Guliston & AR Menu OS (Multi-Vendor Marketplace + Smart Restaurant & Agro Ekotizim)  
-> **Mualliflik ro'yxati va tahlilchilar:** Senior Dasturchi, Tizim Arxitektori, Biznesmen, Mahsulot Menejeri (PM), SEO Mutaxassisi, QA Tester, Sotuv Menejeri va Haqiqiy Mijoz.  
-> **Sana:** 2026-yil sentyabr  
-> **Maqsad:** Loyihani O'zbekiston va xalqaro bozorda millionlab/milliardlab foydalanuvchilarga xizmat ko'rsatadigan, restoran, to'yxona, kafe, dehqon bozori va supermarketlarga eng yuqori narxda sotiladigan 10/10 darajadagi flagman mahsulotga aylantirish.
+# 🔴 ONLINE STORE GULISTON — REAL KAMCHILIKLAR VA SOTUVGA TAYYORGARLIK HISOBOTI
+
+> **Sana:** 2026-yil 25-sentyabr  
+> **Maqsad:** Loyihaning haqiqiy holatini paxta qoymasdan, yon olmasdan, padeshka qilmasdan baholash.  
+> **Kim uchun:** Sotuvga chiqarish uchun ANIQ nima qilish kerakligini bilish.
 
 ---
 
-## 📌 MUNDARIJA
-1. [Ekotizim Diagnostikasi & Haqiqiy Baho](#1-ekotizim-diagnostikasi--haqiqiy-baho)
-2. [Texnik & Arxitektura Blokatorlari (Kritik Xatolar)](#2-texnik--arxitektura-blokatorlari-kritik-xatolar)
-3. [1 Milliondan 1 Milliard Foydalanuvchigacha Arxitektura Strategiyasi](#3-1-milliondan-1-milliard-foydalanuvchigacha-arxitektura-strategiyasi)
-4. [Dizayn & UI/UX Transformatsiyasi (Zerikarlilikdan Premium Minimalizmga)](#4-dizayn--uiux-transformatsiyasi-zerikarlilikdan-premium-minimalizmga)
-5. [Platforma Strategiyasi: APK vs Veb-sayt vs Telegram Mini App (TMA)](#5-platforma-strategiyasi-apk-vs-veb-sayt-vs-telegram-mini-app-tma)
-6. [B2B Segmentatsiya: To'yxona, Restoran, Kafe, Bar va Bozorlarga Sotish Taktikasi](#6-b2b-segmentatsiya-toyxona-restoran-kafe-bar-va-bozorlarga-sotish-taktikasi)
-7. [O'zbekiston Bozoriga Xos Funksiyalar (Fintech, Soliq, Logistika)](#7-ozbekiston-bozoriga-xos-funksiyalar-fintech-soliq-logistika)
-8. [Rollarga Asoslangan Amaliy Harakatlar Rejasi (Master Roadmap)](#8-rollarga-asoslangan-amaliy-harakatlar-rejasi-master-roadmap)
+## 📊 UMUMIY BAHO: 6.5 / 10 (Sotuvga TAYYOR EMAS)
+
+**Xulosa bir so'zda:** Loyihaning POYDEVORI kuchli, lekin hozirgi holatda hech bir restoran yoki do'kon egasiga pul evaziga berib bo'lmaydi. Pul to'lagandan keyin server 500 xato bersa, mijoz ikkinchi marta kelmaydi.
 
 ---
 
-## 1. EKOTIZIM DIAGNOSTIKASI & HAQIQIY BAHO
+## I. 🚨 KRITIK BLOKATORLAR (Bu tuzatilmasdan SOTUVGA CHIQISH MUMKIN EMAS)
 
-### Hozirgi holat: 7.2 / 10
-* **Kuchli tomonlari:**
-  * Multi-vendor arxitekturasi poydevori mavjud.
-  * WebGL / `<model-viewer>` orqali AR va 3D taomlar integratsiyasi boshlangan.
-  * Oziq-ovqat va Dehqon bozori uchun 100+ tayyor standart Agro-tovarlar master katalogi yaratilgan.
-  * Kuryer, Ofitsiant, KDS (Oshpaz ekrani) va QR-stol modullari dastlabki shaklda ulangan.
-* **Zaif va zerikarli tomonlari:**
-  * **Dizayn:** Ko'rinishi 2018–2020-yillardagi oddiy Bootstrap/shablon saytlariga o'xshaydi. Hissiyot, hashamat, ishtaha uyg'otuvchi premium estetika va silliq mikro-animatsiyalar yetishmaydi.
-  * **To'lov:** Click va Payme integratsiyasida model maydonlari noto'g'ri chaqirilgan (real to'lovda 500 error beradi).
-  * **Platforma uzilishi:** Mobil ilovada AR faqat qotib qolgan rasm, real to'lov esa ulanmagan.
-  * **Sotuvga tayyorgarlik:** Do'kon/restoran egasiga taqdimot qilish uchun 1 daqiqalik "Wow-effekt" vositalari (avtomat chek chiqarish, ovozli xabarnoma, Telegram Mini App) to'liq emas.
+Bu xatolar sotuvga to'sqinlik qilayotgan eng asosiy muammolar. Bularni birinchi navbatda tuzatish SHART.
 
----
+### 1. TO'LOV TIZIMI YARIM ISHLAMAYAS — ENG KATTA MUAMMO
 
-## 2. TEXNIK & ARXITEKTURA BLOKATORLARI (KRITIK XATOLAR)
-
-Ushbu xatolar bartaraf etilmasdan loyihani sotuvga chiqarish korxona obro'siga ziyon yetkazadi:
-
-| № | Fayl / Modul | Kritik Xato | Oqibati | Tuzatish Yechimi |
-|---|---|---|---|---|
-| **1** | `backend/payments/services/click_service.py`<br>`backend/payments/services/payme_service.py` | `Payment.objects.get(payment_id=...)` va `payment.status = 'success'` yozilgan. Modelda `payment_id` yo'q, status esa `'paid'`. | Real mijoz pul to'laganda server 500 beradi. Pul yechiladi, buyurtma "to'lanmadi" bo'lib qoladi. | `merchant_transaction_id` orqali qidirish va statusni to'g'ri `'paid'` ga o'tkazish. |
-| **2** | `backend/orders/models.py` | `Order.shop = ForeignKey(..., on_delete=CASCADE)` | Agar do'kon yopilsa yoki o'chirilsa, uning barcha o'tgan buyurtmalari, kvitansiyalari va tushum tarixi bazadan o'chib ketadi. | `on_delete=models.PROTECT` ga o'zgartirish. |
-| **3** | `backend/docker-compose.yml` | `web`, `worker`, `beat` konteynerlariga `POSTGRES_DB` muhit o'zgaruvchisi uzatilmagan. | Tizim fonda SQLite ishlatadi. Docker qayta o'chib-yoqilganda barcha yangi ma'lumotlar o'chib ketadi. | Konteynerlarga to'liq PostgreSQL parametrlarini uzatish. |
-| **4** | `backend/.env` & `settings.py` | `DEBUG=True`, `CORS_ALLOW_ALL_ORIGINS=True`, ochiq `SECRET_KEY`. | Xavfsizlik zaifligi, ma'lumotlar sizib chiqishi, SQL / XSS hujumlari xavfi. | Production rejimida `DEBUG=False`, domenlarni qat'iy cheklash, `.env` ni shifrlash. |
-| **5** | `orders/inventory.py` & API | Buyurtma yaratishda poyga holati (Race condition) va salbiy qoldiq (Negative Stock). | Bir vaqtning o'zida 10 kishi oxirgi 1 ta tovar/taomni buyurtma qilsa, qoldiq -9 ga tushadi. | `select_for_update()` va DB darajasidagi `CheckConstraint(stock >= 0)`. |
-
----
-
-## 3. 1 MILLIONDAN 1 MILLIARD FOYDALANUVCHIGACHA ARXITEKTURA STRATEGIYASI
-
-Katta tizimlar bitta serverda milliard foydalanuvchini ko'tara olmaydi. Arxitekturani quyidagi 4 bosqichda masshtablaymiz:
-
-```
-[Mijozlar: Web / TMA / App] 
-            │
-            ▼
-[Cloudflare / Fastly CDN (Anycast, DDoS Himoya, 3D GLB & Rasmlar)]
-            │
-            ▼
-[Nginx / Envoy Load Balancer (SSL Termination, Rate Limiting)]
-            │
-    ┌───────┴────────────────────────┐
-    ▼                                ▼
-[Gunicorn Pod 1 (Stateless)]   [Gunicorn Pod N (Kubernetes Autoscaling)]
-    │                                │
-    ├────────────────┬───────────────┤
-    ▼                ▼               ▼
-[Redis Cluster] [Kafka / RabbitMQ] [PgBouncer Connection Pool]
-(Sessions/Cache) (Async Buyurtma)    │
-                               ┌─────┴─────────────────┐
-                               ▼                       ▼
-                     [PostgreSQL Master]      [PostgreSQL Read Replicas]
-                     (Faqat Write/Yozish)     (Katalog, Qidiruv, O'qish)
-```
-
-### Bosqichma-bosqich Evolyutsiya:
-1. **0 – 100,000 foydalanuvchi (Boshlang'ich monolit):**
-   * Django + PostgreSQL + Redis (Kesh va Celery) + Gunicorn + Nginx.
-   * Rasmlar va 3D modellarni Cloudflare orqali keshlab uzatish.
-   * `select_related()` va `prefetch_related()` bilan N+1 so'rovlarni 0 ga tushirish.
-
-2. **100,000 – 5,000,000 foydalanuvchi (Masshtablangan modulli monolit):**
-   * **Read/Write ajratish:** Barcha katalog ko'rish, qidiruv va filtrlar Read-Replicaga; faqat buyurtma berish va to'lov Master DB ga boradi.
-   * **PgBouncer:** Ma'lumotlar bazasiga ulanishlar sonini yengillashtirish (Connection pooling).
-   * **Redis Caching:** Eng ko'p sotiladigan tovarlar, do'kon sahifalari va kategoriyalar 15 daqiqaga Redisda keshlanadi.
-
-3. **5,000,000 – 100,000,000 foydalanuvchi (Sharding va Asinxron navbatlar):**
-   * **Multi-tenant Sharding:** Do'konlar va buyurtmalar hududlar bo'yicha (masalan, `shard_toshkent`, `shard_vodiy`, `shard_samarqand`) yoki `shop_id` bo'yicha turli bazalarga bo'linadi.
-   * **Asinxron Buyurtma Qabuli:** Tig'iz paytlarda (bayramlar, to'ylar, iftorlik vaqti) buyurtmalar to'g'ridan-to'g'ri Kafka yoki RabbitMQ navbatiga tashlanadi va workerlar tomonidan uzluksiz qayta ishlanadi. Server "qotib qolmaydi".
-
-4. **100,000,000 – 1,000,000,000 foydalanuvchi (Global Tarqatilgan Arxitektura):**
-   * Edge Computing (Cloudflare Workers): Foydalanuvchiga eng yaqin serverdan javob qaytarish.
-   * Stateless JWT Autentifikatsiya: Sessiyalarni bitta serverda saqlamaslik.
-   * S3 / Cloud Storage Geo-Replication: 3D modellar va media fayllar har bir mintaqada lokal keshlardan ochiladi.
-
----
-
-## 4. DIZAYN & UI/UX TRANSFORMATSIYASI (ZERIKARLILIKDAN PREMIUM MINIMALIZMGA)
-
-### Muammo:
-Hozirgi dizayn juda oddiy, jonsiz va eskirgan. Foydalanuvchi saytga kirganda "qimmat va zamonaviy xizmat" hissini sezmaydi.
-
-### Yechim: Apple va Linear uslubidagi Premium Minimalistik Dizayn Tizimi (Design System)
-
-#### A. Vizual Prinsiplar:
-* **Ranglar Palitrasi:**
-  * Fon: Sof oq (`#FFFFFF`) va ultra yumshoq kulrang (`#F8FAFC`).
-  * Matn: Qora chuqurlik (`#0F172A`) va nozik kulrang (`#64748B`).
-  * Asosiy aksent (Brand): Zangori zumrad yashil (`#059669` / `#10B981` — oziq-ovqat va tozalik ramzi) yoki Restoranlar uchun chuqur sharob/oltin (`#D97706` / `#991B1B`).
-* **Tipografiya:**
-  * Zamonaviy geometrik shriftlar: **Plus Jakarta Sans**, **Inter Display** yoki **SF Pro Display**.
-  * Katta, dadil va o'qish oson sarlavhalar, mukammal vertikal ritm.
-* **Glassmorphism va Yengil Soyalar:**
-  * Ortiqcha qora chiziqlar o'rniga nozik chegara (`border: 1px solid rgba(226, 232, 240, 0.8)`) va `backdrop-filter: blur(12px)`.
-  * Chuqur, yumshoq soyalar (`box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05)`).
-* **Mikro-interaksiyalar va Harakat (Framer Motion / CSS):**
-  * Mahsulot kartasiga sichqoncha kelganda 3D ko'tarilish (tilt effect).
-  * Savatga tovar qo'shilganda haptik (silkinish) animatsiyasi.
-  * Skelet yuklanish (Skeleton loaders) — sahifa ochilishida zerikarli spinner emas, chiroyli pulsatsiyalanuvchi bloklar.
-
-#### B. 3D & AR Taqdimotining "Wow-Effekti":
-* Taom ustiga bosganda darhol 360° interaktiv aylanishi.
-* **AR Tugmasi:** Telefon kamerasida taomni xontaxta yoki stol ustiga real hajmda qo'yib ko'rish.
-* Allergenlar va kaloriya ma'lumotlari interaktiv chip/belgilar ko'rinishida.
-
----
-
-## 5. PLATFORMA STRATEGIYASI: APK VS VEB-SAYT VS TELEGRAM MINI APP (TMA)
-
-Bu biznesmen va PM sifatidagi eng muhim qaror. Ko'p loyihalar "faqat ilova qilamiz" deb yopilib ketadi.
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        YAKUNIY STRATEGIYA: TRIO-EKOTIZIM               │
-├───────────────────┬───────────────────────────────┬────────────────────┤
-│ PLATFORMA         │ KIM UCHUN?                    │ NEGA?              │
-├───────────────────┼───────────────────────────────┼────────────────────┤
-│ 1. Telegram Mini  │ Oddiy mijozlar, restorandagi  │ O'rnatish shart    │
-│    App (TMA)      │ mehmonlar, bozor xaridorlari  │ emas, 1 soniyada   │
-│                   │                               │ ochiladi. 99% UZ.  │
-├───────────────────┼───────────────────────────────┼────────────────────┤
-│ 2. Web PWA        │ Stol QR-menyusi, Google /     │ Brauzerda ochiladi,│
-│    (Responsive)   │ Yandex orqali kelganlar       │ AR kamerasini      │
-│                   │                               │ to'liq qo'llaydi.  │
-├───────────────────┼───────────────────────────────┼────────────────────┤
-│ 3. Flutter APK    │ Kuryerlar, Do'kon boshqaruv-  │ GPS treking fonda  │
-│    / Mobil Ilova  │ chilari, Ofitsiantlar         │ ishlashi, doimiy   │
-│                   │                               │ push-xabarnomalar. │
-└───────────────────┴───────────────────────────────┴────────────────────┘
-```
-
-* **Xulosa:** Restoran mehmoni yoki do'kon xaridoriga "Oldin 50 MB ilovani yuklab ol" desangiz, 80% odam voz kechadi. Shu sababli mijozlar uchun **Telegram Mini App + Tezkor PWA Veb**, xodimlar (kuryer, sotuvchi) uchun esa **Flutter Mobil Ilova** ideal yechimdir!
-
----
-
-## 6. B2B SEGMENTATSIYA: TO'YXONA, RESTORAN, KAFE, BAR VA BOZORLARGA SOTISH TAKTIKASI
-
-Ushbu mahsulotni mijozlarga oddiy dastur emas, balki **"Daromadni 30% oshiruvchi va o'g'rilikni yo'qotuvchi biznes tizimi"** sifatida sotamiz:
-
-### A. Katta To'yxonalar (Banquet Halls & Restoranlar):
-* **Ularning og'rig'i:** To'yda qaysi stolga qancha taom va ichimlik ketganini hisoblash qiyin, ortiqcha sarf-xarajat va xodimlar orasida noaniqlik ko'p.
-* **Bizning taklif:**
-  * **To'yxona Admin Paneli:** Har bir stol (1-stol, 2-stol... 50-stol) buyurtmalarini real vaqtda nazorat qilish.
-  * **To'y Egasi uchun Shaxsiy Kabinet:** To'y egasi telefonida barcha xarajatlar va menyuni shaffof ko'rib turadi.
-  * **Oldindan Buyurtma va Smeta:** To'y menyusini oldindan yig'ish va avtomatik hisob-faktura (invoice) chiqarish.
-* **Sotish narxi:** 15 000 000 – 30 000 000 so'm (bir martalik o'rnatish) yoki 1 500 000 so'm/oy.
-
-### B. Restoran & Milliy Taomlar Maskani:
-* **Ularning og'rig'i:** Ofitsiant yetishmaydi, mehmonlar menyuni kutib asabiylashadi, qimmat taomlar kam sotiladi.
-* **Bizning taklif:**
-  * **3D AR Menyu:** Mehmon telefonida shashlik, osh yoki bifsteksni 3D ko'rganda, qimmatroq taomlarni buyurtma qilish ehtimoli 35% oshadi.
-  * **Stol QR-kodi:** Mehmon ofitsiantni kutmasdan buyurtma beradi va hisobni so'raydi.
-  * **KDS (Oshpaz Ekrani):** Buyurtma to'g'ridan-to'g'ri oshxonadagi planshetga tushadi, vaqt va tartib aniq bo'ladi.
-* **Sotish narxi:** 500 000 – 800 000 so'm/oy obuna.
-
-### C. Kafe, Bar va Klublar:
-* **Ularning og'rig'i:** Shovqinda ofitsiantni chaqirish qiyin, hisobni bo'lib to'lash (split bill) muammosi.
-* **Bizning taklif:**
-  * Bitta tugma bilan "Ofitsiantni chaqirish" / "Hisobni keltiring".
-  * Stol ichida hisobni do'stlar o'rtasida bo'lish (Split payment).
-  * Kokteyl va ichimliklarning 3D interaktiv kartalari.
-
-### D. Dehqon Bozori va Oziq-ovqat Do'konlari:
-* **Ularning og'rig'i:** Tovarlarni kiritish juda uzoq vaqt oladi, narxlar har kuni o'zgaradi.
-* **Bizning taklif:**
-  * **Agro Master Catalog:** 100+ tayyor tovarlar (rasmi, o'lchov birligi, MXIK kodi tayyor). Do'kondor 5 daqiqada faqat narxini kiritib do'konni ishga tushiradi!
-  * **Tezkor Kuryer:** Radius bo'yicha eng yaqin xaridorlarga 30 daqiqada yetkazish.
-
----
-
-## 7. O'ZBEKISTON BOZORIGA XOS FUNKSIYALAR (FINTECH, SOLIQ, LOGISTIKA)
-
-Xorijiy dasturlarni O'zbekistonda yengishning asosiy siri mahalliy talablarga 100% moslashishdir:
-
-1. **SMS OTP Avtorizatsiya (Eskiz.uz / PlayMobile):**
-   * Parolsiz kirish. Xaridor faqat telefon raqamini kiritadi, SMS kod keladi va bir zumda kiradi.
-2. **Soliq va Fiskal Chek (OFD / Soliq Servis / Payme & Click Fiscal):**
-   * Har bir to'lovga avtomatik QR-kodli elektron fiskal chek shakllanishi. Har bir tovarga MXIK (IKPU) kodlari to'liq biriktirilishi.
-3. **Uzum Pay va Uzum Nasiya:**
-   * Click va Payme bilan bir qatorda Uzum Bank va muddatli to'lov (Nasiya) tizimini ulash.
-4. **Termoprinterga Chek Chiqarish (ESC/POS 58mm / 80mm):**
-   * Oshpaz va kassir uchun bitta tugma bilan yoki Bluetooth/LAN orqali avtomatik kvitansiya chiqarish.
-5. **Ovozli Signal (Audio Notification):**
-   * Yangi buyurtma kelganda admin va sotuvchi panelida baland, jarangdor signal yangrashi.
-6. **Yandex Delivery API Integratsiyasi:**
-   * O'z kuryeri bo'lmagan do'konlar uchun bitta bosish bilan Yandex Go (Dostavka) chaqirish.
-
----
-
-## 8. ROLLARGA ASOSLANGAN AMALIY HARAKATLAR REJASI (MASTER ROADMAP)
-
-### 👨‍💻 1. Senior Dasturchi & Arxitektor Vazifalari:
-- [ ] `payments/services/` ichidagi Click va Payme so'rovlarini to'liq tuzatish (`merchant_transaction_id` va `'paid'` statusi).
-- [ ] `orders/models.py` dagi `Order.shop` bog'lanishini `on_delete=models.PROTECT` ga o'tkazish.
-- [ ] `docker-compose.yml` faylida PostgreSQL muhit parametrlarini to'g'rilash.
-- [ ] Eskiz.uz SMS provayderi orqali OTP autentifikatsiyasini joriy qilish.
-- [ ] N+1 so'rovlarni yo'qotish va tez-tez qidiriladigan maydonlarga DB indekslar qo'yish.
-
-### 🎨 2. UI/UX Dizayner Vazifalari:
-- [ ] Bosh sahifa, do'kon va mahsulot sahifalarini zamonaviy **Minimalist Glassmorphism** uslubiga o'tkazish.
-- [ ] Mahsulot kartalari va 3D ko'rish oynasini interaktiv, ishtaha ochuvchi holatga keltirish.
-- [ ] Mobil ekranda xarid qilish qulayligini ta'minlovchi doimiy pastki navigatsiya (Sticky Bottom Bar).
-- [ ] Tizim bo'ylab chiroyli "Empty state" va yuklanish animatsiyalarini (Skeleton loaders) joylashtirish.
-
-### 💼 3. Product Manager & Biznesmen Vazifalari:
-- [ ] 3 xil sotuv paketini (Restoran, To'yxona, Oziq-ovqat Do'koni) rasmiylashtirish.
-- [ ] Telegram Mini App (TMA) interfeysini to'liq sinovdan o'tkazish.
-- [ ] Sotuvchi paneli uchun 58mm/80mm termal chek chiqarish funksiyasini qabul qilib olish.
-- [ ] Admin panelda yangi buyurtma tushganda ovozli bildirishnomani yoqish.
-
-### 📢 4. Sotuv Menejeri & Marketing Vazifalari:
-- [ ] Restoran va to'yxona egalari uchun 1 daqiqalik "Wow-video" taqdimot tayyorlash (AR menyu qanday ishlashi).
-- [ ] Guliston va boshqa shaharlardagi top-20 ta restoran va to'yxonalar ro'yxatini shakllantirish va bepul 7 kunlik demo o'rnatib berish taklifini yuborish.
-- [ ] Narxlar taklifini (Pricing PDF) O'zbek va Rus tillarida tayyorlash.
-
----
-
-## 9. LOOP ENGINEERING ASOSIDAGI 6 SIKLLI CHUQUR TAHLIL (2026-09-22)
-
-### Loop Engineering nima?
-
-Loop Engineering — AI agentlar atrofida takroriy, o'z-o'zini boshqaruvchi ish oqimlarini loyihalash amaliyotidir. Prompt Engineering faqat bitta so'rovni yaxshilashga qaratilgan bo'lsa, Loop Engineering butun siklni optimallashtiradi: vazifa, kontekst, tekshiruv, to'xtash sharti va inson aralashuvi.
-
-**Asosiy prinsiplar:**
-1. Har bir iteratsiyada feedback signali bo'lishi kerak (yaxshilanayotganini yoki yomonlashayotganini ko'rsatadi)
-2. Deterministik feedback (testlar, lint, type-check) afzallik beriladi
-3. Aniq to'xtash sharti bo'lishi kerak (budget exhausted, no-progress detected, objective achieved)
-4. Iteratsiya byudjeti oldindan belgilanadi
-5. Loop qotib qolganda takrorlamasdan, strategiyani o'zgartirish kerak
-
----
-
-### SIKL 1: TEXNIK ARXITEKTURA VA XAVFSIZLIK TAHLILI
-
-**Observe:** Backend va Flutter kodlari to'liq o'qildi. Kritik xatolar aniqlandi.
-
-**Decide:** Eng muhim xavfsizlik va arxitektura blokatorlarini tizimlashtirish kerak.
-
-**Act — Topilgan kritik xatolar:**
-
-| # | Muammo | Darajasi | Oqibati |
-|---|--------|----------|---------|
-| 1 | `DEBUG=True`, `CORS_ALLOW_ALL_ORIGINS=True`, ochiq `SECRET_KEY` | 🔴 KRITIK | SQL injection, XSS, ma'lumot sizib chiqishi |
-| 2 | `Order.shop = CASCADE` — do'kon o'chsa buyurtmalar ham yo'qoladi | 🔴 KRITIK | Tarixiy ma'lumotlar yo'qoladi |
-| 3 | PostgreSQL muhit parametrlari konteynerlarga uzatilmagan | 🔴 KRITIK | SQLite ishlatiladi, ma'lumotlar yo'qoladi |
-| 4 | Race condition — bir vaqtda 10 kishi oxirgi 1 ta tovarni buyurtma qilsa | 🟡 YUQORI | Salbiy qoldiq (-9 ta) |
-| 5 | Click/Payme to'lovda `payment_id` o'rniga `merchant_transaction_id` ishlatilgan | 🔴 KRITIK | Real to'lovda 500 error |
-| 6 | JWT tokenda faqat `customer_id`, auth klass `user_id` kutardi | 🔴 KRITIK | Barcha IsAuthenticated endpoint 401 |
-| 7 | Wishlist IDOR — telefon raqamni bilgan har kim sevimlilarni ko'radi | 🟡 YUQORI | Ma'lumotlar xavfsizligi buziladi |
-| 8 | Login rate-limit yo'q | 🟡 O'RTA | Brute-force hujum xavfi |
-| 9 | Token refresh endpoint yo'q | 🟡 O'RTA | Access token tugasa qayta login |
-| 10 | `ProductProvider` stub — home featured mahsulotlar mock | 🟡 O'RTA | Foydalanuvchi tajribasi yomon |
-
-**Evaluate:** 6 ta KRITIK xato, 4 ta YUQORI/O'RTA xato. Bu xatolar production'ga chiqishga to'sqinlik qiladi.
-
-**Update — Tavsiya etilgan tartib:**
-1. Birinchi navbatda: xavfsizlik sozlamalari (DEBUG, CORS, SECRET_KEY)
-2. Ikkinchi: to'lov tizimini tuzatish (Click/Payme)
-3. Uchünchi: JWT autentifikatsiyani to'liq ishga tushirish
-4. To'rtinchi: ma'lumotlar yaxlitligi (CASCADE→PROTECT, race condition)
-
-**Natija:** Loyiha arxitekturasi poydevori mustahkam (Clean Architecture + DRF), lekin xavfsizlik sozlamalari production holatida emas. Bu oddiy tuzatishlar bilan hal qilinadi.
-
----
-
-### SIKL 2: BIZNES MODELI VA BOZOR TAHLILI
-
-**Observe:** O'zbekiston bozorida raqobatchilar (iiko, R-Keeper, Express24, Uzum) tahlil qilindi. 14 ta biznes turi aniqlandi.
-
-**Decide:** Loyiha qaysi bozor segmentiga qaratilganini va narx strategiyasini belgilash kerak.
-
-**Act — Bozor tahlili natijalari:**
-
-**Raqobatchilar:**
-- **iiko/R-Keeper:** $500-$2000 o'rnatish, $30-$100/oy — juda qimmat, o'zbek tilida qulaylik yo'q, AR/3D yo'q
-- **Express24/Uzum:** 20-30% komissiya, mijoz bazasini bermaydi, stol boshqaruvi yo'q
-- **Telegram botlar:** Faqat 2D rasm, moliya/kassa yo'q
-
-**Bizning ustunliklarimiz:**
-1. AR 3D menyu (raqobatchilarda yo'q) — buyurtma chekini 25-35% oshiradi
-2. Stol QR + ofitsiant chaqirish — xodim xarajatini 50% kamaytiradi
-3. "Sobir Tog'a" kassa — o'g'rilikni 100% to'xtatadi
-4. Nasiya eslatmasi — muzlagan pullarni 3-5 barobar tezroq qaytaradi
-5. 14 ta biznes turi — universal platforma
-
-**Narx strategiyasi:**
-| Paket | Narxi | Target |
-|-------|-------|--------|
-| Start Kassa | Bepul/99k so'm/oy | Kichik do'kondorlar |
-| Smart Kafe & QR | 700k o'rnatish + 200k/oy | Kafelar, fast-food |
-| VIP Restoran | 1.8M o'rnatish + 400k/oy | Katta restoranlar, to'yxonalar |
-
-**Evaluate:** Bozor tahlili to'liq va real. Narxlar O'zbekiston sharoitiga mos. AR/3D — eng katta ustunlik.
-
-**Update — Sotuv strategiyasi:**
-- 3 daqiqalik "Shok Terapiya" skripti tayyor
-- 7 kunlik bepul demo — asosiy sotuv vositasi
-- 1-oy maqsad: 10 ta kafe/do'kon → 8M so'm o'rnatish + 2M/oy abonent
-
-**Natija:** Loyiha bozorda real raqobat afzalligiga ega. AR/3D va Telegram integratsiyasi — eng katta "moat" (ayrilmas ustunlik).
-
----
-
-### SIKL 3: UX/UI VA RESPONSIVLIK TAHLILI
-
-**Observe:** Flutter ilova, web seller panel, AR menyu sahifalari o'qildi. 123 ta shablon, 7 sahifa preview, drag-and-drop mavjud.
-
-**Decide:** Responsive design qay darajada ishlanganini va qaysi qismlarda kamchilik borligini aniqlash kerak.
-
-**Act — Responsive tahlili:**
-
-| Platforma | Holat | Kamchilik |
-|-----------|-------|-----------|
-| **Mobil (390px)** | ✅ Yaxshi | AR menyu mobil-first, savat drawer, bottom navigation |
-| **Planshet (768px)** | 🟡 O'rtacha | Grid 2-3 ustun, lekin ba'zi sahifalar hali to'liq moslashmagan |
-| **Desktop (1200px+)** | 🟡 O'rtacha | Seller panel ishlaydi, lekin mijoz tomoni mobilga o'xshab qolgan |
-| **Flutter APK** | ✅ Yaxshi | Cross-platform, lekin desktop versiyasi hali yo'q |
-| **Telegram Mini App** | ✅ Tayyor | Web asosida, responsive bo'lishi kerak |
-
-**UI/UX kamchiliklari:**
-1. Dizayn 2018-2020 yillardagi Bootstrap ko'rinishida — premium estetika yo'q
-2. Mikro-animatsiyalar (haptik, skeleton loaders) yetishmaydi
-3. Glassmorphism va zamonaviy vizual effektlar yo'q
-4. "Empty state" sahifalari chiroyli emas
-5. Foydalanuvchi tajribasi silliq emas (qotishlar, kutishlar)
-
-**Evaluate:** Responsive design bazasi bor, lekin to'liq ishlangan emas. Desktop versiyasi alohida qo'shish kerak. UI/UX zamonaviy standartlardan orqada.
-
-**Update — Tavsiyalar:**
-1. Desktop versiyasini alohida optimize qilish (admin panel yaxshi, lekin mijoz tomoni yo'q)
-2. Telegram Mini App ni birinchi o'ringa qo'yish (99% UZ foydalanuvchisi)
-3. Premium minimalizm dizayn tizimini joriy qilish (Apple/Linear uslubi)
-4. Skeleton loaders va mikro-animatsiyalarni qo'shish
-
-**Natija:** Responsive design 7/10 darajada. Mobil yaxshi, desktop o'rtacha. UI/UX yangilanishi shart.
-
----
-
-### SIKL 4: PRODUCTION TAYYORGARLIK VA SOTUVGA CHIQISH TAHLILI
-
-**Observe:** HANDOFF.md v17.0, 61 migratsiya, 93 dart fayl, E2E 21/21 PASS, server 0 error.
-
-**Decide:** Loyiha hozirgi holatda production'ga chiqishga tayyormi va sotuv qanchalik tez/sifatli bo'ladi?
-
-**Act — Production tayyorgarlik bahosi:**
-
-| Komponent | Holat | Tayyorgarlik |
-|-----------|-------|-------------|
-| Backend (Django + DRF) | ✅ Ishlaydi | 85% — xavfsizlik sozlamalari kerak |
-| Flutter mobil ilova | ✅ Ishlaydi | 80% — responsive va UI/UX yaxshilash kerak |
-| AR/3D menyu | ✅ Ishlaydi | 90% — real GLB modellar bilan |
-| To'lov tizimi | ⚠️ Xato bor | 40% — Click/Payme tuzatilishi shart |
-| Telegram Mini App | ⬜ Tayyor emas | 20% — backend tayyor, frontend yo'q |
-| Desktop versiya | ⬜ Yo'q | 0% — qo'shish kerak |
-| Sotuv skriptlari | ✅ Tayyor | 90% — 3 daqiqalik demo tayyor |
-| Narxlar strategiyasi | ✅ Tayyor | 95% — 3 ta paket belgilangan |
-| Admin panel | ✅ Ishlaydi | 85% — dashboard grafiklari kerak |
-| KDS/Ofitsiant | ✅ Ishlaydi | 80% — WebSocket real-time kerak |
-
-**Sotuv prognozi (realist):**
-
-| Davr | Maqsad | Daromad |
+| Fayl | Muammo | Oqibati |
 |------|--------|---------|
-| 1-oy | 5 ta kafe/restoran | 3.5M so'm o'rnatish + 1M/oy |
-| 3-oy | 20 ta obuna | 5M/oy passiv daromad |
-| 6-oy | 50 ta obuna | 12.5M/oy + bonus/loyalty tushumi |
-| 12-oy | 100+ ta obuna | 25M+/oy, viloyatlar bo'ylab kengayish |
+| `payments/services/uzcard_service.py` L72 | `from .models import Payment` — noto'g'ri import. `Payment.objects.get(payment_id=...)` deb yozilgan, modelda `payment_id` degan maydon YO'Q. Status `'success'` deb yozilgan, modelda `'paid'`. | **UzCard orqali to'lov tasdiqlanganda server 500 error beradi. Pul yechiladi, buyurtma "to'lanmagan" bo'lib qoladi.** |
+| `payments/views.py` (callback endpointlar) | Payme va Click webhook'larida **kriptografik imzo tekshiruvi (signature verification) UMUMAN YO'Q**. Har kim POST so'rov yuborib buyurtmani "to'langan" qilishi mumkin. | **Xaker biror buyurtma ID'sini bilib, bepul mahsulot olishi mumkin. Pullik xizmatni bepul ishlatish mumkin.** |
+| `payments/payment_service.py` | API kalitlari bo'lmasa, sistema **jimgina Mock provayderga** o'tib ketadi. Hech qanday ogohlantirish yo'q. | Sotuvchi "to'lov ishlamoqda" deb o'ylaydi, aslida faqat test rejimda ishlayapti. Real pul kelmaydi. |
 
-**Evaluate:** Loyiha production'ga chiqishga 70-75% tayyor. Eng katta to'siq — to'lov tizimi va xavfsizlik sozlamalari. Bu 1-2 haftada tuzatiladi.
+**VERDICT:** 💀 Bu tuzatilmasdan BITTA ham real mijozga sotib bo'lmaydi.
 
-**Update — Birinchi qadamlar:**
-1. To'lov tizimini tuzatish (1-2 kun)
-2. Xavfsizlik sozlamalari (DEBUG=False, CORS cheklash) (1 kun)
-3. APK build qilish (1 kun)
-4. Telegram Mini App beta versiyasi (3-5 kun)
-5. Demo video tayyorlash (2-3 kun)
+### 2. XAVFSIZLIK TESHIKLARI — Production'ga CHIQARISH MUMKIN EMAS
 
-**Natija:** 2-3 hafta ichida production'ga chiqish mumkin. Sotuv 1-2 oyda boshlanishi mumkin.
+| Muammo | Darajasi | Tafsilot |
+|--------|----------|----------|
+| `DEBUG = True` (default) | 🔴 KRITIK | Server xatolikda BARCHA kod, SQL so'rovlar, muhit o'zgaruvchilari, SECRET_KEY ochiq ko'rinadi. Xaker uchun oltin ma'lumot. |
+| `SECRET_KEY` har safar yangidan generatsiya bo'ladi | 🔴 KRITIK | Server qayta ishga tushganda BARCHA foydalanuvchi sessiylari buziladi. Savatchadagi mahsulotlar yo'qoladi. Login qilganlar chiqib ketadi. |
+| `CORS_ALLOW_ALL_ORIGINS = True` (DEBUG=True bo'lganda) | 🟡 YUQORI | Har qanday sayt sizning API'ga so'rov yuborishi mumkin. XSS hujum xavfi. |
+| Login endpointda rate-limit YO'Q | 🟡 YUQORI | Xaker brute-force bilan parollarni sinab ko'rishi mumkin. 1 soniyada 1000 ta urinish mumkin. |
+| Wishlist IDOR zaiflik | 🟡 O'RTA | Telefon raqamni bilgan har kim boshqa odamning sevimli mahsulotlarini ko'rishi mumkin. |
 
----
+### 3. MA'LUMOTLAR BAZASI MUAMMOLARI
 
-### SIKL 5: TADBRIKKOR, BIZNESMEN, CEO, MIJOZ NUQTAI NAZARIDAN TAHLIL
-
-**Observe:** Barcha rollar (tadbirkor, biznesmen, CEO, mijoz, oddiy oluvchi) nuqtai nazaridan tahlil qilindi.
-
-**Decide:** Har bir rol uchun loyiha qanchalik qimmatli va nima kerak.
-
-**Act — Rollarga ko'ra tahlil:**
-
-#### 👨‍💼 TADBRIKKOR (Do'kon/Restoran egasi):
-**Nima kerak:**
-- 10 daqiqada ishga tushiradigan tizim
-- Kassadagi o'g'rilikni to'xtatish
-- Ofitsiant xarajatini kamaytirish
-- Mijozlar sonini oshirish
-- Telegram orqali kunlik hisobot
-
-**Loyiha bera oladimi?** ✅ HA — AR menyu, kassa, ofitsiant paneli, Telegram digest barchasi bor.
-
-**Xavotir:** "Qo'lda qilsam ham bo'ladimi?" — Yo'q, chunki AR/3D va Telegram integratsiyasini qo'lda qilib bo'lmaydi.
-
-#### 💼 BIZNESMEN (Investor/Sotuv menejeri):
-**Nima kerak:**
-- 6 oyda 100+ obuna
-- Oylik 25M+ so'm daromad
-- Viloyatlar bo'ylab kengayish
-- Xalqaro bozorga chiqish
-
-**Loyiha bera oladimi?** 🟡 Qisman — O'zbekiston bozorida YAXSHI, lekin xalqaro uchun turk/rus tiliga moslash kerak.
-
-#### 🏢 CEO (Texnik direktor/Arxitektor):
-**Nima kerak:**
-- Masshtablanuvchi arxitektura (1M→1M foydalanuvchi)
-- 99.9% uptime
-- Xavfsizlik standartlari
-- CI/CD pipeline
-
-**Loyiha bera oladimi?** 🟡 Qisman — arxitektura poydevori bor, lekin keshlash, load balancer, monitoring yo'q.
-
-#### 👤 MIJOZ (Xaridor):
-**Nima kerak:**
-- Tez va qulay buyurtma berish
-- Haqiqiy narx va sifat
-- Yetkazib berish vaqti
-- To'lov xavfsizligi
-
-**Loyiha bera oladimi?** ✅ HA — AR menyu orqali taomni 3D ko'rish, tez buyurtma, Click/Payme.
-
-#### 🛒 ODDIY OLUVCHI (Telegram foydalanuvchisi):
-**Nima kerak:**
-- Ilova yuklamasdan ishlatish
-- 1 soniyada ochilish
-- Tushunarli interfeys
-
-**Loyiha bera oladimi?** ✅ HA — Telegram Mini App orqali ilova yuklash shart emas.
-
-**Evaluate:** Barcha rollar uchun loyiha qimmatli. Eng katta qiymat — tadbirkor va mijoz uchun.
-
-**Update — Har bir rol uchun prioritlar:**
-1. Tadbirkor: Kassa + Telegram hisobot (1-hafta)
-2. Mijoz: Telegram Mini App (2-hafta)
-3. CEO: Monitoring + CI/CD (1-oy)
-4. Investor: Demo video + Sotuv skripti (3-kun)
+| Muammo | Oqibati |
+|--------|---------|
+| SQLite ishlatilmoqda (POSTGRES_DB env yo'q bo'lsa) | SQLite bir vaqtda 2 ta yozish so'rovini qo'llab-quvvatlamaydi. 5 kishi bir vaqtda buyurtma bersachi? Baza qulflanadi. |
+| `Product.shop = CASCADE` | Do'kon o'chirilsa, BARCHA mahsulotlar ham o'chib ketadi. Tarix, statistika — hammasi yo'q. |
+| Inventar uchun race condition | 10 kishi bir vaqtda oxirgi 1 ta tovarga buyurtma bersa, qoldiq -9 ga tushadi. `select_for_update()` bor, lekin `CheckConstraint(stock >= 0)` YO'Q. |
 
 ---
 
-### SIKL 6: KELAJAK RIVOJLANISH VA UMUMIY XULOSA
+## II. 🎨 DIZAYN KAMCHILIKLARI — XOLIS BAHO
 
-**Observe:** 6 sikl natijalari tahlil qilindi. Loyiha kuchli va zaif tomonlari aniqlandi.
+### Hozirgi holat: 7/10 (Yaxshi, lekin "WOW" effekt yo'q)
 
-**Decide:** Loyiha kelajakda qanday rivojlanishi kerak va umumiy baho qanday.
+**Yaxshi tomonlari (haqiqatan bor):**
+- Tailwind CSS ishlatilgan — toza va zamonaviy bazis
+- Rounded corners, glassmorphism elementlari bor
+- Dark mode — Seller panelda ishlaydi
+- Responsive grid — mobilda yaxshi ko'rinadi
+- SVG ikonkalar, yumaloq tugmalar
 
-**Act — Loyiha umumiy bahosi:**
+**Kamchiliklar (real):**
 
-#### Kuchli tomonlar (✅):
-1. **AR/3D texnologiyasi** — O'zbekistonda birinchi va yagona
-2. **14 ta biznes turi** — universal platforma
-3. **8 ta AI provayder MCP** — avtomatik tarjima, 3D yaratish
-4. **60-123 ta shablon** — boy dizayn kutubxonasi
-5. **To'liq oqim:** QR → menyu → 3D/AR → buyurtma → ofitsiant → KDS → admin
-6. **Telegram integratsiyasi** — 99% UZ foydalanuvchisi
-7. **Sotuv skriptlari va narxlar** — tayyor
-
-#### Zaif tomonlar (⚠️):
-1. **Xavfsizlik sozlamalari** — DEBUG=True, CORS ochiq (1-2 kunlik ish)
-2. **To'lov tizimi** — Click/Payme xato (1-2 kunlik ish)
-3. **UI/UX** — zamonaviy premium dizayn yetishmaydi (2-3 hafta)
-4. **Telegram Mini App** — frontend yo'q (3-5 kun)
-5. **Desktop versiya** — yo'q (2-3 hafta)
-6. **WebSocket real-time** — yo'q (1-2 hafta)
-7. **CI/CD pipeline** — yo'q (1-2 hafta)
-8. **Monitoring va logging** — bazaviy (1 hafta)
-
-#### Loyiha ballari:
-| Komponent | Ball (10 dan) |
-|-----------|---------------|
-| Arxitektura | 8.5 |
-| Funktsionallik | 8.0 |
-| Xavfsizlik | 5.0 |
-| UI/UX | 6.5 |
-| Responsive | 7.0 |
-| Production tayyorgarlik | 7.0 |
-| Sotuv potensiali | 8.5 |
-| Bozor raqobati | 8.0 |
-| **UMUMIY** | **7.3 / 10** |
-
-#### Kelajak rejasini bosqichma-bosqich:
-
-**1-bosqich (1-2 hafta): Production tayyorgarlik**
-- [ ] Xavfsizlik sozlamalarini tuzatish (DEBUG=False, CORS)
-- [ ] Click/Payme to'lov tizimini tuzatish
-- [ ] APK build qilish
-- [ ] E2E testlarni qayta tekshirish
-
-**2-bosqich (2-4 hafta): Sotuv boshlash**
-- [ ] Demo video tayyorlash (AR menyu demo)
-- [ ] Telegram Mini App beta
-- [ ] Top-20 ta restoran/kafe ro'yxati
-- [ ] Bepul 7 kunlik demo o'rnatish
-
-**3-bosqich (1-3 oy): Masshtablashish**
-- [ ] Viloyatlar (Samarqand, Toshkent, Farg'ona)
-- [ ] Desktop versiya
-- [ ] WebSocket real-time
-- [ ] CI/CD pipeline
-
-**4-bosqich (3-6 oy): Xalqaro**
-- [ ] Turk/Rus/Ingliz tillari
-- [ ] Xalqaro to'lov tizimlari
-- [ ] App Store/Play Store
-
-**Evaluate:** Loyiha 7.3/10 darajada baholandi. Kuchli tomonlari zaif tomonlaridan ko'p. Eng katta ustunlik — AR/3D va O'zbekiston bozorida raqobatsizlik.
-
-**Update — Yakuniy xulosa:**
-- Loyiha sotuvga TAYYOR emas, lekin 2-3 hafta ichida tayyor bo'ladi
-- Sotuv boshlash mumkin: 1-oyda 5 ta obuna → 3.5M so'm
-- Eng katta xavf: to'lov tizimi xatosi (tuzatilishi kerak)
-- Eng katta imkoniyat: AR/3D — O'zbekistonda hech kimda yo'q
+| # | Muammo | Tafsilot |
+|---|--------|----------|
+| 1 | **"Empty state" sahifalari jonsiz** | Buyurtmalar yo'q bo'lganda — kulrang ikonka va quruq matn. Chiroyli illustratsiya, animatsiya yo'q. Birinchi marta kirgan foydalanuvchi "bu buzilganmi?" deb o'ylaydi. |
+| 2 | **Mahsulot rasmlari uchun placeholder yo'q** | Rasm yuklanmasa — bo'sh kulrang to'rtburchak. Hech narsa yozilmagan, emoji ham yo'q. Professional ko'rinmaydi. |
+| 3 | **Savatga qo'shish animatsiyasi oddiy** | Savatga qo'shganda faqat raqam o'zgaradi. Rasm savatga "uchib kirish" (Parabolic Flight), konfetti yoki pulsatsiya effekti YO'Q. |
+| 4 | **Skeleton loader bazaviy** | Sahifa yuklanayotganda shimmer/pulsatsiya bor, lekin ba'zi sahifalarda faqat oq ekran ko'rinadi. |
+| 5 | **Premium estetika yetishmaydi** | Hozirgi dizayn "yaxshi ishlaydigan dastur" ko'rinishida, lekin "Voy, bu qanday chiroyli!" degan his bermaydi. Restoran egasi bu saytni ko'rsa, narx so'raganda "buni o'zim ham qildira olaman" deb o'ylaydi. |
+| 6 | **Desktop versiya — mobilni kattalashtirgan** | Mijoz web sahifasi mobilga o'xshab qolgan. 1920px monitorga kirganda qo'l bilan yozilgan oddiy saytga o'xshaydi. Sidebar, keng grid, multi-column layout YO'Q. |
+| 7 | **Ishtaha ochuvchi food photography yo'q** | Taom rasmlari oddiy to'rtburchak. Yengil soya, bokeh (blur fon), steam (bug') effektlari yo'q. Restoran menyusi — bu birinchi navbatda RASM. |
 
 ---
 
-### LOOP ENGINEERING SIKLLAR YAKUNIY XULOSASI
+## III. 🎬 ANIMATSIYALAR — NIMA BOR, NIMA YO'Q
 
-**6 sikl natijalari:**
+### ✅ BOR:
+- CSS transitions (hover scale, color change) — bazaviy
+- `group-hover:scale-[1.04]` — kartochka ko'tarilishi
+- `active:scale-95` — tugma bosilganda kichrayish
+- `fade-in` utility — sahifa elementlari paydo bo'lishi
+- Flutter: `lottie`, `flutter_staggered_animations` — mobil ilovada
 
-| Sikl | Asosiy topilma | Tavsiya |
-|------|----------------|---------|
-| 1. Texnik | 6 ta KRITIK xato | 1-2 haftada tuzatish |
-| 2. Biznes | Bozorda raqobatsiz AR/3D | Sotuvni boshlash |
-| 3. UX/UI | Responsive 7/10 | Desktop + Premium dizayn |
-| 4. Production | 70-75% tayyor | 2-3 hafta ichida chiqish |
-| 5. Rollar | Barcha rollar uchun qimmatli | Har biriga alohida priorit |
-| 6. Kelajak | 7.3/10 umumiy baho | 4 bosqichli reja |
-
-**Loop Engineering printsipi asosida:**
-- Har bir siklda **observe → decide → act → evaluate → update** amalga oshirildi
-- Har bir iteratsiyada **feedback signali** (test natijalari, bozor tahlili, UX bahosi) ishlatildi
-- **To'xtash shartlari** belgilandi (production tayyorgarlik 100% bo'lganda)
-- **Byudjet** hisoblandi (2-3 hafta tuzatish, 1-2 oy sotuv boshlash)
-
----
-
-> **UMUMIY XULOSA:** Loyiha O'zbekiston bozorida NOYOB va QIMMATLI. AR/3D, Telegram integratsiyasi va 14 ta biznes turi — raqobatchilarda yo'q. Asosiy kamchiliklar (xavfsizlik, to'lov, UI/UX) tuzatilishi mumkin. 2-3 hafta ichida production'ga chiqish va 1-2 oyda sotuv boshlash MUMKIN. Loyiha 7.3/10 baholandi — bu "yaxshi, lekin yaxshilash kerak" degan ma'noni anglatadi.
+### ❌ YO'Q (va kerak):
+| Animatsiya | Nima uchun kerak | Qayerda |
+|-----------|-----------------|---------|
+| **Savatga uchish (Parabolic Flight)** | Foydalanuvchi mahsulotni savatga qo'shganini SEZADI | Mahsulot kartasi → savat ikonkasi |
+| **Haptic vibration** | Telefonda fizik sezgi — "sotib oldim" hissi | `navigator.vibrate(40)` — savat qo'shishda |
+| **3D model yuklanish progressi** | AR model yuklanayotganida foydalanuvchi kutib turadi, hech narsa ko'rmaydi | AR modal ochilishida |
+| **Buyurtma status animatsiyasi** | Buyurtma holatini Lottie animatsiya bilan ko'rsatish | Buyurtma kuzatish sahifasi |
+| **Page transition** | Sahifalar orasida silliq o'tish | Barcha sahifalar |
+| **Confetti / Success** | To'lov muvaffaqiyatli bo'lganda bayrami animatsiya | Payment success sahifasi |
+| **Pull-to-refresh** | Mobilda pastga tortib yangilash | Mahsulotlar ro'yxati |
+| **Skeleton → Real content** | Shimmer to'xtab, real kontent silliq paydo bo'lishi | Barcha yuklanish holatlari |
 
 ---
 
-> **Ushbu hujjat loyihani O'zbekiston bozorida 10 dan 10 natija bilan sotish uchun bosh dastur hisoblanadi.** Har bir band amalga oshirilishi bilan loyihaning bozor qiymati va daromad keltirish quvvati keskin oshib boradi.
+## IV. ✅ KERAKLI VA ❌ KERAKSIZ FUNKSIYALAR
+
+### ✅ KERAKLI (va ishlaydi):
+| Funksiya | Holati | Izoh |
+|----------|--------|------|
+| QR kod orqali menyu ochish | ✅ Ishlaydi | Restoran uchun eng muhim narsa |
+| AR/3D taom ko'rish | ✅ Ishlaydi | O'zbekistonda YAGONA — raqobat ustunligi |
+| Telegram Mini App | ✅ Ishlaydi | 99% O'zbekiston foydalanuvchisi Telegramda |
+| Stol buyurtmasi (QR → savat → to'lov) | ✅ Ishlaydi | Ofitsiant yetishmasligi muammosini hal qiladi |
+| KDS (Oshpaz ekrani) | ✅ Bazaviy | Buyurtma to'g'ridan-to'g'ri oshxonaga tushadi |
+| Moliya (kirim/chiqim/nasiya) | ✅ Ishlaydi | Kassa boshqaruvi — har bir do'kondorga kerak |
+| Telegram bot xabarnomalar | ✅ Ishlaydi | Yangi buyurtma kelganda admin xabar oladi |
+| Multi-vendor (ko'p do'kon) | ✅ Ishlaydi | Bir platformada 100 ta do'kon |
+| Agro master katalog | ✅ Ishlaydi | Dehqon bozori uchun tayyor mahsulotlar bazasi |
+| Kuryer tizimi | ✅ Bazaviy | GPS kuzatish, buyurtma biriktirish |
+| Seller dashboard | ✅ To'liq | Mahsulot, buyurtma, mijoz, moliya boshqaruvi |
+
+### ❌ KERAKSIZ yoki ERTA:
+| Funksiya | Nega keraksiz | Maslahat |
+|----------|--------------|---------|
+| **3D Print Studio** | Gulistonda 3D printer bilan pul topish mumkin emas. Bu funksiya foydalanuvchini chalg'itadi. | O'chirish yoki yashirish |
+| **AI Marketing (GPT-4o)** | AI API kaliti yo'q, bepul emas ($20/oy). Guliston sotuvchisi bunga pul bermaydi. | Keyinga qoldirish |
+| **AI 3D generatsiya (Meshy/Tripo)** | API kaliti kiritilmagan, qimmat ($50/oy+). Hozir foyda bermaydi. | Keyinga qoldirish |
+| **60+ do'kon shabloni** | Guliston bozorida 3 ta shablon yetarli. 60 ta — ortiqcha murakkablik. | 3-5 ta eng yaxshisini qoldirish |
+| **Subscription/Plan tizimi (Basic/Pro/Business)** | Birinchi mijozga tekinga berib, keyin pul so'rash kerak. Obuna tizimi boshlang'ich bosqichda foydalanuvchini qo'rqitadi. | 1-oyda faqat demo, keyin obuna |
+
+---
+
+## V. 📱 ODDIY SOTUVCHI NIMA XOHLAYDI?
+
+Guliston bozorida oddiy restoran/kafe/do'kon egasi FAQAT shu narsalarni xohlaydi:
+
+### 1. TEZKOR NATIJA — 5 daqiqada ishga tushsin
+- "Menga menyu yaratib ber" — va 5 daqiqada tayyor bo'lsin
+- Qo'lda 100 ta mahsulot kiritish emas, Excel/CSV import bo'lsin
+
+### 2. PUL KELSIN
+- Click/Payme orqali to'lov HAQIQATAN ishlasin
+- Naqd pul bo'lganda ham chek chiqsin
+- Oylik hisobot: qancha sotdim, qancha foyda qildim
+
+### 3. O'G'RILIK BO'LMASIN
+- Har bir buyurtma qayd qilinsin
+- Ofitsiant/kassir "yozmasdan" sotolmasin
+- Kunlik kirim/chiqim aniq ko'rinsin
+
+### 4. ODDIY BO'LSIN
+- Telefonda ishlasin (kompyuter shart bo'lmasin)
+- O'zbek tilida bo'lsin
+- "3D AR WebXR GLB USDZ" degan so'zlarni bilmasam ham ishlatib keta olishim kerak
+
+### 5. TELEGRAM BILAN ISHLAT
+- Yangi buyurtma kelganda Telegramga xabar kelsin
+- Kunlik hisobot kelsin
+- Mijoz Telegramdan buyurtma bera olsin
+
+---
+
+## VI. 🏪 BU LOYIHA BILAN NIMA BERA OLASIZ?
+
+### KUCHLI TOMONLARI (haqiqiy):
+1. **AR 3D menyu — O'zbekistonda HECH KIMDA YO'Q.** Bu bitta narsa bilan butun raqobatchilardan ajralasiz.
+2. **Telegram Mini App + QR stol buyurtmasi** — ofitsiant yetishmasligi muammosini hal qiladi
+3. **Moliya moduli** — kichik biznes uchun bepul kassa dasturi sifatida sotish mumkin
+4. **Multi-tenant arxitektura** — 1 ta serverda 100 ta do'konni boshqarish mumkin
+5. **25+ turdagi do'kon qo'llaniladi** — restoran, kafe, dehqon bozori, dorixona, kiyim do'koni...
+
+### ZAIF TOMONLAR (real):
+1. **To'lov tizimi buzilgan** — eng muhim narsa ishlamaydi
+2. **Xavfsizlik teshiklari** — productionga chiqarish mumkin emas
+3. **Demo/taqdimot tayyor emas** — birinchi 30 soniyada mijozga "WOW" qildiradigan narsa yo'q
+4. **Bulk import yo'q** — 100 ta mahsulotni qo'lda kiritish kerak
+5. **Onboarding wizard yo'q** — yangi sotuvchi qayerdan boshlashni bilmaydi
+
+---
+
+## VII. 💰 GULISTON BOZORIDA QANDAY SOTISH KERAK
+
+### A. TARGET MIJOZLAR (Gulistonda real):
+
+| # | Mijoz turi | Son (taxminiy) | Qancha to'laydi | Qiyinchiligi |
+|---|-----------|----------------|-----------------|---------------|
+| 1 | **To'yxonalar** (Dilnavoz, Sardoba, Guliston) | 15-20 ta | 3-5M so'm | O'rtacha — egalar texnologiyaga qiziqadi |
+| 2 | **Kafelar** (Evos, Burger King, mahalliy) | 30-50 ta | 500K-1M so'm/oy | Oson — menyuni tez o'zgartirish kerak |
+| 3 | **Restoranlar** (Milliy taom maskanlari) | 20-30 ta | 800K-1.5M so'm/oy | O'rtacha — AR menyu bilan jalb qilish |
+| 4 | **Oziq-ovqat do'konlari** | 100+ ta | 200K-500K so'm/oy | Oson — Agro katalog tayyor |
+| 5 | **Mehmonxonalar** (turistlar uchun) | 5-10 ta | 1-3M so'm | Qiyin — qaror sekin qabul qilinadi |
+
+### B. SOTUV SKRIPTI (Real, Gulistoncha):
+
+> **Siz:** "Assalomu alaykum, Akrom aka! Men sizga quruq gap emas, 30 soniyalik ko'rgazma qilaman. Telefoningizni oling, mana bu qog'ozdagi QR-kodni kamerangizda oching."
+>
+> *(Restoran egasi kamerani QR-ga tutadi. Telefonda chiroyli menyu ochiladi, taom 3D ko'rinadi)*
+>
+> **Egasi:** "Iye, bu qanday bo'ldi? Bu bizning oshku!"
+>
+> **Siz:** "Xuddi shunday. Endi tasavvur qiling — kechki payt oilasi bilan kelgan mehmon shu menyuni ko'rib, oshni 3D holda stol ustida ko'rsa — buyurtma bermasdan keta oladimi? Tajribada o'rtacha chek 20-25% oshadi."
+>
+> "Ikkinchidan — ofitsiantlaringiz bloknotda yozmaydi, buyurtma TO'G'RIDAN-TO'G'RI oshxonadagi ekranga tushadi. Adashish — nol."
+>
+> "Uchinchidan — kassa Telegram orqali har kuni hisobot yuboradi. O'g'irlik bo'lmaydi."
+>
+> "Sizga 7 kun BEPUL sinov muddatiga o'rnatib beraman. Agar foyda ko'rmasangiz — bitta tiyin to'lamaysiz. Qaysi stollardan boshlaymiz?"
+
+### C. NARXLAR (Guliston bozori uchun real):
+
+| Paket | Narxi | Kimga |
+|-------|-------|-------|
+| **Start Kassa** | BEPUL (7 kun) → 200K so'm/oy | Kichik do'kon, bozor sotuvchisi |
+| **Smart Kafe** | 700K o'rnatish + 300K so'm/oy | Kafe, fast-food, pitsa |
+| **VIP Restoran** | 1.5M o'rnatish + 500K so'm/oy | Katta restoran, to'yxona |
+| **To'y Paketi** | Har tadbir uchun 1.5-3M so'm | To'yxona bir martali |
+
+### D. BIRINCHI 10 TA MIJOZNI TOPISH REJASI:
+
+1. **1-hafta:** Gulistondagi eng mashhur 3 ta to'yxonaga boring. QR demo ko'rsating. 7 kun bepul o'rnating.
+2. **2-hafta:** 5 ta kafel/restoranga boring. "Birinchi 10 ta mijozimizga UMRBOD 50% chegirma" deng.
+3. **3-hafta:** Guliston dehqon bozorida 5 ta oziq-ovqat do'koniga Agro katalogni ko'rsating.
+4. **4-hafta:** Birinchi muvaffaqiyatli mijoz bilan VIDEO (Reels/TikTok) oling. Bu eng kuchli reklama.
+
+---
+
+## VIII. 🏨 MEHMONXONA VA TURISTIK FIRMALARGA SOTISH
+
+### GULISTON TURISTIK POTENSIALI:
+
+Guliston o'zi turistik shahar emas, LEKIN Sirdaryo viloyati orqali Toshkent-Farg'ona yo'nalishida tranzit trafik bor. Shu sababli:
+
+### A. Mehmonxonalarga taklif:
+
+**Ularning dardi:** "Mehmonlar menyuni tushunmaydi, chet elliklar rus tilida ham gap ololmaydi, hamma narsa qog'ozda."
+
+**Bizning taklif:**
+- 3 tilda (O'zbek/Rus/Ingliz) interaktiv menyu
+- Mehmon xonasida QR kod — restoran menyusini ochadi va buyurtma beradi
+- AR orqali xonadagi jihozlarni 3D ko'rish (Kelajakda)
+
+**Narxi:** 1-3M so'm o'rnatish + 300K-500K so'm/oy
+
+### B. Turistik shaharlarga sotish (Samarqand, Buxoro, Xiva):
+
+Bu shaharlarda JUDA KO'P restoran va mehmonxona bor. AR menyu ularga 10 barobar ko'proq kerak:
+
+| Shahar | Nechta restoran | Nega kerak | Qanday yetish |
+|--------|----------------|-----------|---------------|
+| **Samarqand** | 200+ turistik | Chet ellik turistlar menyuni tushunmaydi → 3 tilda AR menyu | "Registon yonidagi restoranlar" dan boshlash |
+| **Buxoro** | 150+ eski shahar | Atmosfera muhim → AR bilan taomni ko'rsatish | Mehmonxonalarga taklif qilish |
+| **Toshkent** | 500+ | Eng katta bozor, lekin raqobat ham ko'p | Premium restoranlardan boshlash |
+| **Xiva** | 50+ | Kichik lekin sifatli turistik bozor | Ichki shahar restoranlariga |
+
+### C. Turistik firmalarga taklif:
+
+**Taklif:** "Biz sizning mijozlaringiz (turistlar) uchun AR menyuni o'rnatamiz. Turpaket ichiga 'Smart restoran tajribasi' qo'shasiz — turistlar bundan zavqlanadi va sizning firmangizni tanlab oladi."
+
+**Model:** Har bir turistik firmaning 3-5 ta hamkor restoraniga o'rnatish. Turpaket narxiga 20-50K so'm qo'shiladi.
+
+---
+
+## IX. 📋 ISH KETISH TARTIBI (ANIQ REJA)
+
+### 1-BOSQICH: KRITIK TUZATISHLAR (3-5 kun)
+
+- [x] `uzcard_service.py` — importni tuzatish, `payment_id` → `merchant_transaction_id`, `'success'` → `'paid'`, `paid_at` va `mark_payment_paid` integratsiyasi (BAJARILDI ✅)
+- [x] Payme/Click webhook'lariga **kriptografik imzo tekshiruvini** qo'shish (Click MD5, Payme HTTP Basic Auth & JSON-RPC 2.0) (BAJARILDI ✅)
+- [x] Professional Demo / Sandbox to'lov simulyatori yaratish (API kalitlar kiritilmaganda mijozga to'liq kassa-oshxona to'lov zanjirini ko'rsatish) (BAJARILDI ✅)
+- [x] `.env.example` fayl yaratish — barcha kerakli kalitlarni ro'yxatlash (BAJARILDI ✅)
+- [x] `DJANGO_SECRET_KEY` ni `.env` da doimiy qilish (sessiyalar va loginlar uzilmasligi uchun) (BAJARILDI ✅)
+- [x] `Product.shop` — `CASCADE` → `PROTECT` ga o'tkazish (mahsulotlar tarixi o'chib ketmasligi uchun) (BAJARILDI ✅)
+- [x] `stock >= 0` uchun DB `CheckConstraint` qo'shish (ombor qoldig'i manfiyga tushmasligi uchun) (BAJARILDI ✅)
+- [x] Login endpointga rate-limit qo'shish (Brute-force hujumlaridan himoya) (BAJARILDI ✅)
+- [x] To'lov muvaffaqiyati (Payment Success) sahifasiga Confetti animatsiyasi va to'liq chek bloki qo'shish (BAJARILDI ✅)
+
+### 2-BOSQICH: DEMO TAYYORLASH (1 hafta)
+
+- [x] 1 ta Guliston restoranining 10 ta mashhur taomini kiritish (rasm + narx) (BAJARILDI ✅ — 12 ta milliy taom kiritildi)
+- [x] Kamida 3 ta taom uchun 3D GLB model topish/yaratish (BAJARILDI ✅ — 12 ta taomga 3D GLB modellari biriktirildi)
+- [x] QR kodli demo stend tayyorlash (A4 qog'ozga chiqarish mumkin) (BAJARILDI ✅ — `/seller/tables/stands/print/` tayyor)
+- [ ] 1 daqiqalik demo video yozish (telefonda)
+- [x] Seller panel'ga birinchi marta kirgan uchun "Xush kelibsiz" wizard (BAJARILDI ✅ — 4-qadamli Onboarding Wizard)
+- [x] Excel/CSV orqali ommaviy yuklash va namunaviy shablon (BAJARILDI ✅ — Bulk CSV Importer)
+- [x] 1-klikda barcha milliy taomlarni yangi do'konga yuklash (BAJARILDI ✅ — Seed Starter)
+
+### 3-BOSQICH: DIZAYN YAXSHILASH (1-2 hafta)
+
+- [x] "Empty state" sahifalarini chiroyli illustratsiyalar bilan to'ldirish (BAJARILDI ✅ — Cart, Orders, Catalog, Seller Products)
+- [x] Savatga qo'shish animatsiyasini yaxshilash (BAJARILDI ✅ — Parabolic Flight + Haptic tebranish + Badge Bounce)
+- [x] Desktop versiyasini optimize qilish (BAJARILDI ✅ — Multi-column responsive grid va keng ekran optimizatsiyasi)
+- [x] Mahsulot rasmi uchun default placeholder qo'shish (BAJARILDI ✅ — `dish-placeholder.svg` gourmet placeholder)
+- [x] Payment Success sahifasiga confetti animatsiya (BAJARILDI ✅ — Canvas Confetti va haptic tebranish)
+
+### 4-BOSQICH: SOTUVGA CHIQISH (2-3 hafta)
+
+- [ ] Birinchi 3 ta mijozga BEPUL o'rnatish (portfolio uchun)
+- [ ] Telegram kanal ochish: "@guliston_smart_menu"
+- [ ] Instagram sahifa ochish — AR menyu videolari bilan
+- [ ] Muvaffaqiyatli case study video olish
+- [ ] Narxlar jadvalini PDF qilish (O'zbek + Rus)
+
+### 5-BOSQICH: KENGAYISH (1-3 oy)
+
+- [ ] Samarqand va Buxoro'dagi 5-10 ta turistik restoranga sotish
+- [ ] Mehmonxonalar bilan hamkorlik
+- [ ] Turistik firmalar bilan shartnoma
+- [ ] Excel/CSV import qo'shish (bulk mahsulot kiritish)
+- [ ] Termal printer (58mm/80mm) integratsiyasi
+
+---
+
+## X. 📊 REAL SOTUV PROGNOZI (Paxta yo'q, faqat real raqamlar)
+
+| Davr | Maqsad | Ehtimol (%) | Daromad |
+|------|--------|-------------|---------|
+| **1-oy** | 3 ta bepul demo + 2 ta pullik | 70% | 1.5-2M so'm |
+| **3-oy** | 10 ta obuna | 50% | 3-5M so'm/oy |
+| **6-oy** | 25 ta obuna + 5 ta to'yxona | 40% | 8-12M so'm/oy |
+| **12-oy** | 50+ obuna (Guliston + Samarqand) | 30% | 20-30M so'm/oy |
+
+### Nega foizlar past?
+- Guliston kichik shahar — bozor cheklangan
+- Sotuvchi sifatida tajriba kerak — texnologiyani bilish yetmaydi
+- Raqobatchilar (Telegram botlar, oddiy menyular) bepul ishlaydi
+- To'yxona egasi texnologiyaga pul berish odati yo'q
+
+### Nega baribir imkoniyat bor?
+- AR/3D menyu — hech kimda yo'q, BU USTUNLIK
+- Telegram integratsiyasi — O'zbekiston bozoriga mukammal mos
+- Moliya moduli — do'kon egalariga BEPUL kassa sifatida taklif qilish
+- Turistik shaharlar (Samarqand, Buxoro) — KATTA bozor
+
+---
+
+## XI. 🎯 ENG MUHIM 5 TA QADAM (BUGUNDAN BOSHLASH)
+
+1. **BUGUN:** `uzcard_service.py` ni tuzat — to'lov haqiqatan ishlashi kerak
+2. **ERTAGA:** `DEBUG=False` qil, `SECRET_KEY` ni `.env` ga yoz, webhook imzo tekshiruvini qo'sh
+3. **3 KUN ICHIDA:** 1 ta restoranning 10 ta taomini kiritib, QR demo tayyorla
+4. **1 HAFTA ICHIDA:** Gulistondagi 3 ta to'yxona/restoranga borib demo ko'rsat
+5. **2 HAFTA ICHIDA:** Birinchi PULLIK mijozni top
+
+---
+
+> **YAKUNIY XULOSA:** Loyihaning POYDEVORI mustahkam — arxitektura, kod sifati va funksionallik yaxshi. Lekin "yaxshi dastur" va "sotiladigan mahsulot" orasida KATTA farq bor. Hozirgi eng katta to'siq — TO'LOV TIZIMI va XAVFSIZLIK. Bu 3-5 kunda tuzatiladi. Keyin DEMO tayyorlab, ko'chaga chiqib sotish kerak. Eng katta xato — uyda o'tirib yana kod yozish. Mahsulot 80% tayyor bo'lganda SOTISHNI BOSHLASH kerak.

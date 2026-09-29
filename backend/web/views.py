@@ -384,43 +384,54 @@ def customer_product_ar(request, slug):
 
 
 def ar_catalog(request):
-    """AR/3D mahsulotlar katalogi — /ar/.
-    Standart holatda ultra-zamonaviy AIR 3D Menyu (air-3d-menu) ochiladi.
-    Agar ?classic=1 parametri uzatilsa, klassik grid katalog ko'rsatiladi."""
-    if request.GET.get('classic') != '1':
-        from ar3d.views import ar_3d_menu_page
-        return ar_3d_menu_page(request)
+    """AR/3D Menyu — Bitta yagona professional Restoran 3D Menyu tizimi (/restaurant/)."""
+    from django.shortcuts import redirect
+    return redirect('/restaurant/')
 
-    products = Product.objects.filter(has_3d=True, is_available=True).select_related('shop', 'category')
-    category = request.GET.get('category')
-    if category:
-        products = products.filter(category_id=category)
-    categories = Category.objects.filter(
-        id__in=products.values_list('category_id', flat=True).distinct()
-    ).exclude(id__isnull=True)
-    return render(request, 'customer/ar_catalog.html', {
-        'products': products,
-        'categories': categories,
-        'category_filter': int(category) if category and category.isdigit() else None,
-    })
 
 
 def _cart_context(request):
     cart = _get_cart(request)
     items = []
     total = 0
-    for product_id, quantity in cart.items():
-        product = Product.objects.filter(id=product_id).first()
-        if not product:
-            continue
-        line_total = int(product.price) * int(quantity)
-        total += line_total
-        items.append({
-            'id': product.id,
-            'product': product,
-            'quantity': quantity,
-            'subtotal': line_total,
-        })
+    if not isinstance(cart, dict):
+        return items, total
+
+    for key, val in cart.items():
+        if isinstance(val, dict):
+            for product_id, item_data in val.items():
+                product = Product.objects.filter(id=product_id).first()
+                if not product:
+                    continue
+                qty = item_data.get('quantity', 1) if isinstance(item_data, dict) else item_data
+                try:
+                    qty = int(qty)
+                except (ValueError, TypeError):
+                    qty = 1
+                line_total = int(product.price) * qty
+                total += line_total
+                items.append({
+                    'id': product.id,
+                    'product': product,
+                    'quantity': qty,
+                    'subtotal': line_total,
+                })
+        else:
+            product = Product.objects.filter(id=key).first()
+            if not product:
+                continue
+            try:
+                qty = int(val)
+            except (ValueError, TypeError):
+                qty = 1
+            line_total = int(product.price) * qty
+            total += line_total
+            items.append({
+                'id': product.id,
+                'product': product,
+                'quantity': qty,
+                'subtotal': line_total,
+            })
     return items, total
 
 
@@ -442,19 +453,43 @@ def customer_cart(request):
 
 def customer_cart_add(request):
     if request.method == 'POST':
-        product_id = request.POST.get('product_id')
-        quantity = int(request.POST.get('quantity', 1) or 1)
+        product_id = None
+        quantity = 1
+        is_ajax = (
+            request.headers.get('Content-Type') == 'application/json' or
+            request.headers.get('Accept') == 'application/json' or
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+            request.POST.get('ajax') == '1'
+        )
+        if request.content_type == 'application/json':
+            import json
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+                product_id = data.get('product_id')
+                quantity = int(data.get('quantity', 1) or 1)
+            except Exception:
+                pass
+        if not product_id:
+            product_id = request.POST.get('product_id')
+            quantity = int(request.POST.get('quantity', 1) or 1)
+
         product = Product.objects.filter(id=product_id, is_available=True).first()
         if product:
             cart = _get_cart(request)
-            cart[str(product.id)] = cart.get(str(product.id), 0) + quantity
+            cart[str(product.id)] = cart.get(str(product.id), 0) + max(1, quantity)
             _save_cart(request, cart)
             cart_count = sum(cart.values())
-            if request.headers.get('Content-Type') == 'application/json' or request.headers.get('Accept') == 'application/json':
-                return JsonResponse({'success': True, 'cart_count': cart_count})
-            messages.success(request, 'Mahsulot savatga qo\'shildi')
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'cart_count': cart_count,
+                    'product_id': product.id,
+                    'product_name': product.name,
+                    'message': f"{product.name} savatga qo'shildi!"
+                })
+            messages.success(request, f"{product.name} savatga qo'shildi")
         else:
-            if request.headers.get('Content-Type') == 'application/json' or request.headers.get('Accept') == 'application/json':
+            if is_ajax:
                 return JsonResponse({'success': False, 'error': 'Mahsulot topilmadi'}, status=404)
             messages.error(request, 'Mahsulot topilmadi')
     return redirect('customer_cart')
@@ -846,13 +881,23 @@ def customer_login(request):
     if request.session.get('phone'):
         return redirect('customer_profile')
     if request.method == 'POST':
+        from django.core.cache import cache
+        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        cache_key = f"cust_login_attempts_{ip}"
+        attempts = cache.get(cache_key, 0)
+        if attempts >= 7:
+            messages.error(request, "Xavfsizlik: Ko'p marotaba xato urinish bo'ldi. Iltimos 5 daqiqadan so'ng qayta urinib ko'ring.")
+            return render(request, 'customer/login.html')
+
         phone = request.POST.get('phone', '').strip()
         password = request.POST.get('password', '').strip()
         customer = Customer.objects.filter(phone=phone).first()
         if customer and customer.check_password(password):
+            cache.delete(cache_key)
             request.session['phone'] = phone
             messages.success(request, f"Xush kelibsiz, {customer.name}!")
             return redirect('customer_profile')
+        cache.set(cache_key, attempts + 1, timeout=300)
         messages.error(request, 'Telefon yoki parol xato.')
     return render(request, 'customer/login.html')
 
@@ -888,14 +933,25 @@ def web_login(request):
         return _role_redirect(request.user)
 
     if request.method == 'POST':
+        from django.core.cache import cache
+        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        cache_key = f"login_attempts_{ip}"
+        attempts = cache.get(cache_key, 0)
+        if attempts >= 7:
+            messages.error(request, "Xavfsizlik: Ko'p marotaba xato urinish bo'ldi. Iltimos 5 daqiqadan so'ng qayta urinib ko'ring.")
+            return render(request, 'admin/login.html')
+
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
         if not user or not user.is_approved:
+            cache.set(cache_key, attempts + 1, timeout=300)
             messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
         elif getattr(user, 'role', '') != 'super_admin' and not getattr(user, 'is_superuser', False):
+            cache.set(cache_key, attempts + 1, timeout=300)
             messages.error(request, 'Ushbu hisob super-admin emas. Sotuvchi bo\'lsangiz — quyidagi "Sotuvchi kabineti" havolasi orqali kiring.')
         else:
+            cache.delete(cache_key)
             login(request, user)
             return redirect('admin_dashboard')
     return render(request, 'admin/login.html')

@@ -89,7 +89,12 @@ def send_order_created(order):
     # Guruhga yuborish
     results = []
     if TELEGRAM_CHAT_ID:
-        result = _send_message(TELEGRAM_CHAT_ID, text)
+        try:
+            from notifications.admin_bot import build_order_keyboard
+            reply_markup = build_order_keyboard(order)
+        except Exception:
+            reply_markup = None
+        result = _send_message(TELEGRAM_CHAT_ID, text, reply_markup=reply_markup)
         results.append(result)
         NotificationLog.objects.create(
             order=order, type='telegram', recipient=TELEGRAM_CHAT_ID,
@@ -109,6 +114,31 @@ def send_order_created(order):
         results.append(result)
 
     return results[0] if results else {'success': False, 'error': 'Chat ID yo\'q'}
+
+
+def send_table_reservation_alert(reservation):
+    """Yangi stol broni haqida Telegram guruh va ofitsiantlarga bildirishnoma yuborish."""
+    tbl_str = f"№{reservation.table.number}" if reservation.table else "Joyida beriladi"
+    hall_str = reservation.hall.name if reservation.hall else (reservation.table.hall.name if reservation.table and reservation.table.hall else "Asosiy zal")
+    
+    text = (
+        f"📅 <b>YANGI STOL BRONI QABUL QILINDI!</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"🍽 <b>Restoran:</b> {reservation.shop.name}\n"
+        f"👤 <b>Mehmon:</b> {reservation.customer_name}\n"
+        f"📞 <b>Telefon:</b> {reservation.customer_phone}\n"
+        f"👥 <b>Mehmonlar soni:</b> {reservation.guests_count} kishi\n"
+        f"📆 <b>Sana:</b> {reservation.reservation_date.strftime('%d.%m.%Y')}\n"
+        f"⏰ <b>Vaqt:</b> {reservation.reservation_time.strftime('%H:%M')}\n"
+        f"🏢 <b>Zal:</b> {hall_str}\n"
+        f"📍 <b>Stol:</b> {tbl_str}\n"
+        f"📝 <b>Izoh:</b> <i>{reservation.notes or 'Qo\'shimcha talab yo\'q'}</i>\n\n"
+        f"👉 <i>Ofitsiant/Kassir paneli orqali tasdiqlang.</i>"
+    )
+
+    if TELEGRAM_CHAT_ID:
+        return _send_message(TELEGRAM_CHAT_ID, text)
+    return {'success': False, 'error': 'Chat ID sozlanmagan'}
 
 
 def send_status_updated(order, old_status, new_status):

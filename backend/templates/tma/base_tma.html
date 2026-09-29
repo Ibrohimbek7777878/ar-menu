@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{% block title %}Online Store Guliston — Telegram Mini App{% endblock %}</title>
+    <title>{% block title %}{{ shop.name|default:"Smart 3D Restaurant Menu" }} — 3D Menyu{% endblock %}</title>
     <!-- Telegram WebApp JS SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: var(--tg-theme-bg-color, #f8fafc);
-            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
-            --text-color: var(--tg-theme-text-color, #0f172a);
-            --hint-color: var(--tg-theme-hint-color, #64748b);
-            --primary: var(--tg-theme-button-color, #059669);
-            --primary-text: var(--tg-theme-button-text-color, #ffffff);
-            --border-color: rgba(226, 232, 240, 0.8);
-            --radius-md: 16px;
-            --radius-sm: 10px;
+            --bg-color: var(--tg-theme-bg-color, #0b1120);
+            --card-bg: var(--tg-theme-secondary-bg-color, #1e293b);
+            --text-color: var(--tg-theme-text-color, #f8fafc);
+            --hint-color: var(--tg-theme-hint-color, #94a3b8);
+            --primary: var(--tg-theme-button-color, #f59e0b);
+            --primary-text: var(--tg-theme-button-text-color, #0f172a);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
         }
 
         * {
@@ -33,70 +34,256 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             min-height: 100vh;
-            padding-bottom: 80px;
             font-size: 14px;
-            line-height: 1.4;
+            line-height: 1.5;
+            padding-bottom: 76px; /* Mobil pastki bar uchun joy */
         }
 
-        /* Top Header */
+        /* Desktopda pastki bar yashiriladi va body padding tiklanadi */
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 32px;
+            }
+        }
+
+        /* Yuqori ekotizim switcher paneli */
+        .tma-ecosystem-bar {
+            background: rgba(15, 23, 42, 0.98);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 7px 14px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            z-index: 150;
+        }
+        .tma-ecosystem-bar::-webkit-scrollbar { display: none; }
+        .tma-ecosystem-inner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 1720px;
+            margin: 0 auto;
+        }
+        .tma-ecosystem-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .tma-eco-link {
+            padding: 5px 14px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .tma-eco-link.active {
+            background: #f59e0b;
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        .tma-eco-link:not(.active) {
+            background: rgba(255, 255, 255, 0.06);
+            color: #94a3b8;
+        }
+        .tma-eco-link:not(.active):hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #f8fafc;
+        }
+
+        /* Asosiy Header */
         .tma-header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: var(--card-bg);
+            background: rgba(30, 41, 59, 0.92);
             border-bottom: 1px solid var(--border-color);
             padding: 12px 16px;
+            backdrop-filter: blur(14px);
+        }
+        .tma-header-inner {
+            width: 100%;
+            max-width: 1720px;
+            margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            backdrop-filter: blur(12px);
+            gap: 16px;
         }
+
         .tma-brand {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 700;
-            font-size: 16px;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 18px;
             color: var(--text-color);
             text-decoration: none;
+            flex-shrink: 0;
         }
         .tma-brand span {
             color: var(--primary);
         }
-        .tma-user-badge {
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(5, 150, 105, 0.1);
-            color: var(--primary);
+
+        /* Desktop Navigatsiya menyusi */
+        .tma-desktop-nav {
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+        @media (min-width: 768px) {
+            .tma-desktop-nav {
+                display: flex;
+            }
+        }
+        .tma-desk-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            color: #cbd5e1;
             font-weight: 600;
+            font-size: 13px;
+            transition: all 0.15s;
+        }
+        .tma-desk-link:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .tma-desk-link.active {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            font-weight: 700;
         }
 
-        /* Container */
+        /* Header O'ng qism */
+        .tma-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tma-cart-button-desk {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: #f59e0b;
+            color: #0f172a;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 13px;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+            transition: opacity 0.15s, transform 0.15s;
+        }
+        @media (min-width: 768px) {
+            .tma-cart-button-desk {
+                display: flex;
+            }
+        }
+        .tma-cart-button-desk:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Faol Stol Banneri */
+        .tma-table-strip {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.95) 0%, rgba(13, 148, 136, 0.95) 100%);
+            color: white;
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tma-table-strip-inner {
+            width: 100%;
+            max-width: 1720px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .tma-table-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .tma-btn-service {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .tma-btn-service:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .tma-btn-service.bill {
+            background: #f59e0b;
+            color: #0f172a;
+            border-color: #f59e0b;
+        }
+
+        /* Asosiy Kontent Konteyneri - Har qanday ekranda moslashuvchan */
         .tma-content {
+            width: 100%;
+            max-width: 1720px;
+            margin: 0 auto;
             padding: 14px 16px;
         }
+        @media (min-width: 768px) {
+            .tma-content {
+                padding: 24px 28px;
+            }
+        }
+        @media (min-width: 1280px) {
+            .tma-content {
+                padding: 28px 36px;
+            }
+        }
 
-        /* Bottom Nav Bar */
+        /* Pastki Mobil Navigatsiya Bari - Faqat Mobil Telefonda */
         .tma-bottom-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             height: 64px;
-            background: var(--card-bg);
+            background: rgba(30, 41, 59, 0.96);
             border-top: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: space-around;
             z-index: 200;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+        }
+        @media (min-width: 768px) {
+            .tma-bottom-bar {
+                display: none !important;
+            }
         }
         .tma-nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             text-decoration: none;
             color: var(--hint-color);
             font-size: 11px;
@@ -127,62 +314,81 @@
             border-radius: 999px;
             padding: 0 4px;
         }
-
-        /* Reusable UI Components */
-        .tma-card {
-            background: var(--card-bg);
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            padding: 14px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-        }
-        .tma-btn-primary {
-            display: block;
-            width: 100%;
-            background: var(--primary);
-            color: var(--primary-text);
-            border: none;
-            border-radius: var(--radius-md);
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            text-align: center;
-            cursor: pointer;
-            text-decoration: none;
-            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
-            transition: opacity 0.2s;
-        }
-        .tma-btn-primary:active {
-            opacity: 0.85;
-        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Ekotizim Switcher -->
+    <div class="tma-ecosystem-bar">
+        <div class="tma-ecosystem-inner">
+            <span style="color: #94a3b8; font-weight: 700; display:flex; align-items:center; gap:6px;">
+                <span style="color:#f59e0b; font-size:10px;">●</span> Mahsulotlar ekotizimi:
+            </span>
+            <div class="tma-ecosystem-links">
+                <a href="/restaurant/" class="tma-eco-link {% if 'restaurant' in request.path or 'menu' in request.path or 'tma' in request.path %}active{% endif %}">🍽 3D Restoran Menyu</a>
+                <a href="/studio/" class="tma-eco-link {% if 'studio' in request.path %}active{% endif %}">🖨 3D Studio & Printer</a>
+                <a href="/" class="tma-eco-link">🛍 Online Do'kon</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asosiy Header -->
     <header class="tma-header">
-        <a href="{% url 'tma_home' %}" class="tma-brand">
-            🌿 <span>Guliston</span> TMA
-        </a>
-        <div id="tg-user-greeting" class="tma-user-badge">
-            Telegram WebApp
+        <div class="tma-header-inner">
+            <a href="/restaurant/" class="tma-brand">
+                <span style="font-size: 22px;">🍽</span>
+                <span>{{ shop.name|default:"Smart 3D Restoran" }}</span>
+            </a>
+
+            <!-- Desktop Navigatsiya -->
+            <nav class="tma-desktop-nav">
+                <a href="/restaurant/" class="tma-desk-link {% if request.resolver_match.url_name == 'restaurant_home' or request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
+                    <span>🍽</span> 3D Menyu
+                </a>
+                <a href="/restaurant/catalog/" class="tma-desk-link {% if 'catalog' in request.path %}active{% endif %}">
+                    <span>🍲</span> Bo'limlar
+                </a>
+                <a href="/restaurant/table/" class="tma-desk-link {% if 'table' in request.path or 'orders' in request.path %}active{% endif %}">
+                    <span>📍</span> Stolim & Bron
+                </a>
+                <a href="/studio/" class="tma-desk-link {% if 'studio' in request.path %}active{% endif %}">
+                    <span>🖨</span> 3D Printer
+                </a>
+                <a href="/" class="tma-desk-link">
+                    <span>🛍</span> Do'kon
+                </a>
+            </nav>
+
+            <!-- O'ng taraf: Desk Savat & User -->
+            <div class="tma-header-actions">
+                <a href="/restaurant/cart/" class="tma-cart-button-desk">
+                    <span>🛒</span>
+                    <span>Savatcha (<span id="tma-cart-count-desk">{{ cart_count|default:0 }}</span>)</span>
+                </a>
+                <div id="tg-user-greeting" style="font-size: 12px; padding: 6px 12px; border-radius: 999px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; font-weight: 700; border: 1px solid rgba(245, 158, 11, 0.25);">
+                    ✨ 3D Gastronomiya
+                </div>
+            </div>
         </div>
     </header>
 
     {% if table %}
     <!-- Active Restaurant Table Bar -->
-    <div style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: white; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(5,150,105,0.2);">
-        <div style="display:flex;align-items:center;gap:6px;">
-            <span>🍽</span>
-            <span>Stol №{{ table.number }} ({{ table.hall.name }})</span>
-        </div>
-        <div style="display:flex;gap:4px;">
-            <button type="button" onclick="callTmaTableService('tea')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🫖 Choy</button>
-            <button type="button" onclick="callTmaTableService('bread')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🍞 Non</button>
-            <button type="button" onclick="callTmaTableService('waiter')" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🔔 Xodim</button>
-            <button type="button" onclick="callTmaTableService('bill')" style="background:#f59e0b;border:none;color:white;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Hisob</button>
+    <div class="tma-table-strip">
+        <div class="tma-table-strip-inner">
+            <a href="/restaurant/table/" style="display:flex;align-items:center;gap:8px;color:white;text-decoration:none;">
+                <span style="font-size:18px;">📍</span>
+                <span>Stol №{{ table.number }} — {{ table.hall.name|default:"Asosiy zal" }}</span>
+                <span style="background:rgba(255,255,255,0.25);font-size:11px;padding:2px 8px;border-radius:999px;">Aktiv &rarr;</span>
+            </a>
+            <div class="tma-table-actions">
+                <span style="font-size:12px;color:rgba(255,255,255,0.85);margin-right:4px;">Xodim chaqirish:</span>
+                <button type="button" class="tma-btn-service" onclick="callTmaTableService('tea')">🫖 Choy</button>
+                <button type="button" class="tma-btn-service" onclick="callTmaTableService('bread')">🍞 Non</button>
+                <button type="button" class="tma-btn-service" onclick="callTmaTableService('waiter')">🔔 Ofitsiant</button>
+                <button type="button" class="tma-btn-service bill" onclick="callTmaTableService('bill')">🧾 Hisob</button>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -192,30 +398,26 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Bottom Nav -->
+    <!-- Bottom Nav (Faqat Mobil Telefonda Ko'rinadi) -->
     <nav class="tma-bottom-bar">
-        <a href="{% url 'tma_home' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
-            <span class="tma-nav-icon">🏠</span>
-            <span>Asosiy</span>
+        <a href="/restaurant/" class="tma-nav-item {% if request.resolver_match.url_name == 'restaurant_home' or request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
+            <span class="tma-nav-icon">🍽</span>
+            <span>3D Menyu</span>
         </a>
-        <a href="{% url 'tma_catalog' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_catalog' %}active{% endif %}">
-            <span class="tma-nav-icon">🔍</span>
-            <span>Katalog</span>
+        <a href="/restaurant/catalog/" class="tma-nav-item {% if 'catalog' in request.path %}active{% endif %}">
+            <span class="tma-nav-icon">🍲</span>
+            <span>Bo'limlar</span>
         </a>
-        <a href="/ar/" class="tma-nav-item {% if request.path == '/ar/' %}active{% endif %}">
-            <span class="tma-nav-icon">🥽</span>
-            <span>3D / AR</span>
-        </a>
-        <a href="{% url 'tma_cart' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_cart' %}active{% endif %}">
-            <span class="tma-nav-icon">🛒</span>
+        <a href="/restaurant/cart/" class="tma-nav-item {% if 'cart' in request.path %}active{% endif %}">
+            <span class="tma-nav-icon">🧾</span>
             <span>Savat</span>
             <span id="tma-cart-count" class="tma-badge" style="{% if not cart_count %}display: none;{% endif %}">
                 {{ cart_count|default:0 }}
             </span>
         </a>
-        <a href="{% url 'tma_orders' %}" class="tma-nav-item {% if request.resolver_match.url_name == 'tma_orders' %}active{% endif %}">
-            <span class="tma-nav-icon">📦</span>
-            <span>Buyurtmalar</span>
+        <a href="/restaurant/table/" class="tma-nav-item {% if 'table' in request.path or 'orders' in request.path %}active{% endif %}">
+            <span class="tma-nav-icon">📍</span>
+            <span>Stolim & Bron</span>
         </a>
     </nav>
 
@@ -280,8 +482,27 @@
             });
         }
 
-        // Haptic feedback & savat AJAX yordamchisi
-        function tmaAddToCart(productId) {
+        // Toast bildirishnoma ko'rsatish
+        function showTmaToast(msg) {
+            let toast = document.getElementById('tma-global-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'tma-global-toast';
+                toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);color:#f8fafc;padding:12px 24px;border-radius:999px;font-size:13px;font-weight:800;border:1px solid #f59e0b;box-shadow:0 8px 24px rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity 0.3s,transform 0.3s;';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<span>🛒</span> <span>${msg}</span>`;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            clearTimeout(window._tmaToastTimeout);
+            window._tmaToastTimeout = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(10px)';
+            }, 2400);
+        }
+
+        // Haptic feedback & savat AJAX yordamchisi (Miqdor (quantity) bilan)
+        function tmaAddToCart(productId, quantity = 1, dishName = '') {
             const tg = window.Telegram?.WebApp;
             if (tg?.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('medium');
@@ -292,7 +513,11 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ action: 'add', product_id: productId })
+                body: JSON.stringify({ 
+                    action: 'add', 
+                    product_id: productId,
+                    quantity: quantity || 1
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -302,9 +527,12 @@
                         badge.innerText = data.cart_count;
                         badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
                     }
-                    if (tg?.showScanQrPopup) {
-                        // Success toast
+                    const deskBadge = document.getElementById('tma-cart-count-desk');
+                    if (deskBadge) {
+                        deskBadge.innerText = data.cart_count;
                     }
+                    const titleText = dishName ? `"${dishName}"` : "Taom";
+                    showTmaToast(`${quantity > 1 ? quantity + 'x ' : ''}${titleText} savatga qo'shildi!`);
                 }
             })
             .catch(err => console.error(err));

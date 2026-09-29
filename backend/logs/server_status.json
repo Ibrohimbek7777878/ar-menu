@@ -1,8 +1,0 @@
-{
-  "status": "running",
-  "url": "https://sterling-dylan-peace-faces.trycloudflare.com",
-  "gunicorn_pid": 56235,
-  "cloudflared_pid": 56347,
-  "daemon_pid": 56210,
-  "updated_at": "2026-09-25T08:29:57.564731"
-}

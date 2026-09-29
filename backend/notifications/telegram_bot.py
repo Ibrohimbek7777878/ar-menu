@@ -53,6 +53,75 @@ def send_message(chat_id, text, parse_mode='HTML', reply_markup=None):
         return False
 
 
+def edit_message_text(chat_id, message_id, text, parse_mode='HTML', reply_markup=None):
+    """Telegramdagi mavjud xabarni yangilash (inline tugmalar uchun)."""
+    token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
+    if not token or not chat_id or not message_id:
+        return False
+    try:
+        payload = {
+            'chat_id': str(chat_id),
+            'message_id': int(message_id),
+            'text': text,
+            'parse_mode': parse_mode,
+        }
+        if reply_markup is not None:
+            payload['reply_markup'] = reply_markup
+        resp = httpx.post(
+            API.format(token=token, method='editMessageText'),
+            json=payload,
+            timeout=10,
+        )
+        return resp.status_code == 200 and resp.json().get('ok', False)
+    except Exception as e:
+        logger.error(f'Telegram editMessageText xatosi: {e}')
+        return False
+
+
+def edit_message_reply_markup(chat_id, message_id, reply_markup=None):
+    """Telegramdagi mavjud xabarning inline tugmalarini yangilash."""
+    token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
+    if not token or not chat_id or not message_id:
+        return False
+    try:
+        payload = {
+            'chat_id': str(chat_id),
+            'message_id': int(message_id),
+        }
+        if reply_markup is not None:
+            payload['reply_markup'] = reply_markup
+        resp = httpx.post(
+            API.format(token=token, method='editMessageReplyMarkup'),
+            json=payload,
+            timeout=10,
+        )
+        return resp.status_code == 200 and resp.json().get('ok', False)
+    except Exception as e:
+        logger.error(f'Telegram editMessageReplyMarkup xatosi: {e}')
+        return False
+
+
+def answer_callback_query(callback_query_id, text=None, show_alert=False):
+    """Telegram inline tugma bosilganda alert yoki yuklanish belgisini to'xtatish."""
+    token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
+    if not token or not callback_query_id:
+        return False
+    try:
+        payload = {'callback_query_id': str(callback_query_id)}
+        if text:
+            payload['text'] = text
+            payload['show_alert'] = show_alert
+        resp = httpx.post(
+            API.format(token=token, method='answerCallbackQuery'),
+            json=payload,
+            timeout=5,
+        )
+        return resp.status_code == 200 and resp.json().get('ok', False)
+    except Exception as e:
+        logger.error(f'Telegram answerCallbackQuery xatosi: {e}')
+        return False
+
+
 def get_subscribers():
     """Faol obunachilar chat_id ro'yxati."""
     return list(TelegramSubscriber.objects.filter(is_active=True).values_list('chat_id', flat=True))
