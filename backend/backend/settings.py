@@ -13,18 +13,14 @@ try:
     from dotenv import load_dotenv
     # backend/.env yoki asosiy papkadagi .env ni yuklash
     load_dotenv(BASE_DIR / '.env', override=True)
+    load_dotenv(BASE_DIR.parent / '.env', override=False)
 except Exception:
     pass
 
 # Security
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
-if not SECRET_KEY:
-    import secrets
-    SECRET_KEY = secrets.token_urlsafe(50)
-    if DEBUG:
-        import warnings
-        warnings.warn('SECRET_KEY avtomatik generatsiya qilindi — .env da DJANGO_SECRET_KEY o\'rnating!')
+STATIC_SECRET_KEY = 'django-insecure-MVZfwO0RUY8EaznN3m4r2Wxnh7bPLOFlqIWX4i5NWC53dvtXtkAPpF0DcFLW83io2Mw'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip() or STATIC_SECRET_KEY
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
 # CSRF Trusted Origins (Production web va admin panel uchun)
@@ -261,11 +257,20 @@ MAP_DEFAULT_LAT = 40.4775
 MAP_DEFAULT_LNG = 66.8435
 MAP_DEFAULT_ZOOM = 13
 
-# ─── TELEGRAM ─────────────────────────────────────────────────────────
+# ─── TELEGRAM (3 ta mustaqil bot ekotizimi) ───────────────────────────
+# TZ: TZ_3_TA_MUSTAQIL_MAHSULOT_EKOTIZIMI.md
+# Eski yagona token — Restoran boti bilan moslik uchun fallback sifatida qoladi.
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 TELEGRAM_ADMIN_CHAT_IDS = os.environ.get('TELEGRAM_ADMIN_CHAT_IDS', '')
 ADMIN_PANEL_PASSWORD = os.environ.get('ADMIN_PANEL_PASSWORD', '')
+
+# Mahsulot #1: Restoran 3D Menyu & Stollar boti
+TELEGRAM_RESTAURANT_BOT_TOKEN = os.environ.get('TELEGRAM_RESTAURANT_BOT_TOKEN', '') or TELEGRAM_BOT_TOKEN
+# Mahsulot #2: Online Store E-Commerce Shopping Bot
+TELEGRAM_MARKET_BOT_TOKEN = os.environ.get('TELEGRAM_MARKET_BOT_TOKEN', '')
+# Mahsulot #3: 3D Studio & Print Assistant Bot
+TELEGRAM_STUDIO_BOT_TOKEN = os.environ.get('TELEGRAM_STUDIO_BOT_TOKEN', '')
 
 # ─── PAYMENTS ─────────────────────────────────────────────────────────
 # Click

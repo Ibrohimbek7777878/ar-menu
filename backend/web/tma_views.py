@@ -316,7 +316,7 @@ def tma_checkout(request):
         name = (request.POST.get('name') or request.POST.get('customer_name') or '').strip()
         phone = (request.POST.get('phone') or request.POST.get('customer_phone') or '').strip()
         address = request.POST.get('address', '').strip()
-        payment_method = request.POST.get('payment_method', 'click')
+        payment_method = request.POST.get('payment_method', 'cash')
         notes = request.POST.get('notes', '').strip()
         telegram_id = request.POST.get('telegram_id', '')
 
@@ -441,7 +441,10 @@ def tma_checkout(request):
         request.session['cart'] = {}
         request.session.modified = True
 
-        # To'lov yaratish
+        # To'lov yaratish: Naqd / Stolda to'lash to'lov shlyuzisiz to'g'ridan-to'g'ri qabul qilinadi
+        if payment_method == 'cash' or service_type == 'table':
+            return redirect('tma_order_detail', pk=order.id)
+
         return_url = request.build_absolute_uri(f'/tma/order/{order.id}/')
         pay_result = create_order_payment(order, payment_method, return_url)
 

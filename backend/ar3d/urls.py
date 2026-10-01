@@ -2,13 +2,10 @@ from django.urls import path
 from django.shortcuts import redirect
 from . import views
 
-def _redirect_restaurant(request, slug=None):
-    return redirect('/restaurant/')
-
 urlpatterns = [
-    # AIR 3D Menu Page — Bitta yagona professional Restoran 3D Menyu tizimi (/restaurant/)
-    path('ar/', _redirect_restaurant, name='ar_3d_menu'),
-    path('m/<slug:slug>/', _redirect_restaurant, name='ar_3d_menu_slug'),
+    # AIR 3D Menu Page — Interaktiv Restoran 3D Menyu tizimi
+    path('ar/', views.ar_3d_menu_page, name='ar_3d_menu'),
+    path('m/<slug:slug>/', views.ar_3d_menu_page, name='ar_3d_menu_slug'),
 
     # AIR 3D API (v1)
     path('v1/menu/<slug:slug>/', views.v1_menu_api, name='v1_menu_api'),

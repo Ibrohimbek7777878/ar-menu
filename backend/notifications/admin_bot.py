@@ -80,8 +80,15 @@ def is_admin(chat_id, username=''):
     return False
 
 
-def get_restaurant_shop(shop_id=None):
-    """Restoran stollariga ega bo'lgan do'konni topish."""
+def get_restaurant_shop(shop_id=None, order=None, table=None):
+    """
+    Restoran stollariga ega bo'lgan aniq do'konni topish.
+    Birinchi navbatda order.shop_id, table.shop_id yoki shop_id bo'yicha qat'iy filtrlaydi.
+    """
+    if order and getattr(order, 'shop_id', None):
+        return order.shop
+    if table and getattr(table, 'shop_id', None):
+        return table.shop
     if shop_id:
         s = Shop.objects.filter(id=shop_id).first()
         if s:
@@ -91,6 +98,43 @@ def get_restaurant_shop(shop_id=None):
     if shop_with_tables:
         return shop_with_tables
     return Shop.objects.first()
+
+
+def get_shop_admin_chat_ids(shop=None):
+    """
+    Muayyan restoranning xodimlari va adminlari chat_id larini topish.
+    Agar shop berilsa, buyurtma faqat o'sha muassasaga tegishli xodimlarga yuboriladi.
+    """
+    from django.db.models import Q
+    if not shop:
+        return get_admin_chat_ids()
+
+    ids = []
+    # 1. Biznes profili yoki do'kon sozlamalaridagi telegram chat ID
+    if hasattr(shop, 'business_profile') and isinstance(shop.business_profile, dict):
+        biz_chat = shop.business_profile.get('telegram_chat_id')
+        if biz_chat and str(biz_chat) not in ids:
+            ids.append(str(biz_chat))
+
+    # 2. Restoranga biriktirilgan xodimlar (ofitsiant, menejer, do'kon egasi)
+    owner_id = getattr(shop.owner, 'id', None) if getattr(shop, 'owner', None) else None
+    shop_users_filter = Q(shop=shop)
+    if owner_id:
+        shop_users_filter |= Q(id=owner_id)
+
+    shop_users = AdminUser.objects.filter(is_active=True).filter(shop_users_filter).exclude(telegram_username='')
+    usernames = [u.telegram_username.lstrip('@').lower() for u in shop_users if u.telegram_username]
+    if usernames:
+        subs = TelegramSubscriber.objects.filter(is_active=True, username__in=usernames)
+        for s in subs:
+            if str(s.chat_id) not in ids:
+                ids.append(str(s.chat_id))
+
+    # 3. Agar ushbu do'kon uchun alohida xodim chat_id lari topilmasa, umumiy adminlarga yuboriladi
+    if not ids:
+        return get_admin_chat_ids()
+
+    return ids
 
 
 def build_tables_monitoring_text(shop=None):

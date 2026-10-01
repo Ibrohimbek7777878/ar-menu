@@ -86,19 +86,25 @@ def send_order_created(order):
         f"🔗 <a href=\"{order_link}\">Buyurtmani ko'rish</a>"
     )
 
-    # Guruhga yuborish
+    # Aniq restoranning xodimlari va adminlariga yuborish (Multi-shop isolation)
     results = []
-    if TELEGRAM_CHAT_ID:
-        try:
-            from notifications.admin_bot import build_order_keyboard
-            reply_markup = build_order_keyboard(order)
-        except Exception:
-            reply_markup = None
-        result = _send_message(TELEGRAM_CHAT_ID, text, reply_markup=reply_markup)
+    from notifications.admin_bot import get_shop_admin_chat_ids, build_order_keyboard
+    target_chat_ids = get_shop_admin_chat_ids(getattr(order, 'shop', None))
+    if not target_chat_ids and TELEGRAM_CHAT_ID:
+        target_chat_ids = [str(TELEGRAM_CHAT_ID)]
+
+    reply_markup = None
+    try:
+        reply_markup = build_order_keyboard(order)
+    except Exception:
+        pass
+
+    for cid in target_chat_ids:
+        result = _send_message(cid, text, reply_markup=reply_markup)
         results.append(result)
         NotificationLog.objects.create(
-            order=order, type='telegram', recipient=TELEGRAM_CHAT_ID,
-            message=text, success=result['success'], error_message=result.get('error', ''),
+            order=order, type='telegram', recipient=cid,
+            message=text, success=result.get('success', False), error_message=result.get('error', ''),
         )
 
     # Mijozga alohida xabar
@@ -136,9 +142,16 @@ def send_table_reservation_alert(reservation):
         f"👉 <i>Ofitsiant/Kassir paneli orqali tasdiqlang.</i>"
     )
 
-    if TELEGRAM_CHAT_ID:
-        return _send_message(TELEGRAM_CHAT_ID, text)
-    return {'success': False, 'error': 'Chat ID sozlanmagan'}
+    from notifications.admin_bot import get_shop_admin_chat_ids
+    target_chat_ids = get_shop_admin_chat_ids(getattr(reservation, 'shop', None))
+    if not target_chat_ids and TELEGRAM_CHAT_ID:
+        target_chat_ids = [str(TELEGRAM_CHAT_ID)]
+
+    res_list = []
+    for cid in target_chat_ids:
+        res = _send_message(cid, text)
+        res_list.append(res)
+    return res_list[0] if res_list else {'success': False, 'error': 'Chat ID sozlanmagan'}
 
 
 def send_status_updated(order, old_status, new_status):

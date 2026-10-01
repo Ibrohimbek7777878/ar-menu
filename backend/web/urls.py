@@ -9,8 +9,9 @@ urlpatterns = [
     # Health check
     path('health/', health.health_check, name='health_check'),
 
-    # Customer
-    path('', views.customer_home, name='customer_home'),
+    # Restoran 3D Menyu — ASOSIY BOSH SAHIFA (Mahsulot #1)
+    path('', tma_views.tma_home, name='restaurant_root'),
+    path('market/', views.customer_home, name='customer_home'),
     path('search/', views.customer_search, name='customer_search'),
     path('quick-buy/', views.customer_quick_buy, name='customer_quick_buy'),
     path('nearby-stores/', views.customer_nearby_stores, name='customer_nearby_stores'),

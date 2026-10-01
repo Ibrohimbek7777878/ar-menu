@@ -103,8 +103,8 @@ reporter.check("P1: TMA", "TMA bosh sahifasi (/tma/)", r.status_code == 200, f"H
 r = client.get('/menu/catalog/')
 reporter.check("P1: TMA", "Restoran toifalar katalogi (/menu/catalog/)", r.status_code == 200, f"HTTP {r.status_code}")
 
-r = client.get('/ar/', follow=False)
-reporter.check("P1: 3D AR", "WebXR /ar/ so'rovi yagona Restoran 3D Menyuga yo'naltirilishi (/restaurant/)", r.status_code == 302 and '/restaurant/' in r.url, f"HTTP {r.status_code} -> {getattr(r, 'url', None)}")
+r = client.get('/ar/')
+reporter.check("P1: 3D AR", "WebXR /ar/ 3D Menyu sahifasi yuklanishi", r.status_code == 200 and 'AIR 3D MENU' in r.content.decode('utf-8', errors='ignore'), f"HTTP {r.status_code}")
 
 r_rest = client.get('/restaurant/')
 reporter.check("P1: 3D AR", "Yangi /restaurant/ 3D Menyu sahifasi va 3D Modellar", r_rest.status_code == 200 and 'hero-3d-viewer' in r_rest.content.decode('utf-8'), f"HTTP {r_rest.status_code}, 3D sahnasi faol")

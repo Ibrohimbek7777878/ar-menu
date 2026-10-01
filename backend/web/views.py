@@ -384,9 +384,25 @@ def customer_product_ar(request, slug):
 
 
 def ar_catalog(request):
-    """AR/3D Menyu — Bitta yagona professional Restoran 3D Menyu tizimi (/restaurant/)."""
-    from django.shortcuts import redirect
-    return redirect('/restaurant/')
+    """AR/3D mahsulotlar katalogi — /ar/.
+    Standart holatda ultra-zamonaviy AIR 3D Menyu (air-3d-menu) ochiladi.
+    Agar ?classic=1 parametri uzatilsa, klassik grid katalog ko'rsatiladi."""
+    if request.GET.get('classic') != '1':
+        from ar3d.views import ar_3d_menu_page
+        return ar_3d_menu_page(request)
+
+    products = Product.objects.filter(has_3d=True, is_available=True).select_related('shop', 'category')
+    category = request.GET.get('category')
+    if category:
+        products = products.filter(category_id=category)
+    categories = Category.objects.filter(
+        id__in=products.values_list('category_id', flat=True).distinct()
+    ).exclude(id__isnull=True)
+    return render(request, 'customer/ar_catalog.html', {
+        'products': products,
+        'categories': categories,
+        'category_filter': int(category) if category and category.isdigit() else None,
+    })
 
 
 

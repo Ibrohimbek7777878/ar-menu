@@ -63,7 +63,7 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None)
     if table_number:
         orders_url += f"?table={table_number}"
     studio_url = f"{base_url}/studio/"
-    market_url = f"{base_url}/"
+    market_url = f"{base_url}/market/"
 
     tma_btn = {"web_app": {"url": tma_url}} if is_https else {"url": tma_url}
     orders_btn = {"web_app": {"url": orders_url}} if is_https else {"url": orders_url}
