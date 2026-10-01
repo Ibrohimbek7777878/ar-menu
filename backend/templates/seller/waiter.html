@@ -266,7 +266,7 @@
                 <div class="dish-card" 
                      data-cat="{{ p.category.id|default:'all' }}"
                      data-name="{{ p.name|lower }}"
-                     onclick="openDishModal('{{ p.id }}', '{{ p.name|escapejs }}', '{{ p.price|floatformat:0 }}', '{{ p.image.url|default:"" }}', '{{ p.glb_path|default:"" }}', '{{ p.description|default:""|escapejs }}')">
+                     onclick="openDishModal('{{ p.id }}', '{{ p.name|escapejs }}', '{{ p.price|floatformat:0 }}', '{% if p.image %}{{ p.image.url }}{% endif %}', '{{ p.glb_path|default:"" }}', '{{ p.description|default:""|escapejs }}')">
                     <div class="dish-thumb-wrap">
                         {% if p.image %}
                         <img src="{{ p.image.url }}" alt="{{ p.name }}" class="dish-thumb" loading="lazy">

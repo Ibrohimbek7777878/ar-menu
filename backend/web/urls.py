@@ -110,6 +110,9 @@ urlpatterns = [
     path('restaurant/checkout/', tma_views.tma_checkout, name='restaurant_checkout'),
     path('restaurant/table/', tma_views.tma_table_hub, name='restaurant_table_hub'),
     path('restaurant/orders/', tma_views.tma_orders, name='restaurant_orders'),
+    path('restaurant/admin/', tma_views.restaurant_admin_dashboard, name='restaurant_admin_dashboard'),
+    path('restaurant/admin/login/', tma_views.restaurant_admin_login, name='restaurant_admin_login'),
+    path('restaurant/admin/logout/', tma_views.restaurant_admin_logout, name='restaurant_admin_logout'),
 
     # O'zbekcha va qisqa aliaslar
     path('restoran/', tma_views.tma_home, name='restoran_home'),

@@ -85,13 +85,14 @@ urlpatterns = [
     path('telegram/chat-ids/', telegram_webhook.telegram_set_chat_id, name='telegram_chat_ids'),
     path('telegram/send-test/', telegram_webhook.telegram_send_test, name='telegram_send_test'),
 
-    # Admin va Auth
-    path('admin/login/', views.web_login, name='web_login'),
-    path('admin/register/', views.web_register, name='web_register'),
-    path('admin/logout/', views.web_logout, name='web_logout'),
-    path('admin', restaurant_admin_redirect),
-    path('admin/', restaurant_admin_redirect),
-    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    # Restoran Admin Paneli & Boshqaruv
+    path('admin/', tma_views.restaurant_admin_dashboard, name='restaurant_admin_dashboard'),
+    path('admin', tma_views.restaurant_admin_dashboard),
+    path('admin/login/', tma_views.restaurant_admin_login, name='restaurant_admin_login'),
+    path('admin/login/', tma_views.restaurant_admin_login, name='web_login'),
+    path('admin/logout/', tma_views.restaurant_admin_logout, name='restaurant_admin_logout'),
+    path('admin/logout/', tma_views.restaurant_admin_logout, name='web_logout'),
+    path('admin/dashboard/', tma_views.restaurant_admin_dashboard, name='admin_dashboard'),
     path('djangoadmin/', admin.site.urls),
 
     # AR3D App URL'lari

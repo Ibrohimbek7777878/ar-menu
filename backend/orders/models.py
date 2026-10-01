@@ -128,6 +128,10 @@ class OrderItem(models.Model):
         verbose_name = 'Buyurtma mahsuloti'
         verbose_name_plural = 'Buyurtma mahsulotlari'
 
+    @property
+    def unit_price(self):
+        return self.price
+
     def __str__(self):
         return f'{self.product_name} x{self.quantity}'
 

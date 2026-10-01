@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ shop.name|default:"Restoran" }} — Boshqaruv Markazi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            background: #090d16;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+        /* Top Navigation */
+        .admin-nav {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            padding: 14px 24px;
+        }
+        .admin-nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .admin-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+        }
+        .brand-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #0f172a;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .brand-text h2 { font-size: 17px; font-weight: 800; }
+        .brand-text p { font-size: 11px; color: #94a3b8; }
+
+        .admin-nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .btn-link-menu {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+        .btn-link-menu:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: rgba(239, 68, 68, 0.25); }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 28px auto 0;
+            padding: 0 24px;
+        }
+
+        /* Greeting Bar */
+        .greeting-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px 28px;
+        }
+        .greeting-text h1 { font-size: 24px; font-weight: 800; color: #ffffff; }
+        .greeting-text p { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .greeting-pill {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .kpi-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 12px 25px -8px rgba(0, 0, 0, 0.5);
+        }
+        .kpi-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+            display: inline-block;
+        }
+        .kpi-title { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-val { font-size: 26px; font-weight: 800; color: #ffffff; margin: 6px 0 4px; }
+        .kpi-sub { font-size: 12px; color: #64748b; }
+        .kpi-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #f59e0b;
+            text-decoration: none;
+        }
+        .kpi-action:hover { text-decoration: underline; }
+
+        /* Section Title */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Modules Grid (Big Action Cards) */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-bottom: 36px;
+        }
+        .module-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 24px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s;
+            position: relative;
+        }
+        .module-card:hover {
+            transform: translateY(-4px);
+            background: rgba(30, 41, 59, 0.95);
+            border-color: #f59e0b;
+            box-shadow: 0 16px 32px -10px rgba(245, 158, 11, 0.15);
+        }
+        .mod-icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        .mod-title { font-size: 17px; font-weight: 800; color: #ffffff; margin-bottom: 6px; }
+        .mod-desc { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 16px; }
+        .mod-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 700;
+            color: #f59e0b;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Table Card */
+        .table-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 24px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #cbd5e1;
+        }
+        tr:last-child td { border-bottom: none; }
+        .status-pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-preparing { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .status-ready { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .status-delivered { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <nav class="admin-nav">
+        <div class="admin-nav-inner">
+            <a href="/admin/" class="admin-brand">
+                <span class="brand-badge">🍽</span>
+                <div class="brand-text">
+                    <h2>{{ shop.name|default:"Registon Restorani" }}</h2>
+                    <p>Boshqaruv Paneli & POS Ekotizimi</p>
+                </div>
+            </a>
+
+            <div class="admin-nav-right">
+                <a href="/" target="_blank" class="btn-link-menu">
+                    <span>👁</span> Mijoz 3D Menyusi
+                </a>
+                <span style="font-size: 12px; color: #64748b; padding: 0 4px;">|</span>
+                <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">
+                    👤 {{ request.user.username }}
+                </span>
+                <a href="/admin/logout/" class="btn-logout">
+                    <span>🚪</span> Chiqish
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Greeting -->
+        <div class="greeting-bar">
+            <div class="greeting-text">
+                <h1>Xush kelibsiz, {{ request.user.first_name|default:request.user.username }}!</h1>
+                <p>Restoranning jonli stollari, buyurtmalar oqimi va kassa ko'rsatkichlari</p>
+            </div>
+            <div class="greeting-pill">
+                ● Tizim faol: {{ shop.name|default:"Registon" }}
+            </div>
+        </div>
+
+        <!-- 6 Asosiy Ko'rsatkichlar (KPI) -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-icon">📍</span>
+                <div class="kpi-title">Jami Stollar</div>
+                <div class="kpi-val">{{ tables_count }}</div>
+                <div class="kpi-sub">Band: <b style="color:#ef4444;">{{ occupied_tables_count }}</b> | Bo'sh: <b style="color:#22c55e;">{{ free_tables_count }}</b></div>
+                <a href="/seller/tables/" class="kpi-action">Boshqarish &rarr;</a>
+            </div>
+
+            <div class="kpi-card">
+                <span class="kpi-icon">👨‍🍳</span>
+                <div class="kpi-title">Oshxona (KDS)</div>
+                <div class="kpi-val" style="color: #f59e0b;">{{ pending_kds_count }}</div>
+                <div class="kpi-sub">Tayyorlanayotgan taomlar</div>
+                <a href="/seller/kds/" class="kpi-action">Oshxona Ekrani &rarr;</a>
+            </div>
+
+            <div class="kpi-card">
+                <span class="kpi-icon">🛎</span>
+                <div class="kpi-title">Ofitsiant Paneli</div>
+                <div class="kpi-val">Faol</div>
+                <div class="kpi-sub">Ofitsiant POS va hisob</div>
+                <a href="/seller/waiter/" class="kpi-action">POS Paneliga O'tish &rarr;</a>
+            </div>
+
+            <div class="kpi-card">
+                <span class="kpi-icon">🍲</span>
+                <div class="kpi-title">Menyu & Taomlar</div>
+                <div class="kpi-val">{{ products_count }}</div>
+                <div class="kpi-sub">3D Modellar: <b style="color:#38bdf8;">{{ ar_dishes_count }}</b> ta</div>
+                <a href="/seller/products/" class="kpi-action">Taomlar &rarr;</a>
+            </div>
+
+            <div class="kpi-card">
+                <span class="kpi-icon">💰</span>
+                <div class="kpi-title">Bugungi Kassa</div>
+                <div class="kpi-val" style="color: #22c55e;">{{ today_revenue|floatformat:0 }} <small style="font-size:13px;">so'm</small></div>
+                <div class="kpi-sub">{{ today_orders_count }} ta buyurtma</div>
+                <a href="/seller/orders/" class="kpi-action">Kassa & Tarix &rarr;</a>
+            </div>
+
+            <div class="kpi-card">
+                <span class="kpi-icon">🤖</span>
+                <div class="kpi-title">Telegram Bot</div>
+                <div class="kpi-val" style="color: #38bdf8;">Faol</div>
+                <div class="kpi-sub">@marketing_orign_bot</div>
+                <a href="/seller/telegram/" class="kpi-action">Xabarlar Auditi &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Boshqaruv Modullari (Action Grid) -->
+        <div class="section-header">
+            <h2 class="section-title">
+                <span>⚡</span> Restoran Boshqaruv Modullari
+            </h2>
+        </div>
+
+        <div class="modules-grid">
+            <!-- 1. Stollar & QR -->
+            <a href="/seller/tables/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #f59e0b, #d97706);">📍</div>
+                    <div class="mod-title">Stollar & QR Kodlar</div>
+                    <div class="mod-desc">Zallarni sozlash, yangi stol qo'shish, stol raqamlari va individual QR kodlarni yangilash.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>O'tish</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 2. QR & NFC Stendlar Chop Etish -->
+            <a href="/seller/tables/stands/print/" target="_blank" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #10b981, #059669);">🖨</div>
+                    <div class="mod-title">Stol Stendlarini Chop Etish</div>
+                    <div class="mod-desc">Stollar ustiga qo'yiladigan NFC & QR stendlarni tayyor formatda PDF yoki pechatga chiqarish.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Pechatga chiqarish</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 3. Oshxona KDS -->
+            <a href="/seller/kds/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #ef4444, #dc2626);">👨‍🍳</div>
+                    <div class="mod-title">Oshxona Ekrani (KDS)</div>
+                    <div class="mod-desc">Oshpazlar uchun katta ekran. Yangi stol buyurtmalari avtomatik tushadi va 1-klikda status o'zgaradi.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Jonli KDS ekrani</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 4. Ofitsiant POS -->
+            <a href="/seller/waiter/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">🛎</div>
+                    <div class="mod-title">Ofitsiant Paneli (POS)</div>
+                    <div class="mod-desc">Ofitsiantlar telefoni yoki plansheti uchun: chaqiruvlarni qabul qilish, stol hisobi va to'lov.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Ofitsiant ekrani</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 5. Taomlar va Narxlar -->
+            <a href="/seller/products/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">🍲</div>
+                    <div class="mod-title">Taomlar Menyu & 3D</div>
+                    <div class="mod-desc">Taomlar narxini o'zgartirish, yangi taom qo'shish, toifalarga ajratish va 3D modellarni biriktirish.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Taomlar ro'yxati</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 6. Zal Rejasi -->
+            <a href="/seller/tables/plan/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">🗺</div>
+                    <div class="mod-title">Zal Rejasi (Plani)</div>
+                    <div class="mod-desc">Restoran zallari xaritasi va stollarning interaktiv joylashuv sxemasi.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Zal xaritasi</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 7. Buyurtmalar va Kassa -->
+            <a href="/seller/orders/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #ec4899, #db2777);">🧾</div>
+                    <div class="mod-title">Buyurtmalar va Kassa</div>
+                    <div class="mod-desc">Barcha stollardan tushgan buyurtmalar tarixi, to'lov usullari (Naqd / Karta) va cheklar.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Barcha buyurtmalar</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+
+            <!-- 8. Telegram Xabarlar Auditi -->
+            <a href="/seller/telegram/" class="module-card">
+                <div>
+                    <div class="mod-icon-box" style="background: linear-gradient(135deg, #0284c7, #0369a1);">🤖</div>
+                    <div class="mod-title">Telegram Bot & Xodimlar</div>
+                    <div class="mod-desc">Ofitsiant va oshpazlar Telegram chat ID'lari, yuborilgan buyurtma xabarnomalari auditi.</div>
+                </div>
+                <div class="mod-footer">
+                    <span>Xabarlar auditi</span>
+                    <span>&rarr;</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Oxirgi Buyurtmalar -->
+        <div class="section-header">
+            <h2 class="section-title">
+                <span>🕒</span> Oxirgi Buyurtmalar Oqimi
+            </h2>
+            <a href="/seller/orders/" style="font-size: 13px; color: #f59e0b; text-decoration: none; font-weight: 700;">Barchasini ko'rish &rarr;</a>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Stol</th>
+                        <th>Mijoz</th>
+                        <th>Taomlar</th>
+                        <th>Summa</th>
+                        <th>To'lov</th>
+                        <th>Holat</th>
+                        <th>Vaqt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ord in recent_orders %}
+                    <tr>
+                        <td><b>#{{ ord.id }}</b></td>
+                        <td>
+                            {% if ord.table %}
+                                <span style="color:#f59e0b; font-weight:800;">Stol №{{ ord.table.number }}</span>
+                            {% else %}
+                                <span style="color:#94a3b8;">Umumiy</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ ord.customer.name|default:"Mehmon" }}</td>
+                        <td>{{ ord.items.count }} ta taom</td>
+                        <td><b>{{ ord.final_amount|floatformat:0 }} so'm</b></td>
+                        <td>{{ ord.get_payment_method_display|default:"Naqd / Stolga" }}</td>
+                        <td>
+                            <span class="status-pill status-{{ ord.status }}">{{ ord.get_status_display }}</span>
+                        </td>
+                        <td>{{ ord.created_at|date:"H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #64748b; padding: 28px;">
+                            Hozircha buyurtmalar mavjud emas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

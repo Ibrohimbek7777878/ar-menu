@@ -47,6 +47,12 @@ class SellerTenantMiddleware(MiddlewareMixin):
                     request.tenant_shop = Shop.objects.filter(pk=shop_id).first()
                 except Exception:
                     pass
+            if not request.tenant_shop:
+                try:
+                    from shops.models import Shop
+                    request.tenant_shop = Shop.objects.filter(name__icontains='restoran').first() or Shop.objects.first()
+                except Exception:
+                    pass
             return None
         if role in ('shop_owner', 'shop_manager', 'waiter'):
             try:
@@ -57,6 +63,8 @@ class SellerTenantMiddleware(MiddlewareMixin):
                     request.tenant_shop = shop
                 else:
                     request.tenant_shop = Shop.objects.filter(owner=user).first()
+                if not request.tenant_shop:
+                    request.tenant_shop = Shop.objects.filter(name__icontains='restoran').first() or Shop.objects.first()
             except Exception:
                 pass
         return None

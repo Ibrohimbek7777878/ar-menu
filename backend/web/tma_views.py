@@ -596,3 +596,107 @@ def tma_order_detail(request, pk):
     order = get_object_or_404(Order, pk=pk)
     return render(request, 'tma/order_detail.html', {'order': order})
 
+
+# ==============================================================================
+# RESTORAN ADMIN VA BOSHQARUV MARKAZI (ADMIN HUB & LOGIN)
+# ==============================================================================
+
+def restaurant_admin_dashboard(request):
+    """
+    Restoran Boshqaruv Markazi (Dashboard).
+    Stollar, Oshxona (KDS), Ofitsiant (POS), Menyu, Kassa va Telegram nazorati.
+    """
+    from django.contrib.auth.decorators import login_required
+    if not request.user.is_authenticated:
+        return redirect('restaurant_admin_login')
+
+    role = getattr(request.user, 'role', '')
+    if role == 'waiter':
+        return redirect('waiter_panel_web')
+
+    from tables_restaurant.models import Table, Hall
+    from shops.models import Shop
+    from products.models import Product
+    from orders.models import Order
+    from django.db.models import Sum
+    from django.utils import timezone
+
+    shop = getattr(request, 'tenant_shop', None)
+    if not shop:
+        shop = Shop.objects.filter(Q(categories__name__icontains='restoran') | Q(name__icontains='restoran') | Q(slug__icontains='restoran')).first()
+        if not shop:
+            shop = Shop.objects.first()
+
+    now = timezone.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    tables_qs = Table.objects.filter(shop=shop, is_active=True) if shop else Table.objects.filter(is_active=True)
+    tables_count = tables_qs.count()
+    free_tables_count = tables_qs.filter(status='free').count()
+    occupied_tables_count = tables_qs.filter(status='occupied').count()
+
+    orders_qs = Order.objects.filter(shop=shop) if shop else Order.objects.all()
+    today_orders = orders_qs.filter(created_at__gte=today_start)
+    today_orders_count = today_orders.count()
+    today_rev = today_orders.exclude(status__in=['cancelled', 'failed']).aggregate(s=Sum('final_amount'))['s'] or 0
+
+    kds_orders = orders_qs.filter(status__in=['pending', 'confirmed', 'preparing']).order_by('-created_at')
+    pending_kds_count = kds_orders.count()
+
+    products_qs = Product.objects.filter(shop=shop) if shop else Product.objects.all()
+    products_count = products_qs.count()
+    ar_dishes_count = products_qs.filter(has_3d=True).count()
+
+    recent_orders = orders_qs.order_by('-created_at')[:8]
+
+    context = {
+        'shop': shop,
+        'tables_count': tables_count,
+        'free_tables_count': free_tables_count,
+        'occupied_tables_count': occupied_tables_count,
+        'today_orders_count': today_orders_count,
+        'today_revenue': float(today_rev),
+        'pending_kds_count': pending_kds_count,
+        'products_count': products_count,
+        'ar_dishes_count': ar_dishes_count,
+        'recent_orders': recent_orders,
+    }
+    return render(request, 'restaurant_admin/dashboard.html', context)
+
+
+def restaurant_admin_login(request):
+    """
+    Restoran Boshqaruv Paneliga Kirish sahifasi.
+    shop_owner, shop_manager, super_admin va waiter rollari uchun ochiq.
+    """
+    from django.contrib.auth import authenticate, login
+    from django.contrib import messages
+
+    if request.user.is_authenticated:
+        role = getattr(request.user, 'role', '')
+        if role == 'waiter':
+            return redirect('waiter_panel_web')
+        return redirect('restaurant_admin_dashboard')
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        user = authenticate(request, username=username, password=password)
+        if user and user.is_approved and getattr(user, 'role', '') in ('shop_owner', 'shop_manager', 'super_admin', 'waiter'):
+            login(request, user)
+            if getattr(user, 'role', '') == 'waiter':
+                return redirect('waiter_panel_web')
+            return redirect('restaurant_admin_dashboard')
+        messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
+
+    return render(request, 'restaurant_admin/login.html')
+
+
+def restaurant_admin_logout(request):
+    """Restoran adminidan chiqish."""
+    from django.contrib.auth import logout
+    from django.contrib import messages
+    logout(request)
+    messages.info(request, "Boshqaruv panelidan chiqdingiz.")
+    return redirect('restaurant_root')
+

@@ -46,57 +46,25 @@
             }
         }
 
-        /* Yuqori ekotizim switcher paneli */
-        .tma-ecosystem-bar {
-            background: rgba(15, 23, 42, 0.98);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 7px 14px;
-            display: flex;
-            align-items: center;
-            overflow-x: auto;
-            white-space: nowrap;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-            z-index: 150;
-        }
-        .tma-ecosystem-bar::-webkit-scrollbar { display: none; }
-        .tma-ecosystem-inner {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-            max-width: 1720px;
-            margin: 0 auto;
-        }
-        .tma-ecosystem-links {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-        .tma-eco-link {
-            padding: 5px 14px;
-            border-radius: 999px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 12px;
-            transition: all 0.2s;
+        .tma-admin-btn-desk {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-        }
-        .tma-eco-link.active {
-            background: #f59e0b;
-            color: #0f172a;
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-        }
-        .tma-eco-link:not(.active) {
-            background: rgba(255, 255, 255, 0.06);
-            color: #94a3b8;
-        }
-        .tma-eco-link:not(.active):hover {
-            background: rgba(255, 255, 255, 0.12);
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
             color: #f8fafc;
+            background: rgba(245, 158, 11, 0.16);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 999px;
+            padding: 8px 16px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .tma-admin-btn-desk:hover {
+            background: rgba(245, 158, 11, 0.28);
+            border-color: #f59e0b;
+            transform: translateY(-1px);
+            color: #ffffff;
         }
 
         /* Asosiy Header */
@@ -319,29 +287,15 @@
 </head>
 <body>
 
-    <!-- Ekotizim Switcher -->
-    <div class="tma-ecosystem-bar">
-        <div class="tma-ecosystem-inner">
-            <span style="color: #94a3b8; font-weight: 700; display:flex; align-items:center; gap:6px;">
-                <span style="color:#f59e0b; font-size:10px;">●</span> Mahsulotlar ekotizimi:
-            </span>
-            <div class="tma-ecosystem-links">
-                <a href="/restaurant/" class="tma-eco-link {% if 'restaurant' in request.path or 'menu' in request.path or 'tma' in request.path %}active{% endif %}">🍽 3D Restoran Menyu</a>
-                <a href="/studio/" class="tma-eco-link {% if 'studio' in request.path %}active{% endif %}">🖨 3D Studio & Printer</a>
-                <a href="/" class="tma-eco-link">🛍 Online Do'kon</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Asosiy Header -->
+    <!-- Asosiy Header (Faqat Restoran) -->
     <header class="tma-header">
         <div class="tma-header-inner">
             <a href="/restaurant/" class="tma-brand">
                 <span style="font-size: 22px;">🍽</span>
-                <span>{{ shop.name|default:"Smart 3D Restoran" }}</span>
+                <span>{{ shop.name|default:"Registon Restorani" }}</span>
             </a>
 
-            <!-- Desktop Navigatsiya -->
+            <!-- Desktop Navigatsiya (Faqat Restoran) -->
             <nav class="tma-desktop-nav">
                 <a href="/restaurant/" class="tma-desk-link {% if request.resolver_match.url_name == 'restaurant_home' or request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
                     <span>🍽</span> 3D Menyu
@@ -349,26 +303,24 @@
                 <a href="/restaurant/catalog/" class="tma-desk-link {% if 'catalog' in request.path %}active{% endif %}">
                     <span>🍲</span> Bo'limlar
                 </a>
-                <a href="/restaurant/table/" class="tma-desk-link {% if 'table' in request.path or 'orders' in request.path %}active{% endif %}">
+                <a href="/restaurant/table/" class="tma-desk-link {% if 'table' in request.path %}active{% endif %}">
                     <span>📍</span> Stolim & Bron
                 </a>
-                <a href="/studio/" class="tma-desk-link {% if 'studio' in request.path %}active{% endif %}">
-                    <span>🖨</span> 3D Printer
-                </a>
-                <a href="/" class="tma-desk-link">
-                    <span>🛍</span> Do'kon
+                <a href="/restaurant/orders/" class="tma-desk-link {% if 'orders' in request.path %}active{% endif %}">
+                    <span>📦</span> Buyurtmalarim
                 </a>
             </nav>
 
-            <!-- O'ng taraf: Desk Savat & User -->
+            <!-- O'ng taraf: Desk Savat & Boshqaruv Paneli -->
             <div class="tma-header-actions">
                 <a href="/restaurant/cart/" class="tma-cart-button-desk">
                     <span>🛒</span>
                     <span>Savatcha (<span id="tma-cart-count-desk">{{ cart_count|default:0 }}</span>)</span>
                 </a>
-                <div id="tg-user-greeting" style="font-size: 12px; padding: 6px 12px; border-radius: 999px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; font-weight: 700; border: 1px solid rgba(245, 158, 11, 0.25);">
-                    ✨ 3D Gastronomiya
-                </div>
+                <a href="/admin/" class="tma-admin-btn-desk" title="Restoran Boshqaruv Paneli">
+                    <span>⚙️</span>
+                    <span>Boshqaruv Paneli</span>
+                </a>
             </div>
         </div>
     </header>
@@ -415,9 +367,13 @@
                 {{ cart_count|default:0 }}
             </span>
         </a>
-        <a href="/restaurant/table/" class="tma-nav-item {% if 'table' in request.path or 'orders' in request.path %}active{% endif %}">
+        <a href="/restaurant/table/" class="tma-nav-item {% if 'table' in request.path %}active{% endif %}">
             <span class="tma-nav-icon">📍</span>
-            <span>Stolim & Bron</span>
+            <span>Stolim</span>
+        </a>
+        <a href="/admin/" class="tma-nav-item {% if 'admin' in request.path or 'seller' in request.path %}active{% endif %}" style="color: #f59e0b;">
+            <span class="tma-nav-icon">⚙️</span>
+            <span>Admin</span>
         </a>
     </nav>
 

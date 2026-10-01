@@ -308,20 +308,34 @@ if admin_user:
 # ==============================================================================
 # 4. UMUMIY EKOTIZIM VA SWITCHER TEKSHIRUVI
 # ==============================================================================
-print("\n--- [4] EKOTIZIM: UNIVERSAL SWITCHER VA XAVFSIZLIK ---")
+# 4. RESTORAN TOZALIGI VA MAXSUS RESTORAN ADMIN PANELI
+# ==============================================================================
+print("\n--- [4] RESTORAN DIQQAT MARKAZI VA MAXSUS ADMIN PANEL ---")
 
-# Header switcher mavjudligi
-r = client.get('/')
+# Restoran mijoz interfeysidan ortiqcha switcherlar olib tashlanganligi (Focus)
+r = client.get('/', HTTP_HOST='127.0.0.1:8001', SERVER_PORT='8001')
 html = r.content.decode('utf-8')
-reporter.check("Ecosystem", "Header Switcher: 3D Menyu havolasi", ("/restaurant/" in html or "/menu/" in html), "Havola faol")
-reporter.check("Ecosystem", "Header Switcher: 3D Studio havolasi", "/studio/" in html, "Havola faol")
-reporter.check("Ecosystem", "Header Switcher: Online Store havolasi", "/" in html, "Havola faol")
+reporter.check("Restaurant Focus", "Mijoz interfeysida begona switcherlar yo'qligi", "tma-ecosystem-bar" not in html and "/studio/" not in html, "100% Sof Restoran interfeysi")
 
-# Base Seller Switcher
+# Restoran Admin Login sahifasi (Port 8001 da)
+client.logout()
+r_login = client.get('/admin/login/', HTTP_HOST='127.0.0.1:8001', SERVER_PORT='8001')
+reporter.check("Restaurant Admin", "Restoran Admin Login (/admin/login/)", r_login.status_code == 200 and 'Restoran Boshqaruv Paneli' in r_login.content.decode('utf-8'), f"HTTP {r_login.status_code}")
+
+# Anonim foydalanuvchini loginga yo'naltirish (Auth Guard)
+r_admin_anon = client.get('/admin/', HTTP_HOST='127.0.0.1:8001', SERVER_PORT='8001')
+reporter.check("Restaurant Admin", "Anonim foydalanuvchi himoyasi (Redirect to Login)", r_admin_anon.status_code == 302, f"HTTP {r_admin_anon.status_code}")
+
+# Restoran Admin / POS Boshqaruv Hubiga kirish
 if admin_user:
     client.force_login(admin_user)
-    r = client.get('/seller/tables/')
-    s_html = r.content.decode('utf-8')
+    r_admin = client.get('/admin/', HTTP_HOST='127.0.0.1:8001', SERVER_PORT='8001')
+    reporter.check("Restaurant Admin", "Restoran Admin Hub (/admin/)", r_admin.status_code == 200 and 'Boshqaruv Markazi' in r_admin.content.decode('utf-8'), f"HTTP {r_admin.status_code}")
+    
+    # Global alias /restaurant/admin/
+    r_alias = client.get('/restaurant/admin/')
+    reporter.check("Restaurant Admin", "Global alias (/restaurant/admin/)", r_alias.status_code == 200 and 'Boshqaruv Markazi' in r_alias.content.decode('utf-8'), f"HTTP {r_alias.status_code}")
+
 # ==============================================================================
 # 5. ALOHIDA PORTLAR VA MUSTAQIL URLCONF TEKSHIRUVI (8001, 8002, 8003)
 # ==============================================================================

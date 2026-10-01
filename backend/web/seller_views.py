@@ -1691,7 +1691,7 @@ def waiter_panel(request):
                 'number': o.order_number,
                 'status': o.status,
                 'total': float(o.total_amount or 0),
-                'items': [{'name': it.product_name, 'qty': it.quantity, 'price': float(it.unit_price or 0)} for it in o.items.all()]
+                'items': [{'name': it.product_name, 'qty': it.quantity, 'price': float(it.price or 0)} for it in o.items.all()]
             })
 
     ctx = {
