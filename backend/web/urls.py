@@ -90,8 +90,11 @@ urlpatterns = [
     # Seller (multi-tenant)
     path('seller/', include('web.seller_urls')),
 
-    # Telegram Bot
+    # Telegram Bot (Multi-Product & Legacy Webhooks)
     path('telegram/webhook/', telegram_webhook.telegram_webhook, name='telegram_webhook'),
+    path('bot/restaurant/webhook/', telegram_webhook.restaurant_webhook, name='bot_restaurant_webhook'),
+    path('bot/market/webhook/', telegram_webhook.market_webhook, name='bot_market_webhook'),
+    path('bot/studio/webhook/', telegram_webhook.studio_webhook, name='bot_studio_webhook'),
     path('telegram/chat-ids/', telegram_webhook.telegram_set_chat_id, name='telegram_chat_ids'),
     path('telegram/send-test/', telegram_webhook.telegram_send_test, name='telegram_send_test'),
 

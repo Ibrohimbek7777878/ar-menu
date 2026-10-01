@@ -311,7 +311,7 @@ def telegram_webhook(request):
         bot_msg.save(update_fields=['response'])
 
     elif text_clean.startswith(('/market', '/dokon', '/store', '/shop', 'market', 'dokon')):
-        market_url = f"{base_url}/"
+        market_url = f"{base_url}/market/"
         is_https = base_url.startswith('https://')
         mk_btn = {"web_app": {"url": market_url}} if is_https else {"url": market_url}
         rest_btn = {"web_app": {"url": f"{base_url}/restaurant/"}} if is_https else {"url": f"{base_url}/restaurant/"}
@@ -387,3 +387,133 @@ def telegram_send_test(request):
         return JsonResponse({'error': 'chat_id kerak'}, status=400)
     ok = send_message(chat_id, text)
     return JsonResponse({'success': ok})
+
+
+@csrf_exempt
+@require_POST
+def restaurant_webhook(request):
+    """Mahsulot #1: Restoran 3D Menyu Boti webhooki."""
+    return telegram_webhook(request)
+
+
+@csrf_exempt
+@require_POST
+def market_webhook(request):
+    """Mahsulot #2: Online Store Guliston (Marketplace) Boti webhooki."""
+    from notifications.bots import send_bot_message
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': True})
+
+    message = data.get('message') or data.get('channel_post') or {}
+    chat = message.get('chat', {})
+    from_user = message.get('from', {})
+    chat_id = str(chat.get('id') or from_user.get('id', ''))
+    text = (message.get('text') or '').strip()
+    first_name = from_user.get('first_name', '')
+
+    if not chat_id:
+        return JsonResponse({'ok': True})
+
+    base_url = get_base_url_from_request(request)
+    is_https = base_url.startswith('https://')
+    market_url = f"{base_url}/market/"
+    orders_url = f"{base_url}/orders/"
+    
+    market_btn = {"web_app": {"url": market_url}} if is_https else {"url": market_url}
+    orders_btn = {"web_app": {"url": orders_url}} if is_https else {"url": orders_url}
+
+    kb = {
+        "inline_keyboard": [
+            [{"text": "🛍 Do'konni Ochish (TMA)", **market_btn}],
+            [{"text": "📦 Mening Buyurtmalarim", **orders_btn}]
+        ]
+    }
+
+    resp = (
+        f"Assalomu alaykum, <b>{first_name or 'hurmatli xaridor'}</b>! 👋\n\n"
+        f"🛍 <b>Online Store Guliston</b> gipermarketiga xush kelibsiz!\n\n"
+        f"Bizning onlayn savdo maydonchamiz orqali:\n"
+        f"• Shahringizdagi do'konlardan tovarlarni qulay xarid qilishingiz\n"
+        f"• Manzilingizgacha tezkor kuryer xizmatidan foydalanishingiz mumkin.\n\n"
+        f"Xaridni boshlash uchun quyidagi tugmani bosing 👇"
+    )
+    send_bot_message('market', chat_id, resp, reply_markup=kb)
+    return JsonResponse({'ok': True})
+
+
+@csrf_exempt
+@require_POST
+def studio_webhook(request):
+    """Mahsulot #3: 3D Studio & Print Assistant Boti webhooki."""
+    from notifications.bots import send_bot_message
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': True})
+
+    message = data.get('message') or data.get('channel_post') or {}
+    chat = message.get('chat', {})
+    from_user = message.get('from', {})
+    chat_id = str(chat.get('id') or from_user.get('id', ''))
+    text = (message.get('text') or '').strip()
+    first_name = from_user.get('first_name', '')
+    doc = message.get('document')
+
+    if not chat_id:
+        return JsonResponse({'ok': True})
+
+    base_url = get_base_url_from_request(request)
+    is_https = base_url.startswith('https://')
+    studio_url = f"{base_url}/studio/"
+    calc_url = f"{base_url}/3d-print/"
+
+    studio_btn = {"web_app": {"url": studio_url}} if is_https else {"url": studio_url}
+    calc_btn = {"web_app": {"url": calc_url}} if is_https else {"url": calc_url}
+
+    # Agar foydalanuvchi fayl yuborgan bo'lsa (.stl, .obj)
+    if doc:
+        file_name = doc.get('file_name', 'model.stl')
+        file_size = doc.get('file_size', 0)
+        size_mb = round(file_size / (1024 * 1024), 2)
+        
+        reply_doc = (
+            f"🖨 <b>3D Model Qabul Qilindi!</b>\n\n"
+            f"📁 <b>Fayl:</b> <code>{file_name}</code> ({size_mb} MB)\n"
+            f"🔍 <b>Tahlil:</b> 3D printerda chop etishga yaroqli.\n\n"
+            f"💰 <b>Taxminiy narxlar:</b>\n"
+            f"• PLA (Standart): 500 so'm / gramm\n"
+            f"• PETG (Mustahkam): 700 so'm / gramm\n"
+            f"• ABS (Zaruriy qism): 800 so'm / gramm\n"
+            f"🎁 <i>Har bir buyurtmada 5% keshbek beriladi!</i>\n\n"
+            f"Aniq o'lcham va rangni tanlab buyurtma berish uchun quyidagi tugmani bosing 👇"
+        )
+        kb_doc = {
+            "inline_keyboard": [
+                [{"text": "📐 3D Kalkulyatorda Ochish", **calc_btn}],
+                [{"text": "🖨 3D Studio Portali", **studio_btn}]
+            ]
+        }
+        send_bot_message('studio', chat_id, reply_doc, reply_markup=kb_doc)
+        return JsonResponse({'ok': True})
+
+    kb = {
+        "inline_keyboard": [
+            [{"text": "🖨 3D Studio & Narx Kalkulyatori", **calc_btn}],
+            [{"text": "🌐 3D Studio Portali", **studio_btn}]
+        ]
+    }
+
+    reply = (
+        f"Assalomu alaykum, <b>{first_name or 'hurmatli muhandis'}</b>! ⚙️\n\n"
+        f"🖨 <b>3D Printing & Prototyping Studio</b>ga xush kelibsiz!\n\n"
+        f"Xizmatlarimiz:\n"
+        f"• Talab bo'yicha ehtiyot qismlar, maketlar va suvenirlar chop etish\n"
+        f"• PLA, PETG, ABS, TPU va SLA Resin materiallar\n"
+        f"• Har bir buyurtmada kafolatlangan <b>5% keshbek</b>!\n\n"
+        f"Siz to'g'ridan-to'g'ri <code>.stl</code> yoki <code>.obj</code> faylingizni ushbu botga yuborishingiz mumkin. "
+        f"Yoki narxni onlayn hisoblash uchun quyidagi tugmani bosing 👇"
+    )
+    send_bot_message('studio', chat_id, reply, reply_markup=kb)
+    return JsonResponse({'ok': True})

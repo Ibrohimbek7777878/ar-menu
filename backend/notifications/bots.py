@@ -36,7 +36,7 @@ BOT_REGISTRY = {
         'legacy_token_setting': '',
         'webhook_path': '/bot/market/webhook/',
         'legacy_webhook_path': '',
-        'tma_path': '/',
+        'tma_path': '/market/',
     },
     'studio': {
         'key': 'studio',
