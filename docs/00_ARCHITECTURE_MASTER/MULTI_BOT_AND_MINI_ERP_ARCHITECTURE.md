@@ -20,11 +20,11 @@ Har bir mahsulot o'zining ixtisoslashgan Telegram botiga ega. Botlar bitta umumi
 
 ### 1.1. Botlar Sozlamalari Jadvali
 
-| Bot Yo'nalishi | Token Kaliti (.env) | Webhook Manzili | Asosiy TMA Yo'li | Vazifasi |
-| :--- | :--- | :--- | :--- | :--- |
-| **🍽 1. Restoran Boti** | `TELEGRAM_RESTAURANT_BOT_TOKEN` *(yoki `TELEGRAM_BOT_TOKEN`)* | `/bot/restaurant/webhook/` *(alias: `/telegram/webhook/`)* | `/restaurant/` | Stoldan buyurtma, 3D taomlar, ofitsiant chaqirish, oshxona statuslari, kunlik kassa |
-| **🛍 2. Marketplace Boti** | `TELEGRAM_MARKET_BOT_TOKEN` | `/bot/market/webhook/` | `/market/` | Mahsulotlar qidirish, katalog, savat, buyurtma statusini kuzatish, kuryer geolokatsiyasi |
-| **🖨 3. 3D Studio Boti** | `TELEGRAM_STUDIO_BOT_TOKEN` | `/bot/studio/webhook/` | `/studio/` | 3D fayllar (`.stl`, `.obj`) qabul qilish, avto narxlash, 5% keshbek, chop etish fotohisoboti |
+| Bot / Mahsulot | Maxsus Port | Local URL | Token Kaliti (.env) | Webhook Manzili | Vazifasi |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **🍽 1. Restoran 3D/AR** | **`8001`** | `http://127.0.0.1:8001/` | `TELEGRAM_RESTAURANT_BOT_TOKEN` *(yoki `TELEGRAM_BOT_TOKEN`)* | `/bot/restaurant/webhook/` *(alias: `/telegram/webhook/`)* | Stoldan buyurtma, 3D taomlar, ofitsiant chaqirish, oshxona statuslari, kunlik kassa |
+| **🛍 2. Marketplace** | **`8002`** | `http://127.0.0.1:8002/` | `TELEGRAM_MARKET_BOT_TOKEN` | `/bot/market/webhook/` | Mahsulotlar qidirish, katalog, savat, buyurtma statusini kuzatish, kuryer geolokatsiyasi |
+| **🖨 3. 3D Studio** | **`8003`** | `http://127.0.0.1:8003/` | `TELEGRAM_STUDIO_BOT_TOKEN` | `/bot/studio/webhook/` | 3D fayllar (`.stl`, `.obj`) qabul qilish, avto narxlash, 5% keshbek, chop etish fotohisoboti |
 
 ---
 

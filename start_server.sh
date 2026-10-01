@@ -27,17 +27,16 @@ echo "================================================================"
 
 # Orqa fonda (detached background) to'liq mustaqil ishga tushirish
 # Bu jarayon GNOME yoki Niri terminali yopilsa ham to'xtamaydi
-nohup "$DIR/backend/venv/bin/python" "$DIR/backend/scripts/laptop_server_daemon.py" > /dev/null 2>&1 &
+nohup "$DIR/backend/venv/bin/python" "$DIR/backend/scripts/laptop_server_daemon.py" > "$DIR/backend/logs/daemon_startup.log" 2>&1 &
 DAEMON_PID=$!
 
 echo "⏳ Server va Cloudflare Tunnel ulanishi kutilmoqda (5-10 soniya)..."
 
-# Tunnel URL tayyor bo'lishini kutish (maksimal 15 soniya)
-for i in {1..15}; do
+# Serverlar tayyor bo'lishini kutish (maksimal 25 soniya)
+for i in {1..25}; do
     sleep 1
     if [ -f "$STATUS_FILE" ]; then
-        URL=$(grep -o '"url": *"[^"]*"' "$STATUS_FILE" | cut -d'"' -f4 || true)
-        if [[ "$URL" =~ ^https://.*trycloudflare\.com ]]; then
+        if grep -q '"status": "running"' "$STATUS_FILE"; then
             break
         fi
     fi

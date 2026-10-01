@@ -67,6 +67,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'backend.middleware.MultiProductHostPortMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -80,6 +81,11 @@ MIDDLEWARE = [
     'backend.middleware.LanguageMiddleware',
     'backend.security_middleware.SecurityHeadersMiddleware',
 ]
+
+# 3 Ta Mustaqil Mahsulot uchun maxsus portlar
+PORT_RESTAURANT = int(os.environ.get('PORT_RESTAURANT', 8001))
+PORT_MARKET = int(os.environ.get('PORT_MARKET', 8002))
+PORT_STUDIO = int(os.environ.get('PORT_STUDIO', 8003))
 
 # OWASP Session and Cookie Security
 SESSION_COOKIE_HTTPONLY = True

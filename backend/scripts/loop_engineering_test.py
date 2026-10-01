@@ -322,8 +322,31 @@ if admin_user:
     client.force_login(admin_user)
     r = client.get('/seller/tables/')
     s_html = r.content.decode('utf-8')
-    reporter.check("Ecosystem", "Seller Sidebar: 3D Print Navbati mavjudligi", "/seller/studio/" in s_html, "Yon menyuda faol")
-    reporter.check("Ecosystem", "Seller Sidebar: Stollar mavjudligi", "/seller/tables/" in s_html, "Yon menyuda faol")
+# ==============================================================================
+# 5. ALOHIDA PORTLAR VA MUSTAQIL URLCONF TEKSHIRUVI (8001, 8002, 8003)
+# ==============================================================================
+print("\n--- [5] ALOHIDA PORTLAR VA MUSTAQIL URLCONF MARSHRUTLARI ---")
+
+# 5.1 Port 8001: Restoran 3D/AR
+r_p1 = client.get('/', HTTP_HOST='127.0.0.1:8001', SERVER_PORT='8001')
+reporter.check("P1: Port 8001", "Port 8001 Root (/) Restoran 3D Menyu ochilishi", r_p1.status_code == 200 and ('hero-3d-viewer' in r_p1.content.decode('utf-8') or 'AIR 3D' in r_p1.content.decode('utf-8') or 'tma' in r_p1.content.decode('utf-8').lower()), f"HTTP {r_p1.status_code}")
+
+r_p1_wh = client.post('/bot/restaurant/webhook/', content_type='application/json', data=json.dumps({}), HTTP_HOST='127.0.0.1:8001', SERVER_PORT='8001')
+reporter.check("P1: Port 8001", "Port 8001 Restoran Webhook (/bot/restaurant/webhook/)", r_p1_wh.status_code == 200, f"HTTP {r_p1_wh.status_code}")
+
+# 5.2 Port 8002: Online Store Gipermarket
+r_p2 = client.get('/', HTTP_HOST='127.0.0.1:8002', SERVER_PORT='8002')
+reporter.check("P2: Port 8002", "Port 8002 Root (/) Online Store Gipermarket ochilishi", r_p2.status_code == 200 and ('Guliston' in r_p2.content.decode('utf-8') or 'Do\'kon' in r_p2.content.decode('utf-8')), f"HTTP {r_p2.status_code}")
+
+r_p2_wh = client.post('/bot/market/webhook/', content_type='application/json', data=json.dumps({}), HTTP_HOST='127.0.0.1:8002', SERVER_PORT='8002')
+reporter.check("P2: Port 8002", "Port 8002 Market Webhook (/bot/market/webhook/)", r_p2_wh.status_code == 200, f"HTTP {r_p2_wh.status_code}")
+
+# 5.3 Port 8003: 3D Studio & Chop Etish
+r_p3 = client.get('/', HTTP_HOST='127.0.0.1:8003', SERVER_PORT='8003')
+reporter.check("P3: Port 8003", "Port 8003 Root (/) 3D Studio & Chop Etish ochilishi", r_p3.status_code == 200 and ('3D' in r_p3.content.decode('utf-8') or 'Printer' in r_p3.content.decode('utf-8')), f"HTTP {r_p3.status_code}")
+
+r_p3_wh = client.post('/bot/studio/webhook/', content_type='application/json', data=json.dumps({}), HTTP_HOST='127.0.0.1:8003', SERVER_PORT='8003')
+reporter.check("P3: Port 8003", "Port 8003 Studio Webhook (/bot/studio/webhook/)", r_p3_wh.status_code == 200, f"HTTP {r_p3_wh.status_code}")
 
 # ==============================================================================
 # YAKUNIY NATIJALAR

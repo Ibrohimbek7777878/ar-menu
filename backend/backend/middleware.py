@@ -116,3 +116,82 @@ class LanguageMiddleware(MiddlewareMixin):
         except Exception:
             pass
         return response
+
+
+class MultiProductHostPortMiddleware(MiddlewareMixin):
+    """
+    3 Ta Mustaqil Mahsulotni alohida Port va alohida URL bo'yicha marshrutlovchi yadroviy middleware:
+    - Port 8001 -> backend.urls_restaurant (Mahsulot #1: Restoran 3D/AR & NFC Menyu)
+    - Port 8002 -> backend.urls_market (Mahsulot #2: Online Store Gipermarket)
+    - Port 8003 -> backend.urls_studio (Mahsulot #3: 3D Studio & Buyurtma Chop Etish)
+    - Host / Subdomain / Header yoki DJANGO_PRODUCT o'zgaruvchisi orqali ham avtomatik aniqlanadi.
+    """
+    def process_request(self, request):
+        import os
+
+        # 1. Atrof-muhit o'zgaruvchisidan (masalan, alohida Gunicorn instancelari)
+        env_product = os.environ.get('DJANGO_PRODUCT', '').strip().lower()
+        if env_product == 'restaurant':
+            request.urlconf = 'backend.urls_restaurant'
+            request.product_code = 'restaurant'
+            return None
+        elif env_product == 'market':
+            request.urlconf = 'backend.urls_market'
+            request.product_code = 'market'
+            return None
+        elif env_product == 'studio':
+            request.urlconf = 'backend.urls_studio'
+            request.product_code = 'studio'
+            return None
+
+        # 2. Maxsus HTTP Header (Reverse Proxy / Load Balancer)
+        header_prod = request.META.get('HTTP_X_PRODUCT', '').strip().lower()
+        if header_prod in ('restaurant', 'market', 'studio'):
+            request.urlconf = f'backend.urls_{header_prod}'
+            request.product_code = header_prod
+            return None
+
+        # 3. Port bo'yicha aniqlash (8001, 8002, 8003)
+        try:
+            port = str(request.get_port() or '')
+        except Exception:
+            port = ''
+        server_port = str(request.META.get('SERVER_PORT', ''))
+        forwarded_port = str(request.META.get('HTTP_X_FORWARDED_PORT', ''))
+        effective_port = port or forwarded_port or server_port
+
+        if effective_port == '8001':
+            request.urlconf = 'backend.urls_restaurant'
+            request.product_code = 'restaurant'
+            return None
+        elif effective_port == '8002':
+            request.urlconf = 'backend.urls_market'
+            request.product_code = 'market'
+            return None
+        elif effective_port == '8003':
+            request.urlconf = 'backend.urls_studio'
+            request.product_code = 'studio'
+            return None
+
+        # 4. Host / Domen / Subdomen bo'yicha aniqlash (Cloudflare tunnel yoki maxsus domenlar)
+        try:
+            host = request.get_host().lower().split(':')[0]
+        except Exception:
+            host = ''
+
+        if any(k in host for k in ('restaurant', 'restoran', 'menyu', 'ar-menu', 'cafe', 'choyxona')):
+            request.urlconf = 'backend.urls_restaurant'
+            request.product_code = 'restaurant'
+            return None
+        elif any(k in host for k in ('market', 'store', 'shop', 'gipermarket', 'bazar', 'bozor')):
+            request.urlconf = 'backend.urls_market'
+            request.product_code = 'market'
+            return None
+        elif any(k in host for k in ('studio', 'print', '3dprint', 'model', 'slicer')):
+            request.urlconf = 'backend.urls_studio'
+            request.product_code = 'studio'
+            return None
+
+        # Standart holatda ROOT_URLCONF ishlaydi
+        request.product_code = 'default'
+        return None

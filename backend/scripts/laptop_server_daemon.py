@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
 """
-Online Store Guliston — Noutbuk Doimiy Server Daemoni (v2.0)
-============================================================
-1. Gunicorn WSGI serverni 127.0.0.1:8000 da ishga tushiradi.
-2. Cloudflared quick tunnel ni ishga tushiradi va loglarini to'g'ridan-to'g'ri yozadi.
-3. Yangi hosil bo'lgan https://*.trycloudflare.com domenini va "Registered tunnel connection" holatini aniqlaydi.
-4. backend/.env dagi PUBLIC_DOMAIN va SITE_URL ni yangilaydi.
-5. Telegram webhook va Mini App menu tugmasini (DNS propagatsiyasi kutgan holda 5 marta urinish bilan) o'rnatadi.
-6. Har 10 soniyada monitoring olib boradi; uzilish bo'lsa tiklaydi.
-7. GNOME yoki Niri session almashganda SIGHUP ni e'tiborsiz qoldirib orqa fonda ishlayveradi.
+Online Store Guliston — Noutbuk Doimiy Multi-Port Server Daemoni (v3.0)
+=====================================================================
+Ushbu daemon loyihadagi 3 ta mustaqil mahsulotni ALOHIDA PORTLAR va ALOHIDA URLLARDA boshqaradi:
+
+1. Mahsulot #1: Restoran 3D/AR & NFC Menyu
+   - Port: 8001
+   - Bosh sahifa (/): Restoran 3D Menyu (tma_home)
+   - Alohida Cloudflare Tunneli va URL
+   - Telegram Webhook: @marketing_orign_bot
+
+2. Mahsulot #2: Online Store Guliston (Marketplace)
+   - Port: 8002
+   - Bosh sahifa (/): Online Store Gipermarket (customer_home)
+   - Alohida Cloudflare Tunneli va URL
+   - Telegram Webhook: TELEGRAM_MARKET_BOT_TOKEN
+
+3. Mahsulot #3: 3D Studio & Buyurtma Chop Etish
+   - Port: 8003
+   - Bosh sahifa (/): 3D Studio & Slicer (print_3d_studio_page)
+   - Alohida Cloudflare Tunneli va URL
+   - Telegram Webhook: TELEGRAM_STUDIO_BOT_TOKEN
 """
 
 import os
@@ -34,16 +46,42 @@ ENV_FILE = BACKEND_DIR / ".env"
 PID_FILE = LOG_DIR / "server_daemon.pid"
 STATUS_FILE = LOG_DIR / "server_status.json"
 DAEMON_LOG = LOG_DIR / "server_daemon.log"
-GUNICORN_LOG = LOG_DIR / "gunicorn_error.log"
-CLOUDFLARE_LOG = LOG_DIR / "cloudflared.log"
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-gunicorn_proc = None
-cloudflared_proc = None
+# 3 Mahsulot konfiguratsiyasi
+PRODUCTS = {
+    "restaurant": {
+        "name": "Restoran 3D/AR & NFC Menyu",
+        "port": 8001,
+        "product_env": "restaurant",
+        "urlconf": "backend.urls_restaurant",
+        "log_prefix": "restaurant",
+        "bot_env_token": "TELEGRAM_RESTAURANT_BOT_TOKEN",
+    },
+    "market": {
+        "name": "Online Store Guliston (Marketplace)",
+        "port": 8002,
+        "product_env": "market",
+        "urlconf": "backend.urls_market",
+        "log_prefix": "market",
+        "bot_env_token": "TELEGRAM_MARKET_BOT_TOKEN",
+    },
+    "studio": {
+        "name": "3D Studio & Buyurtma Chop Etish",
+        "port": 8003,
+        "product_env": "studio",
+        "urlconf": "backend.urls_studio",
+        "log_prefix": "studio",
+        "bot_env_token": "TELEGRAM_STUDIO_BOT_TOKEN",
+    },
+}
+
 running = True
-current_tunnel_url = None
-cf_log_fd = None
+gunicorn_procs = {}
+cloudflared_procs = {}
+tunnel_urls = {}
+cf_log_fds = {}
 
 
 def log(message: str, level: str = "INFO"):
@@ -57,84 +95,14 @@ def log(message: str, level: str = "INFO"):
         pass
 
 
-def kill_port_8000():
-    try:
-        subprocess.run(["fuser", "-k", "8000/tcp"], capture_output=True, timeout=5)
-        time.sleep(1)
-    except Exception:
-        pass
-
-
-def update_env_file(new_url: str):
-    if not ENV_FILE.exists():
-        log(f".env fayli topilmadi: {ENV_FILE}", "WARN")
-        return
-
-    domain = new_url.replace("https://", "").replace("http://", "").strip("/")
-    try:
-        content = ENV_FILE.read_text(encoding="utf-8")
-        if "PUBLIC_DOMAIN=" in content:
-            content = re.sub(r"PUBLIC_DOMAIN=[^\r\n]*", f"PUBLIC_DOMAIN={domain}", content)
-        else:
-            content += f"\nPUBLIC_DOMAIN={domain}\n"
-
-        if "SITE_URL=" in content:
-            content = re.sub(r"SITE_URL=[^\r\n]*", f"SITE_URL={new_url}", content)
-        else:
-            content += f"\nSITE_URL={new_url}\n"
-
-        ENV_FILE.write_text(content, encoding="utf-8")
-        log(f".env muvaffaqiyatli yangilandi: PUBLIC_DOMAIN={domain}, SITE_URL={new_url}")
-    except Exception as e:
-        log(f".env ni yangilashda xatolik: {e}", "ERROR")
-
-
-def sync_telegram_webhook(url: str, max_retries: int = 4):
-    """DNS propagatsiyasini hisobga olib bir necha marta qayta urinish"""
-    log(f"Telegram webhook va Mini App menyusi sozlanmoqda: {url}")
-    for attempt in range(1, max_retries + 1):
+def kill_ports():
+    ports = ["8001", "8002", "8003", "8000"]
+    for p in ports:
         try:
-            res = subprocess.run(
-                [str(VENV_PYTHON), "manage.py", "set_telegram_webhook", url],
-                cwd=str(BACKEND_DIR),
-                capture_output=True,
-                text=True,
-                timeout=90,
-            )
-            if res.returncode == 0:
-                log(f"✅ Telegram webhook muvaffaqiyatli ulandi:\n{res.stdout.strip()}", "SUCCESS")
-                return True
-            else:
-                err_msg = res.stderr.strip()
-                if "Failed to resolve host" in err_msg or "400" in err_msg:
-                    log(f"⏳ DNS propagatsiyasi kutilmoqda ({attempt}/{max_retries}). 4 soniyadan keyin qayta uriniladi...", "INFO")
-                    time.sleep(4)
-                else:
-                    log(f"Telegram webhook xatosi ({attempt}/{max_retries}): {err_msg}", "WARN")
-                    time.sleep(3)
-        except subprocess.TimeoutExpired:
-            log(f"Telegram webhook timeout bo'ldi ({attempt}/{max_retries}), keyingi siklda davom etadi.", "WARN")
-            break
-        except Exception as e:
-            log(f"set_telegram_webhook chaqirishda xatolik ({attempt}/{max_retries}): {e}", "WARN")
-            time.sleep(3)
-    return False
-
-
-def save_status(status: str, url: str = None):
-    data = {
-        "status": status,
-        "url": url or current_tunnel_url,
-        "gunicorn_pid": gunicorn_proc.pid if gunicorn_proc else None,
-        "cloudflared_pid": cloudflared_proc.pid if cloudflared_proc else None,
-        "daemon_pid": os.getpid(),
-        "updated_at": datetime.now().isoformat(),
-    }
-    try:
-        with open(STATUS_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        log(f"Status saqlashda xato: {e}", "WARN")
+            subprocess.run(["fuser", "-k", f"{p}/tcp"], capture_output=True, timeout=5)
+        except Exception:
+            pass
+    time.sleep(1)
 
 
 def load_env_into_process():
@@ -150,87 +118,172 @@ def load_env_into_process():
             pass
 
 
-def start_gunicorn():
-    global gunicorn_proc
-    kill_port_8000()
-    load_env_into_process()
-    log("Gunicorn WSGI server ishga tushirilmoqda (workers=2, bind=127.0.0.1:8000)...")
+def update_env_file_urls():
+    if not ENV_FILE.exists():
+        return
+
+    try:
+        content = ENV_FILE.read_text(encoding="utf-8")
+
+        for key, pinfo in PRODUCTS.items():
+            url = tunnel_urls.get(key)
+            if not url:
+                continue
+            domain = url.replace("https://", "").replace("http://", "").strip("/")
+            domain_key = f"PUBLIC_DOMAIN_{key.upper()}"
+            url_key = f"SITE_URL_{key.upper()}"
+
+            if f"{domain_key}=" in content:
+                content = re.sub(rf"{domain_key}=[^\r\n]*", f"{domain_key}={domain}", content)
+            else:
+                content += f"\n{domain_key}={domain}\n"
+
+            if f"{url_key}=" in content:
+                content = re.sub(rf"{url_key}=[^\r\n]*", f"{url_key}={url}", content)
+            else:
+                content += f"\n{url_key}={url}\n"
+
+        # Restoran URL ni asosiy fallback sifatida ham o'rnatish
+        rest_url = tunnel_urls.get("restaurant")
+        if rest_url:
+            rest_domain = rest_url.replace("https://", "").replace("http://", "").strip("/")
+            if "PUBLIC_DOMAIN=" in content:
+                content = re.sub(r"PUBLIC_DOMAIN=[^\r\n]*", f"PUBLIC_DOMAIN={rest_domain}", content)
+            else:
+                content += f"\nPUBLIC_DOMAIN={rest_domain}\n"
+            if "SITE_URL=" in content:
+                content = re.sub(r"SITE_URL=[^\r\n]*", f"SITE_URL={rest_url}", content)
+            else:
+                content += f"\nSITE_URL={rest_url}\n"
+
+        ENV_FILE.write_text(content, encoding="utf-8")
+        log(".env muvaffaqiyatli barcha alohida URLlar bilan yangilandi.")
+    except Exception as e:
+        log(f".env ni yangilashda xatolik: {e}", "ERROR")
+
+
+def save_status(status_str: str = "running"):
+    prods_data = {}
+    for key, info in PRODUCTS.items():
+        gproc = gunicorn_procs.get(key)
+        cproc = cloudflared_procs.get(key)
+        prods_data[key] = {
+            "name": info["name"],
+            "port": info["port"],
+            "local_url": f"http://127.0.0.1:{info['port']}/",
+            "tunnel_url": tunnel_urls.get(key),
+            "gunicorn_pid": gproc.pid if gproc and gproc.poll() is None else None,
+            "cloudflared_pid": cproc.pid if cproc and cproc.poll() is None else None,
+        }
+
+    data = {
+        "status": status_str,
+        "daemon_pid": os.getpid(),
+        "products": prods_data,
+        "updated_at": datetime.now().isoformat(),
+    }
+    try:
+        with open(STATUS_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        log(f"Status saqlashda xato: {e}", "WARN")
+
+
+def start_gunicorn_for_product(key: str):
+    info = PRODUCTS[key]
+    port = info["port"]
+    log_name = info["log_prefix"]
+
+    access_log = LOG_DIR / f"gunicorn_{log_name}_access.log"
+    error_log = LOG_DIR / f"gunicorn_{log_name}_error.log"
+
+    env_copy = os.environ.copy()
+    env_copy["DJANGO_PRODUCT"] = info["product_env"]
+    env_copy["DJANGO_ROOT_URLCONF"] = info["urlconf"]
 
     cmd = [
         str(VENV_GUNICORN),
         "backend.wsgi:application",
-        "--bind", "127.0.0.1:8000",
-        "--workers", "2",
+        "--bind", f"127.0.0.1:{port}",
+        "--workers", "1",
         "--threads", "2",
         "--no-control-socket",
         "--reload",
         "--timeout", "60",
         "--capture-output",
-        "--access-logfile", str(LOG_DIR / "gunicorn_access.log"),
-        "--error-logfile", str(GUNICORN_LOG),
+        "--access-logfile", str(access_log),
+        "--error-logfile", str(error_log),
     ]
 
-    gunicorn_proc = subprocess.Popen(
+    proc = subprocess.Popen(
         cmd,
         cwd=str(BACKEND_DIR),
+        env=env_copy,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
-    log(f"Gunicorn ishga tushdi (PID={gunicorn_proc.pid})")
-    time.sleep(2)
-    return gunicorn_proc
+    gunicorn_procs[key] = proc
+    log(f"✅ Gunicorn [{info['name']}] ishga tushdi (Port: {port}, PID={proc.pid})")
+    return proc
 
 
-def start_cloudflared():
-    global cloudflared_proc, current_tunnel_url, cf_log_fd
+def start_cloudflared_for_product(key: str):
     if not CLOUDFLARED_BIN.exists():
         log(f"cloudflared binar fayli topilmadi: {CLOUDFLARED_BIN}", "FATAL")
         return None
 
-    # Eski log faylni tozalash
-    cf_log_fd = open(CLOUDFLARE_LOG, "w+", encoding="utf-8")
+    info = PRODUCTS[key]
+    port = info["port"]
+    cf_log_path = LOG_DIR / f"cloudflared_{info['log_prefix']}.log"
 
-    log("Cloudflared tunnel ishga tushirilmoqda...")
+    fd = open(cf_log_path, "w+", encoding="utf-8")
+    cf_log_fds[key] = fd
+
     cmd = [
         str(CLOUDFLARED_BIN),
         "tunnel",
-        "--url", "http://127.0.0.1:8000",
+        "--url", f"http://127.0.0.1:{port}",
     ]
 
-    cloudflared_proc = subprocess.Popen(
+    proc = subprocess.Popen(
         cmd,
         cwd=str(BACKEND_DIR),
-        stdout=cf_log_fd,
+        stdout=fd,
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
-    log(f"Cloudflared ishga tushdi (PID={cloudflared_proc.pid})")
+    cloudflared_procs[key] = proc
+    log(f"🌐 Cloudflared [{info['name']}] port {port} uchun ishga tushdi (PID={proc.pid})")
+    return proc
 
-    # URL va Tunnel ulanishini aniqlash (maksimal 35 soniya)
-    tunnel_url = None
+
+def detect_tunnel_url(key: str, timeout: int = 25):
+    proc = cloudflared_procs.get(key)
+    if not proc:
+        return None
+
+    cf_log_path = LOG_DIR / f"cloudflared_{PRODUCTS[key]['log_prefix']}.log"
     url_pattern = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
     start_wait = time.time()
-    has_registered = False
+    tunnel_url = None
 
-    while time.time() - start_wait < 35:
-        if cloudflared_proc.poll() is not None:
-            log("Cloudflared kutilmaganda to'xtadi!", "ERROR")
+    while time.time() - start_wait < timeout:
+        if proc.poll() is not None:
+            log(f"Cloudflared [{key}] kutilmaganda to'xtadi!", "ERROR")
             break
 
-        cf_log_fd.flush()
-        try:
-            with open(CLOUDFLARE_LOG, "r", encoding="utf-8") as f:
-                content = f.read()
-                if not tunnel_url:
-                    match = url_pattern.search(content)
-                    if match:
-                        tunnel_url = match.group(0)
-                        log(f"🌐 Cloudflare URL aniqlandi: {tunnel_url}", "INFO")
+        fd = cf_log_fds.get(key)
+        if fd and not fd.closed:
+            fd.flush()
 
-                if "Registered tunnel connection" in content:
-                    has_registered = True
-                    log("✅ Cloudflare Edge tarmog'iga muvaffaqiyatli ulandi (Registered tunnel connection)!", "INFO")
+        try:
+            with open(cf_log_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                match = url_pattern.search(content)
+                if match:
+                    tunnel_url = match.group(0)
+                    log(f"🔗 Cloudflare URL [{key}]: {tunnel_url}", "SUCCESS")
                     break
         except Exception:
             pass
@@ -238,59 +291,53 @@ def start_cloudflared():
         time.sleep(0.5)
 
     if tunnel_url:
-        current_tunnel_url = tunnel_url
-        update_env_file(tunnel_url)
-        domain = tunnel_url.replace("https://", "").replace("http://", "").strip("/")
-        os.environ['PUBLIC_DOMAIN'] = domain
-        os.environ['SITE_URL'] = tunnel_url
-        save_status("running", tunnel_url)
+        tunnel_urls[key] = tunnel_url
+    return tunnel_url
 
-        # Gunicorn workerlarini yangi domen bilan yangilash
-        if gunicorn_proc and gunicorn_proc.poll() is None:
-            try:
-                gunicorn_proc.send_signal(signal.SIGHUP)
-                log(f"🔄 Gunicorn master (PID={gunicorn_proc.pid}) ga SIGHUP yuborildi (ishchi jarayonlar yangilandi).")
-            except Exception as ge:
-                log(f"Gunicorn reload xatosi: {ge}", "WARN")
 
-        # DNS propagatsiyasini biroz kutib webhook o'rnatish
-        time.sleep(2)
-        try:
-            sync_telegram_webhook(tunnel_url)
-        except Exception as we:
-            log(f"Webhook o'rnatishda xatolik: {we}", "WARN")
-    else:
-        log("Tunnel URL ni olish imkoni bo'lmadi!", "WARN")
-        save_status("tunnel_pending", None)
-
-    return cloudflared_proc
-
+def sync_restaurant_webhook(url: str):
+    """Restoran Telegram boti (@marketing_orign_bot) webhook va TMA menyusini o'rnatish"""
+    log(f"Restoran Telegram webhook sozlanmoqda: {url}")
+    try:
+        subprocess.run(
+            [str(VENV_PYTHON), "manage.py", "set_telegram_webhook", url],
+            cwd=str(BACKEND_DIR),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except Exception as e:
+        log(f"Webhook o'rnatish ogohlantirishi: {e}", "WARN")
 
 
 def shutdown(signum, frame):
-    global running, gunicorn_proc, cloudflared_proc, cf_log_fd
-    log(f"Signal qabul qilindi ({signum}), server to'xtatilmoqda...")
+    global running
+    log(f"Signal qabul qilindi ({signum}), barcha mahsulot serverlari to'xtatilmoqda...")
     running = False
 
-    if gunicorn_proc and gunicorn_proc.poll() is None:
-        log(f"Gunicorn to'xtatilmoqda (PID={gunicorn_proc.pid})...")
+    for key, proc in list(gunicorn_procs.items()):
+        if proc and proc.poll() is None:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception:
+                proc.terminate()
+
+    for key, proc in list(cloudflared_procs.items()):
+        if proc and proc.poll() is None:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception:
+                proc.terminate()
+
+    for key, fd in list(cf_log_fds.items()):
         try:
-            os.killpg(os.getpgid(gunicorn_proc.pid), signal.SIGTERM)
+            if fd and not fd.closed:
+                fd.close()
         except Exception:
-            gunicorn_proc.terminate()
+            pass
 
-    if cloudflared_proc and cloudflared_proc.poll() is None:
-        log(f"Cloudflared to'xtatilmoqda (PID={cloudflared_proc.pid})...")
-        try:
-            os.killpg(os.getpgid(cloudflared_proc.pid), signal.SIGTERM)
-        except Exception:
-            cloudflared_proc.terminate()
-
-    if cf_log_fd and not cf_log_fd.closed:
-        cf_log_fd.close()
-
-    kill_port_8000()
-    save_status("stopped", None)
+    kill_ports()
+    save_status("stopped")
 
     if PID_FILE.exists():
         try:
@@ -298,25 +345,26 @@ def shutdown(signum, frame):
         except Exception:
             pass
 
-    log("Server to'liq to'xtatildi.")
+    log("Barcha 3 ta server to'liq to'xtatildi.")
     sys.exit(0)
 
 
-last_cf_attempt = 0
-
 def check_health():
-    global gunicorn_proc, cloudflared_proc, last_cf_attempt
-    if gunicorn_proc is None or gunicorn_proc.poll() is not None:
-        log("⚠️ Gunicorn ishlamayapti! Qayta ishga tushirilmoqda...", "WARN")
-        start_gunicorn()
+    """Monitoring: agar biron server to'xtasa, avtomatik qayta tiklaydi"""
+    for key, info in PRODUCTS.items():
+        gproc = gunicorn_procs.get(key)
+        if gproc is None or gproc.poll() is not None:
+            log(f"⚠️ Gunicorn [{key}] to'xtagan! Qayta ishga tushirilmoqda...", "WARN")
+            start_gunicorn_for_product(key)
 
-    now = time.time()
-    if (cloudflared_proc is None or cloudflared_proc.poll() is not None) and (now - last_cf_attempt > 60):
-        last_cf_attempt = now
-        log("⚠️ Cloudflared tunnel qayta tekshirilmoqda...", "INFO")
-        start_cloudflared()
+        cproc = cloudflared_procs.get(key)
+        if cproc is None or cproc.poll() is not None:
+            log(f"⚠️ Cloudflared [{key}] to'xtagan! Qayta ishga tushirilmoqda...", "WARN")
+            start_cloudflared_for_product(key)
+            detect_tunnel_url(key, timeout=15)
 
-    save_status("running", current_tunnel_url)
+    update_env_file_urls()
+    save_status("running")
 
 
 def main():
@@ -324,16 +372,45 @@ def main():
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
+    kill_ports()
+    load_env_into_process()
+
     with open(PID_FILE, "w") as f:
         f.write(str(os.getpid()))
 
-    log("=" * 60)
-    log("🚀 Guliston Online Store Server Daemoni ishga tushmoqda")
+    log("=" * 65)
+    log("🚀 Guliston 3 Ta Mustaqil Mahsulot Server Daemoni ishga tushmoqda")
     log(f"Daemon PID: {os.getpid()}")
-    log("=" * 60)
+    log("=" * 65)
 
-    start_gunicorn()
-    start_cloudflared()
+    # 1. Barcha 3 ta Gunicorn instance'larini alohida portlarda boshlash
+    for key in PRODUCTS:
+        start_gunicorn_for_product(key)
+
+    time.sleep(2)
+
+    # 2. Barcha 3 ta Cloudflare Tunnellarini boshlash
+    for key in PRODUCTS:
+        start_cloudflared_for_product(key)
+
+    # 3. Har bir tunnel URL'ini aniqlash
+    for key in PRODUCTS:
+        detect_tunnel_url(key, timeout=20)
+
+    # 4. .env va status fayllarini yangilash
+    update_env_file_urls()
+    save_status("running")
+
+    # 5. Restoran Telegram botini o'zining mustaqil URL'i bilan ulash
+    rest_url = tunnel_urls.get("restaurant")
+    if rest_url:
+        sync_restaurant_webhook(rest_url)
+
+    log("=" * 65)
+    log("🎉 BARCHA 3 TA MUSTAQIL MAHSULOT ISHGA TUSHIRILDI!")
+    for key, info in PRODUCTS.items():
+        log(f"👉 [{info['name']}]: Port {info['port']} -> Local: http://127.0.0.1:{info['port']}/ | Public: {tunnel_urls.get(key, 'kutilmoqda')}")
+    log("=" * 65)
 
     while running:
         try:

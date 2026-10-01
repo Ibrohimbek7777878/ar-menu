@@ -8,13 +8,13 @@ Ushbu repozitoriy dasturchilar va AI yordamchilari kod, hujjatlar yoki biznes ma
 
 ---
 
-## 🧭 Tezkor Mahsulotlar Xaritasi
+## 🧭 Tezkor Mahsulotlar Xaritasi (Alohida Portlar va Alohida URLlar)
 
-| Mahsulot | Asosiy Web Yo'li | Mini ERP Boshqaruv | Telegram Bot | Asosiy Hujjat |
-|---|---|---|---|---|
-| **#1 Restoran 3D/AR & NFC Menyu** | `/` yoki `/restaurant/` | `/seller/tables/`, `/seller/kds/`, `/seller/waiter/` | `@marketing_orign_bot` (`/bot/restaurant/webhook/`) | [`docs/01_PRODUCT_RESTAURANT_3D_AR/`](docs/01_PRODUCT_RESTAURANT_3D_AR/) |
-| **#2 Online Store Guliston (Marketplace)** | `/market/` | `/seller/products/`, `/seller/orders/`, `/seller/couriers/` | `TELEGRAM_MARKET_BOT_TOKEN` (`/bot/market/webhook/`) | [`docs/02_PRODUCT_MARKETPLACE_ONLINE_STORE/`](docs/02_PRODUCT_MARKETPLACE_ONLINE_STORE/) |
-| **#3 3D Studio & Buyurtma Chop Etish** | `/studio/` yoki `/3d-print/` | `/seller/studio/` (Print Queue Kanban) | `TELEGRAM_STUDIO_BOT_TOKEN` (`/bot/studio/webhook/`) | [`docs/03_PRODUCT_3D_STUDIO_PRINTING/`](docs/03_PRODUCT_3D_STUDIO_PRINTING/) |
+| Mahsulot | Maxsus Port | Mahalliy URL (Local) | Mini ERP Boshqaruv | Telegram Bot | Asosiy Hujjat |
+|---|---|---|---|---|---|
+| **#1 Restoran 3D/AR & NFC Menyu** | **`8001`** | `http://127.0.0.1:8001/` | `/seller/tables/`, `/seller/kds/`, `/seller/waiter/` | `@marketing_orign_bot` (`/bot/restaurant/webhook/`) | [`docs/01_PRODUCT_RESTAURANT_3D_AR/`](docs/01_PRODUCT_RESTAURANT_3D_AR/) |
+| **#2 Online Store (Marketplace)** | **`8002`** | `http://127.0.0.1:8002/` | `/seller/products/`, `/seller/orders/`, `/seller/couriers/` | `TELEGRAM_MARKET_BOT_TOKEN` (`/bot/market/webhook/`) | [`docs/02_PRODUCT_MARKETPLACE_ONLINE_STORE/`](docs/02_PRODUCT_MARKETPLACE_ONLINE_STORE/) |
+| **#3 3D Studio & Chop Etish** | **`8003`** | `http://127.0.0.1:8003/` | `/seller/studio/` (Print Queue Kanban) | `TELEGRAM_STUDIO_BOT_TOKEN` (`/bot/studio/webhook/`) | [`docs/03_PRODUCT_3D_STUDIO_PRINTING/`](docs/03_PRODUCT_3D_STUDIO_PRINTING/) |
 
 ---
 
