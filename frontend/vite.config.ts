@@ -6,14 +6,16 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: path.resolve(__dirname, '../backend/static/react'),
+    outDir: process.env.VERCEL ? 'dist' : path.resolve(import.meta.dirname, '../backend/static/react'),
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]',
-      },
-    },
+    rollupOptions: process.env.VERCEL
+      ? {}
+      : {
+          output: {
+            entryFileNames: 'assets/[name].js',
+            chunkFileNames: 'assets/[name].js',
+            assetFileNames: 'assets/[name].[ext]',
+          },
+        },
   },
 })
