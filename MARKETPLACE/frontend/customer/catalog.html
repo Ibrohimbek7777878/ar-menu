@@ -1,0 +1,138 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.catalog_title }} — {{ t.site_name }}{% endblock %}
+{% block content %}
+
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <p class="eyebrow">{{ t.catalog_title }}</p>
+    <h1 class="mt-2 text-3xl font-semibold sm:text-4xl">{{ t.catalog_all_products }}</h1>
+    {% if query %}<p class="text-sm text-muted mt-2">"{{ query }}" bo'yicha natijalar</p>{% endif %}
+
+    <!-- Search -->
+    <div class="mt-8">
+        <form method="get" class="card-surface flex items-center gap-3 px-5 py-3.5">
+            {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}
+            <svg class="size-5 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="{{ t.catalog_search_placeholder }}" class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted">
+            <select onchange="if(this.value)window.location.href='?sort='+this.value+'{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}'" class="bg-transparent text-sm text-muted outline-none border-none cursor-pointer">
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>{{ t.catalog_sort_newest }}</option>
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>{{ t.catalog_sort_cheap }}</option>
+                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>{{ t.catalog_sort_expensive }}</option>
+                <option value="rating" {% if sort == 'rating' %}selected{% endif %}>{{ t.catalog_sort_rating }}</option>
+            </select>
+            <button type="submit" class="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.search }}</button>
+        </form>
+    </div>
+
+    <!-- Category pills — horizontal scroll on mobile -->
+    {% if categories %}
+    <div class="mt-5 flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style="-webkit-overflow-scrolling:touch;">
+        <a href="{% url 'customer_catalog' %}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}" class="snap-start shrink-0 rounded-full px-4 py-2.5 text-sm font-medium transition-colors {% if not current_category %}bg-primary text-primary-foreground{% else %}border border-border bg-card hover:border-primary hover:text-primary{% endif %}">
+            {{ t.all }}
+        </a>
+        {% for cat in categories %}
+        <a href="{% url 'customer_catalog' %}?category={{ cat.id }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="snap-start shrink-0 rounded-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-1.5 {% if current_category|stringformat:'s' == cat.id|stringformat:'s' %}bg-primary text-primary-foreground{% else %}border border-border bg-card hover:border-primary hover:text-primary{% endif %}">
+            {% if cat.icon %}<span class="material-icons-outlined text-base">{{ cat.icon }}</span>{% endif %}
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Products count -->
+    <div class="mt-6 mb-4 flex items-center justify-between">
+        <p class="text-sm text-muted">{{ products.paginator.count|default:"0" }} {{ t.catalog_products_count }}</p>
+    </div>
+
+    <!-- Products -->
+    <div>
+        {% if products %}
+        <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
+            {% for product in products %}
+            <div class="card-surface group relative flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
+                <a href="{% url 'customer_product' product.slug %}" class="flex flex-1 flex-col">
+                    <div class="relative aspect-square overflow-hidden bg-sand">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
+                        {% else %}
+                        <img src="/static/images/dish-placeholder.svg" alt="{{ product.name }}" class="size-full object-cover opacity-85">
+                        {% endif %}
+                        {% if product.old_price %}
+                        <span class="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">−{{ product.discount_percent }}%</span>
+                        {% endif %}
+                        {% if product.has_3d %}
+                        <span class="absolute right-2.5 bottom-2.5 rounded-full bg-slate-950/80 backdrop-blur text-white px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 shadow-xs border border-white/10">
+                            <span>🕶️</span> 3D
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+                        {% if product.shop %}<p class="truncate text-xs text-muted">{{ product.shop.name }}</p>{% endif %}
+                        <h3 class="font-display text-sm font-semibold leading-snug sm:text-base line-clamp-2">{{ product.name }}</h3>
+                        <div class="mt-1 flex items-center gap-1 text-xs text-muted">
+                            <svg class="size-3.5 shrink-0 fill-primary text-primary" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294-.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                            {{ product.rating|default:"0" }}
+                            {% if product.reviews_count %}<span>({{ product.reviews_count }})</span>{% endif %}
+                        </div>
+                        <div class="mt-3 flex flex-wrap items-baseline gap-x-2 pr-10">
+                            <span class="text-sm font-semibold sm:text-base">{{ product.price|uznum }} {{ t.catalog_som }}</span>
+                            {% if product.old_price %}<span class="text-xs text-muted line-through">{{ product.old_price|uznum }}</span>{% endif %}
+                        </div>
+                    </div>
+                </a>
+                <form method="POST" action="{% url 'customer_wishlist_toggle' %}" class="absolute right-3 top-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <button type="submit" aria-label="Sevimlilarga" class="grid size-8 place-items-center rounded-full bg-white/90 backdrop-blur text-gray-400 shadow-sm hover:text-red-500 transition active:scale-90">
+                        <span class="material-icons-outlined !text-[18px]">favorite_border</span>
+                    </button>
+                </form>
+                <form method="POST" action="{% url 'customer_cart_add' %}" class="add-to-cart-form absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" aria-label="{{ t.cart_add }}" class="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-lift transition-transform active:scale-95 hover:scale-105">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if products.has_other_pages %}
+        <div class="flex items-center justify-center gap-2 mt-10">
+            {% if products.has_previous %}
+            <a href="?page={{ products.previous_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" class="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">← {{ t.previous }}</a>
+            {% endif %}
+            {% for num in products.paginator.page_range %}
+            {% if products.number == num %}
+            <span class="px-3.5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold">{{ num }}</span>
+            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+            <a href="?page={{ num }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" class="px-3.5 py-2 rounded-full border border-border text-sm text-muted hover:bg-secondary transition">{{ num }}</a>
+            {% endif %}
+            {% endfor %}
+            {% if products.has_next %}
+            <a href="?page={{ products.next_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" class="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">{{ t.next }} →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card-surface max-w-xl mx-auto my-12 p-8 sm:p-12 text-center rounded-3xl border border-border/80 shadow-sm relative overflow-hidden">
+            <div class="size-20 mx-auto mb-4 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-3xl">
+                🍽️
+            </div>
+            <h3 class="font-display text-xl sm:text-2xl font-bold mb-2">{{ t.catalog_not_found|default:"Mahsulotlar topilmadi" }}</h3>
+            <p class="text-sm text-muted mb-6 leading-relaxed">
+                Kiritilgan so'rov yoki filter bo'yicha hech qanday taom topilmadi. Qidiruv so'zini o'zgartirib ko'ring yoki barcha mahsulotlarni oching.
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
+                    {{ t.catalog_all_products_btn|default:"Barcha mahsulotlarni ko'rish" }} →
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

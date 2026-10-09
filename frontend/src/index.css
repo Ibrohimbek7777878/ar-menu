@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ─── Neutral Surfaces (Warm Ivory / Linen) ─── */
+  --bg-primary: #F8F5EE;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #F3EEE4;
+  --bg-surface-dark: #1A261E;
+
+  /* ─── Borders (Subtle, No Harhness) ─── */
+  --border-subtle: #EAE4D7;
+  --border-strong: #D6CDBC;
+
+  /* ─── Typography & Contrast ─── */
+  --text-primary: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #78716C;
+  --text-inverse: #FAF7F0;
+
+  /* ─── Brand Colors (Deep Forest & Warm Amber) ─── */
+  --brand-primary: #213827;
+  --brand-primary-hover: #16261A;
+  --brand-primary-subtle: #EBF2EC;
+  --brand-accent: #B45309;
+  --brand-accent-subtle: #FEF3C7;
+  --status-success: #15803D;
+  --status-danger: #DC2626;
+
+  /* ─── Elevation & Shadows (Human-Crafted, Soft) ─── */
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+  --shadow-card: 0 2px 8px -2px rgba(28, 25, 23, 0.05), 0 1px 3px rgba(28, 25, 23, 0.03);
+  --shadow-hover: 0 8px 24px -4px rgba(28, 25, 23, 0.09);
+  --shadow-modal: 0 20px 40px -8px rgba(28, 25, 23, 0.2);
+
+  /* ─── Mobile Ergonomics ─── */
+  --tap-target-min: 44px;
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* Tabular numbers for clean prices and timers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Serif font utility for brand / headlines */
+.serif-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-feature-settings: "pnum";
+}
+
+/* Smooth focus accessibility */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}

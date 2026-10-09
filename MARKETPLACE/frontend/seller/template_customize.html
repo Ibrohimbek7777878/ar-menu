@@ -1,0 +1,658 @@
+{% extends "seller/base_seller.html" %}
+{% block title %}{{ tpl.name }} — moslash{% endblock %}
+{% block page_title %}Shablonni moslash{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<style>
+/* Sortable & Touch/Mouse Drag Styles */
+.sortable-ghost {
+    opacity: 0.35 !important;
+    background: #ecfdf5 !important;
+    border: 2px dashed #16a34a !important;
+    border-radius: 0.75rem !important;
+    transform: scale(0.98);
+}
+.sortable-chosen {
+    background-color: #f0fdf4 !important;
+    border-color: #86efac !important;
+}
+.sortable-drag {
+    opacity: 0.98 !important;
+    background: #ffffff !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border-color: #16a34a !important;
+    transform: scale(1.02) !important;
+    cursor: grabbing !important;
+    z-index: 9999 !important;
+}
+.drag-handle {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.secRow {
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+</style>
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div>
+        <p class="eyebrow">{{ tpl.get_category_display }}{% if tpl.is_custom %} · mening shablonim{% endif %}</p>
+        <h1 class="font-display text-xl font-semibold">{{ tpl.name }}</h1>
+    </div>
+    <a href="{% url 'seller_template_gallery' %}" class="btn btn-outline">← Galereyaga qaytish</a>
+</div>
+
+<form id="installForm" method="post" action="{% url 'seller_template_save_install' %}" class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+    {% csrf_token %}
+    <input type="hidden" name="base_slug" value="{{ tpl.slug }}">
+    <input type="hidden" name="colors" id="colorsInput" value="{{ colors_json }}">
+    <input type="hidden" name="layout" id="layoutInput" value="{{ layout_json }}">
+
+    <!-- ─── CHAP: REAL preview (iframe) + mini xarita ─── -->
+    <div class="lg:col-span-3 card p-4">
+        <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
+            <p class="eyebrow">Real ko'rinish (o'rnatmasdan)</p>
+            <div class="flex gap-1 bg-gray-100 rounded-lg p-1">
+                <button type="button" id="btnMobile" onclick="setDevice(true)" class="px-3 py-1 rounded-md text-xs font-semibold bg-white shadow">📱 Mobil</button>
+                <button type="button" id="btnDesktop" onclick="setDevice(false)" class="px-3 py-1 rounded-md text-xs font-semibold text-gray-500">🖥 Desktop</button>
+            </div>
+        </div>
+        <!-- Sahifa tab'lari: real frontend iframe (7 sahifa) -->
+        <div class="flex gap-1 overflow-x-auto mb-3 pb-1.5 -mx-1 px-1" id="pvTabs">
+            {% for p in all_pages %}
+            <button type="button" class="pvTab whitespace-nowrap px-3 py-1.5 rounded-full text-[13px] font-semibold transition" data-page="{{ p.0 }}" onclick="setPage('{{ p.0 }}')">{{ p.1 }} {{ p.2 }}</button>
+            {% endfor %}
+        </div>
+        <div class="bg-gray-100 rounded-xl p-3 flex justify-center">
+            <iframe id="realPreview" class="w-full rounded-xl bg-white border border-black/10 shadow-sm transition-all"
+                    style="max-width: 390px; height: 620px;" src="{% url 'seller_template_preview_page' tpl.slug 'home' %}"></iframe>
+        </div>
+        <p class="text-xs text-gray-400 mt-2.5 text-center">Rang/bo'lim o'zgarsa — bu real sahifalar 1-2 soniyada yangilanadi.</p>
+    </div>
+
+    <!-- ─── O'NG: moslash paneli ─── -->
+    <div class="lg:col-span-2 card p-5 space-y-5">
+        <div>
+            <label class="field">Shablon nomi (galereyada shu nom bilan saqlanadi)</label>
+            <input type="text" name="template_name" id="nameInput" value="{{ shop.name|default:'' }} dizayni" maxlength="100">
+        </div>
+
+        <div>
+            <p class="field">Ranglar</p>
+            <div class="space-y-2.5">
+                {% for key, label, val in color_fields %}
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm text-gray-600">{{ label }}</span>
+                    <div class="flex items-center gap-2">
+                        <input type="text" class="colorHex w-20 text-xs text-center" value="{{ val }}" readonly>
+                        <input type="color" class="colorPick w-9 h-9 rounded-lg border cursor-pointer" data-key="{{ key }}" value="{{ val }}">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <p class="field">{{ t.builder_menu_title }}</p>
+            <div class="flex gap-1.5" id="menuPosRow">
+                <button type="button" onclick="setMenuPos('top')" data-pos="top" class="menuPos px-3 py-2 rounded-xl text-xs font-bold border transition">⬆️ {{ t.builder_menu_top }}</button>
+                <button type="button" onclick="setMenuPos('left')" data-pos="left" class="menuPos px-3 py-2 rounded-xl text-xs font-bold border transition">⬅️ {{ t.builder_menu_left }}</button>
+                <button type="button" onclick="setMenuPos('bottom')" data-pos="bottom" class="menuPos px-3 py-2 rounded-xl text-xs font-bold border transition">⬇️ {{ t.builder_menu_bottom }}</button>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1.5">{{ t.builder_drag_hint }}</p>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between mb-1.5">
+                <p class="field !mb-0 font-bold">Bo'limlar tartibi</p>
+                <span class="text-[10px] text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                    <span>🖐️ Touch</span>
+                    <span class="text-gray-300">/</span>
+                    <span>🖱️ Mouse</span>
+                </span>
+            </div>
+            <p class="text-[11px] text-gray-500 mb-2.5 leading-snug">Bo'limni barmog'ingiz yoki sichqoncha bilan bosib ushlab sudrang. O'zgarishlar darhol chapdagi vitrinada aks etadi.</p>
+            <div id="sectionList" class="space-y-2"></div>
+            <div class="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-gray-100" id="addRow"></div>
+        </div>
+
+        <div class="sticky bottom-4 pt-2">
+            <button type="submit" class="btn btn-primary w-full justify-center text-base py-3 rounded-xl shadow-lg">
+                💾 Saqlash va o'rnatish
+            </button>
+            <p class="text-[11px] text-gray-400 text-center mt-2">Yangi shablon galereyaga saqlanadi + do'koningizga o'rnatiladi.</p>
+        </div>
+    </div>
+</form>
+
+<script>
+// ─── Holat ─────────────────────────────────────────────────────────
+let layout = {{ layout_json|safe }};
+let colors = {{ colors_json|safe }};
+let isMobile = true;
+let previewPage = 'home';
+let sortableInstance = null;
+const TPL_SLUG = '{{ tpl.slug }}';
+const PREVIEW_BASE = "{% url 'seller_template_preview_page' tpl.slug 'home' %}".replace(/\/home\/?$/, '/');
+const DRAFT_URL = "{% url 'seller_template_draft_save' %}";
+
+const TYPE_LABELS = Object.assign({
+    hero: 'Hero banner', product_grid: 'Mahsulotlar', category_strip: 'Kategoriyalar',
+    banner: 'Promo banner', map: 'Xarita / Manzil', reviews: 'Mijozlar sharhlari', cta: 'Chaqiriq (CTA)', richtext: 'Matn bloki',
+    features: 'Afzalliklar', info_strip: 'Aloqa chizig\'i', menu: 'Menyu', custom: 'Maxsus bo\'lim'
+}, {{ type_labels_json|safe }});
+
+const SECTION_ICONS = {
+    hero: '🏝️', product_grid: '🛍️', category_strip: '🏷️', banner: '🖼️',
+    map: '📍', reviews: '⭐', cta: '📣', richtext: '📝', features: '✨', info_strip: 'ℹ️',
+    menu: '☰', custom: '🧩'
+};
+
+const ICON_CHOICES = ['🏝️','🛍️','🏷️','🖼️','📍','⭐','📣','📝','✨','ℹ️','🔥','⚡','🚚','💳','🎁','🏆','❤️','🌟','📦','🕒','📞','🧩','☰','🌱','🥬','🥛','🍖','🧁','☕','🧴','💊','👕','👟','💄','📚','🎮','🏠','🔧','🐶','🐱','🎯','🎉','💎','🛠️','🔔','📷'];
+
+const EDITABLE = {
+    hero: [['title', 'Sarlavha'], ['subtitle', 'Qo\'shimcha matn'], ['cta_text', 'Tugma matni']],
+    product_grid: [['title', 'Sarlavha'], ['limit', 'Nechta mahsulot']],
+    banner: [['title', 'Sarlavha'], ['subtitle', 'Qo\'shimcha matn']],
+    cta: [['title', 'Sarlavha'], ['cta_text', 'Tugma matni']],
+    richtext: [['title', 'Sarlavha'], ['text', 'Matn mazmuni']],
+    category_strip: [['title', 'Sarlavha']],
+    map: [['title', 'Sarlavha']], reviews: [['title', 'Sarlavha']],
+    features: [['title', 'Sarlavha']],
+    info_strip: [['title', 'Sarlavha']],
+    custom: [['title', 'Sarlavha'], ['text', 'Matn'], ['cta_text', 'Tugma matni']],
+};
+
+function ensureUids() {
+    if (!Array.isArray(layout)) layout = [];
+    layout.forEach(s => {
+        if (!s._uid) {
+            s._uid = 's_' + Math.random().toString(36).substr(2, 8) + Date.now().toString(36).substr(4);
+        }
+    });
+}
+
+function cleanLayoutData() {
+    return layout.map(s => {
+        const copy = Object.assign({}, s);
+        delete copy._uid;
+        return copy;
+    });
+}
+
+// ─── Draft avtosaqlash (debounce) → iframe reload ──────────────────
+let draftTimer = null;
+function scheduleDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(async () => {
+        try {
+            await fetch(DRAFT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    base_slug: TPL_SLUG,
+                    template_name: document.getElementById('nameInput').value,
+                    colors: colors,
+                    layout: cleanLayoutData()
+                }),
+            });
+            const f = document.getElementById('realPreview');
+            if (f) f.src = PREVIEW_BASE + previewPage + '/?t=' + Date.now();
+        } catch (_) {}
+    }, 450);
+}
+
+// ─── Sectionlar ro'yxati + tahrirlash ───────────────────────────────
+function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderSections() {
+    ensureUids();
+    const list = document.getElementById('sectionList');
+    if (!list) return;
+
+    const visible = layout.filter(s => s.type !== 'menu');
+
+    list.innerHTML = visible.map((s, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === visible.length - 1;
+        const defaultName = TYPE_LABELS[s.type] || s.type;
+        const hasCustomTitle = s.title && s.title !== defaultName;
+
+        return `
+        <div class="rounded-xl border border-gray-200/90 p-2.5 bg-white secRow group transition-all" data-uid="${s._uid}">
+            <div class="flex items-center gap-2">
+                <!-- Tactile Drag Handle for Touch & Mouse -->
+                <div class="drag-handle w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-brand-700 hover:bg-brand-50 active:bg-brand-100 cursor-grab active:cursor-grabbing shrink-0 transition" style="touch-action: none;" title="Ushlab sudrang (Touch / Sichqoncha)">
+                    <svg class="w-4 h-4 pointer-events-none" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                    </svg>
+                </div>
+
+                <!-- Tartib raqami -->
+                <span class="sec-badge w-5 h-5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
+
+                <!-- Ikonka -->
+                <span class="text-base shrink-0">${s.icon || SECTION_ICONS[s.type] || '▫️'}</span>
+
+                <!-- Nom / Tavsif -->
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-800 truncate">${hasCustomTitle ? esc(s.title) : defaultName}</p>
+                    ${hasCustomTitle ? `<p class="text-[10px] text-gray-400 truncate">${defaultName}</p>` : ''}
+                </div>
+
+                <!-- Harakatlar -->
+                <div class="flex items-center gap-0.5 shrink-0">
+                    <button type="button" onclick="editSection('${s._uid}')" class="w-7 h-7 rounded-lg hover:bg-blue-50 text-blue-600 flex items-center justify-center transition" title="Sarlavha va matnni tahrirlash">✏️</button>
+                    <button type="button" onclick="settingsSection('${s._uid}')" class="w-7 h-7 rounded-lg hover:bg-purple-50 text-purple-600 flex items-center justify-center transition" title="Ko'rinish: o'lcham, rang, ikonka">⚙️</button>
+                    <button type="button" onclick="moveByUid('${s._uid}', -1)" ${isFirst ? 'disabled class="w-6 h-7 rounded-lg text-gray-300 opacity-30 cursor-not-allowed text-xs"' : 'class="w-6 h-7 rounded-lg hover:bg-gray-100 text-gray-500 text-xs transition"'} title="Bir pog'ona yuqoriga">▲</button>
+                    <button type="button" onclick="moveByUid('${s._uid}', 1)" ${isLast ? 'disabled class="w-6 h-7 rounded-lg text-gray-300 opacity-30 cursor-not-allowed text-xs"' : 'class="w-6 h-7 rounded-lg hover:bg-gray-100 text-gray-500 text-xs transition"'} title="Bir pog'ona pastga">▼</button>
+                    <button type="button" onclick="removeByUid('${s._uid}')" class="w-7 h-7 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center transition" title="O'chirish">✕</button>
+                </div>
+            </div>
+            <div class="editBox mt-2 space-y-1.5 hidden border-t border-gray-100 pt-2"></div>
+            <div class="setBox mt-2 hidden border-t border-gray-100 pt-2"></div>
+        </div>`;
+    }).join('');
+
+    const used = new Set(layout.map(s => s.type));
+    document.getElementById('addRow').innerHTML = Object.keys(TYPE_LABELS).filter(t => !used.has(t) && t !== 'menu')
+        .map(t => `<button type="button" onclick="addSection('${t}', true)" class="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-300 text-gray-600 hover:border-brand-600 hover:text-brand-600 hover:bg-brand-50 transition">+ ${TYPE_LABELS[t]}</button>`)
+        .join('');
+
+    renderMenuPos();
+    initSortable();
+}
+
+// ─── Sortable & Touch Drag & Drop Integratsiyasi ────────────────────
+function initSortable() {
+    const list = document.getElementById('sectionList');
+    if (!list) return;
+
+    if (window.Sortable) {
+        if (sortableInstance) {
+            try { sortableInstance.destroy(); } catch (_) {}
+        }
+        sortableInstance = new Sortable(list, {
+            handle: '.drag-handle',
+            animation: 200,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            swapThreshold: 0.65,
+            direction: 'vertical',
+            touchStartThreshold: 2,
+            fallbackTolerance: 3,
+            onEnd: function() {
+                syncLayoutFromDOM();
+                updateIndexBadges();
+            }
+        });
+    } else {
+        // Fallback PointerEvents controller (Touch va Mouse uchun)
+        initPointerDragFallback(list);
+    }
+}
+
+function initPointerDragFallback(container) {
+    const handles = container.querySelectorAll('.drag-handle');
+    handles.forEach(handle => {
+        handle.onpointerdown = function(e) {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            const item = handle.closest('.secRow');
+            if (!item) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+
+            const startY = e.clientY;
+            let moved = false;
+
+            const placeholder = document.createElement('div');
+            placeholder.className = 'sortable-ghost my-2 rounded-xl transition-all';
+            placeholder.style.height = `${item.offsetHeight}px`;
+
+            function onMove(ev) {
+                const diffY = ev.clientY - startY;
+                if (!moved && Math.abs(diffY) > 3) {
+                    moved = true;
+                    item.parentNode.insertBefore(placeholder, item.nextSibling);
+                    item.classList.add('sortable-drag');
+                    item.style.width = `${item.offsetWidth}px`;
+                    item.style.position = 'relative';
+                    item.style.zIndex = '9999';
+                    item.style.pointerEvents = 'none';
+                }
+                if (!moved) return;
+
+                item.style.transform = `translateY(${diffY}px)`;
+
+                const siblings = Array.from(container.querySelectorAll('.secRow:not(.sortable-drag)'));
+                for (const sib of siblings) {
+                    const rect = sib.getBoundingClientRect();
+                    if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+                        const mid = rect.top + rect.height / 2;
+                        if (ev.clientY < mid) {
+                            container.insertBefore(placeholder, sib);
+                        } else {
+                            container.insertBefore(placeholder, sib.nextSibling);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            function onUp(ev) {
+                try { handle.releasePointerCapture(ev.pointerId); } catch (_) {}
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', onUp);
+                window.removeEventListener('pointercancel', onUp);
+
+                if (moved) {
+                    item.classList.remove('sortable-drag');
+                    item.style.position = '';
+                    item.style.zIndex = '';
+                    item.style.width = '';
+                    item.style.transform = '';
+                    item.style.pointerEvents = '';
+
+                    if (placeholder.parentNode) {
+                        placeholder.parentNode.insertBefore(item, placeholder);
+                        placeholder.remove();
+                    }
+
+                    syncLayoutFromDOM();
+                    updateIndexBadges();
+                }
+            }
+
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp);
+            window.addEventListener('pointercancel', onUp);
+        };
+    });
+}
+
+function syncLayoutFromDOM() {
+    const uids = Array.from(document.querySelectorAll('#sectionList .secRow')).map(el => el.dataset.uid);
+    const visibleMap = new Map();
+    const otherItems = [];
+
+    layout.forEach(s => {
+        if (s.type === 'menu') {
+            otherItems.push(s);
+        } else {
+            visibleMap.set(s._uid, s);
+        }
+    });
+
+    const reorderedVisible = uids.map(uid => visibleMap.get(uid)).filter(Boolean);
+    layout = [...reorderedVisible, ...otherItems];
+    syncInputs();
+}
+
+function updateIndexBadges() {
+    document.querySelectorAll('#sectionList .secRow').forEach((row, idx) => {
+        const badge = row.querySelector('.sec-badge');
+        if (badge) badge.textContent = idx + 1;
+    });
+}
+
+function moveByUid(uid, dir) {
+    const visible = layout.filter(s => s.type !== 'menu');
+    const idx = visible.findIndex(s => s._uid === uid);
+    if (idx === -1) return;
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= visible.length) return;
+
+    const [item] = visible.splice(idx, 1);
+    visible.splice(targetIdx, 0, item);
+    const otherItems = layout.filter(s => s.type === 'menu');
+    layout = [...visible, ...otherItems];
+    renderSections();
+    syncInputs();
+}
+
+function removeByUid(uid) {
+    layout = layout.filter(s => s._uid !== uid);
+    renderSections();
+    syncInputs();
+}
+
+// ─── Menyu joylashuvi ───────────────────────────────────────────────
+function menuSection() { return layout.find(s => s.type === 'menu'); }
+function renderMenuPos() {
+    const pos = (menuSection() || {}).position || 'top';
+    document.querySelectorAll('.menuPos').forEach(b => {
+        const on = b.dataset.pos === pos;
+        b.className = `menuPos px-3 py-2 rounded-xl text-xs font-bold border transition ${on ? 'bg-brand-600 text-white border-brand-600 shadow' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-600'}`;
+    });
+}
+function setMenuPos(pos) {
+    let m = menuSection();
+    if (!m) { m = {type: 'menu', position: pos}; layout.push(m); }
+    else m.position = pos;
+    syncInputs(); renderMenuPos();
+}
+
+// ─── Tahrirlash (✏️) — fokus bilan ──────────────────────────────────
+function editSection(uid) {
+    const row = document.querySelector(`.secRow[data-uid="${uid}"]`);
+    if (!row) return;
+    const box = row.querySelector('.editBox');
+    const setBox = row.querySelector('.setBox');
+    setBox.classList.add('hidden');
+    if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+    document.querySelectorAll('.editBox:not(.hidden), .setBox:not(.hidden)').forEach(b => b.classList.add('hidden'));
+
+    const s = layout.find(item => item._uid === uid);
+    if (!s) return;
+
+    const fields = EDITABLE[s.type] || [['title', 'Sarlavha']];
+    box.innerHTML = fields.map(([k, label]) => `
+        <div class="flex items-center gap-2">
+            <span class="text-[11px] text-gray-500 w-28 shrink-0 font-medium">${label}</span>
+            <input type="text" value="${esc(s[k])}" data-uid="${uid}" data-k="${k}" class="secField flex-1 px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:border-brand-500">
+        </div>`).join('') +
+        (s.type === 'features' ? `<button type="button" onclick="editFeature('${uid}')" class="text-xs text-brand-700 font-semibold mt-1">✨ Afzalliklar ro'yxatini tahrirlash</button>` : '');
+    box.classList.remove('hidden');
+
+    box.querySelectorAll('.secField').forEach((inp, idx) => {
+        inp.addEventListener('input', () => {
+            let v = inp.value;
+            if (inp.dataset.k === 'limit') v = parseInt(v) || 12;
+            const target = layout.find(item => item._uid === inp.dataset.uid);
+            if (target) {
+                target[inp.dataset.k] = v;
+                if (inp.dataset.k === 'title') {
+                    const rowTitle = row.querySelector('.text-sm.font-semibold');
+                    if (rowTitle) rowTitle.textContent = v || (TYPE_LABELS[target.type] || target.type);
+                }
+                syncInputs();
+            }
+        });
+        if (idx === 0) setTimeout(() => inp.focus(), 30);
+    });
+}
+
+// ─── Ko'rinish sozlamalari (⚙️): o'lcham / rang / ikonka ────────────
+function settingsSection(uid) {
+    const row = document.querySelector(`.secRow[data-uid="${uid}"]`);
+    if (!row) return;
+    const box = row.querySelector('.setBox');
+    const editBox = row.querySelector('.editBox');
+    editBox.classList.add('hidden');
+    if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+    document.querySelectorAll('.editBox:not(.hidden), .setBox:not(.hidden)').forEach(b => b.classList.add('hidden'));
+
+    const s = layout.find(item => item._uid === uid);
+    if (!s) return;
+    const size = s.size || 'normal';
+
+    box.innerHTML = `
+        <div class="space-y-2.5 bg-gray-50 rounded-xl p-3 border border-gray-100">
+            <div>
+                <p class="text-[11px] font-bold text-gray-500 mb-1">📐 O'lchami</p>
+                <div class="flex gap-1.5">
+                    ${[['normal', 'Oddiy'], ['tall', 'Katta'], ['full', "To'liq kenglik"]].map(([v, l]) => `
+                    <button type="button" onclick="setPropByUid('${uid}','size','${v}')" class="flex-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border ${size === v ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'}">${l}</button>`).join('')}
+                </div>
+            </div>
+            <div>
+                <p class="text-[11px] font-bold text-gray-500 mb-1">🎨 Urg'u rangi</p>
+                <div class="flex items-center gap-2">
+                    <input type="color" value="${s.accent_color || '#16a34a'}" oninput="setPropByUid('${uid}','accent_color', this.value)" class="w-9 h-9 rounded-lg border cursor-pointer">
+                    <button type="button" onclick="setPropByUid('${uid}','accent_color','')" class="text-[11px] text-gray-500 hover:text-gray-800 underline">standartga qaytarish</button>
+                </div>
+            </div>
+            <div>
+                <p class="text-[11px] font-bold text-gray-500 mb-1">🔤 Ikonka tanlash</p>
+                <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+                    ${ICON_CHOICES.map(ic => `
+                    <button type="button" onclick="setPropByUid('${uid}','icon','${ic}')" class="w-8 h-8 rounded-lg text-base hover:bg-white border transition ${s.icon === ic ? 'border-purple-600 bg-purple-50 shadow-sm' : 'border-transparent bg-gray-100'}">${ic}</button>`).join('')}
+                </div>
+            </div>
+        </div>`;
+    box.classList.remove('hidden');
+}
+
+function setPropByUid(uid, k, v) {
+    const s = layout.find(item => item._uid === uid);
+    if (!s) return;
+    if (v === '') delete s[k]; else s[k] = v;
+    renderSections();
+    syncInputs();
+}
+
+// ─── Qo'shish: darhol nom yozish oynasi ochiladi ────────────────────
+function addSection(t, openEdit) {
+    const d = {
+        hero: {title: "Do'kon nomi", subtitle: 'Sifatli va hamyonbop mahsulotlar', cta_text: "Katalogga o'tish"},
+        product_grid: {title: 'Ommabop mahsulotlar', limit: 12, product_ids: []},
+        category_strip: {title: 'Kategoriyalar'},
+        banner: {title: 'Mavsumiy chegirmalar', subtitle: 'Barcha yangi tovarlarga 20% gacha chegirma'},
+        map: {title: 'Do\'konimiz manzili'},
+        reviews: {title: 'Mijozlarimiz fikrlari'},
+        cta: {title: 'Hoziroq buyurtma bering', cta_text: 'Buyurtma berish'},
+        richtext: {title: 'Biz haqimizda', text: 'Do\'konimiz sizga eng sifatli xizmat ko\'rsatadi.'},
+        features: {title: 'Nega biz?', items: [{icon:'🚚',title:'Tez yetkazish',text:'30 daqiqada'},{icon:'🥬',title:'Yangi mahsulot',text:'Har kuni yangilanadi'},{icon:'💳',title:"Qulay to'lov",text:'Click / Payme'}]},
+        info_strip: {title: 'Bog\'lanish va ish vaqti'},
+        custom: {title: 'Maxsus bo\'lim', text: 'Bo\'lim matni...', cta_text: ''}
+    };
+    const defaults = d[t] || {};
+    if (openEdit && defaults.title !== undefined) defaults.title = '';
+    const newUid = 's_' + Math.random().toString(36).substr(2, 8) + Date.now().toString(36).substr(4);
+    layout.push({_uid: newUid, type: t, ...defaults});
+    renderSections();
+    syncInputs();
+    if (openEdit) {
+        setTimeout(() => editSection(newUid), 50);
+    }
+}
+
+function syncInputs() {
+    const clean = cleanLayoutData();
+    document.getElementById('layoutInput').value = JSON.stringify(clean);
+    document.getElementById('colorsInput').value = JSON.stringify(colors);
+    scheduleDraft();
+}
+
+// ─── Features ro'yxatini tahrirlash (ikonka | nom | matn) ──────────
+function editFeature(uid) {
+    const s = layout.find(item => item._uid === uid);
+    if (!s) return;
+    const items = s.items || [];
+    const html = items.map((it, j) => `
+        <div class="flex gap-1.5 items-center">
+            <input type="text" value="${esc(it.icon)}" data-j="${j}" data-f="icon" class="featF w-12 text-center px-1 py-1.5 text-sm border rounded-lg">
+            <input type="text" value="${esc(it.title)}" data-j="${j}" data-f="title" class="featF flex-1 px-2 py-1.5 text-sm border rounded-lg">
+            <input type="text" value="${esc(it.text)}" data-j="${j}" data-f="text" class="featF flex-1 px-2 py-1.5 text-sm border rounded-lg">
+            <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>
+        </div>`).join('');
+    const dlg = document.createElement('div');
+    dlg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    dlg.innerHTML = `<div class="bg-white rounded-2xl p-5 w-full max-w-lg space-y-3 shadow-2xl">
+        <div class="flex items-center justify-between">
+            <p class="font-bold text-gray-900">Afzalliklar (ikonka | sarlavha | matn)</p>
+            <button type="button" id="featClose" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+        </div>
+        <div id="featList" class="space-y-1.5 max-h-72 overflow-y-auto pr-1">${html}</div>
+        <div class="flex gap-2 justify-between items-center pt-2 border-t border-gray-100">
+            <button type="button" id="featAdd" class="text-xs px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-600 hover:border-brand-600 hover:text-brand-600">+ yangi afzallik</button>
+            <button type="button" id="featOk" class="btn btn-primary !py-1.5 !px-4 !text-xs">Tayyor</button>
+        </div></div>`;
+    document.body.appendChild(dlg);
+
+    dlg.querySelector('#featClose').onclick = () => dlg.remove();
+    dlg.querySelector('#featAdd').onclick = () => {
+        const div = document.createElement('div');
+        div.className = 'flex gap-1.5 items-center';
+        div.innerHTML = `<input type="text" value="✨" data-f="icon" class="featF w-12 text-center px-1 py-1.5 text-sm border rounded-lg">
+            <input type="text" value="Yangi afzallik" data-f="title" class="featF flex-1 px-2 py-1.5 text-sm border rounded-lg">
+            <input type="text" value="Qisqa tavsif" data-f="text" class="featF flex-1 px-2 py-1.5 text-sm border rounded-lg">
+            <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>`;
+        dlg.querySelector('#featList').appendChild(div);
+    };
+    dlg.querySelector('#featOk').onclick = () => {
+        const rows = [...dlg.querySelectorAll('#featList > div')];
+        s.items = rows.map(r => {
+            const g = f => r.querySelector(`[data-f="${f}"]`).value;
+            return {icon: g('icon'), title: g('title'), text: g('text')};
+        }).filter(it => it.title);
+        dlg.remove();
+        syncInputs();
+        renderSections();
+    };
+}
+
+// ─── Ranglar ───────────────────────────────────────────────────────
+document.querySelectorAll('.colorPick').forEach(inp => {
+    inp.addEventListener('input', () => {
+        colors[inp.dataset.key] = inp.value;
+        const hex = inp.closest('.flex').querySelector('.colorHex');
+        if (hex) hex.value = inp.value;
+        syncInputs();
+    });
+});
+document.getElementById('nameInput').addEventListener('input', scheduleDraft);
+
+// ─── Qurilma + sahifa tab ──────────────────────────────────────────
+function setDevice(m) {
+    isMobile = m;
+    const mb = document.getElementById('btnMobile'), db = document.getElementById('btnDesktop');
+    mb.className = `px-3 py-1 rounded-md text-xs font-semibold ${m ? 'bg-white shadow' : 'text-gray-500'}`;
+    db.className = `px-3 py-1 rounded-md text-xs font-semibold ${!m ? 'bg-white shadow' : 'text-gray-500'}`;
+    document.getElementById('realPreview').style.maxWidth = m ? '390px' : '100%';
+}
+
+function setPage(p) {
+    previewPage = p;
+    document.querySelectorAll('.pvTab').forEach(b => {
+        const on = b.dataset.page === p;
+        b.className = `pvTab whitespace-nowrap px-3 py-1.5 rounded-full text-[13px] font-semibold transition ${on ? 'bg-brand-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+        if (on) b.scrollIntoView({behavior: 'smooth', inline: 'center', block: 'nearest'});
+    });
+    document.getElementById('realPreview').src = PREVIEW_BASE + p + '/?t=' + Date.now();
+}
+
+// Form submitdan oldin eng so'nggi ma'lumotlarni sinxronlashtirish
+document.getElementById('installForm').addEventListener('submit', () => {
+    syncInputs();
+});
+
+// Boshlang'ich yuklash
+ensureUids();
+renderSections();
+setPage('home');
+setDevice(true);
+</script>
+{% endblock %}

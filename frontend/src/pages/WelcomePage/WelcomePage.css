@@ -1,0 +1,379 @@
+/* ─────────────────────────────────────────────────────────────
+   React WelcomePage Component Styles
+   Senior UI/UX Architecture — Warm Ivory & Forest Green
+   ───────────────────────────────────────────────────────────── */
+
+.welcome-app-container {
+  min-height: 100vh;
+  background-color: var(--bg-primary, #F8F5EE);
+  color: var(--text-primary, #212529);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  padding-bottom: 95px;
+}
+
+.welcome-main-shell {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+/* Hero Section */
+.welcome-hero-block {
+  text-align: left;
+  margin-bottom: 28px;
+}
+
+.welcome-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  color: var(--brand-primary, #213827);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.welcome-hero-badge .badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand-primary, #213827);
+}
+
+.welcome-hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0 0 10px;
+}
+
+.welcome-hero-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary, #6C757D);
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+/* Enter Button */
+.btn-enter-menu-giant {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  padding: 16px 24px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(33, 56, 39, 0.22);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.btn-enter-menu-giant:hover {
+  background: #182A1D;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(33, 56, 39, 0.28);
+}
+
+/* 3D Special Banner */
+.welcome-3d-banner {
+  background: var(--brand-primary, #213827);
+  color: #FAF7F0;
+  border-radius: var(--radius-card, 16px);
+  padding: 22px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(33, 56, 39, 0.16);
+}
+
+.banner-3d-text .banner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.banner-3d-text h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #FFFFFF;
+  line-height: 1.3;
+}
+
+.banner-3d-text p {
+  font-size: 13px;
+  color: #C8D8CC;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-banner-3d-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  color: var(--brand-primary, #213827);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill, 9999px);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.18s ease;
+}
+
+.btn-banner-3d-cta:hover {
+  background: #F8F5EE;
+  transform: translateY(-1px);
+}
+
+/* Connect Options Section */
+.connect-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary, #6C757D);
+  margin-bottom: 14px;
+}
+
+.kicker-green-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-primary, #213827);
+}
+
+.connect-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.connect-option-card {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  padding: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.18s ease;
+}
+
+.connect-option-card:hover {
+  border-color: #D4CCA8;
+}
+
+.card-icon-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.opt-circle-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #F2F5F3;
+  color: var(--brand-primary, #213827);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.opt-text-block h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #212529);
+  margin: 0 0 3px;
+}
+
+.opt-text-block p {
+  font-size: 12px;
+  color: var(--text-secondary, #6C757D);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Action inside cards */
+.btn-card-action-outline {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  background: #FAF9F5;
+  color: var(--text-primary, #212529);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+}
+
+.btn-card-action-outline:hover {
+  background: #FFFFFF;
+  border-color: var(--brand-primary, #213827);
+  color: var(--brand-primary, #213827);
+}
+
+.table-input-flex-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.input-table-quick {
+  flex: 1;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  background: #FAF9F5;
+  outline: none;
+  transition: all 0.18s ease;
+}
+
+.input-table-quick:focus {
+  border-color: var(--brand-primary, #213827);
+  background: #FFFFFF;
+}
+
+.btn-table-quick-submit {
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  padding: 10px 22px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-table-quick-submit:hover {
+  background: #182A1D;
+}
+
+/* QR Code Modal */
+.welcome-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 22, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.welcome-modal-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.welcome-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0 0 6px;
+}
+
+.welcome-modal-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #6C757D);
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+
+.welcome-modal-qr-frame {
+  display: inline-flex;
+  padding: 12px;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 14px;
+  background: #FAF9F5;
+  margin-bottom: 20px;
+}
+
+.welcome-modal-qr-img {
+  width: 180px;
+  height: 180px;
+  border-radius: 8px;
+  display: block;
+}
+
+.welcome-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-modal-3d {
+  flex: 1;
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  padding: 11px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s ease;
+}
+
+.btn-modal-3d:hover {
+  background: #182A1D;
+}
+
+.btn-modal-close {
+  flex: 1;
+  background: #F2F5F3;
+  color: var(--brand-primary, #213827);
+  border: none;
+  padding: 11px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-modal-close:hover {
+  background: #E5ECE7;
+}

@@ -3,192 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restoran Boshqaruv Paneli — Kirish</title>
+    <title>Guliston — Boshqaruv Paneliga Kirish</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        :root {
+            --bg-cream: #F7F3EA;
+            --bg-cream-soft: #FAF7F0;
+            --primary-green: #2F4836;
+            --primary-green-hover: #24382A;
+            --accent-brown: #8B5E3C;
+            --text-dark: #2C2A26;
+            --text-muted: #6B6559;
+            --border-cream: #E8E0CF;
+            --radius-2xl: 24px;
+            --radius-xl: 18px;
+            --radius-pill: 9999px;
+            --shadow-card: 0 10px 30px -4px rgba(44, 42, 38, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+
         body {
-            background: #090d16;
-            color: #f8fafc;
+            background-color: var(--bg-cream);
+            color: var(--text-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background-image: radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
-                              radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.05) 0%, transparent 40%);
         }
-        .login-box {
+
+        .serif { font-family: 'Playfair Display', Georgia, serif; }
+
+        .login-card {
             width: 100%;
-            max-width: 420px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 36px 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        .login-header {
+            max-width: 440px;
+            background: #FFFFFF;
+            border: 1px solid var(--border-cream);
+            border-radius: var(--radius-2xl);
+            padding: 40px 32px;
+            box-shadow: var(--shadow-card);
             text-align: center;
-            margin-bottom: 28px;
         }
-        .login-logo {
+
+        .brand-crest-big {
             width: 64px;
             height: 64px;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            border-radius: 20px;
-            display: inline-flex;
+            border-radius: 18px;
+            background: var(--primary-green);
+            color: #FAF7F0;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 32px;
+            font-weight: 700;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
-            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);
-            margin-bottom: 16px;
+            margin: 0 auto 16px;
+            box-shadow: 0 6px 18px rgba(47, 72, 54, 0.25);
         }
+
         .login-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #ffffff;
-            letter-spacing: -0.5px;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
         }
-        .login-desc {
+
+        .login-subtitle {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--accent-brown);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 28px;
+        }
+
+        .error-box {
+            background: #FFF5F5;
+            border: 1px solid #FEB2B2;
+            color: #C53030;
+            padding: 12px 14px;
+            border-radius: var(--radius-xl);
             font-size: 13px;
-            color: #94a3b8;
-            margin-top: 6px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: left;
         }
-        .form-group {
-            margin-bottom: 18px;
+
+        .login-form {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
+
         .form-label {
             display: block;
             font-size: 13px;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 6px;
         }
-        .form-input {
+
+        .form-field {
             width: 100%;
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 14px;
-            padding: 13px 16px;
+            background: var(--bg-cream-soft);
+            border: 1px solid var(--border-cream);
+            border-radius: var(--radius-xl);
+            padding: 14px 18px;
             font-size: 14px;
-            color: #ffffff;
+            color: var(--text-dark);
             outline: none;
-            transition: all 0.2s;
+            transition: border-color 0.2s;
         }
-        .form-input:focus {
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
-            background: rgba(30, 41, 59, 1);
+        .form-field:focus {
+            border-color: var(--primary-green);
+            background: #FFFFFF;
         }
-        .btn-submit {
-            width: 100%;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #0f172a;
-            border: none;
-            border-radius: 14px;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+
+        .btn-submit-login {
             margin-top: 10px;
+            background: var(--primary-green);
+            color: #FFFFFF;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius-pill);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(47, 72, 54, 0.25);
+            transition: all 0.2s;
         }
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.45);
+        .btn-submit-login:hover {
+            background: var(--primary-green-hover);
+            transform: translateY(-1px);
         }
-        .messages-box {
-            margin-bottom: 20px;
-        }
-        .msg-error {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .msg-info {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #93c5fd;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-        }
-        .login-footer {
+
+        .back-menu-link {
+            display: inline-block;
             margin-top: 24px;
-            text-align: center;
             font-size: 13px;
-            color: #64748b;
-        }
-        .back-link {
-            color: #f59e0b;
+            color: var(--text-muted);
+            font-weight: 700;
             text-decoration: none;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: opacity 0.2s;
+            transition: color 0.15s;
         }
-        .back-link:hover { opacity: 0.8; }
-        .roles-hint {
-            margin-top: 20px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            font-size: 11px;
-            color: #94a3b8;
-            line-height: 1.5;
-            text-align: center;
+        .back-menu-link:hover {
+            color: var(--primary-green);
         }
     </style>
 </head>
 <body>
-    <div class="login-box">
-        <div class="login-header">
-            <div class="login-logo">🍽</div>
-            <h1 class="login-title">Restoran Boshqaruv Paneli</h1>
-            <p class="login-desc">Stollar, oshxona (KDS), ofitsiantlar va kassa nazorati</p>
-        </div>
+    <div class="login-card">
+        <div class="brand-crest-big">G</div>
+        <h1 class="login-title serif">Guliston</h1>
+        <p class="login-subtitle">Boshqaruv Markazi</p>
 
         {% if messages %}
-        <div class="messages-box">
-            {% for msg in messages %}
-            <div class="{% if msg.tags == 'error' %}msg-error{% else %}msg-info{% endif %}">
-                {{ msg }}
-            </div>
+        <div class="error-box">
+            {% for message in messages %}
+            <p>⚠️ {{ message }}</p>
             {% endfor %}
         </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" action="{% url 'restaurant_admin_login' %}" class="login-form">
             {% csrf_token %}
-            <div class="form-group">
-                <label class="form-label">Foydalanuvchi nomi (Login)</label>
-                <input type="text" name="username" class="form-input" placeholder="masalan: admin yoki ofitsiant1" required autofocus autocomplete="username">
+            <div>
+                <label class="form-label">Foydalanuvchi nomi / Login</label>
+                <input type="text" name="username" placeholder="Masalan: admin" class="form-field" required autocomplete="username">
             </div>
 
-            <div class="form-group">
+            <div>
                 <label class="form-label">Maxfiy parol</label>
-                <input type="password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                <input type="password" name="password" placeholder="••••••••" class="form-field" required autocomplete="current-password">
             </div>
 
-            <button type="submit" class="btn-submit">Boshqaruv Paneliga Kirish &rarr;</button>
+            <button type="submit" class="btn-submit-login">
+                Tizimga Kirish →
+            </button>
         </form>
 
-        <div class="roles-hint">
-            🔒 Tizimga <b>Restoran egasi</b>, <b>Menejer</b>, <b>Oshpaz</b> yoki <b>Ofitsiant</b> hisobi orqali kiriladi.
-        </div>
-
-        <div class="login-footer">
-            <a href="/" class="back-link">&larr; Mijoz 3D Menyusiga qaytish</a>
-        </div>
+        <a href="/" class="back-menu-link">← Mehmon Menyusiga Qaytish</a>
     </div>
 </body>
 </html>

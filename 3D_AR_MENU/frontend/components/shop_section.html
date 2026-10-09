@@ -1,0 +1,155 @@
+{# components/shop_section.html — renders one builder section #}
+{% load uznum i18n_tags %}
+{% if section.type == 'hero' %}
+<section class="{% if section.size == 'full' %}px-0{% else %}mx-auto max-w-6xl px-4 sm:px-5{% endif %} py-6">
+    <div class="relative overflow-hidden {% if section.size == 'full' %}rounded-none{% else %}rounded-3xl{% endif %} {% if template == 'neon' %}bg-gradient-to-br from-primary/20 via-accent to-primary/10 neon{% elif tpl_colors %}sp-hero text-white{% else %}bg-accent{% endif %} {% if section.size == 'tall' %}p-12 sm:p-20{% else %}p-8 sm:p-12{% endif %}"
+         {% if section.accent_color %}style="background: linear-gradient(120deg, {{ section.accent_color }}, {{ tpl_colors.accent|default:section.accent_color }})"{% endif %}>
+        {% if section.image %}<img src="{{ section.image }}" class="absolute inset-0 size-full object-cover opacity-20" alt="">{% endif %}
+        <div class="relative max-w-xl">
+            <h2 class="font-display {% if section.size == 'tall' %}text-4xl sm:text-5xl{% else %}text-3xl sm:text-4xl{% endif %} font-semibold tracking-tight">{% if section.icon %}<span class="mr-2">{{ section.icon }}</span>{% endif %}{{ section.title }}</h2>
+            {% if section.subtitle %}<p class="mt-3 leading-relaxed {% if tpl_colors %}text-white/80{% else %}text-muted{% endif %}">{{ section.subtitle }}</p>{% endif %}
+            <a href="#catalog" class="mt-5 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium hover:opacity-90 transition {% if tpl_colors %}bg-white/15 border border-white/30 text-white{% else %}bg-primary text-primary-foreground{% endif %}">{{ section.cta_text|default:t.view_products }}</a>
+        </div>
+    </div>
+</section>
+
+{% elif section.type == 'category_strip' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-4">
+    {% if section.title %}<h3 class="font-display text-xl font-semibold mb-4">{{ section.title }}</h3>{% endif %}
+    <div class="flex gap-3 overflow-x-auto pb-2">
+        {% for c in categories %}
+        <a href="?q=" class="shrink-0 rounded-2xl border border-border bg-card px-5 py-3 text-sm font-medium hover:border-primary hover:text-primary transition">{{ c.name }}</a>
+        {% empty %}<p class="text-sm text-muted">{{ t.categories_no }}</p>{% endfor %}
+    </div>
+</section>
+
+{% elif section.type == 'product_grid' %}
+<section id="catalog" class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    {% if section.title %}<h3 class="font-display text-2xl font-semibold tracking-tight mb-1">{{ section.title }}</h3>{% endif %}
+    {% if section.subtitle %}<p class="text-sm text-muted mb-5">{{ section.subtitle }}</p>{% endif %}
+    {% with grid_products=products %}
+    {% if grid_products %}
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+        {% for product in grid_products %}
+        <div class="card-surface group relative flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
+            <a href="{% url 'customer_product' product.slug %}" class="flex flex-1 flex-col">
+                <div class="relative aspect-square overflow-hidden bg-sand">
+                    {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]">{% endif %}
+                    {% if product.old_price %}<span class="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">−{{ product.discount_percent }}%</span>{% endif %}
+                </div>
+                <div class="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+                    <h3 class="font-display text-sm font-semibold leading-snug sm:text-base line-clamp-2">{{ product.name }}</h3>
+                    <div class="mt-1 flex items-center gap-1 text-xs text-muted">
+                        <svg class="size-3.5 shrink-0 fill-primary text-primary" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                        {{ product.rating|default:"0" }}
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-baseline gap-x-2 pr-10">
+                        <span class="text-sm font-semibold sm:text-base">{{ product.price|uznum }} {{ t.catalog_som }}</span>
+                        {% if product.old_price %}<span class="text-xs text-muted line-through">{{ product.old_price|uznum }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
+                {% csrf_token %}<input type="hidden" name="product_id" value="{{ product.id }}"><input type="hidden" name="quantity" value="1">
+                <button type="submit" aria-label="Savatga qo'shish" class="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-lift transition-transform active:scale-95">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}<div class="card-surface text-center py-16 text-sm text-muted">{{ t.products_no }}</div>{% endif %}
+    {% endwith %}
+</section>
+
+{% elif section.type == 'banner' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-4">
+    <div class="rounded-3xl overflow-hidden {% if section.image %}relative{% else %}bg-primary text-primary-foreground p-8 sm:p-12{% endif %}">
+        {% if section.image %}<img src="{{ section.image }}" class="size-full object-cover" alt="{% if section.icon %}<span class="mr-2">{{ section.icon }}</span>{% endif %}{{ section.title }}">{% endif %}
+        <div class="{% if section.image %}absolute inset-0 flex flex-col justify-center p-8 bg-black/30 text-white{% endif %}">
+            {% if section.title %}<h3 class="font-display text-2xl sm:text-3xl font-semibold">{{ section.title }}</h3>{% endif %}
+            {% if section.subtitle %}<p class="mt-2 max-w-md">{{ section.subtitle }}</p>{% endif %}
+        </div>
+    </div>
+</section>
+
+{% elif section.type == 'map' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    {% if section.title %}<h3 class="font-display text-2xl font-semibold tracking-tight mb-3">{{ section.title }}</h3>{% endif %}
+    <div class="card-surface p-6">
+        <p class="text-muted">{{ section.subtitle|default:shop.address }}</p>
+        <a href="https://maps.google.com/?q={{ shop.latitude }},{{ shop.longitude }}" target="_blank" class="mt-3 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary transition">{{ t.map_open }}</a>
+    </div>
+</section>
+
+{% elif section.type == 'reviews' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    {% if section.title %}<h3 class="font-display text-2xl font-semibold tracking-tight mb-4">{{ section.title }}</h3>{% endif %}
+    <div class="grid gap-4 sm:grid-cols-2">
+        {% for r in reviews %}
+        <div class="card-surface p-5">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-9 h-9 rounded-full bg-accent grid place-items-center text-primary font-semibold">{{ r.customer.name|first|upper }}</div>
+                <div><p class="text-sm font-medium">{{ r.customer.name }}</p><p class="text-xs text-muted">{{ r.created_at|date:"d.m.Y" }}</p></div>
+                <span class="ml-auto text-amber-500 text-sm">★ {{ r.rating }}</span>
+            </div>
+            <p class="text-sm text-muted">{{ r.comment }}</p>
+        </div>
+        {% empty %}<p class="text-sm text-muted">{{ t.reviews_not_found }}</p>{% endfor %}
+    </div>
+</section>
+
+{% elif section.type == 'cta' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    <div class="rounded-3xl {% if template == 'neon' %}neon {% endif %}{% if tpl_colors %}sp-cta text-white{% else %}bg-primary text-primary-foreground{% endif %} {% if section.size == 'tall' %}p-12 sm:p-16{% else %}p-8 sm:p-12{% endif %} text-center" {% if section.accent_color %}style="background: {{ section.accent_color }}"{% endif %}>
+        <h3 class="font-display text-2xl sm:text-3xl font-semibold">{% if section.icon %}<span class="mr-2">{{ section.icon }}</span>{% endif %}{{ section.title|default:t.checkout_title }}</h3>
+        {% if section.subtitle %}<p class="mt-2 opacity-90">{{ section.subtitle }}</p>{% endif %}
+        <a href="#catalog" class="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium transition hover:opacity-90 {% if tpl_colors %}!text-[color:var(--sp-primary)]{% else %}text-primary{% endif %}">{% if section.text %}{{ section.text }}{% else %}{{ t.cart_checkout }}{% endif %}</a>
+    </div>
+</section>
+
+{% elif section.type == 'richtext' %}
+<section class="mx-auto max-w-3xl px-4 sm:px-5 py-6">
+    <div class="card-surface p-6 sm:p-8 prose">{{ section.text|linebreaks }}</div>
+</section>
+
+{% elif section.type == 'ar_showcase' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    {% if section.title %}<h3 class="font-display text-2xl font-semibold tracking-tight mb-4">{{ section.title }}</h3>{% endif %}
+    {% with ar=products.first.ar_model|default:None %}
+    <div class="card-surface p-6 text-sm text-muted">{{ t.ar_description }}</div>
+    {% endwith %}
+</section>
+
+{% elif section.type == 'features' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    {% if section.title %}<h3 class="font-display text-2xl font-semibold tracking-tight mb-5 text-center">{{ section.title }}</h3>{% endif %}
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {% for item in section.items %}
+        <div class="card-surface p-5 flex flex-col items-center text-center" {% if section.accent_color %}style="border: 2px solid {{ section.accent_color }}"{% endif %}>
+            <span class="text-3xl mb-3">{{ item.icon|default:section.icon|default:'✨' }}</span>
+            <h4 class="font-medium mb-1">{{ item.title }}</h4>
+            <p class="text-sm text-muted">{{ item.text }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% elif section.type == 'info_strip' %}
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-6">
+    <div class="{% if tpl_colors %}sp-surface{% else %}card-surface{% endif %} rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+        <div class="flex items-center gap-3">
+            <span class="{% if tpl_colors %}sp-chip{% else %}bg-primary/10 text-primary{% endif %} w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0">🕒</span>
+            <div class="min-w-0"><p class="font-semibold">{{ section.title|default:"Ish vaqti" }}</p><p class="text-muted">{{ shop.working_hours|default:"08:00 – 22:00" }}</p></div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="{% if tpl_colors %}sp-chip{% else %}bg-primary/10 text-primary{% endif %} w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0">📞</span>
+            <div class="min-w-0"><p class="font-semibold">Telefon</p><p class="text-muted">{{ shop.phone }}</p></div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="{% if tpl_colors %}sp-chip{% else %}bg-primary/10 text-primary{% endif %} w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0">📍</span>
+            <div class="min-w-0"><p class="font-semibold">Manzil</p><p class="text-muted truncate">{{ shop.address }}</p></div>
+        </div>
+    </div>
+</section>
+{% endif %}

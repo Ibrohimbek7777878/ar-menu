@@ -1,0 +1,113 @@
+/* ─────────────────────────────────────────────────────────────
+   Clean HeaderNav Styles (Impeccable UI)
+   ───────────────────────────────────────────────────────────── */
+
+.header-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg-surface, #FFFFFF);
+  border-bottom: 1px solid var(--border-subtle, #EAE4D7);
+  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.03);
+}
+
+.header-nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-primary, #1C1917);
+}
+
+.brand-crest {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--brand-primary, #213827);
+  color: #FAF7F0;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.header-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-table-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface-subtle, #F3EEE4);
+  border: 1px solid var(--border-subtle, #EAE4D7);
+  color: var(--brand-primary, #213827);
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.table-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-success, #15803D);
+}
+
+.header-cart-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle, #EAE4D7);
+  background: var(--bg-surface, #FFFFFF);
+  color: var(--text-primary, #1C1917);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.header-cart-btn:hover {
+  background: var(--bg-surface-subtle, #F3EEE4);
+  border-color: var(--brand-primary, #213827);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #FFFFFF;
+}

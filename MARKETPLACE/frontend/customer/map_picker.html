@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Yetkazish manzili — Online Store Guliston{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto;padding:24px 16px;">
+
+  <div style="margin-bottom:16px;">
+    <a href="/cart/" style="color:#16a34a;text-decoration:none;font-size:14px;">← Savatga qaytish</a>
+  </div>
+
+  <h1 style="font-family:'Fraunces',serif;font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">
+    Yetkazish manzili
+  </h1>
+  <p style="color:#6b7280;font-size:14px;margin-bottom:24px;">Xaritada manzilingizni belgilang</p>
+
+  <!-- Xarita -->
+  <div id="map" style="width:100%;height:320px;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:16px;"></div>
+
+  <div id="selected-address" style="
+    background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;
+    padding:12px 16px;margin-bottom:16px;display:none;
+  ">
+    <div style="font-size:12px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Tanlangan manzil</div>
+    <div id="address-text" style="font-size:14px;color:#1a1a1a;"></div>
+  </div>
+
+  <!-- Buyurtma form -->
+  <form method="POST" action="/checkout/" id="checkout-form">
+    {% csrf_token %}
+    <input type="hidden" name="lat" id="input-lat">
+    <input type="hidden" name="lng" id="input-lng">
+
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#1a1a1a;margin-bottom:6px;">Ismingiz *</label>
+      <input name="name" required placeholder="Ismingizni kiriting" style="
+        width:100%;padding:12px 16px;border:1px solid #e5e7eb;border-radius:8px;
+        font-size:15px;background:white;outline:none;box-sizing:border-box;
+      ">
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#1a1a1a;margin-bottom:6px;">Telefon *</label>
+      <input name="phone" required placeholder="+998 90 123 45 67" style="
+        width:100%;padding:12px 16px;border:1px solid #e5e7eb;border-radius:8px;
+        font-size:15px;background:white;outline:none;box-sizing:border-box;
+      ">
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#1a1a1a;margin-bottom:6px;">{{ t.shop_address }} *</label>
+      <input name="address" id="input-address" required placeholder="Ko'cha, uy raqami" style="
+        width:100%;padding:12px 16px;border:1px solid #e5e7eb;border-radius:8px;
+        font-size:15px;background:white;outline:none;box-sizing:border-box;
+      ">
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#1a1a1a;margin-bottom:6px;">{{ t.note_label }}</label>
+      <textarea name="notes" rows="3" placeholder="Qo'shimcha ma'lumot..." style="
+        width:100%;padding:12px 16px;border:1px solid #e5e7eb;border-radius:8px;
+        font-size:15px;background:white;outline:none;resize:vertical;box-sizing:border-box;
+      "></textarea>
+    </div>
+
+    <button type="submit" style="
+      width:100%;padding:14px;background:#16a34a;color:white;border:none;
+      border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;
+    ">Buyurtma berish</button>
+  </form>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+  var defaultLat = {{ MAP_DEFAULT_LAT|default:"40.4775" }};
+  var defaultLng = {{ MAP_DEFAULT_LNG|default:"66.8435" }};
+
+  var map = L.map('map').setView([defaultLat, defaultLng], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  var marker = L.marker([defaultLat, defaultLng], {draggable: true}).addTo(map);
+
+  function updateAddress(lat, lng) {
+    document.getElementById('input-lat').value = lat;
+    document.getElementById('input-lng').value = lng;
+
+    // Reverse geocoding
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var addr = data.display_name || '';
+        document.getElementById('input-address').value = addr;
+        document.getElementById('address-text').textContent = addr;
+        document.getElementById('selected-address').style.display = 'block';
+      });
+  }
+
+  marker.on('dragend', function(){
+    var pos = marker.getLatLng();
+    updateAddress(pos.lat, pos.lng);
+  });
+
+  map.on('click', function(e){
+    marker.setLatLng(e.latlng);
+    updateAddress(e.latlng.lat, e.latlng.lng);
+  });
+
+  // Geolocation
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos){
+      map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+      marker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+      updateAddress(pos.coords.latitude, pos.coords.longitude);
+    });
+  }
+})();
+</script>
+{% endblock %}

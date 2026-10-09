@@ -385,24 +385,11 @@ def customer_product_ar(request, slug):
 
 def ar_catalog(request):
     """AR/3D mahsulotlar katalogi — /ar/.
-    Standart holatda ultra-zamonaviy AIR 3D Menyu (air-3d-menu) ochiladi.
-    Agar ?classic=1 parametri uzatilsa, klassik grid katalog ko'rsatiladi."""
-    if request.GET.get('classic') != '1':
-        from ar3d.views import ar_3d_menu_page
-        return ar_3d_menu_page(request)
+    Yangi Guliston Warm Cream & Forest Green dizayndagi 3D / AR menyu ochiladi.
+    """
+    from web.tma_views import tma_ar_menu
+    return tma_ar_menu(request)
 
-    products = Product.objects.filter(has_3d=True, is_available=True).select_related('shop', 'category')
-    category = request.GET.get('category')
-    if category:
-        products = products.filter(category_id=category)
-    categories = Category.objects.filter(
-        id__in=products.values_list('category_id', flat=True).distinct()
-    ).exclude(id__isnull=True)
-    return render(request, 'customer/ar_catalog.html', {
-        'products': products,
-        'categories': categories,
-        'category_filter': int(category) if category and category.isdigit() else None,
-    })
 
 
 
@@ -708,6 +695,10 @@ def customer_checkout(request):
 
 
 def customer_orders(request):
+    if getattr(django_settings, 'PRODUCT', 'retail') == 'restaurant':
+        from . import tma_views
+        return tma_views.tma_orders(request)
+
     phone = request.GET.get('phone', '')
     orders = []
     if phone:

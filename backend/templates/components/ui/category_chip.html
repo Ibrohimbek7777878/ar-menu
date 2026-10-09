@@ -1,0 +1,19 @@
+{% comment %}
+UI Component: Category Chip
+Parametrlar:
+- name: Toifa nomi
+- id: Toifa identifikatori
+- icon: Toifa emojisi yoki ikonka
+- is_active: Tanlanganligi (boolean)
+- count: Mahsulotlar soni (ixtiyoriy)
+- onclick: Bosilgandagi js funksiya
+{% endcomment %}
+
+<button type="button" 
+        class="chip-ui {% if is_active %}active{% endif %} {{ extra_class }}"
+        data-cat-id="{{ id }}"
+        {% if onclick %}onclick="{{ onclick }}"{% endif %}>
+    {% if icon %}<span class="chip-icon">{{ icon }}</span>{% endif %}
+    <span class="chip-label">{{ name }}</span>
+    {% if count is not None %}<span class="chip-badge">{{ count }}</span>{% endif %}
+</button>

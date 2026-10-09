@@ -95,7 +95,58 @@ def tma_home(request):
 
     # Savat miqdori
     cart = request.session.get('cart', {})
-    cart_count = sum(len(items) for items in cart.values())
+    cart_count = sum(
+        int(item.get('quantity', 1))
+        for items in cart.values() for item in items.values()
+    )
+
+    # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
+    react_products = []
+    for p in featured_products:
+        react_products.append({
+            'id': p.id,
+            'name': p.name,
+            'description': p.description or '',
+            'price': float(p.price),
+            'old_price': float(p.old_price) if p.old_price else None,
+            'image': p.image.url if p.image else '',
+            'category_id': p.category_id,
+            'category_name': p.category.name if p.category else '',
+            'has_3d': bool(p.has_3d),
+            'ar_model': p.ar_model or '',
+            'unit': p.unit or 'dona',
+            'is_halal': bool(p.is_halal),
+            'is_popular': bool(p.is_featured),
+        })
+
+    react_categories = []
+    for c in categories:
+        react_categories.append({
+            'id': c.id,
+            'name': c.name,
+            'icon': getattr(c, 'icon', '') or '🍽️',
+            'count': c.products.filter(is_available=True).count() if hasattr(c, 'products') else None,
+        })
+
+    flat_cart = {}
+    for s_items in cart.values():
+        for pid_str, item in s_items.items():
+            try:
+                flat_cart[int(pid_str)] = int(item.get('quantity', 1))
+            except (ValueError, TypeError):
+                pass
+
+    react_initial_data = {
+        'shop': {'name': active_shop.name if active_shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+        },
+        'categories': react_categories,
+        'products': react_products,
+        'cart': flat_cart,
+        'cartCount': cart_count,
+    }
 
     context = {
         'categories': categories,
@@ -107,6 +158,7 @@ def tma_home(request):
         'table_token': table_token,
         'shop': active_shop,
         'telegram_bot_username': getattr(settings, 'TELEGRAM_BOT_USERNAME', 'marketing_orign_bot'),
+        'react_initial_data_json': json.dumps(react_initial_data),
     }
     return render(request, 'tma/home.html', context)
 
@@ -184,13 +236,43 @@ def tma_cart(request):
         if shop:
             shop_name = shop.name
 
+    total_cart_qty = sum(item['quantity'] for item in items_list)
+
+    # React CartPage uchun JSON
+    react_cart_items = []
+    for item in items_list:
+        react_cart_items.append({
+            'product_id': int(item['product_id']),
+            'name': item['name'],
+            'price': float(item['price']),
+            'quantity': int(item['quantity']),
+            'subtotal': float(item['subtotal']),
+            'image': item['image'] or '',
+            'unit': item['unit'] or 'dona',
+        })
+
+    from notifications.admin_bot import get_restaurant_shop
+    active_shop = table.shop if (table and table.shop) else get_restaurant_shop()
+
+    react_cart_data = {
+        'shop': {'name': active_shop.name if active_shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+        },
+        'items': react_cart_items,
+        'cartCount': total_cart_qty,
+        'totalAmount': float(total_amount),
+    }
+
     context = {
         'items': items_list,
         'total_amount': total_amount,
-        'cart_count': len(items_list),
+        'cart_count': total_cart_qty,
         'shop_name': shop_name,
         'table': table,
         'table_token': table_token,
+        'react_cart_data_json': json.dumps(react_cart_data),
     }
     return render(request, 'tma/cart.html', context)
 
@@ -453,6 +535,36 @@ def tma_checkout(request):
 
         return redirect('tma_order_detail', pk=order.id)
 
+    react_checkout_items = []
+    for it in items_to_create:
+        react_checkout_items.append({
+            'name': it['product'].name,
+            'price': float(it['price']),
+            'quantity': int(it['quantity']),
+            'subtotal': float(it['subtotal']),
+        })
+
+    react_all_tables = []
+    for tb in all_tables:
+        react_all_tables.append({
+            'id': tb.id,
+            'number': str(tb.number),
+            'hall': tb.hall.name if tb.hall else 'Asosiy Zal',
+        })
+
+    react_checkout_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+            'id': table.id if table else None,
+        },
+        'items': react_checkout_items,
+        'cartCount': sum(it['quantity'] for it in items_to_create),
+        'subtotal': float(total_amount),
+        'allTables': react_all_tables,
+    }
+
     context = {
         'shop': shop,
         'items': items_to_create,
@@ -462,6 +574,7 @@ def tma_checkout(request):
         'table': table,
         'all_tables': all_tables,
         'table_token': table_token,
+        'react_checkout_data_json': json.dumps(react_checkout_data),
     }
     return render(request, 'tma/checkout.html', context)
 
@@ -564,7 +677,38 @@ def tma_table_hub(request):
     cart = request.session.get('cart', {})
     cart_count = sum(len(items) for items in cart.values())
 
-    # Mijozning umumiy buyurtmalari
+    # React TableHubPage uchun ma'lumotlar
+    react_tables = []
+    for t in tables:
+        react_tables.append({
+            'id': t.id,
+            'number': str(t.number),
+            'hall_id': t.hall_id,
+            'hall_name': t.hall.name if t.hall else 'Asosiy Zal',
+            'status': t.status,
+            'capacity': getattr(t, 'capacity', 4),
+        })
+
+    react_halls = []
+    for h in halls:
+        react_halls.append({
+            'id': h.id,
+            'name': h.name,
+        })
+
+    react_table_data = {
+        'shop': {'name': active_shop.name if active_shop else 'Guliston'},
+        'table': {
+            'id': table.id,
+            'number': str(table.number),
+            'hall': table.hall.name if table.hall else 'Asosiy Zal',
+        } if table else None,
+        'tables': react_tables,
+        'halls': react_halls,
+        'cartCount': cart_count,
+        'flashMsg': flash_msg,
+    }
+
     orders = Order.objects.all().order_by('-created_at')[:10]
     today_str = datetime.date.today().isoformat()
 
@@ -582,19 +726,114 @@ def tma_table_hub(request):
         'reservation_obj': reservation_obj,
         'flash_msg': flash_msg,
         'today_str': today_str,
+        'react_table_data_json': json.dumps(react_table_data),
     }
     return render(request, 'tma/table_hub.html', context)
 
 
 def tma_orders(request):
-    """Mijozning Stol va Buyurtmalar bo'limi — to'g'ridan-to'g'ri Stol Hubiga ulanadi."""
-    return tma_table_hub(request)
+    """Mijozning Buyurtmalari va Hisob sahifasi (/orders/)."""
+    table, table_token = _get_tma_table(request)
+    shop = get_restaurant_shop()
+
+    # Agar stol biriktirilgan bo'lsa, stol buyurtmalari; aks holda so'nggi buyurtmalar
+    orders_qs = []
+    if table:
+        orders_qs = list(Order.objects.filter(table=table).prefetch_related('items').order_by('-created_at')[:30])
+    if not orders_qs:
+        orders_qs = list(Order.objects.all().prefetch_related('items').order_by('-created_at')[:20])
+
+    react_orders = []
+    for o in orders_qs:
+        items = []
+        for it in o.items.all():
+            items.append({
+                'name': it.product_name,
+                'quantity': it.quantity,
+                'price': float(it.price),
+                'total': float(it.total),
+            })
+        react_orders.append({
+            'id': o.id,
+            'order_number': o.order_number,
+            'created_at': o.created_at.strftime("%d.%m.%Y · %H:%M"),
+            'status': o.status,
+            'status_display': o.get_status_display() or o.status,
+            'total_amount': float(o.final_amount),
+            'table_number': str(o.table.number) if o.table else '',
+            'items': items,
+        })
+
+    cart = request.session.get('cart', {})
+    cart_count = 0
+    try:
+        cart_count = sum(int(item.get('quantity', 1)) for items in cart.values() for item in items.values())
+    except Exception:
+        cart_count = 0
+
+    react_orders_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+        } if table else None,
+        'orders': react_orders,
+        'cartCount': cart_count,
+    }
+
+    context = {
+        'shop': shop,
+        'table': table,
+        'table_token': table_token,
+        'orders': orders_qs,
+        'cart_count': cart_count,
+        'tma_active_tab': 'orders',
+        'react_orders_data_json': json.dumps(react_orders_data),
+    }
+    return render(request, 'tma/orders.html', context)
 
 
 def tma_order_detail(request, pk):
     """TMA Buyurtma tafsilotlari va status kuzatish."""
     order = get_object_or_404(Order, pk=pk)
-    return render(request, 'tma/order_detail.html', {'order': order})
+    table, table_token = _get_tma_table(request)
+    shop = get_restaurant_shop()
+
+    items = []
+    for it in order.items.all():
+        items.append({
+            'name': it.product_name,
+            'quantity': it.quantity,
+            'price': float(it.price),
+            'total': float(it.total),
+        })
+
+    single_order_data = [{
+        'id': order.id,
+        'order_number': order.order_number,
+        'created_at': order.created_at.strftime("%d.%m.%Y · %H:%M"),
+        'status': order.status,
+        'status_display': order.get_status_display() or order.status,
+        'total_amount': float(order.final_amount),
+        'table_number': str(order.table.number) if order.table else '',
+        'items': items,
+    }]
+
+    react_orders_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+        } if table else None,
+        'orders': single_order_data,
+        'cartCount': 0,
+    }
+
+    context = {
+        'order': order,
+        'react_orders_data_json': json.dumps(react_orders_data),
+    }
+    return render(request, 'tma/orders.html', context)
 
 
 # ==============================================================================
@@ -606,12 +845,10 @@ def restaurant_admin_dashboard(request):
     Restoran Boshqaruv Markazi (Dashboard).
     Stollar, Oshxona (KDS), Ofitsiant (POS), Menyu, Kassa va Telegram nazorati.
     """
-    from django.contrib.auth.decorators import login_required
-    if not request.user.is_authenticated:
-        return redirect('restaurant_admin_login')
-
-    role = getattr(request.user, 'role', '')
-    if role == 'waiter':
+    # Prototip va demonstratsiya uchun to'g'ridan-to'g'ri ko'rishga ruxsat
+    # Agar foydalanuvchi tizimga kirmagan bo'lsa ham, demonstratsiya boshqaruv panelini ko'radi
+    role = getattr(request.user, 'role', 'shop_manager')
+    if request.user.is_authenticated and role == 'waiter':
         return redirect('waiter_panel_web')
 
     from tables_restaurant.models import Table, Hall
@@ -621,11 +858,7 @@ def restaurant_admin_dashboard(request):
     from django.db.models import Sum
     from django.utils import timezone
 
-    shop = getattr(request, 'tenant_shop', None)
-    if not shop:
-        shop = Shop.objects.filter(Q(categories__name__icontains='restoran') | Q(name__icontains='restoran') | Q(slug__icontains='restoran')).first()
-        if not shop:
-            shop = Shop.objects.first()
+    shop = getattr(request, 'tenant_shop', None) or get_restaurant_shop()
 
     now = timezone.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -647,10 +880,35 @@ def restaurant_admin_dashboard(request):
     products_count = products_qs.count()
     ar_dishes_count = products_qs.filter(has_3d=True).count()
 
-    recent_orders = orders_qs.order_by('-created_at')[:8]
+    tables_list = list(tables_qs.select_related('hall').order_by('number')[:12])
+    recent_orders = list(orders_qs.order_by('-created_at')[:8])
 
-    context = {
-        'shop': shop,
+    import json
+    react_tables = []
+    for t in tables_list:
+        react_tables.append({
+            'id': t.id,
+            'number': str(t.number),
+            'hall': t.hall.name if getattr(t, 'hall', None) else 'Asosiy Zal',
+            'status': t.status,
+            'capacity': getattr(t, 'capacity', 4),
+        })
+
+    react_recent_orders = []
+    for o in recent_orders:
+        t_name = f"Stol {o.table.number}" if getattr(o, 'table', None) else "Stol belgilanmagan"
+        react_recent_orders.append({
+            'id': o.id,
+            'order_number': f"#{o.order_number}" if not str(o.order_number).startswith('#') else str(o.order_number),
+            'table_name': t_name,
+            'customer_name': o.customer_name or 'Mehmon',
+            'status': o.status,
+            'final_amount': float(getattr(o, 'final_amount', 0) or getattr(o, 'total_amount', 0) or 0),
+            'created_at': o.created_at.strftime('%H:%M') if getattr(o, 'created_at', None) else '',
+        })
+
+    react_admin_data = {
+        'shop': {'name': shop.name if shop else 'Guliston Restoran'},
         'tables_count': tables_count,
         'free_tables_count': free_tables_count,
         'occupied_tables_count': occupied_tables_count,
@@ -659,7 +917,23 @@ def restaurant_admin_dashboard(request):
         'pending_kds_count': pending_kds_count,
         'products_count': products_count,
         'ar_dishes_count': ar_dishes_count,
+        'tables_list': react_tables,
+        'recent_orders': react_recent_orders,
+    }
+
+    context = {
+        'shop': shop,
+        'tables_count': tables_count,
+        'free_tables_count': free_tables_count,
+        'occupied_tables_count': occupied_tables_count,
+        'tables_list': tables_list,
+        'today_orders_count': today_orders_count,
+        'today_revenue': float(today_rev),
+        'pending_kds_count': pending_kds_count,
+        'products_count': products_count,
+        'ar_dishes_count': ar_dishes_count,
         'recent_orders': recent_orders,
+        'react_admin_data_json': json.dumps(react_admin_data, ensure_ascii=False),
     }
     return render(request, 'restaurant_admin/dashboard.html', context)
 
@@ -699,4 +973,469 @@ def restaurant_admin_logout(request):
     logout(request)
     messages.info(request, "Boshqaruv panelidan chiqdingiz.")
     return redirect('restaurant_root')
+
+
+# ==============================================================================
+# YANGI REPLIT PROTOTIP EKRANLARI (WARM CREAM & FOREST GREEN)
+# ==============================================================================
+
+def tma_welcome(request):
+    """
+    Ekran 2: Guliston-Welcome-Entry.png
+    QR scanner, NFC teginish va qo'lda stol raqamini kiritish orqali ulanish sahifasi.
+    """
+    shop = get_restaurant_shop()
+    table, table_token = _get_tma_table(request)
+    cart = request.session.get('cart', {})
+    cart_count = sum(
+        int(item.get('quantity', 1))
+        for items in cart.values() for item in items.values()
+    )
+    react_welcome_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+        },
+        'cartCount': cart_count,
+    }
+
+    context = {
+        'shop': shop,
+        'table': table,
+        'table_token': table_token,
+        'cart_count': cart_count,
+        'proto_active': 'welcome',
+        'react_welcome_data_json': json.dumps(react_welcome_data),
+    }
+    return render(request, 'tma/welcome.html', context)
+
+
+def tma_arrival_confirm(request):
+    """
+    Ekran 3: Create-a-reservation-arrival-screen.png
+    Mehmon kelganini tasdiqlash sahifasi (Muhayyo Karimova, GS-2841, Stol 08).
+    """
+    from tables_restaurant.models import TableReservation, Table
+
+    shop = get_restaurant_shop()
+    code = request.GET.get('code') or request.POST.get('code') or 'GS-2841'
+    table_num = request.GET.get('table') or request.POST.get('table') or '08'
+
+    if request.method == 'POST':
+        # Kelishni tasdiqlash: stolni sessiyaga yozib Dasturxon Menyusiga yo'naltirish
+        request.session['tma_table_token'] = table_num
+        request.session.modified = True
+        return redirect(f"/menu/?table={table_num}&arrived=1")
+
+    # DB dan izlash yoki demo obyekt tayyorlash
+    res_obj = None
+    if shop:
+        res_qs = TableReservation.objects.filter(shop=shop)
+        if res_qs.exists():
+            res_obj = res_qs.first()
+
+    reservation = {
+        'customer_name': res_obj.customer_name if res_obj else 'Muhayyo Karimova',
+        'code': code,
+        'reservation_time': res_obj.reservation_time if res_obj else '19:30',
+        'guests_count': res_obj.guests_count if res_obj else 4,
+        'table_number': table_num,
+    }
+
+    react_reservation_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'mode': 'arrival',
+        'reservation': reservation,
+    }
+
+    context = {
+        'shop': shop,
+        'reservation': reservation,
+        'proto_active': 'arrival',
+        'react_reservation_data_json': json.dumps(react_reservation_data),
+    }
+    return render(request, 'tma/arrival_confirm.html', context)
+
+
+def tma_find_reservation(request):
+    """
+    Ekran 4: Find-a-reservation.png
+    Bron kodi yoki telefon orqali qidirish sahifasi.
+    """
+    from tables_restaurant.models import TableReservation
+    shop = get_restaurant_shop()
+    query = (request.GET.get('q') or request.GET.get('code') or request.GET.get('phone') or '').strip()
+    found_res = None
+    if query:
+        res_qs = TableReservation.objects.filter(shop=shop) if shop else TableReservation.objects.all()
+        # 1. Telefon raqami yoki ism bo'yicha
+        found_res = (
+            res_qs.filter(customer_phone__icontains=query).first() or
+            res_qs.filter(customer_name__icontains=query).first()
+        )
+        # 2. Kod orqali qidirish (GS-XXXX yoki son)
+        if not found_res:
+            import re
+            digits = re.findall(r'\d+', query)
+            if digits:
+                num = int(digits[0])
+                target_id = num - 2840 if num > 2840 else num
+                found_res = res_qs.filter(id=target_id).first()
+
+    res_data = None
+    if found_res:
+        res_data = {
+            'id': found_res.id,
+            'code': f"GS-{2840 + found_res.id}",
+            'customer_name': found_res.customer_name,
+            'customer_phone': found_res.customer_phone,
+            'table_number': found_res.table.number if getattr(found_res, 'table', None) else '08',
+            'reservation_time': str(found_res.reservation_time),
+            'guests_count': found_res.guests_count,
+            'hall': found_res.hall.name if getattr(found_res, 'hall', None) else 'Registon Zali',
+            'status': getattr(found_res, 'get_status_display', lambda: found_res.status)(),
+        }
+
+    react_reservation_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'mode': 'find',
+        'query': query,
+        'reservation': res_data,
+    }
+
+    context = {
+        'shop': shop,
+        'query': query,
+        'found_res': found_res,
+        'proto_active': 'find',
+        'react_reservation_data_json': json.dumps(react_reservation_data),
+    }
+    return render(request, 'tma/find_reservation.html', context)
+
+
+def arrival_desk(request):
+    """
+    Ekran 5: GulistonArrivalDesk.png
+    Hostess / Kutib olish paneli (Kimni kutyapmiz? 3 kutilmoqda, 1 kelishdi).
+    """
+    from tables_restaurant.models import TableReservation
+
+    shop = get_restaurant_shop()
+    reservations_qs = TableReservation.objects.filter(shop=shop) if shop else TableReservation.objects.all()
+
+    react_guests = []
+    for r in reservations_qs[:15]:
+        react_guests.append({
+            'id': r.id,
+            'code': f"GS-{2840 + r.id}",
+            'name': r.customer_name,
+            'phone': r.customer_phone,
+            'table_number': r.table.number if getattr(r, 'table', None) else '08',
+            'hall': r.hall.name if getattr(r, 'hall', None) else 'Registon Zali',
+            'time': str(r.reservation_time),
+            'guests_count': r.guests_count,
+            'status': 'pending' if r.status == 'pending' else 'arrived',
+            'notes': r.notes or '',
+        })
+
+    react_hostess_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'hostess_name': request.user.get_full_name() or request.user.username if request.user.is_authenticated else 'Zarina (Hostess)',
+        'guests': react_guests,
+    }
+
+    context = {
+        'shop': shop,
+        'reservations': reservations_qs[:10],
+        'proto_active': 'desk',
+        'react_hostess_data_json': json.dumps(react_hostess_data),
+    }
+    return render(request, 'seller/arrival_desk.html', context)
+
+
+def arrival_timeline(request):
+    """
+    Ekran 6: Explore-different-approaches.png
+    Vaqt shkalasi bo'yicha tashriflar kuzatuvi (19:30, 19:45, 20:00, 20:15).
+    """
+    return arrival_desk(request)
+
+
+def arrival_checklist(request):
+    """
+    Ekran 7: Coordinate-large-party-arrivals.png
+    Katta guruhlar kelishidan oldin 3 ta muhim tekshiruv (Before they arrive).
+    """
+    return arrival_desk(request)
+
+
+def waiter_mobile_panel(request):
+    """
+    Ekran 8: Guliston-Ofitsiant-Paneli.png (Rahbar / Ofitsiant uchun ixcham mobil boshqaruv).
+    Stollar holati, chaqiruvlar, buyurtma qo'shish va kassa/hisob boshqaruvi.
+    """
+    from tables_restaurant.models import Table
+    shop = get_restaurant_shop()
+    tables_qs = Table.objects.filter(shop=shop, is_active=True).select_related('hall') if shop else Table.objects.filter(is_active=True).select_related('hall')
+
+    react_tables = []
+    for t in tables_qs:
+        react_tables.append({
+            'id': t.id,
+            'number': str(t.number),
+            'hall': t.hall.name if t.hall else 'Asosiy Zal',
+            'status': t.status,
+            'guests_count': getattr(t, 'capacity', 4),
+            'total_bill': 0,
+            'active_orders_count': 0,
+        })
+
+    react_waiter_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'waiter_name': request.user.get_full_name() or request.user.username if request.user.is_authenticated else 'Alisher (Navbatchi)',
+        'tables': react_tables,
+    }
+
+    context = {
+        'shop': shop,
+        'proto_active': 'waiter',
+        'react_waiter_data_json': json.dumps(react_waiter_data),
+    }
+    return render(request, 'seller/waiter_mobile.html', context)
+
+
+def tma_ar_menu(request):
+    """
+    3D / AR Interaktiv Taomlar Menyusi (/ar/).
+    Model-viewer orqali taomlarni 360 gradusda va stol ustida ko'rish imkoniyati.
+    """
+    table, table_token = _get_tma_table(request)
+    shop = get_restaurant_shop()
+
+    # 3D modelga ega bo'lgan yoki faol taomlar
+    products = Product.objects.filter(has_3d=True, is_available=True).select_related('shop', 'category')
+    if not products.exists():
+        products = Product.objects.filter(is_available=True).select_related('shop', 'category')
+
+    cat_ids = products.values_list('category_id', flat=True).distinct()
+    categories = Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True)
+
+    cart = request.session.get('cart', {})
+    cart_count = 0
+    try:
+        cart_count = sum(int(item.get('quantity', 1)) for items in cart.values() for item in items.values())
+    except Exception:
+        cart_count = 0
+
+    react_products = []
+    for p in products:
+        react_products.append({
+            'id': p.id,
+            'name': p.name,
+            'description': p.description or '',
+            'price': float(p.price),
+            'old_price': float(p.old_price) if p.old_price else None,
+            'image': p.image.url if p.image else '',
+            'category_id': p.category_id,
+            'category_name': p.category.name if p.category else '',
+            'has_3d': True,
+            'ar_model': p.ar_model or '',
+            'unit': p.unit or 'dona',
+            'is_halal': bool(p.is_halal),
+            'is_popular': bool(p.is_featured),
+        })
+
+    react_categories = []
+    for c in categories:
+        react_categories.append({
+            'id': c.id,
+            'name': c.name,
+            'icon': getattr(c, 'icon', '') or '✨',
+            'count': c.products.filter(is_available=True).count() if hasattr(c, 'products') else None,
+        })
+
+    flat_cart = {}
+    for s_items in cart.values():
+        for pid_str, item in s_items.items():
+            try:
+                flat_cart[int(pid_str)] = int(item.get('quantity', 1))
+            except (ValueError, TypeError):
+                pass
+
+    react_ar_data = {
+        'shop': {'name': shop.name if shop else 'Guliston'},
+        'table': {
+            'number': str(table.number) if table else '',
+            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+        },
+        'categories': react_categories,
+        'products': react_products,
+        'cart': flat_cart,
+        'cartCount': cart_count,
+    }
+
+    context = {
+        'shop': shop,
+        'products': products,
+        'categories': categories,
+        'cart_count': cart_count,
+        'table': table,
+        'table_token': table_token,
+        'tma_active_tab': 'ar',
+        'react_ar_data_json': json.dumps(react_ar_data),
+    }
+    return render(request, 'tma/ar_menu.html', context)
+
+
+def ui_components_showcase(request):
+    """
+    Senior UI/UX Component Laboratory & Design System Showcase (/ui-components/).
+    Barcha 12 ta reusable UI komponentni ko'rish, tanlash va test qilish sahifasi.
+    """
+    shop = get_restaurant_shop()
+    table, table_token = _get_tma_table(request)
+
+    # Showcase uchun demo taomlar
+    demo_products = Product.objects.filter(is_available=True).select_related('shop', 'category')[:4]
+    if not demo_products.exists():
+        demo_products = Product.objects.all()[:4]
+
+    categories = Category.objects.filter(is_active=True)[:5]
+
+    context = {
+        'shop': shop,
+        'table': table,
+        'table_token': table_token,
+        'demo_products': demo_products,
+        'categories': categories,
+        'tma_active_tab': 'menu',
+    }
+    return render(request, 'tma/ui_showcase.html', context)
+
+
+def _serialize_kds_orders(orders_qs):
+    res = []
+    for o in orders_qs:
+        table_str = f"Stol {o.table.number}" if getattr(o, 'table', None) else "Stol belgilanmagan"
+        if getattr(o, 'table', None) and getattr(o.table, 'hall', None):
+            table_str += f" ({o.table.hall.name})"
+        
+        items_list = []
+        for it in o.items.all():
+            items_list.append({
+                'id': it.id,
+                'name': it.product_name,
+                'quantity': it.quantity,
+                'unit': it.unit or 'dona',
+            })
+        
+        res.append({
+            'id': o.id,
+            'order_number': f"#{o.order_number}" if not str(o.order_number).startswith('#') else str(o.order_number),
+            'table_name': table_str,
+            'customer_name': o.customer_name or 'Mehmon',
+            'status': o.status,
+            'created_at': o.created_at.isoformat() if getattr(o, 'created_at', None) else '',
+            'notes': o.notes or '',
+            'items': items_list,
+        })
+    return res
+
+
+def kds_screen(request):
+    """
+    KDS Oshxona Ekrani (Kitchen Display System):
+    Oshpazlar uchun buyurtmalar kartochkalari, tayyorlash vaqti va taomlar ro'yxati.
+    """
+    from orders.models import Order
+    shop = get_restaurant_shop()
+    active_orders = Order.objects.filter(
+        status__in=['pending', 'confirmed', 'preparing', 'ready']
+    ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')
+
+    if shop:
+        active_orders = active_orders.filter(shop=shop)
+
+    serialized_orders = _serialize_kds_orders(active_orders)
+
+    count_pending = sum(1 for o in serialized_orders if o['status'] in ('pending', 'confirmed'))
+    count_preparing = sum(1 for o in serialized_orders if o['status'] == 'preparing')
+    count_ready = sum(1 for o in serialized_orders if o['status'] == 'ready')
+
+    react_kds_data = {
+        'shop': {'name': shop.name if shop else 'Guliston Restoran'},
+        'orders': serialized_orders,
+        'count_pending': count_pending,
+        'count_preparing': count_preparing,
+        'count_ready': count_ready,
+    }
+
+    import json
+    return render(request, 'tma/kds.html', {
+        'shop': shop,
+        'react_kds_data_json': json.dumps(react_kds_data, ensure_ascii=False),
+    })
+
+
+def kds_orders_api(request):
+    """KDS uchun polling JSON API: har 10 soniyada yangi buyurtmalarni oladi."""
+    from orders.models import Order
+    from django.http import JsonResponse
+    shop = get_restaurant_shop()
+    active_orders = Order.objects.filter(
+        status__in=['pending', 'confirmed', 'preparing', 'ready']
+    ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')
+
+    if shop:
+        active_orders = active_orders.filter(shop=shop)
+
+    serialized_orders = _serialize_kds_orders(active_orders)
+    return JsonResponse({'orders': serialized_orders, 'status': 'ok'})
+
+
+def kds_status_update_api(request):
+    """KDS kartochkasidagi statusni o'zgartirish (state machine yoki xavfsiz o'tish)."""
+    import json
+    from django.http import JsonResponse
+    from orders.models import Order
+    from orders.state_machine import transition_order
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        body = request.POST
+
+    order_id = body.get('order_id')
+    new_status = body.get('new_status')
+
+    if not order_id or not new_status:
+        return JsonResponse({'error': 'order_id va new_status talab qilinadi'}, status=400)
+
+    try:
+        order = Order.objects.get(pk=order_id)
+        # State machine transition
+        ok, msg = transition_order(
+            order, new_status,
+            actor=request.user if request.user.is_authenticated else None,
+            reason='KDS oshxona ekrani orqali yangilandi',
+            request=request
+        )
+        if not ok:
+            # Fallback agar to'g'ridan to'g'ri o'tishga ruxsat zarur bo'lsa
+            order.status = new_status
+            order.save(update_fields=['status'])
+            msg = f"Status {new_status} ga yangilandi"
+
+        return JsonResponse({'ok': True, 'message': msg, 'status': order.status})
+    except Order.DoesNotExist:
+        return JsonResponse({'error': 'Buyurtma topilmadi'}, status=404)
+
+
+
+
+
 

@@ -1,0 +1,73 @@
+{% comment %}
+UI Component: Dish Card (Taom Kartochkasi)
+Parametrlar:
+- product: Product model obyekti
+- layout: vertical (default) | horizontal
+- show_3d: true (default) | false
+- show_add: true (default) | false
+{% endcomment %}
+
+<div class="dish-card-ui layout-{{ layout|default:'vertical' }} {% if product.has_3d %}has-3d-model{% endif %}"
+     data-dish-id="{{ product.id }}"
+     data-category-id="{{ product.category_id }}">
+    
+    <!-- Rasm va nishonlar -->
+    <div class="dish-media-wrap" 
+         {% if product.has_3d %}
+         onclick="open3DModal({{ product.id }}, '{{ product.name|escapejs }}', '{{ product.price|floatformat:0 }} so\'m', '{{ product.ar_model }}', '{{ product.image.url }}')"
+         {% endif %}>
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="dish-thumb-img" loading="lazy">
+        {% else %}
+            <div class="dish-thumb-placeholder">🍲</div>
+        {% endif %}
+
+        <div class="dish-badges-layer">
+            {% if product.has_3d %}
+                <span class="badge-ui badge-ar badge-sz-sm badge-pill">
+                    <span class="badge-icon">✨</span>
+                    <span>3D / AR</span>
+                </span>
+            {% endif %}
+            {% if product.is_halal %}
+                <span class="badge-ui badge-success badge-sz-sm badge-pill">Halol</span>
+            {% endif %}
+        </div>
+
+        {% if product.has_3d and show_3d|default:True %}
+            <button type="button" class="btn-dish-3d-preview" title="3D ko'rish">
+                <span>🔄</span> <span>3D</span>
+            </button>
+        {% endif %}
+    </div>
+
+    <!-- Taom ma'lumotlari -->
+    <div class="dish-content-wrap">
+        <div class="dish-header">
+            <h4 class="dish-title serif">{{ product.name }}</h4>
+            {% if product.description %}
+                <p class="dish-description">{{ product.description|truncatechars:65 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="dish-footer-action">
+            <div class="dish-pricing">
+                <span class="dish-price">{{ product.price|floatformat:0 }}</span>
+                <span class="dish-currency">so'm</span>
+                {% if product.unit and product.unit != 'dona' %}
+                    <span class="dish-unit">/ {{ product.unit }}</span>
+                {% endif %}
+            </div>
+
+            {% if show_add|default:True %}
+                <button type="button" 
+                        class="btn-dish-add-cart" 
+                        onclick="addToCartDirect({{ product.id }}, '{{ product.name|escapejs }}', {{ product.price }})"
+                        title="Savatga qo'shish"
+                        aria-label="Savatga qo'shish">
+                    <span class="btn-add-plus">+</span>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>

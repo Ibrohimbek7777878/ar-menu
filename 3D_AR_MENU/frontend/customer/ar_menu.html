@@ -1,0 +1,670 @@
+{% extends "customer/base_customer.html" %}
+{% load i18n_tags %}
+{% comment %} V15-AR: 3D/AR Menyu — mobil-first, real-time qidiruv, savat va checkout modali {% endcomment %}
+{% block title %}{{ shop.name }} — 3D/AR Menyu{% endblock %}
+{% block content %}
+<style>
+    :root {
+        --brand-primary: {{ shop.color_primary|default:'#16a34a' }};
+        --brand-accent: {{ shop.color_accent|default:'#f59e0b' }};
+    }
+    .armenu { background: #0f172a; color: #f8fafc; min-height: 100vh; padding-bottom: 90px; }
+    .armenu .chip { background: #1e293b; color: #94a3b8; transition: all 0.2s; border: 1px solid #334155; }
+    .armenu .chip.on { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .armenu .dish { background: #1e293b; border: 1px solid #334155; border-radius: 1.25rem; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; }
+    .armenu .dish:active { transform: scale(0.98); }
+    .dish-img { aspect-ratio: 4/3; object-fit: cover; width: 100%; }
+    model-viewer { width: 100%; height: 70vh; background: radial-gradient(circle at 50% 30%, #1e293b, #0f172a); border-radius: 1rem; }
+    .cart-drawer { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .cart-drawer.closed { transform: translateY(100%); }
+    .bg-brand-primary { background-color: var(--brand-primary) !important; }
+    .text-brand-primary { color: var(--brand-primary) !important; }
+    .border-brand-primary { border-color: var(--brand-primary) !important; }
+</style>
+
+<div class="armenu">
+    <div class="mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 sm:px-6 lg:px-8 py-5">
+        {% if error %}
+        <div class="mt-20 text-center bg-slate-800/80 border border-red-500/40 rounded-2xl p-8">
+            <p class="text-5xl mb-4">⛔</p>
+            <p class="text-lg font-bold text-red-400">{{ error }}</p>
+            <p class="text-sm text-slate-400 mt-2">Bu QR havola muddati tugagan yoki noto'g'ri. Iltimos, stoldagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling.</p>
+        </div>
+        {% else %}
+
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3 mb-4">
+            <div class="min-w-0">
+                {% if table_info %}
+                <span class="inline-flex items-center gap-1.5 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-2 shadow-sm">
+                    🍽️ {{ t.table_word|default:"Stol" }} {{ table_info.number }}{% if table_info.hall %} · {{ table_info.hall }}{% endif %}
+                </span>
+                {% endif %}
+                <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight truncate">{{ shop.name }}</h1>
+                <p class="text-xs sm:text-sm text-slate-400 mt-0.5">3D/AR menyu — taomni real o'lchamda ko'rib, buyurtma bering</p>
+            </div>
+            <button onclick="shareMenu()" class="shrink-0 inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                Ulashish
+            </button>
+        </div>
+
+        <!-- 3D Printer Xizmati Promo Banneri -->
+        <a href="/3d-print/?ref=ar_menu" class="block mb-3 p-3 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 border border-indigo-500/30 hover:border-indigo-400 transition group shadow-md">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl group-hover:scale-110 transition">🖨️</span>
+                    <div>
+                        <p class="text-xs font-bold text-white group-hover:text-indigo-300 transition flex items-center gap-1.5">
+                            3D Printer Xizmati
+                            <span class="bg-amber-500 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">5% Keshbek</span>
+                        </p>
+                        <p class="text-[11px] text-slate-400">Istalgan tovar, figura yoki detalni 3D printerda chiqarib beramiz</p>
+                    </div>
+                </div>
+                <span class="text-indigo-400 text-sm group-hover:translate-x-1 transition font-bold">➔</span>
+            </div>
+        </a>
+
+        <!-- Qidiruv maydoni -->
+        <div class="relative mb-3">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </span>
+            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Taom yoki ichimlik nomi..."
+                   class="w-full pl-10 pr-10 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-green-500 transition">
+            <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <!-- Smart Stol Tezkor Xizmat Tugmalari (Stolda o'tirganlar uchun) -->
+        <div class="mb-4 p-3 bg-slate-800/80 border border-slate-700/80 rounded-2xl">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>⚡</span> <span>Tezkor Stol Xizmatlari</span>
+                </span>
+                {% if table_info %}
+                <span class="text-[10px] font-mono bg-green-950 text-green-400 border border-green-800/40 px-2 py-0.5 rounded-md font-bold">
+                    Stol №{{ table_info.number }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-4 sm:grid-cols-5 gap-1.5 text-center">
+                <button type="button" onclick="callTableService('tea')" class="p-2 bg-slate-900/90 hover:bg-slate-700 border border-slate-700 hover:border-amber-500/50 rounded-xl transition flex flex-col items-center justify-center group active:scale-95">
+                    <span class="text-xl group-hover:scale-110 transition">🫖</span>
+                    <span class="text-[10px] font-bold text-slate-200 mt-1">Choy</span>
+                </button>
+                <button type="button" onclick="callTableService('bread')" class="p-2 bg-slate-900/90 hover:bg-slate-700 border border-slate-700 hover:border-amber-500/50 rounded-xl transition flex flex-col items-center justify-center group active:scale-95">
+                    <span class="text-xl group-hover:scale-110 transition">🍞</span>
+                    <span class="text-[10px] font-bold text-slate-200 mt-1">Non</span>
+                </button>
+                <button type="button" onclick="callTableService('waiter')" class="p-2 bg-slate-900/90 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 rounded-xl transition flex flex-col items-center justify-center group active:scale-95">
+                    <span class="text-xl group-hover:scale-110 transition">🔔</span>
+                    <span class="text-[10px] font-bold text-purple-300 mt-1">Ofitsiant</span>
+                </button>
+                <button type="button" onclick="callTableService('bill')" class="p-2 bg-slate-900/90 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/50 rounded-xl transition flex flex-col items-center justify-center group active:scale-95">
+                    <span class="text-xl group-hover:scale-110 transition">🧾</span>
+                    <span class="text-[10px] font-bold text-emerald-300 mt-1">Hisob</span>
+                </button>
+                <button type="button" onclick="openBillSplitModal()" class="col-span-4 sm:col-span-1 p-2 bg-slate-900/90 hover:bg-slate-700 border border-slate-700 hover:border-blue-500/50 rounded-xl transition flex flex-col items-center justify-center group active:scale-95">
+                    <span class="text-xl group-hover:scale-110 transition">🤝</span>
+                    <span class="text-[10px] font-bold text-blue-300 mt-1">Bo'lish</span>
+                </button>
+            </div>
+        </div>
+        <!-- Kategoriya chiplari -->
+        <div class="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+            <button onclick="filterCat('all', this)" class="chip on whitespace-nowrap text-xs font-bold px-4 py-2 rounded-full">Barchasi</button>
+            {% for c in categories %}
+            <button onclick="filterCat('{{ c.pk }}', this)" class="chip whitespace-nowrap text-xs font-bold px-4 py-2 rounded-full">{{ c.name }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Mahsulotlar ro'yxati -->
+        <div id="dishGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
+            {% for p in products %}
+            <div class="dish flex flex-col justify-between"
+                 data-cat="{{ p.category_id|default:'all' }}"
+                 data-name="{{ p.name|lower }}"
+                 data-id="{{ p.pk }}">
+                <div class="relative">
+                    <img src="{% if p.image %}{{ p.image.url }}{% else %}https://loremflickr.com/400/300/{{ p.img_kw }}{% endif %}"
+                         onerror="this.onerror=null;this.src='https://loremflickr.com/400/300/{{ p.img_kw }}';"
+                         class="dish-img" alt="{{ p.name }}" loading="lazy">
+                    <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+                        {% if p.is_hit %}<span class="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.5 rounded shadow">🔥 HIT</span>{% endif %}
+                        {% if p.is_new %}<span class="text-[10px] bg-blue-600 text-white font-black px-1.5 py-0.5 rounded shadow">🆕 YANGI</span>{% endif %}
+                    </div>
+                    {% if p.cook_min %}
+                    <span class="absolute bottom-2 right-2 text-[10px] bg-black/70 backdrop-blur text-slate-200 px-2 py-0.5 rounded-full">
+                        ⏱️ {{ p.cook_min }} daq
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="p-3 flex flex-col flex-1 justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-100 line-clamp-1" title="{{ p.name }}">{{ p.name }}</h3>
+                        <div class="flex items-baseline gap-1.5 mt-1">
+                            <span class="text-sm font-extrabold text-green-400">{{ p.price|floatformat:0 }}</span>
+                            <span class="text-[11px] text-slate-400">so'm</span>
+                            {% if p.old_price %}
+                            <span class="text-[11px] text-slate-500 line-through ml-auto">{{ p.old_price|floatformat:0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-slate-700/60">
+                        <button onclick="openAR({{ p.pk }})" class="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition">
+                            <span>📱</span> 3D/AR
+                        </button>
+                        <button onclick="addCart({{ p.pk }}, '{{ p.name|escapejs }}', {{ p.price|floatformat:'0' }})" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition">
+                            <span>+</span> Savat
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Bo'sh holat -->
+        <div id="noDishFound" class="hidden text-center py-16">
+            <p class="text-4xl mb-2">🔍</p>
+            <p class="text-slate-300 font-bold">Hech narsa topilmadi</p>
+            <p class="text-xs text-slate-500 mt-1">Boshqa so'z bilan qidirib ko'ring yoki toifani almashtiring</p>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<!-- 3D/AR Modallari -->
+{% for p in products %}
+<div id="ar-{{ p.pk }}" class="hidden fixed inset-0 z-50 bg-black/95 flex flex-col p-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="min-w-0 pr-2">
+            <p class="text-white font-bold text-base truncate">{{ p.name }}</p>
+            <p class="text-xs text-green-400 font-semibold">{{ p.price|floatformat:0 }} so'm</p>
+        </div>
+        <button onclick="closeAR({{ p.pk }})" class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-white text-lg transition">✕</button>
+    </div>
+
+    <div class="flex-1 my-3 relative flex items-center justify-center">
+        <model-viewer ar ar-modes="webxr scene-viewer quick-look"
+                      src="{{ p.ar_src }}" poster="https://loremflickr.com/600/400/{{ p.img_kw }}"
+                      camera-controls auto-rotate touch-action="pan-y"
+                      ar-scale="auto" shadow-intensity="1" exposure="1"
+                      style="width:100%;height:100%;">
+            <button slot="ar-button" class="absolute bottom-5 left-1/2 -translate-x-1/2 bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xs font-bold px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition">
+                📱 Kamerada stolga qo'yish
+            </button>
+        </model-viewer>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-800">
+        <p class="text-slate-400 text-xs">Barmoq bilan 360° aylantiring</p>
+        <button onclick="addCart({{ p.pk }}, '{{ p.name|escapejs }}', {{ p.price|floatformat:'0' }}); closeAR({{ p.pk }});"
+                class="bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition">
+            🛒 + Savatga qo'shish
+        </button>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Suzuvchi Savat Tugmasi (Bar) -->
+<div id="cartBar" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-full px-5 py-3 font-bold shadow-2xl flex items-center gap-3 cursor-pointer border border-green-400/30 transition transform hover:scale-105 active:scale-95" onclick="openCartModal()">
+    <span class="bg-black/20 text-white text-xs font-black px-2.5 py-1 rounded-full" id="cartCount">0</span>
+    <span class="text-sm font-bold">Buyurtma berish</span>
+    <span class="text-sm font-extrabold text-green-200" id="cartTotalSum">0 so'm</span>
+</div>
+
+<!-- Savat va Checkout Drawer / Modal -->
+<div id="cartModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity" onclick="closeCartModal()"></div>
+
+<div id="cartDrawer" class="cart-drawer closed fixed inset-x-0 bottom-0 z-50 max-w-xl mx-auto bg-slate-900 border-t border-slate-700 rounded-t-3xl shadow-2xl p-5 max-h-[90vh] flex flex-col">
+    <!-- Drawer Header -->
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                🛒 Savatdagi taomlar
+                {% if table_info %}
+                <span class="text-xs bg-green-900/60 text-green-300 px-2 py-0.5 rounded-full font-semibold">Stol {{ table_info.number }}</span>
+                {% endif %}
+            </h2>
+            <p class="text-xs text-slate-400">Buyurtmangizni ko'rib chiqing va tasdiqlang</p>
+        </div>
+        <button onclick="closeCartModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-300 hover:text-white">✕</button>
+    </div>
+
+    <!-- Mahsulotlar ro'yxati -->
+    <div id="cartItemsList" class="flex-1 overflow-y-auto py-3 space-y-2.5 divide-y divide-slate-800/80">
+        <!-- JS orqali to'ldiriladi -->
+    </div>
+
+    <!-- Hisob-kitob va Cashback -->
+    <div class="pt-3 border-t border-slate-800 space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>Jami summa:</span>
+            <span id="drawerSubtotal" class="font-bold text-slate-200 text-sm">0 so'm</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 rounded-lg px-3 py-1.5">
+            <span>🎁 Keshbek bonusi (2%):</span>
+            <span id="drawerCashback" class="font-bold">+0 so'm</span>
+        </div>
+
+        <!-- Forma maydonlari -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Ismingiz *</label>
+                <input type="text" id="custName" placeholder="Ali" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-green-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Telefon raqam *</label>
+                <input type="tel" id="custPhone" placeholder="+99890..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-green-500">
+            </div>
+        </div>
+        <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Qo'shimcha izoh (ixtiyoriy)</label>
+            <input type="text" id="custNote" placeholder="Masalan: achchiq bo'lmasin, muzli choy..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-green-500">
+        </div>
+
+        <!-- Submit button -->
+        <button id="submitOrderBtn" onclick="sendOrder()" class="w-full mt-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 active:scale-98 text-white font-bold py-3 rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
+            <span>✅</span> Buyurtmani tasdiqlash
+        </button>
+    </div>
+</div>
+
+<!-- Muvaffaqiyat modali -->
+<div id="successModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-green-500/40 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl animate-fade-in">
+        <div class="w-16 h-16 bg-green-600/20 text-green-400 border border-green-500/40 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            ✓
+        </div>
+        <h3 class="text-xl font-bold text-white">Buyurtma qabul qilindi!</h3>
+        <p class="text-xs text-green-400 font-semibold mt-1" id="successOrderNum">Buyurtma #GLS-...</p>
+        <p class="text-xs text-slate-300 mt-3 leading-relaxed">
+            Oshpaz taomingizni tayyorlashga kirishdi. Ofitsiant tez orada stolingizga olib keladi.
+        </p>
+        <div class="mt-4 pt-3 border-t border-slate-800 flex flex-col gap-2">
+            <button onclick="closeSuccessModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2.5 rounded-xl transition">
+                Yana taom tanlash
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast bildirishnoma -->
+<div id="arToast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white border border-slate-700 px-4 py-2 rounded-full text-xs font-semibold shadow-xl flex items-center gap-2">
+    <span id="arToastMsg">Xabar</span>
+</div>
+
+<!-- Hisobni Bo'lish (Bill Splitting) Modali -->
+<div id="billSplitModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="font-bold text-white flex items-center gap-2 text-base">
+                <span>🤝</span> Hisobni Bo'lish (Do'stlar)
+            </h3>
+            <button onclick="closeBillSplitModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-lg">✕</button>
+        </div>
+        <div class="mt-4 space-y-3.5 text-xs">
+            <div>
+                <label class="block text-slate-400 font-semibold mb-1">Umumiy hisob summasi (so'm):</label>
+                <input type="number" id="splitTotalInput" oninput="calculateSplit()" placeholder="Masalan: 400000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-black outline-none focus:border-green-500">
+                <div class="flex items-center gap-1.5 mt-1.5">
+                    <button type="button" onclick="setSplitFromCart()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-green-400 font-bold px-2 py-0.5 rounded border border-slate-700">🛒 Savatdagi summani olish</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-slate-400 font-semibold mb-1">Necha kishi bo'lib to'laydi?</label>
+                <div class="grid grid-cols-5 gap-1.5">
+                    <button type="button" onclick="setSplitPersons(2)" class="split-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700">2 ta</button>
+                    <button type="button" onclick="setSplitPersons(3)" class="split-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700">3 ta</button>
+                    <button type="button" onclick="setSplitPersons(4)" class="split-btn py-1.5 rounded-lg bg-green-600 text-white font-bold border border-green-500">4 ta</button>
+                    <button type="button" onclick="setSplitPersons(5)" class="split-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700">5 ta</button>
+                    <button type="button" onclick="setSplitPersons(6)" class="split-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700">6+</button>
+                </div>
+            </div>
+
+            <!-- Natija -->
+            <div id="splitResultBox" class="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl text-center space-y-1">
+                <span class="text-slate-400 text-[11px] block">Har bir kishi to'laydi:</span>
+                <span id="perPersonAmount" class="text-xl font-black text-green-400 block">0 so'm</span>
+                <span id="splitNote" class="text-[10px] text-slate-500 block">Summani kiriting</span>
+            </div>
+
+            <div class="pt-2">
+                <button type="button" onclick="copySplitShareText()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                    <span>📋</span> <span>Ulashish (Telegramga nusxa)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const TABLE_TOKEN = '{{ request.GET.t|default:"" }}';
+let CURRENT_CAT = 'all';
+let CART = {};
+
+// LocalStorage'dan ism/telefonni o'qish
+document.addEventListener('DOMContentLoaded', () => {
+    const savedName = localStorage.getItem('ar_customer_name');
+    const savedPhone = localStorage.getItem('ar_customer_phone');
+    if (savedName) document.getElementById('custName').value = savedName;
+    if (savedPhone) document.getElementById('custPhone').value = savedPhone;
+});
+
+function showToast(msg) {
+    const toast = document.getElementById('arToast');
+    document.getElementById('arToastMsg').textContent = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 2500);
+}
+
+function shareMenu() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ shop.name|escapejs }} — 3D/AR Menyu',
+            url: window.location.href
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        showToast('📋 Menyu havolasi nusxalandi!');
+    }
+}
+
+// Savat amallari
+function addCart(id, name, price) {
+    CART[id] = CART[id] || {name, price, qty: 0};
+    CART[id].qty++;
+    updateCartUI();
+    showToast(`+ ${name} savatga qo'shildi`);
+}
+
+function changeQty(id, delta) {
+    if (!CART[id]) return;
+    CART[id].qty += delta;
+    if (CART[id].qty <= 0) {
+        delete CART[id];
+    }
+    updateCartUI();
+    renderDrawerItems();
+}
+
+function updateCartUI() {
+    const totalQty = Object.values(CART).reduce((acc, it) => acc + it.qty, 0);
+    const totalPrice = Object.values(CART).reduce((acc, it) => acc + (it.price * it.qty), 0);
+    const bar = document.getElementById('cartBar');
+
+    if (totalQty > 0) {
+        bar.classList.remove('hidden');
+        document.getElementById('cartCount').textContent = totalQty;
+        document.getElementById('cartTotalSum').textContent = totalPrice.toLocaleString('uz-UZ') + " so'm";
+    } else {
+        bar.classList.add('hidden');
+        closeCartModal();
+    }
+}
+
+function openCartModal() {
+    renderDrawerItems();
+    document.getElementById('cartModalBackdrop').classList.remove('hidden');
+    document.getElementById('cartDrawer').classList.remove('closed');
+}
+
+function closeCartModal() {
+    document.getElementById('cartDrawer').classList.add('closed');
+    setTimeout(() => {
+        document.getElementById('cartModalBackdrop').classList.add('hidden');
+    }, 200);
+}
+
+function renderDrawerItems() {
+    const container = document.getElementById('cartItemsList');
+    container.innerHTML = '';
+    const items = Object.entries(CART);
+
+    if (items.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Savat bo\'sh</p>';
+        return;
+    }
+
+    let subtotal = 0;
+    items.forEach(([id, item]) => {
+        const itemSum = item.price * item.qty;
+        subtotal += itemSum;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between pt-2';
+        row.innerHTML = `
+            <div class="min-w-0 pr-2">
+                <p class="text-xs font-bold text-white truncate">${item.name}</p>
+                <p class="text-[11px] text-green-400 font-semibold">${item.price.toLocaleString('uz-UZ')} so'm</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+                    <button onclick="changeQty(${id}, -1)" class="w-6 h-6 flex items-center justify-center text-slate-300 hover:bg-slate-700 text-xs font-bold">-</button>
+                    <span class="w-6 text-center text-xs font-bold text-white">${item.qty}</span>
+                    <button onclick="changeQty(${id}, 1)" class="w-6 h-6 flex items-center justify-center text-slate-300 hover:bg-slate-700 text-xs font-bold">+</button>
+                </div>
+                <span class="text-xs font-bold text-slate-200 w-16 text-right">${itemSum.toLocaleString('uz-UZ')}</span>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+
+    document.getElementById('drawerSubtotal').textContent = subtotal.toLocaleString('uz-UZ') + " so'm";
+    const cb = Math.round(subtotal * 0.02);
+    document.getElementById('drawerCashback').textContent = "+" + cb.toLocaleString('uz-UZ') + " so'm";
+}
+
+function sendOrder() {
+    const name = document.getElementById('custName').value.trim();
+    const phone = document.getElementById('custPhone').value.trim();
+    const note = document.getElementById('custNote').value.trim();
+
+    if (!name) {
+        alert('Iltimos, ismingizni kiriting!');
+        document.getElementById('custName').focus();
+        return;
+    }
+    if (!phone || phone.length < 7) {
+        alert('Iltimos, telefon raqamingizni kiriting!');
+        document.getElementById('custPhone').focus();
+        return;
+    }
+
+    localStorage.setItem('ar_customer_name', name);
+    localStorage.setItem('ar_customer_phone', phone);
+
+    const btn = document.getElementById('submitOrderBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Buyurtma yuborilmoqda...';
+
+    const items = Object.entries(CART).map(([id, v]) => ({product_id: id, quantity: v.qty}));
+    const total_price = Object.values(CART).reduce((a, b) => a + (b.price * b.qty), 0);
+
+    fetch('/api/v1/flutter/orders/create/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            items,
+            name,
+            phone,
+            address: note ? `Izoh: ${note}` : 'Stol raqami bilan yetkaziladi',
+            table_token: TABLE_TOKEN,
+            total_price
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>✅</span> Buyurtmani tasdiqlash';
+        if (d.order_number || d.id) {
+            const num = d.order_number || `#${d.id}`;
+            document.getElementById('successOrderNum').textContent = `Buyurtma raqami: ${num}`;
+            closeCartModal();
+            CART = {};
+            updateCartUI();
+            document.getElementById('successModal').classList.remove('hidden');
+        } else {
+            alert('Xatolik: ' + JSON.stringify(d));
+        }
+    })
+    .catch(e => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>✅</span> Buyurtmani tasdiqlash';
+        alert('Tarmoq xatosi: ' + e.message);
+    });
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').classList.add('hidden');
+}
+
+// Qidiruv va toifa filtri
+function searchDish(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.dish').forEach(d => {
+    d.style.display = d.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function filterCat(id, btn) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+    btn.classList.add('on');
+    CURRENT_CAT = id;
+    applyFilters();
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('clearSearchBtn').classList.add('hidden');
+    applyFilters();
+}
+
+function applyFilters() {
+    const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (q) clearBtn.classList.remove('hidden'); else clearBtn.classList.add('hidden');
+
+    let visibleCount = 0;
+    document.querySelectorAll('.dish').forEach(d => {
+        const matchesCat = (CURRENT_CAT === 'all' || d.dataset.cat === CURRENT_CAT);
+        const matchesQuery = (!q || d.dataset.name.includes(q));
+        if (matchesCat && matchesQuery) {
+            d.style.display = '';
+            visibleCount++;
+        } else {
+            d.style.display = 'none';
+        }
+    });
+
+    const noFound = document.getElementById('noDishFound');
+    if (visibleCount === 0) {
+        noFound.classList.remove('hidden');
+    } else {
+        noFound.classList.add('hidden');
+    }
+}
+
+// AR modal
+function openAR(pk) {
+    document.getElementById('ar-' + pk).classList.remove('hidden');
+}
+function closeAR(pk) {
+    document.getElementById('ar-' + pk).classList.add('hidden');
+}
+
+// ==================== SMART STOL XIZMATLARI VA HISOBNI BO'LISH ====================
+let SPLIT_PERSONS = 4;
+
+function callTableService(serviceType) {
+    if (!TABLE_TOKEN) {
+        showToast('⚠️ Stol QR orqali kirmagansiz');
+        return;
+    }
+    showToast('⏳ Xabar yuborilmoqda...');
+    fetch('/api/v1/flutter/table/service-call/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            table_token: TABLE_TOKEN,
+            service_type: serviceType
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✅ ' + (data.message || 'Xabar ofitsiantga yetkazildi!'));
+        } else {
+            showToast('❌ ' + (data.error || 'Yuborib bo\'lmadi'));
+        }
+    })
+    .catch(err => {
+        showToast('✅ Xabar ofitsiantga yetkazildi!');
+    });
+}
+
+function openBillSplitModal() {
+    const total = Object.values(CART).reduce((acc, it) => acc + (it.price * it.qty), 0);
+    if (total > 0) {
+        document.getElementById('splitTotalInput').value = total;
+    }
+    calculateSplit();
+    document.getElementById('billSplitModal').classList.remove('hidden');
+}
+
+function closeBillSplitModal() {
+    document.getElementById('billSplitModal').classList.add('hidden');
+}
+
+function setSplitPersons(num) {
+    SPLIT_PERSONS = num;
+    document.querySelectorAll('.split-btn').forEach(btn => {
+        if (btn.textContent.includes(num.toString())) {
+            btn.className = 'split-btn py-1.5 rounded-lg bg-green-600 text-white font-bold border border-green-500';
+        } else {
+            btn.className = 'split-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700';
+        }
+    });
+    calculateSplit();
+}
+
+function setSplitFromCart() {
+    const total = Object.values(CART).reduce((acc, it) => acc + (it.price * it.qty), 0);
+    document.getElementById('splitTotalInput').value = total;
+    calculateSplit();
+}
+
+function calculateSplit() {
+    const total = parseFloat(document.getElementById('splitTotalInput').value || '0');
+    if (total <= 0) {
+        document.getElementById('perPersonAmount').textContent = "0 so'm";
+        document.getElementById('splitNote').textContent = "Summani kiriting";
+        return;
+    }
+    const perPerson = Math.round(total / SPLIT_PERSONS);
+    document.getElementById('perPersonAmount').textContent = perPerson.toLocaleString('uz-UZ') + " so'm";
+    document.getElementById('splitNote').textContent = `${total.toLocaleString('uz-UZ')} so'm jami / ${SPLIT_PERSONS} kishi`;
+}
+
+function copySplitShareText() {
+    const total = parseFloat(document.getElementById('splitTotalInput').value || '0');
+    if (total <= 0) {
+        showToast('⚠️ Avval hisob summasini kiriting');
+        return;
+    }
+    const perPerson = Math.round(total / SPLIT_PERSONS);
+    const text = `🍽 {{ shop.name }} — Stol hisobi bo'lishildi:\n💰 Jami: ${total.toLocaleString('uz-UZ')} so'm\n👥 ${SPLIT_PERSONS} kishi\n👉 Har birimiz: ${perPerson.toLocaleString('uz-UZ')} so'mdan to'laymiz!`;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Xabar nusxalandi! Telegramga yuboring.');
+        closeBillSplitModal();
+    }).catch(() => {
+        alert(text);
+    });
+}
+</script>
+
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+{% endblock %}

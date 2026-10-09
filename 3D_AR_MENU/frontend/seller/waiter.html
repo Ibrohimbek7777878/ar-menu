@@ -1,0 +1,718 @@
+{% extends "seller/base_seller.html" %}
+{% load i18n_tags uznum %}
+{% block title %}Ofitsiant POS — {{ shop.name }}{% endblock %}
+{% block page_title %}Ofitsiant POS (Stollar & 3D Taomlar){% endblock %}
+
+{% block extra_head %}
+<!-- Google 3D Model Viewer for interactive dish models -->
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+{% endblock %}
+
+{% block seller_css %}
+<style>
+    /* ─── OFITSIANT POS TABLET/MOBILE INTERFEYSI ─── */
+    .pos-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    @media (min-width: 1024px) {
+        .pos-grid {
+            grid-template-columns: 1.7fr 1fr;
+        }
+    }
+
+    /* Stollar paneli */
+    .table-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.65rem 0.5rem;
+        border-radius: 0.875rem;
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+    }
+    .table-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -2px rgba(70, 45, 20, 0.08);
+    }
+    .table-btn.active-selected {
+        border-color: #16a34a !important;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25) !important;
+        background: rgba(22, 163, 74, 0.08) !important;
+    }
+    .table-btn.is-occupied {
+        border-color: rgba(220, 38, 38, 0.4);
+        background: rgba(220, 38, 38, 0.06);
+    }
+    .table-btn.is-bill {
+        border-color: rgba(147, 51, 234, 0.4);
+        background: rgba(147, 51, 234, 0.08);
+    }
+
+    /* Taomlar kartochkasi */
+    .dish-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s;
+        cursor: pointer;
+    }
+    .dish-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px -4px rgba(70, 45, 20, 0.10);
+        border-color: rgba(199, 91, 57, 0.4);
+    }
+    .dark .dish-card:hover {
+        box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.7), 0 0 16px rgba(199, 91, 57, 0.2);
+    }
+    .dish-thumb-wrap {
+        position: relative;
+        width: 100%;
+        height: 120px;
+        background: var(--sand);
+        overflow: hidden;
+    }
+    .dish-thumb {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+    .dish-card:hover .dish-thumb {
+        transform: scale(1.06);
+    }
+
+    /* 3D Prevyu Modali */
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .modal-box {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 1.5rem;
+        width: 100%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        transform: scale(0.95);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-backdrop.show .modal-box {
+        transform: scale(1);
+    }
+
+    model-viewer {
+        width: 100%;
+        height: 280px;
+        background-color: transparent;
+        --poster-color: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+    <!-- 1. YUQORI TEZKOR STATUS VA STATISTIKA -->
+    <div class="card p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                🍽️
+            </div>
+            <div>
+                <h1 class="font-display font-bold text-base sm:text-lg leading-tight">{{ shop.name }}</h1>
+                <p class="text-xs text-muted">Ofitsiant Planshet & Kassa POS Paneli</p>
+            </div>
+        </div>
+
+        <!-- Stollar qisqa statistikasi -->
+        <div class="flex items-center gap-2 flex-wrap text-xs">
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-bold flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>{{ tables|length }} ta stol</span>
+            </span>
+            <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 font-bold flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>{{ orders|length }} ta aktiv buyurtma</span>
+            </span>
+            <a href="{% url 'seller_kds_web' %}" target="_blank" class="btn btn-outline !py-1 !px-2.5 !text-xs font-bold text-primary">
+                📺 KDS Oshxona ↗
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. STOLLAR XARITASI (ZALLAR BO'YICHA) -->
+    <div class="card p-3 sm:p-4">
+        <div class="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-xs sm:text-sm flex items-center gap-1.5 text-ink">
+                    <span>📍</span> STOLLAR XARITASI:
+                </span>
+                <span id="selected-table-label" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    Stol tanlanmagan
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openQuickAddModal()" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/20 font-bold text-xs flex items-center gap-1 transition">
+                    <span>➕</span> Bitta stol qo'shish
+                </button>
+                <a href="{% url 'seller_tables_web' %}" class="px-2.5 py-1 rounded-lg bg-sand hover:bg-sand-dark text-muted hover:text-ink font-bold text-xs transition">
+                    🏛️ Zallar & Stollar ↗
+                </a>
+            </div>
+        </div>
+
+        {% if tables %}
+        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+            {% for t in tables %}
+            <button type="button" 
+                    id="tbl-btn-{{ t.id }}"
+                    onclick="selectTable('{{ t.id }}', '{{ t.number }}', '{{ t.status }}', '{{ t.hall.name|default:"Asosiy" }}')"
+                    class="table-btn {% if t.status == 'occupied' %}is-occupied{% elif t.status == 'bill' %}is-bill{% endif %}">
+                <span class="text-xs font-black">#{{ t.number }}</span>
+                <span class="text-[10px] text-muted truncate max-w-full">
+                    {% if t.status == 'free' %}Bo'sh{% elif t.status == 'occupied' %}Band{% else %}Hisob{% endif %}
+                </span>
+                <span class="text-[9px] text-muted/70">{{ t.capacity }} kishi</span>
+            </button>
+            {% endfor %}
+            <button type="button" onclick="openQuickAddModal()" class="table-btn border-dashed border-primary/30 bg-primary/5 hover:bg-primary/15 text-primary transition" title="Yangi stol qo'shish">
+                <span class="text-base font-black leading-none">+</span>
+                <span class="text-[10px] font-bold">Stol qo'shish</span>
+                <span class="text-[9px] text-muted/80">yangi</span>
+            </button>
+        </div>
+        {% else %}
+        <!-- BO'SH HOLAT (ANIQ VA TUSHUNARLI STRUKTURA) -->
+        <div class="text-center py-7 px-4 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 my-2">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl shadow-inner">
+                🪑
+            </div>
+            <h4 class="font-extrabold text-sm text-ink mb-1">Zalda hali stollar shakllantirilmagan</h4>
+            <p class="text-xs text-muted max-w-lg mx-auto mb-4 leading-relaxed">
+                Ofitsiant mijoz buyurtmasini qabul qilishi, har bir stolga chek ochishi va oshxonaga uzatishi uchun stollar zarur.
+                Quyidagi tugma orqali darhol 10 ta stolni 1-klikda avtomatik ochishingiz mumkin:
+            </p>
+            <div class="flex items-center justify-center gap-2.5 flex-wrap">
+                <form method="POST" action="{% url 'seller_waiter_web' %}" class="inline-block">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_create_tables">
+                    <button type="submit" class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2">
+                        <span>⚡</span> 1-10 gacha Avtomatik Stol Yaratish (1-klikda)
+                    </button>
+                </form>
+                <button type="button" onclick="openQuickAddModal()" class="px-3.5 py-2.5 rounded-xl bg-sand hover:bg-sand-dark text-ink text-xs font-bold border border-border transition flex items-center gap-1.5">
+                    <span>➕</span> Bitta Stol Qo'shish
+                </button>
+                <a href="{% url 'seller_tables_web' %}" class="px-3.5 py-2.5 rounded-xl text-primary hover:bg-primary/10 text-xs font-bold transition">
+                    🏛️ Stollar & Zallar Boshqaruvi ↗
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. ASOSIY POS MAYDONI: CHAPDA TAOMLAR, O'NGDA STOL CHEKI -->
+    <div class="pos-grid">
+        <!-- CHAP BO'LIM: TAOMLAR MENYUSI & FILTRLAR -->
+        <div class="space-y-3">
+            <!-- Qidiruv va Toifa Filterlari -->
+            <div class="card p-3 flex flex-wrap items-center gap-2">
+                <div class="relative flex-1 min-w-[180px]">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-xs">🔍</span>
+                    <input type="text" id="dishSearch" oninput="filterDishes()" placeholder="Taom nomi bo'yicha qidirish..." class="!py-1.5 !pl-8 !text-xs">
+                </div>
+                
+                <!-- Kategoriya Tugmalari -->
+                <div class="flex gap-1 overflow-x-auto no-scrollbar py-1">
+                    <button type="button" onclick="filterCategory('all', this)" class="cat-pill px-3 py-1 rounded-full text-xs font-bold bg-primary text-white transition">
+                        Barchasi
+                    </button>
+                    {% for c in categories %}
+                    <button type="button" onclick="filterCategory('{{ c.id }}', this)" class="cat-pill px-3 py-1 rounded-full text-xs font-semibold bg-sand text-muted hover:text-ink transition">
+                        {{ c.name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Taomlar Gridi -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3" id="dishesGrid">
+                {% for p in products %}
+                <div class="dish-card" 
+                     data-cat="{{ p.category.id|default:'all' }}"
+                     data-name="{{ p.name|lower }}"
+                     onclick="openDishModal('{{ p.id }}', '{{ p.name|escapejs }}', '{{ p.price|floatformat:0 }}', '{% if p.image %}{{ p.image.url }}{% endif %}', '{{ p.glb_path|default:"" }}', '{{ p.description|default:""|escapejs }}')">
+                    <div class="dish-thumb-wrap">
+                        {% if p.image %}
+                        <img src="{{ p.image.url }}" alt="{{ p.name }}" class="dish-thumb" loading="lazy">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-3xl">🍲</div>
+                        {% endif %}
+
+                        <!-- 3D / AR Badge -->
+                        {% if p.has_3d %}
+                        <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-purple-600/90 text-white text-[9px] font-black tracking-wider flex items-center gap-0.5 shadow-sm">
+                            <span>🥽</span> 3D / AR
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="p-2.5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <p class="font-bold text-xs line-clamp-1 text-ink">{{ p.name }}</p>
+                            <p class="text-[10px] text-muted">{{ p.category.name|default:"Taom" }}</p>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between">
+                            <span class="text-xs font-black text-primary">{{ p.price|floatformat:0 }} so'm</span>
+                            <button type="button" 
+                                    onclick="event.stopPropagation(); addItemToCart('{{ p.id }}', '{{ p.name|escapejs }}', {{ p.price|floatformat:0 }})"
+                                    class="w-7 h-7 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-white flex items-center justify-center text-sm font-bold transition">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full card p-8 text-center text-muted text-xs">
+                    Hozircha menyuga taomlar qo'shilmagan.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- O'NG BO'LIM: STOL CHEKI & OCHIQ BUYURTMA (KDS ga yuborish) -->
+        <div class="space-y-3">
+            <div class="card p-4 sticky top-20">
+                <div class="flex items-center justify-between border-b border-border pb-2.5 mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🧾</span>
+                        <div>
+                            <h2 class="font-bold text-sm" id="cart-table-title">Stol Tanlanmagan</h2>
+                            <p class="text-[10px] text-muted">Ofitsiant cheki</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="clearCart()" class="text-[11px] text-muted hover:text-red-500 font-semibold transition">
+                        Tozalash
+                    </button>
+                </div>
+
+                <!-- Stolning oldingi aktiv buyurtmasi bo'lsa -->
+                <div id="active-table-order-box" class="hidden mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs">
+                    <div class="flex items-center justify-between font-bold text-amber-700 dark:text-amber-300">
+                        <span>Aktiv Buyurtma: #<span id="active-order-num"></span></span>
+                        <span id="active-order-status" class="px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 text-[10px]"></span>
+                    </div>
+                    <ul id="active-order-items" class="mt-1.5 space-y-0.5 text-muted text-[11px]"></ul>
+                </div>
+
+                <!-- Tanlangan Yangi Taomlar Ro'yxati -->
+                <div id="cart-items-container" class="space-y-2 max-h-[300px] overflow-y-auto mb-3">
+                    <p class="text-center text-xs text-muted py-6">Taom tanlash uchun chapdagi menyudan bosing</p>
+                </div>
+
+                <!-- Jami hisob -->
+                <div class="border-t border-border pt-2.5 space-y-1.5 text-xs">
+                    <div class="flex justify-between text-muted">
+                        <span>Taomlar soni:</span>
+                        <span id="cart-total-qty" class="font-bold">0 ta</span>
+                    </div>
+                    <div class="flex justify-between font-black text-sm text-ink">
+                        <span>Jami summa:</span>
+                        <span id="cart-total-sum" class="text-primary">0 so'm</span>
+                    </div>
+                </div>
+
+                <!-- Qo'shimcha Izoh (Masalan: Piyozsiz, Achchiq) -->
+                <div class="mt-3">
+                    <input type="text" id="orderNote" placeholder="Oshxona uchun izoh (masalan: Piyozsiz)..." class="!py-1.5 !text-xs">
+                </div>
+
+                <!-- KDS ga yuborish formasini jo'natish -->
+                <form id="orderForm" method="post" action="{% url 'waiter_panel_web' %}" class="mt-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_order">
+                    <input type="hidden" name="table_id" id="form-table-id" value="">
+                    <input type="hidden" name="items_json" id="form-items-json" value="[]">
+                    <input type="hidden" name="note" id="form-note" value="">
+
+                    <button type="button" 
+                            id="btnSubmitOrder"
+                            onclick="submitOrderToKitchen()"
+                            disabled
+                            class="w-full py-2.5 rounded-xl bg-primary hover:opacity-90 disabled:opacity-40 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition">
+                        <span>👨‍🍳</span> Oshxonaga Uzatish (KDS)
+                    </button>
+                </form>
+
+                <!-- Stolni Bo'shatish yoki Hisob chiqarish tugmalari -->
+                <div id="table-action-buttons" class="hidden mt-2 pt-2 border-t border-border flex gap-2">
+                    <form method="post" action="{% url 'waiter_panel_web' %}" class="flex-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_table_status">
+                        <input type="hidden" name="table_id" id="table-action-id" value="">
+                        <input type="hidden" name="status" value="free">
+                        <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600/15 text-emerald-600 hover:bg-emerald-600 hover:text-white font-bold text-xs transition">
+                            ✓ Stolni Bo'shatish
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. 3D / AR INTERAKTIV PREVYU MODALI -->
+<div id="dishModal" class="modal-backdrop" onclick="closeDishModal(event)">
+    <div class="modal-box p-4 sm:p-5" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between border-b border-border pb-2.5 mb-3">
+            <div>
+                <h3 id="modalDishTitle" class="font-display font-black text-base text-ink">Taom Nomi</h3>
+                <p id="modalDishPrice" class="text-xs font-bold text-primary">0 so'm</p>
+            </div>
+            <button onclick="hideDishModal()" class="w-8 h-8 rounded-full bg-sand text-muted hover:text-ink font-bold flex items-center justify-center">
+                ✕
+            </button>
+        </div>
+
+        <!-- 3D Model yoki Rasm -->
+        <div id="modal3DContainer" class="w-full rounded-2xl bg-sand/80 overflow-hidden mb-3 flex items-center justify-center relative min-h-[220px]">
+            <model-viewer id="dishModelViewer"
+                          src=""
+                          alt="3D Taom Modeli"
+                          auto-rotate
+                          camera-controls
+                          shadow-intensity="1"
+                          exposure="1.05"
+                          loading="lazy"
+                          ar
+                          ar-modes="webxr scene-viewer quick-look"
+                          class="w-full h-[260px]">
+            </model-viewer>
+            <div id="modalImageFallback" class="hidden w-full h-[220px]">
+                <img id="modalDishImage" src="" class="w-full h-full object-cover rounded-xl" alt="Taom rasmi">
+            </div>
+            <span id="modal3DBadge" class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black">
+                🥽 360° Interaktiv 3D
+            </span>
+        </div>
+
+        <p id="modalDishDesc" class="text-xs text-muted leading-relaxed mb-4">
+            Tarkibi va taom tafsilotlari.
+        </p>
+
+        <!-- Chekga Qo'shish -->
+        <div class="flex items-center gap-3">
+            <button id="modalAddBtn" onclick="" class="btn btn-primary flex-1 justify-center !py-2.5">
+                + Stolga Qo'shish
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 5. TEZKOR STOL QO'SHISH MODALI (POS UCHUN) -->
+<div id="quickAddModal" class="modal-backdrop" onclick="closeQuickAddModal(event)">
+    <div class="modal-box p-4 sm:p-5 max-w-sm w-full" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between border-b border-border pb-2.5 mb-3">
+            <div>
+                <h3 class="font-display font-black text-sm text-ink flex items-center gap-1.5">
+                    <span>🪑</span> Yangi Stol Qo'shish
+                </h3>
+                <p class="text-[11px] text-muted">Ofitsiant buyurtma qabul qilishi uchun stol yarating</p>
+            </div>
+            <button onclick="hideQuickAddModal()" class="w-7 h-7 rounded-full bg-sand text-muted hover:text-ink font-bold flex items-center justify-center text-xs">
+                ✕
+            </button>
+        </div>
+        <form method="POST" action="{% url 'seller_waiter_web' %}" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_single_table">
+            <div>
+                <label class="block text-xs font-bold text-ink mb-1">Stol raqami yoki nomi *</label>
+                <input type="text" name="number" required placeholder="Masalan: 1, 2 yoki VIP-1" class="w-full text-xs">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-ink mb-1">O'rinlar soni (sig'imi)</label>
+                <select name="capacity" class="w-full text-xs">
+                    <option value="2">2 kishilik stol</option>
+                    <option value="4" selected>4 kishilik stol</option>
+                    <option value="6">6 kishilik stol</option>
+                    <option value="8">8 kishilik katta stol</option>
+                    <option value="12">12 kishilik VIP / Banket</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-ink mb-1">Zal</label>
+                <input type="text" name="hall_name" value="Asosiy zal" list="halls-list" placeholder="Asosiy zal, Terassa, VIP..." class="w-full text-xs">
+                <datalist id="halls-list">
+                    {% for h in halls %}
+                    <option value="{{ h.name }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="pt-2 flex items-center gap-2">
+                <button type="submit" class="btn btn-primary flex-1 justify-center !py-2 text-xs font-bold shadow-md">
+                    ✓ Saqlash va Stolni Qo'shish
+                </button>
+                <button type="button" onclick="hideQuickAddModal()" class="btn btn-outline !py-2 text-xs">
+                    Bekor qilish
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Serverdan olingan stollar aktiv buyurtmalari
+    const tableOrders = {{ table_orders_json|safe }};
+    
+    // Savat holati
+    let currentTable = null;
+    let cartItems = [];
+
+    function selectTable(id, number, status, hall) {
+        currentTable = { id, number, status, hall };
+        
+        // Barcha stol tugmalaridan active klassni tozalash
+        document.querySelectorAll('.table-btn').forEach(btn => btn.classList.remove('active-selected'));
+        const btn = document.getElementById('tbl-btn-' + id);
+        if (btn) btn.classList.add('active-selected');
+
+        // Sarlavhani yangilash
+        document.getElementById('selected-table-label').innerText = `Tanlandi: #${number} (${hall})`;
+        document.getElementById('cart-table-title').innerText = `Stol #${number} (${hall})`;
+        document.getElementById('form-table-id').value = id;
+        document.getElementById('table-action-id').value = id;
+
+        // Ushbu stolning oldingi buyurtmasi bormi?
+        const activeOrderBox = document.getElementById('active-table-order-box');
+        const actionButtons = document.getElementById('table-action-buttons');
+        
+        if (tableOrders[id] && tableOrders[id].length > 0) {
+            const ord = tableOrders[id][0];
+            document.getElementById('active-order-num').innerText = ord.number;
+            document.getElementById('active-order-status').innerText = ord.status;
+            
+            const ul = document.getElementById('active-order-items');
+            ul.innerHTML = '';
+            ord.items.forEach(it => {
+                const li = document.createElement('li');
+                li.innerText = `• ${it.qty} × ${it.name}`;
+                ul.appendChild(li);
+            });
+            activeOrderBox.classList.remove('hidden');
+            actionButtons.classList.remove('hidden');
+        } else {
+            activeOrderBox.classList.add('hidden');
+            actionButtons.classList.add('hidden');
+        }
+
+        updateSubmitButton();
+    }
+
+    function addItemToCart(productId, name, price) {
+        if (!currentTable) {
+            alert("Iltimos, avval yuqoridan stolni tanlang!");
+            return;
+        }
+
+        const existing = cartItems.find(it => it.product_id === productId);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cartItems.push({ product_id: productId, name, price, qty: 1 });
+        }
+        renderCart();
+    }
+
+    function changeQty(productId, delta) {
+        const item = cartItems.find(it => it.product_id === productId);
+        if (!item) return;
+        item.qty += delta;
+        if (item.qty <= 0) {
+            cartItems = cartItems.filter(it => it.product_id !== productId);
+        }
+        renderCart();
+    }
+
+    function clearCart() {
+        cartItems = [];
+        renderCart();
+    }
+
+    function renderCart() {
+        const container = document.getElementById('cart-items-container');
+        if (cartItems.length === 0) {
+            container.innerHTML = '<p class="text-center text-xs text-muted py-6">Taom tanlash uchun chapdagi menyudan bosing</p>';
+            document.getElementById('cart-total-qty').innerText = '0 ta';
+            document.getElementById('cart-total-sum').innerText = '0 so\'m';
+            updateSubmitButton();
+            return;
+        }
+
+        container.innerHTML = '';
+        let totalQty = 0;
+        let totalSum = 0;
+
+        cartItems.forEach(it => {
+            const lineTotal = it.price * it.qty;
+            totalQty += it.qty;
+            totalSum += lineTotal;
+
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-2 rounded-xl bg-sand/60 text-xs';
+            div.innerHTML = `
+                <div class="flex-1 min-w-0 pr-2">
+                    <p class="font-bold truncate text-ink">${it.name}</p>
+                    <p class="text-[10px] text-muted">${it.price.toLocaleString()} so'm</p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onclick="changeQty('${it.product_id}', -1)" class="w-6 h-6 rounded-md bg-card border border-border flex items-center justify-center font-bold text-xs">-</button>
+                    <span class="w-5 text-center font-bold text-xs">${it.qty}</span>
+                    <button type="button" onclick="changeQty('${it.product_id}', 1)" class="w-6 h-6 rounded-md bg-card border border-border flex items-center justify-center font-bold text-xs">+</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        document.getElementById('cart-total-qty').innerText = totalQty + ' ta';
+        document.getElementById('cart-total-sum').innerText = totalSum.toLocaleString() + " so'm";
+        updateSubmitButton();
+    }
+
+    function updateSubmitButton() {
+        const btn = document.getElementById('btnSubmitOrder');
+        if (currentTable && cartItems.length > 0) {
+            btn.removeAttribute('disabled');
+        } else {
+            btn.setAttribute('disabled', 'true');
+        }
+    }
+
+    function submitOrderToKitchen() {
+        if (!currentTable) {
+            alert("Stolni tanlang!");
+            return;
+        }
+        if (cartItems.length === 0) {
+            alert("Kamida 1 ta taom tanlang!");
+            return;
+        }
+
+        document.getElementById('form-items-json').value = JSON.stringify(cartItems);
+        document.getElementById('form-note').value = document.getElementById('orderNote').value;
+        document.getElementById('orderForm').submit();
+    }
+
+    // Filtrlar
+    function filterCategory(catId, btn) {
+        document.querySelectorAll('.cat-pill').forEach(b => {
+            b.classList.remove('bg-primary', 'text-white');
+            b.classList.add('bg-sand', 'text-muted');
+        });
+        btn.classList.add('bg-primary', 'text-white');
+        btn.classList.remove('bg-sand', 'text-muted');
+
+        const dishes = document.querySelectorAll('.dish-card');
+        dishes.forEach(d => {
+            if (catId === 'all' || d.dataset.cat === catId) {
+                d.style.display = '';
+            } else {
+                d.style.display = 'none';
+            }
+        });
+    }
+
+    function filterDishes() {
+        const q = document.getElementById('dishSearch').value.toLowerCase().trim();
+        const dishes = document.querySelectorAll('.dish-card');
+        dishes.forEach(d => {
+            if (!q || d.dataset.name.includes(q)) {
+                d.style.display = '';
+            } else {
+                d.style.display = 'none';
+            }
+        });
+    }
+
+    // 3D Prevyu Modali
+    function openDishModal(id, name, price, imageUrl, glbUrl, desc) {
+        document.getElementById('modalDishTitle').innerText = name;
+        document.getElementById('modalDishPrice').innerText = Number(price).toLocaleString() + " so'm";
+        document.getElementById('modalDishDesc').innerText = desc || "Ushbu taom yangi masalliqlardan tayyorlanadi.";
+
+        const mv = document.getElementById('dishModelViewer');
+        const fallback = document.getElementById('modalImageFallback');
+        const badge = document.getElementById('modal3DBadge');
+
+        if (glbUrl) {
+            mv.src = glbUrl;
+            mv.style.display = 'block';
+            fallback.classList.add('hidden');
+            badge.classList.remove('hidden');
+        } else if (imageUrl) {
+            mv.style.display = 'none';
+            fallback.classList.remove('hidden');
+            document.getElementById('modalDishImage').src = imageUrl;
+            badge.classList.add('hidden');
+        } else {
+            mv.src = '/media/products/dish_3d.glb';
+            mv.style.display = 'block';
+            fallback.classList.add('hidden');
+            badge.classList.remove('hidden');
+        }
+
+        const addBtn = document.getElementById('modalAddBtn');
+        addBtn.onclick = function() {
+            addItemToCart(id, name, Number(price));
+            hideDishModal();
+        };
+
+        document.getElementById('dishModal').classList.add('show');
+    }
+
+    function hideDishModal() {
+        document.getElementById('dishModal').classList.remove('show');
+    }
+
+    function closeDishModal(e) {
+        if (e.target.id === 'dishModal') hideDishModal();
+    }
+
+    // Tezkor Stol Qo'shish Modali
+    function openQuickAddModal() {
+        document.getElementById('quickAddModal').classList.add('show');
+    }
+
+    function hideQuickAddModal() {
+        document.getElementById('quickAddModal').classList.remove('show');
+    }
+
+    function closeQuickAddModal(e) {
+        if (e.target.id === 'quickAddModal') hideQuickAddModal();
+    }
+</script>
+{% endblock %}

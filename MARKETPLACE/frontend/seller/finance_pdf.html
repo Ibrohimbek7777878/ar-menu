@@ -1,0 +1,198 @@
+{% load uznum %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Moliya Hisoboti - {{ shop.name }} ({{ period_title }})</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 11pt; }
+            .page-break { page-break-after: always; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans p-4 sm:p-8">
+
+    <!-- Top Action Bar (hidden when printing) -->
+    <div class="no-print max-w-4xl mx-auto mb-6 flex items-center justify-between bg-white p-4 rounded-xl shadow border border-gray-200">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📄</span>
+            <div>
+                <h1 class="font-bold text-gray-800">A4 Formatidagi Rasmiy Moliya Hisoboti</h1>
+                <p class="text-xs text-gray-500">Ushbu sahifani printerdan chiqarish yoki PDF qilib saqlash mumkin.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="javascript:history.back()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs transition">
+                ← Orqaga Qaytish
+            </a>
+            <button onclick="window.print()" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition">
+                🖨️ Chop Etish / PDF Saqlash
+            </button>
+        </div>
+    </div>
+
+    <!-- Printable A4 Document Sheet -->
+    <div class="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-2xl shadow-sm border border-gray-200">
+        
+        <!-- Header -->
+        <div class="flex items-start justify-between border-b-2 border-gray-900 pb-6 mb-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-purple-600">Universal Moliya Tizimi</span>
+                <h2 class="text-2xl font-black text-gray-900 uppercase mt-1">{{ shop.name }}</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Savdo va xizmat ko'rsatish korxonasi kassa daftari</p>
+                {% if shop.address %}<p class="text-xs text-gray-400">Manzil: {{ shop.address }}</p>{% endif %}
+            </div>
+            <div class="text-right">
+                <div class="inline-block bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded">
+                    RASMIY HISOBOT
+                </div>
+                <p class="text-xs text-gray-600 font-medium mt-2">Davr: <span class="font-bold text-gray-900">{{ period_title }}</span></p>
+                <p class="text-xs text-gray-400">Chiqarilgan sana: {{ today|date:"d.m.Y" }}</p>
+            </div>
+        </div>
+
+        <!-- 4 KPI Boxes -->
+        <div class="grid grid-cols-4 gap-4 mb-8">
+            <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] font-bold text-emerald-800 uppercase block">🟢 Jami Kassa Kirimi</span>
+                    <div class="text-xl font-black text-gray-900 mt-1.5">{{ income_total|uznum }} <span class="text-[10px] text-gray-500 font-normal">so'm</span></div>
+                </div>
+                <div class="mt-2 pt-1.5 border-t border-emerald-200/70 text-[9px] text-emerald-900 font-medium">
+                    <div>💵 Naqd: <b>{{ income_cash|uznum }}</b></div>
+                    <div>💳 Plastik: <b>{{ income_card|uznum }}</b></div>
+                </div>
+            </div>
+            <div class="p-4 rounded-xl border border-rose-200 bg-rose-50/50 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] font-bold text-rose-800 uppercase block">🔴 Jami Chiqimlar</span>
+                    <div class="text-xl font-black text-gray-900 mt-1.5">{{ expense_total|uznum }} <span class="text-[10px] text-gray-500 font-normal">so'm</span></div>
+                </div>
+                <div class="mt-2 pt-1.5 border-t border-rose-200/70 text-[9px] text-rose-900 font-medium">
+                    <div>💵 Naqd: <b>{{ expense_cash|uznum }}</b></div>
+                    <div>💳 Plastik: <b>{{ expense_card|uznum }}</b></div>
+                </div>
+            </div>
+            <div class="p-4 rounded-xl border border-purple-200 bg-purple-50/50 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] font-bold text-purple-800 uppercase block">💎 Sof Cho'ntak (Foyda)</span>
+                    <div class="text-xl font-black {% if net_profit >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %} mt-1.5">
+                        {{ net_profit|uznum }} <span class="text-[10px] text-gray-500 font-normal">so'm</span>
+                    </div>
+                </div>
+                <div class="mt-2 pt-1.5 border-t border-purple-200/70 text-[9px] text-purple-950 font-medium">
+                    <div>💵 Naqd: <b>{{ net_cash|uznum }}</b></div>
+                    <div>💳 Plastik: <b>{{ net_card|uznum }}</b></div>
+                </div>
+            </div>
+            <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] font-bold text-indigo-800 uppercase block">🤝 Kutilayotgan Nasiya</span>
+                    <div class="text-xl font-black text-gray-900 mt-1.5">{{ customer_debt_total|uznum }} <span class="text-[10px] text-gray-500 font-normal">so'm</span></div>
+                </div>
+                <div class="mt-2 pt-1.5 border-t border-indigo-200/70 text-[9px] text-indigo-950 font-medium">
+                    <div>📥 Bizga: <b>{{ customer_debt_total|uznum }}</b></div>
+                    <div>📤 Bizdan: <b>{{ supplier_debt_total|uznum }}</b></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Summary -->
+        {% if cat_breakdown %}
+        <div class="mb-8">
+            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3">📊 Xarajatlarning Kategoriyalar Bo'yicha Taqsimoti</h3>
+            <table class="w-full text-xs text-left border border-gray-200 rounded-lg overflow-hidden">
+                <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
+                    <tr>
+                        <th class="py-2 px-3">#</th>
+                        <th class="py-2 px-3">Kategoriya</th>
+                        <th class="py-2 px-3 text-right">Summa</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for c in cat_breakdown %}
+                    <tr>
+                        <td class="py-2 px-3 text-gray-400 font-mono">{{ forloop.counter }}</td>
+                        <td class="py-2 px-3 font-semibold text-gray-800">{{ c.category__icon }} {{ c.category__name }}</td>
+                        <td class="py-2 px-3 text-right font-bold text-gray-900">{{ c.total|uznum }} so'm</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Detailed Transactions Table -->
+        <div class="mb-8">
+            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3">📋 Moliya Operatsiyalari Qaydnomasi</h3>
+            <table class="w-full text-xs text-left border border-gray-200">
+                <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                    <tr>
+                        <th class="py-2 px-2">Sana</th>
+                        <th class="py-2 px-2">Turi</th>
+                        <th class="py-2 px-2">Kategoriya / Nomi</th>
+                        <th class="py-2 px-2">To'lov shakli</th>
+                        <th class="py-2 px-2 text-right">Summa</th>
+                        <th class="py-2 px-2">Izoh</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for t in transactions %}
+                    <tr>
+                        <td class="py-2 px-2 text-gray-500 font-mono text-[11px]">{{ t.tx_date|date:"d.m.Y" }}</td>
+                        <td class="py-2 px-2">
+                            {% if t.tx_type == 'income' %}
+                            <span class="text-emerald-700 font-bold">🟢 Kirim</span>
+                            {% else %}
+                            <span class="text-rose-700 font-bold">🔴 Chiqim</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-2">
+                            <span class="font-bold text-gray-800">{{ t.title }}</span>
+                            {% if t.category %}
+                            <span class="text-[10px] text-gray-400 block">{{ t.category.icon }} {{ t.category.name }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-2 text-gray-600">{{ t.get_payment_method_display }}</td>
+                        <td class="py-2 px-2 text-right font-black {% if t.tx_type == 'income' %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                            {% if t.tx_type == 'income' %}+{% else %}-{% endif %}{{ t.amount|uznum }}
+                        </td>
+                        <td class="py-2 px-2 text-gray-400 text-[10px] italic">{{ t.notes|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-6 text-center text-gray-400">Ushbu davr uchun operatsiyalar mavjud emas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Signatures & Verification Stamp Area -->
+        <div class="mt-12 pt-6 border-t border-gray-200 flex items-center justify-between text-xs">
+            <div>
+                <p class="font-bold text-gray-800">Do'kon / Muassasa Rahbari:</p>
+                <div class="mt-4 border-b border-gray-400 w-48"></div>
+                <p class="text-[10px] text-gray-400 mt-1">(Imzo & F.I.Sh)</p>
+            </div>
+            <div>
+                <p class="font-bold text-gray-800">Bosh Hisobchi / Mas'ul shaxs:</p>
+                <div class="mt-4 border-b border-gray-400 w-48"></div>
+                <p class="text-[10px] text-gray-400 mt-1">(Imzo & F.I.Sh)</p>
+            </div>
+            <div class="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-[10px] text-gray-400 text-center uppercase p-2">
+                M.O'.<br>(Muhri o'rni)
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

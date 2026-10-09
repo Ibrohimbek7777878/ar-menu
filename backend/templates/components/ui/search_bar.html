@@ -1,0 +1,25 @@
+{% comment %}
+UI Component: Search Bar
+Parametrlar:
+- placeholder: Masalan, "Taom yoki ichimlik qidiring..."
+- value: Hozirgi qidiruv qiymati
+- oninput: Jonli qidiruv JS funksiyasi
+- onclear: Tozalash JS funksiyasi
+- autofocus: boolean
+{% endcomment %}
+
+<div class="search-bar-ui {{ extra_class }}">
+    <span class="search-icon">🔍</span>
+    <input type="text" 
+           class="search-input" 
+           placeholder="{{ placeholder|default:'Taom yoki ichimlik qidiring...' }}"
+           value="{{ value|default:'' }}"
+           {% if oninput %}oninput="{{ oninput }}"{% endif %}
+           {% if id %}id="{{ id }}"{% endif %}
+           autocomplete="off">
+    <button type="button" 
+            class="search-clear-btn" 
+            onclick="clearSearchInput(this)" 
+            style="display: {% if value %}flex{% else %}none{% endif %};"
+            aria-label="Tozalash">✕</button>
+</div>

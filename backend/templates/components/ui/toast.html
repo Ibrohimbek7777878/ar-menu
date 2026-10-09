@@ -1,0 +1,29 @@
+{% comment %}
+UI Component: Toast Notification System
+Sahifaga bitta qo'yiladi va showToast(message, icon, type) orqali chaqiriladi.
+{% endcomment %}
+
+<div id="uiToastContainer" class="toast-container-ui" aria-live="polite">
+    <div id="uiToastCard" class="toast-card-ui">
+        <span id="uiToastIcon" class="toast-icon-ui">✨</span>
+        <span id="uiToastMsg" class="toast-msg-ui">Xabar</span>
+    </div>
+</div>
+
+<script>
+    function showToast(message, icon = "✨", duration = 2400) {
+        const container = document.getElementById('uiToastContainer');
+        const msgEl = document.getElementById('uiToastMsg');
+        const iconEl = document.getElementById('uiToastIcon');
+        if (!container || !msgEl) return;
+
+        msgEl.textContent = message;
+        if (iconEl) iconEl.textContent = icon;
+
+        container.classList.add('visible');
+        clearTimeout(window.__toastTimeout);
+        window.__toastTimeout = setTimeout(() => {
+            container.classList.remove('visible');
+        }, duration);
+    }
+</script>

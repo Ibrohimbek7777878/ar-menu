@@ -1,0 +1,64 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}Sevimlilar — {{ t.site_name }}{% endblock %}
+{% block content %}
+
+<section class="mx-auto max-w-4xl px-4 sm:px-5 py-8 sm:py-12">
+    <div class="flex items-center gap-3 mb-8">
+        <div class="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
+            <span class="material-icons-outlined text-2xl text-primary">favorite</span>
+        </div>
+        <div>
+            <h1 class="font-display text-2xl font-semibold">{{ t.wishlist|default:"Sevimlilar" }}</h1>
+            <p class="text-sm text-muted">{{ t.wishlist_subtitle|default:"Saqlagan mahsulotlaringiz" }}</p>
+        </div>
+    </div>
+
+    {% if not customer %}
+    <div class="text-center py-12">
+        <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-accent flex items-center justify-center">
+            <span class="material-icons-outlined text-3xl text-primary">login</span>
+        </div>
+        <h2 class="font-display text-xl font-semibold mb-2">{{ t.profile_guest }}</h2>
+        <p class="text-sm text-muted mb-6">{{ t.wishlist_login_required|default:"Sevimlilarni ko'rish uchun kiring" }}</p>
+        <a href="{% url 'customer_login' %}" class="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition">{{ t.login }}</a>
+    </div>
+    {% elif items %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for item in items %}
+        <div class="card-surface p-4 flex gap-4 items-center">
+            <div class="w-16 h-16 rounded-xl bg-sand flex items-center justify-center overflow-hidden flex-shrink-0">
+                {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                {% else %}
+                <span class="material-icons-outlined text-2xl text-muted">inventory_2</span>
+                {% endif %}
+            </div>
+            <div class="flex-1 min-w-0">
+                <a href="{% url 'customer_product' item.product.slug %}" class="font-semibold text-sm block truncate hover:text-primary transition">{{ item.product.name }}</a>
+                <p class="text-xs text-muted mt-0.5">{{ item.product.shop.name }}</p>
+                <p class="font-display font-semibold text-primary mt-1">{{ item.product.price|uznum }} {{ t.catalog_som }}</p>
+            </div>
+            <form method="POST" action="{% url 'customer_wishlist' %}" class="flex-shrink-0">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove">
+                <input type="hidden" name="product_id" value="{{ item.product.pk }}">
+                <button type="submit" class="p-2 rounded-full hover:bg-red-50 text-red-500 transition" title="{{ t.remove|default:'Ochirish' }}">
+                    <span class="material-icons-outlined text-lg">close</span>
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-accent flex items-center justify-center">
+            <span class="material-icons-outlined text-3xl text-primary">favorite_border</span>
+        </div>
+        <h2 class="font-display text-xl font-semibold mb-2">{{ t.wishlist_empty|default:"Hali saqlamagansiz" }}</h2>
+        <p class="text-sm text-muted mb-6">{{ t.wishlist_empty_sub|default:"Mahsulotlarni yurakcha bilan saqlang" }}</p>
+        <a href="{% url 'customer_catalog' %}" class="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition">{{ t.catalog|default:"Katalogga o'tish" }}</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

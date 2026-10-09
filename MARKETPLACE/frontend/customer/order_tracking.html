@@ -1,0 +1,306 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}Buyurtma #{{ order.order_number }} — Online Store Guliston{% endblock %}
+{% block content %}
+
+<section class="mx-auto max-w-6xl px-4 sm:px-5 py-8 sm:py-12">
+    <!-- Breadcrumb -->
+    <nav class="flex flex-wrap items-center gap-2 text-sm text-muted mb-6">
+        <a href="{% url 'customer_home' %}" class="hover:text-primary transition">{{ t.nav_home }}</a>
+        <span>/</span>
+        <a href="{% url 'customer_orders' %}" class="hover:text-primary transition">{{ t.order_my }}</a>
+        <span>/</span>
+        <span class="text-foreground">#{{ order.order_number }}</span>
+    </nav>
+
+    <!-- Status Header -->
+    <div class="card-surface overflow-hidden mb-6">
+        <div class="bg-gradient-to-r from-primary/5 to-accent p-6 sm:p-8">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                        {% if order.status == 'pending' %}
+                        <span class="material-icons-outlined text-primary text-2xl">hourglass_empty</span>
+                        {% elif order.status == 'confirmed' %}
+                        <span class="material-icons-outlined text-primary text-2xl">check_circle</span>
+                        {% elif order.status == 'preparing' %}
+                        <span class="material-icons-outlined text-primary text-2xl">restaurant</span>
+                        {% elif order.status == 'ready' %}
+                        <span class="material-icons-outlined text-primary text-2xl">inventory_2</span>
+                        {% elif order.status == 'out_for_delivery' %}
+                        <span class="material-icons-outlined text-primary text-2xl">local_shipping</span>
+                        {% elif order.status == 'delivered' %}
+                        <span class="material-icons-outlined text-primary text-2xl">celebration</span>
+                        {% elif order.status == 'cancelled' %}
+                        <span class="material-icons-outlined text-red-500 text-2xl">cancel</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h1 class="font-display text-2xl sm:text-3xl font-semibold tracking-tight">
+                            {% if order.status == 'delivered' %}Buyurtma yetkazildi!
+                            {% elif order.status == 'cancelled' %}Buyurtma bekor qilindi
+                            {% else %}Buyurtma #{{ order.order_number }}{% endif %}
+                        </h1>
+                        <p class="text-sm text-muted mt-1">{{ order.created_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                </div>
+                <span class="font-display text-xl sm:text-2xl font-semibold text-primary shrink-0">{{ order.final_amount|uznum }} {{ t.catalog_som }}</span>
+            </div>
+            {% if can_pay %}
+            <div class="px-6 sm:px-8 pb-2">
+                <a href="{% url 'customer_order_pay' order.pk %}" class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 w-full sm:w-auto">
+                    💳 To'lov qilish ({{ order.final_amount|uznum }} {{ t.catalog_som }})
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Progress Bar -->
+        {% if order.status != 'cancelled' %}
+        <div class="px-6 sm:px-8 py-6">
+            {% with steps="pending,confirmed,preparing,out_for_delivery,delivered" %}
+            {% with step_list=steps|cut:" " %}
+            {% with current="" %}
+            <!-- Progress bar -->
+            <div class="relative mb-8">
+                <div class="h-2 bg-border rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full transition-all duration-700" style="width:
+                        {% if order.status == 'pending' %}10%
+                        {% elif order.status == 'confirmed' %}30%
+                        {% elif order.status == 'preparing' %}50%
+                        {% elif order.status == 'ready' %}70%
+                        {% elif order.status == 'out_for_delivery' %}85%
+                        {% elif order.status == 'delivered' %}100%
+                        {% else %}0{% endif %};
+                    "></div>
+                </div>
+
+                <!-- Step indicators -->
+                <div class="flex justify-between mt-3">
+                    <div class="text-center" style="flex:1">
+                        <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1
+                            {% if order.status == 'pending' or order.status == 'confirmed' or order.status == 'preparing' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                            bg-primary text-white{% else %}bg-border text-muted{% endif %}">
+                            1
+                        </div>
+                        <p class="text-[11px] text-muted hidden sm:block">Qabul qilindi</p>
+                    </div>
+                    <div class="text-center" style="flex:1">
+                        <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1
+                            {% if order.status == 'confirmed' or order.status == 'preparing' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                            bg-primary text-white{% else %}bg-border text-muted{% endif %}">
+                            2
+                        </div>
+                        <p class="text-[11px] text-muted hidden sm:block">Tasdiqlandi</p>
+                    </div>
+                    <div class="text-center" style="flex:1">
+                        <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1
+                            {% if order.status == 'preparing' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                            bg-primary text-white{% else %}bg-border text-muted{% endif %}">
+                            3
+                        </div>
+                        <p class="text-[11px] text-muted hidden sm:block">Tayyorlanmoqda</p>
+                    </div>
+                    <div class="text-center" style="flex:1">
+                        <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1
+                            {% if order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                            bg-primary text-white{% else %}bg-border text-muted{% endif %}">
+                            4
+                        </div>
+                        <p class="text-[11px] text-muted hidden sm:block">Yo'lda</p>
+                    </div>
+                    <div class="text-center" style="flex:1">
+                        <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1
+                            {% if order.status == 'delivered' %}
+                            bg-primary text-white{% else %}bg-border text-muted{% endif %}">
+                            5
+                        </div>
+                        <p class="text-[11px] text-muted hidden sm:block">Yetkazildi</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current status message -->
+            <div class="text-center py-4">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-accent flex items-center justify-center">
+                    {% if order.status == 'pending' %}
+                    <span class="material-icons-outlined text-primary text-4xl">hourglass_empty</span>
+                    {% elif order.status == 'confirmed' %}
+                    <span class="material-icons-outlined text-primary text-4xl">check_circle</span>
+                    {% elif order.status == 'preparing' %}
+                    <span class="material-icons-outlined text-primary text-4xl">restaurant</span>
+                    {% elif order.status == 'ready' %}
+                    <span class="material-icons-outlined text-primary text-4xl">inventory_2</span>
+                    {% elif order.status == 'out_for_delivery' %}
+                    <span class="material-icons-outlined text-primary text-4xl">local_shipping</span>
+                    {% elif order.status == 'delivered' %}
+                    <span class="material-icons-outlined text-primary text-4xl">celebration</span>
+                    {% endif %}
+                </div>
+                <h2 class="font-display text-xl font-semibold mb-1">
+                    {% if order.status == 'pending' %}Buyurtma qabul qilindi
+                    {% elif order.status == 'confirmed' %}Buyurtma tasdiqlandi
+                    {% elif order.status == 'preparing' %}Do'kon tayyorlamoqda
+                    {% elif order.status == 'ready' %}Tayyor — kuryer kutilmoqda
+                    {% elif order.status == 'out_for_delivery' %}Kuryer yo'lda
+                    {% elif order.status == 'delivered' %}Buyurtma yetkazildi!
+                    {% endif %}
+                </h2>
+                <p class="text-sm text-muted">
+                    {% if order.status == 'pending' %}Do'kon buyurtmangizni ko'rib chiqmoqda
+                    {% elif order.status == 'confirmed' %}Do'kon buyurtmangizni tayyorlamoqda
+                    {% elif order.status == 'preparing' %}Mahsulotlar yig'ilmoqda
+                    {% elif order.status == 'ready' %}Buyurtma tayyor, kuryer kutilmoqda
+                    {% elif order.status == 'out_for_delivery' %}Kuryer manzilingizga yo'l olmoqda
+                    {% elif order.status == 'delivered' %}Buyurtmangiz muvaffaqiyatli yetkazildi
+                    {% endif %}
+                </p>
+            </div>
+            {% endwith %}
+            {% endwith %}
+            {% endwith %}
+        </div>
+        {% else %}
+        <!-- Cancelled -->
+        <div class="px-6 sm:px-8 py-6 text-center">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+                <span class="material-icons-outlined text-red-500 text-4xl">cancel</span>
+            </div>
+            <h2 class="font-display text-xl font-semibold mb-1 text-red-600">Buyurtma bekor qilindi</h2>
+            {% if order.cancel_reason %}
+            <p class="text-sm text-muted">Sabab: {{ order.cancel_reason }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Order Items -->
+        <div class="card-surface p-6">
+            <h3 class="font-semibold text-base mb-4">Buyurtma tarkibi</h3>
+            <div class="space-y-3">
+                {% for item in order.items.all %}
+                <div class="flex items-center gap-3 p-3 bg-sand rounded-xl">
+                    <div class="w-14 h-14 shrink-0 bg-card rounded-lg overflow-hidden flex items-center justify-center p-1">
+                        {% if item.product and item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="" class="w-full h-full object-contain">
+                        {% elif item.product %}
+                        <span class="material-icons-outlined text-muted">image</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium line-clamp-1">{{ item.product_name }}</p>
+                        <p class="text-xs text-muted">{{ item.quantity }} × {{ item.price|uznum }} {{ t.catalog_som }}</p>
+                    </div>
+                    <p class="text-sm font-semibold shrink-0">{{ item.total|uznum }} {{ t.catalog_som }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-border space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-muted">{{ t.products_label }}</span>
+                    <span>{{ order.total_amount|uznum }} {{ t.catalog_som }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-muted">{{ t.delivery_label }}</span>
+                    {% if order.delivery_fee %}{{ order.delivery_fee|uznum }} {{ t.catalog_som }}{% else %}Bepul{% endif %}
+                </div>
+                {% if order.discount_amount %}
+                <div class="flex justify-between text-primary">
+                    <span>Chegirma</span>
+                    <span>-{{ order.discount_amount|uznum }} {{ t.catalog_som }}</span>
+                </div>
+                {% endif %}
+                <div class="flex justify-between font-semibold text-base pt-2 border-t border-border">
+                    <span>{{ t.total_label }}</span>
+                    <span class="text-primary">{{ order.final_amount|uznum }} {{ t.catalog_som }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Info + History -->
+        <div class="space-y-6">
+            <div class="card-surface p-6">
+                <h3 class="font-semibold text-base mb-4">Yetkazish ma'lumotlari</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-outlined text-primary text-lg mt-0.5">person</span>
+                        <div>
+                            <p class="text-muted text-xs">{{ t.name }}</p>
+                            <p class="font-medium">{{ order.customer_name|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-outlined text-primary text-lg mt-0.5">phone</span>
+                        <div>
+                            <p class="text-muted text-xs">{{ t.phone }}</p>
+                            <p class="font-medium">{{ order.customer_phone_1 }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-outlined text-primary text-lg mt-0.5">location_on</span>
+                        <div>
+                            <p class="text-muted text-xs">{{ t.address }}</p>
+                            <p class="font-medium">{{ order.delivery_address|default:"—" }}</p>
+                        </div>
+                    </div>
+                    {% if order.notes %}
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-outlined text-primary text-lg mt-0.5">note</span>
+                        <div>
+                            <p class="text-muted text-xs">{{ t.cart_notes }}</p>
+                            <p class="font-medium">{{ order.notes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-outlined text-primary text-lg mt-0.5">store</span>
+                        <div>
+                            <p class="text-muted text-xs">{{ t.store_title }}</p>
+                            <p class="font-medium">{{ order.shop.name }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status History -->
+            {% if history %}
+            <div class="card-surface p-6">
+                <h3 class="font-semibold text-base mb-4">Tarix</h3>
+                <div class="space-y-4">
+                    {% for h in history %}
+                    <div class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <div class="w-3 h-3 rounded-full bg-primary shrink-0"></div>
+                            {% if not forloop.last %}<div class="w-0.5 flex-1 bg-border mt-1"></div>{% endif %}
+                        </div>
+                        <div class="pb-4">
+                            <p class="text-sm font-medium">
+                                {% if h.status == 'pending' %}Kutilmoqda
+                                {% elif h.status == 'confirmed' %}Tasdiqlandi
+                                {% elif h.status == 'preparing' %}Tayyorlanmoqda
+                                {% elif h.status == 'ready' %}Tayyor
+                                {% elif h.status == 'out_for_delivery' %}Yo'lda
+                                {% elif h.status == 'delivered' %}Yetkazildi
+                                {% elif h.status == 'cancelled' %}Bekor qilindi
+                                {% else %}{{ h.status }}{% endif %}
+                            </p>
+                            {% if h.note %}<p class="text-xs text-muted mt-0.5">{{ h.note }}</p>{% endif %}
+                            <p class="text-xs text-muted mt-0.5">{{ h.created_at|date:"d M Y, H:i" }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{% url 'customer_orders' %}" class="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-secondary">
+            ← {{ t.order_my }}
+        </a>
+    </div>
+</section>
+{% endblock %}

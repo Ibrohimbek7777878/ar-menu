@@ -1,0 +1,51 @@
+{% comment %}
+UI Component: Interactive 3D / AR Viewer Modal
+Parametrlar:
+- modal_id: arModalBackdrop (default)
+- has_controls: true (default)
+{% endcomment %}
+
+<div id="{{ modal_id|default:'arModalBackdrop' }}" class="modal-ui-backdrop" onclick="close3DModal(event)">
+    <div class="modal-ui-dialog" onclick="event.stopPropagation()">
+        <button type="button" class="modal-ui-close" onclick="close3DModal()" aria-label="Yopish">✕</button>
+        
+        <div class="modal-viewer-viewport">
+            <model-viewer 
+                id="activeModelViewer"
+                src=""
+                poster=""
+                alt="3D Taom"
+                auto-rotate
+                rotation-per-second="25deg"
+                camera-controls
+                shadow-intensity="1.5"
+                environment-image="neutral"
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                ar-scale="auto"
+                camera-orbit="0deg 75deg 105%"
+                min-camera-orbit="auto auto auto"
+                max-camera-orbit="auto auto auto">
+            </model-viewer>
+            <span class="viewer-interaction-tip">🔄 360° aylantirib ko'ring</span>
+        </div>
+
+        <div class="modal-ui-details">
+            <div class="modal-title-row">
+                <h3 class="modal-dish-name serif" id="modalDishTitle">Taom Nomi</h3>
+                <span class="modal-dish-price" id="modalDishPrice">0 so'm</span>
+            </div>
+
+            <div class="modal-actions-row">
+                <button type="button" class="btn-ui btn-warm btn-sz-md btn-block" onclick="triggerARMode()">
+                    <span class="btn-icon">📱</span>
+                    <span class="btn-text">Stolda Ko'rish (AR)</span>
+                </button>
+                <button type="button" class="btn-ui btn-primary btn-sz-md btn-block" id="modalAddCartBtn">
+                    <span class="btn-icon">🛒</span>
+                    <span class="btn-text">Savatga Qo'shish</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

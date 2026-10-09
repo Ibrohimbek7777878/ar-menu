@@ -1,0 +1,22 @@
+{% comment %}
+UI Component: Quantity Stepper
+Parametrlar:
+- value: Hozirgi qiymat (masalan 1)
+- min: Minimal qiymat (default 0 yoki 1)
+- max: Maksimal qiymat (ixtiyoriy)
+- product_id: Mahsulot IDsi
+- onchange: JavaScript chaqiruvi (masalan, updateCartQuantity)
+- size: sm | md (default)
+{% endcomment %}
+
+<div class="stepper-ui stepper-sz-{{ size|default:'md' }}" data-product-id="{{ product_id }}">
+    <button type="button" 
+            class="stepper-btn stepper-btn-minus" 
+            onclick="decrementStepper(this, {{ product_id|default:0 }})"
+            aria-label="Kamaytirish">−</button>
+    <span class="stepper-value">{{ value|default:1 }}</span>
+    <button type="button" 
+            class="stepper-btn stepper-btn-plus" 
+            onclick="incrementStepper(this, {{ product_id|default:0 }})"
+            aria-label="Oshirish">+</button>
+</div>

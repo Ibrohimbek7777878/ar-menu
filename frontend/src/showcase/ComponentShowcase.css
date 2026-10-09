@@ -1,0 +1,111 @@
+.showcase-root {
+  min-height: 100vh;
+  background-color: #F7F3EA;
+  color: #2C2A26;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  padding-bottom: 80px;
+}
+
+.showcase-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.showcase-hero {
+  background: linear-gradient(135deg, #2F4836 0%, #1A2E20 100%);
+  color: #FAF7F0;
+  border-radius: 24px;
+  padding: 32px 28px;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 28px rgba(47, 72, 54, 0.25);
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  line-height: 1.15;
+}
+
+.hero-desc {
+  font-size: 14px;
+  color: #C8D8CC;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 650px;
+}
+
+.showcase-card {
+  background: #FFFFFF;
+  border: 1px solid #E8E0CF;
+  border-radius: 22px;
+  padding: 26px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(44, 42, 38, 0.05);
+}
+
+.section-head {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2F4836;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: #706B63;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.dish-grid-demo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.flex-wrap-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  background: #FAF7F0;
+  border: 1px dashed #E8E0CF;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.grid-two-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .grid-two-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}

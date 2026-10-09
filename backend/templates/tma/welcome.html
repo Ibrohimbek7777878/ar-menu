@@ -1,0 +1,32 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}Xush kelibsiz — {{ shop.name|default:"Guliston" }}{% endblock %}
+
+{% block extra_head %}
+<!-- Google model-viewer 3D kutubxonasi -->
+<script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+
+<!-- React Component System CSS -->
+<link rel="stylesheet" href="/static/react/assets/index.css?v=8">
+{% endblock %}
+
+{% block desktop_nav %}
+<!-- React o'zining HeaderNav komponentini render qiladi -->
+{% endblock %}
+
+{% block content %}
+<!-- React Mount Root -->
+<div id="root"></div>
+
+<script>
+    // Server tomonidan uzatilgan real welcome ma'lumotlari
+    window.__GULISTON_WELCOME_DATA__ = {{ react_welcome_data_json|safe }};
+</script>
+
+<!-- React Application Bundle -->
+<script type="module" src="/static/react/assets/index.js?v=8"></script>
+{% endblock %}
+
+{% block tabbar %}
+<!-- React o'zining BottomNav komponentini render qiladi -->
+{% endblock %}

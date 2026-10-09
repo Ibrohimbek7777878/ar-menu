@@ -1,0 +1,81 @@
+/* ─────────────────────────────────────────────────────────────
+   Clean BottomNav Styles (Impeccable UI)
+   Mobile Ergonomics & Safe-area Inset
+   ───────────────────────────────────────────────────────────── */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--bg-surface, #FFFFFF);
+  border-top: 1px solid var(--border-subtle, #EAE4D7);
+  box-shadow: 0 -2px 10px rgba(28, 25, 23, 0.04);
+  padding-bottom: var(--safe-bottom);
+}
+
+.bottom-nav-container {
+  max-width: 600px;
+  margin: 0 auto;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+}
+
+.bottom-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #78716C);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 6px 0;
+  min-height: 48px;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.bottom-tab:hover {
+  color: var(--text-primary, #1C1917);
+}
+
+.bottom-tab.active {
+  color: var(--brand-primary, #213827);
+}
+
+.bottom-tab-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.tab-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}

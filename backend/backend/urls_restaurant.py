@@ -36,13 +36,39 @@ urlpatterns = [
     # Health check
     path('health/', health.health_check, name='health_check'),
 
-    # ASOSIY BOSH SAHIFA: Restoran 3D Menyu
-    path('', tma_views.tma_home, name='restaurant_root'),
+    # ASOSIY BOSH SAHIFA: Saytga kirganda 1-bo'lib Welcome & Entry ekrani ochiladi
+    path('', tma_views.tma_welcome, name='restaurant_root'),
+    path('welcome/', tma_views.tma_welcome, name='tma_welcome'),
+
+    # Restoran Dasturxon Menyusi (Taomlar va Stol buyurtmasi)
+    path('menu/', tma_views.tma_home, name='tma_menu'),
     path('restaurant/', tma_views.tma_home, name='restaurant_home'),
     path('restoran/', tma_views.tma_home, name='restoran_home'),
     path('ar-menu/', tma_views.tma_home, name='ar_menu_home'),
-    path('menu/', tma_views.tma_home, name='tma_menu'),
     path('tma/', tma_views.tma_home, name='tma_home'),
+
+    # REPLIT DIZAYN PROTOTIPI (9 TA EKRAN):
+    path('reservation/arrival/', tma_views.tma_arrival_confirm, name='tma_arrival_confirm'),
+    path('reservation/find/', tma_views.tma_find_reservation, name='tma_find_reservation'),
+    path('arrival/desk/', tma_views.arrival_desk, name='arrival_desk'),
+    path('arrival/timeline/', tma_views.arrival_timeline, name='arrival_timeline'),
+    path('arrival/checklist/', tma_views.arrival_checklist, name='arrival_checklist'),
+    path('waiter/panel/', tma_views.waiter_mobile_panel, name='waiter_mobile_panel'),
+    path('waiter/mobile/', tma_views.waiter_mobile_panel),
+    path('ofitsiant/', tma_views.waiter_mobile_panel),
+    path('waiter/desk/', tma_views.arrival_desk),
+    path('waiter/timeline/', tma_views.arrival_timeline),
+    path('waiter/checklist/', tma_views.arrival_checklist),
+
+    # UI Komponentlar Laboratoriyasi (Design System Showcase)
+    path('ui-components/', tma_views.ui_components_showcase, name='ui_components_showcase'),
+    path('design-system/', tma_views.ui_components_showcase, name='design_system_showcase'),
+
+    # Oshxona Ekrani (Kitchen Display System - KDS)
+    path('kds/', tma_views.kds_screen, name='restaurant_kds'),
+    path('kitchen/', tma_views.kds_screen, name='restaurant_kitchen'),
+    path('api/kds/orders/', tma_views.kds_orders_api, name='restaurant_kds_orders_api'),
+    path('api/kds/status/', tma_views.kds_status_update_api, name='restaurant_kds_status_api'),
 
     # Restoran Taomlar va Stol navigatsiyasi
     path('catalog/', tma_views.tma_catalog, name='restaurant_catalog'),
@@ -50,6 +76,7 @@ urlpatterns = [
     path('tma/catalog/', tma_views.tma_catalog, name='tma_catalog'),
 
     path('table/', tma_views.tma_table_hub, name='restaurant_table_hub'),
+    path('reservation/', tma_views.tma_table_hub, name='restaurant_reservation'),
     path('menu/table/', tma_views.tma_table_hub, name='tma_menu_table'),
     path('tma/table/', tma_views.tma_table_hub, name='tma_table_hub'),
 
@@ -73,7 +100,8 @@ urlpatterns = [
     path('nfc/<str:code>/', views.nfc_tap_handler, name='nfc_tap_handler'),
     path('t/<uuid:token>/', views.table_menu_redirect, name='table_menu_redirect'),
     path('m/<slug:slug>/', views.ar_menu_page, name='ar_menu_page'),
-    path('ar/', views.ar_catalog, name='ar_catalog'),
+    path('ar/', tma_views.tma_ar_menu, name='ar_catalog'),
+    path('ar-menu/', tma_views.tma_ar_menu, name='ar_menu_home'),
 
     # Mini ERP (Restoran Boshqaruvi: Stollar, KDS, Ofitsiant)
     path('seller/', include('web.seller_urls')),
@@ -114,6 +142,7 @@ urlpatterns = [
     path('market/search/', views.customer_search, name='customer_search'),
     path('market/profile/', views.customer_profile, name='customer_profile'),
     path('market/wishlist/', views.customer_wishlist, name='customer_wishlist'),
+    path('shop/<str:slug>/', views.customer_shop_detail, name='customer_shop_detail'),
     path('studio/', ar3d_views.print_3d_studio_page, name='studio_home'),
 ]
 

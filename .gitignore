@@ -117,3 +117,8 @@ backend/node_modules/
 
 # Runtime logs & PID
 backend/logs/
+
+# Large media files
+*.mp4
+*.mkv
+*.mov

@@ -1,0 +1,47 @@
+.react-toast-anchor {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 99999;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.react-toast-anchor.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.react-toast-bubble {
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  border-radius: var(--radius-pill, 9999px);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.toast-default-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ADE80;
+}
+
+.toast-symbol {
+  display: flex;
+  align-items: center;
+}
+
+.toast-text-content {
+  white-space: nowrap;
+}

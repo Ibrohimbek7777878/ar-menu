@@ -1,0 +1,294 @@
+/* ─────────────────────────────────────────────────────────────
+   React CheckoutPage Component Styles
+   Senior UI/UX Architecture — Warm Ivory & Forest Green
+   ───────────────────────────────────────────────────────────── */
+
+.checkout-app-container {
+  min-height: 100vh;
+  background-color: var(--bg-primary, #F8F5EE);
+  color: var(--text-primary, #212529);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  padding-bottom: 95px;
+}
+
+.checkout-main-content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+}
+
+.checkout-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.btn-back-to-cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-primary, #213827);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.btn-back-to-cart:hover {
+  background: #F8F5EE;
+  border-color: var(--brand-primary, #213827);
+}
+
+.checkout-page-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0 0 20px;
+}
+
+/* ─── Checkout Section Cards ─── */
+.checkout-section-card {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.checkout-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-head-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #212529);
+  letter-spacing: -0.2px;
+}
+
+/* Service Types Grid */
+.service-types-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 540px) {
+  .service-types-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.service-type-option {
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 12px;
+  padding: 14px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #FAF9F5;
+  transition: all 0.18s ease;
+}
+
+.service-type-option:hover {
+  border-color: #D4CCA8;
+  background: #FFFFFF;
+}
+
+.service-type-option.active {
+  background: #F2F5F3;
+  border-color: var(--brand-primary, #213827);
+}
+
+.service-opt-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: var(--brand-primary, #213827);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+}
+
+.service-type-option.active .service-opt-icon {
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  border-color: var(--brand-primary, #213827);
+}
+
+.service-opt-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #212529);
+  margin-bottom: 2px;
+}
+
+.service-opt-desc {
+  font-size: 11px;
+  color: var(--text-secondary, #6C757D);
+}
+
+/* ─── Form Grid ─── */
+.form-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .form-grid-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6C757D);
+}
+
+.field-input-text {
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-primary, #212529);
+  background: #FAF9F5;
+  outline: none;
+  transition: all 0.18s ease;
+}
+
+.field-input-text:focus {
+  border-color: var(--brand-primary, #213827);
+  background: #FFFFFF;
+}
+
+/* ─── Payment Methods ─── */
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 540px) {
+  .payment-methods-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.payment-opt-card {
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  background: #FAF9F5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+}
+
+.payment-opt-card:hover {
+  border-color: #D4CCA8;
+  background: #FFFFFF;
+}
+
+.payment-opt-card.active {
+  background: #F2F5F3;
+  border-color: var(--brand-primary, #213827);
+}
+
+.payment-opt-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: var(--brand-primary, #213827);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+}
+
+.payment-brand-badge {
+  width: 44px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.click-badge {
+  background: #00A651;
+  color: #FFFFFF;
+}
+
+.payme-badge {
+  background: #1472FF;
+  color: #FFFFFF;
+}
+
+.payment-opt-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #212529);
+}
+
+/* ─── Submit Button ─── */
+.btn-submit-order {
+  width: 100%;
+  margin-top: 18px;
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  padding: 16px 24px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(33, 56, 39, 0.22);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-submit-order:hover:not(:disabled) {
+  background: #182A1D;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(33, 56, 39, 0.28);
+}
+
+.btn-submit-order:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

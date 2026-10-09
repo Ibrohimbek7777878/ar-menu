@@ -1,0 +1,1816 @@
+{% extends "base_map.html" %}
+{% load i18n_tags %}
+{% block title %}{{ t.map_title }} — {{ t.site_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<style>
+    :root { --sidebar-bg: #121212; --sidebar-bg-2: #1e1e1e; --neon: #16a34a; }
+
+    .map-shell {
+        display: grid;
+        grid-template-columns: minmax(320px, 390px) 1fr;
+        height: calc(100vh - var(--header-height, 64px));
+        background: #0c0c0c;
+    }
+
+    /* ─── Dark floating sidebar ─── */
+    .map-sidebar {
+        z-index: 20; overflow-y: auto;
+        max-height: calc(100vh - var(--header-height, 64px));
+        background: linear-gradient(180deg, #181818 0%, #121212 100%);
+        border-right: 1px solid rgba(255,255,255,0.06);
+        display: flex; flex-direction: column;
+        color: #e9e9e9;
+    }
+    .map-sidebar-header {
+        position: sticky; top: 0; z-index: 5;
+        background: rgba(20,20,20,0.92); backdrop-filter: blur(12px);
+        padding: 0.9rem 1rem 0.65rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .map-sidebar-header h1 { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 700; color: #fff; }
+    .map-sidebar-header p { font-size: 0.78rem; color: #8a8a8a; margin-top: 2px; }
+
+    .store-search-input {
+        width: 100%; margin-top: 0.65rem;
+        border: 1px solid rgba(255,255,255,0.1); border-radius: 0.85rem;
+        padding: 0.55rem 0.9rem; font-size: 0.85rem; color: #fff;
+        background: rgba(255,255,255,0.06); backdrop-filter: blur(8px);
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .store-search-input::placeholder { color: #6f6f6f; }
+    .store-search-input:focus { outline: none; border-color: var(--neon); background: rgba(22,163,74,0.08); }
+
+    /* ─── Category Quick Chips ─── */
+    .category-chips-bar {
+        display: flex; gap: 5px; overflow-x: auto; padding: 6px 0 2px;
+        scrollbar-width: none;
+    }
+    .category-chips-bar::-webkit-scrollbar { display: none; }
+    .cat-chip {
+        padding: 4px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600;
+        border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);
+        color: #cbd5e1; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .cat-chip:hover { border-color: #16a34a; color: #fff; background: rgba(22,163,74,0.15); }
+    .cat-chip.active { background: #16a34a; color: #fff; border-color: #16a34a; font-weight: 700; }
+
+    .sort-bar { display: flex; gap: 0.4rem; margin: 0.6rem 0 0.2rem; }
+    .sort-btn {
+        padding: 4px 11px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.04); color: #c7c7c7; cursor: pointer;
+        transition: all 0.15s; white-space: nowrap; backdrop-filter: blur(8px);
+    }
+    .sort-btn.active, .sort-btn:hover { background: var(--neon); color: #fff; border-color: var(--neon); }
+
+    .stores-list { padding: 0.5rem 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+
+    /* ─── Glassmorphism store cards ─── */
+    .store-list-card {
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 1rem; overflow: hidden; backdrop-filter: blur(10px);
+        transition: border-color 0.15s, box-shadow 0.2s, transform 0.15s;
+    }
+    .store-list-card:hover, .store-list-card.active {
+        border-color: var(--neon); box-shadow: 0 6px 22px rgba(22,163,74,0.22);
+        transform: translateY(-1px);
+    }
+    .store-list-card__button {
+        display: flex; align-items: center; gap: 0.75rem; width: 100%;
+        padding: 0.7rem; background: transparent; border: none; cursor: pointer; text-align: left;
+    }
+    .store-list-card__button img { width: 54px; height: 54px; border-radius: 0.75rem; object-fit: cover; flex-shrink: 0; background: #2a2a2a; }
+    .store-list-card__avatar {
+        width: 54px; height: 54px; border-radius: 0.75rem; flex-shrink: 0;
+        display: grid; place-items: center; background: rgba(22,163,74,0.15); color: var(--neon);
+        font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700;
+    }
+    .store-list-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .store-list-card__body strong { font-size: 0.9rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .store-list-card__body small { font-size: 0.74rem; color: #9a9a9a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .store-list-card__arrow { color: #4b4b4b; font-size: 1.4rem; }
+
+    .map-canvas, #map { width: 100%; height: calc(100vh - var(--header-height, 64px)); background: #0c0c0c; position: relative; }
+
+    /* ─── Map Controls Group (Top-Right Dock) ─── */
+    .map-controls-group {
+        position: absolute; top: 14px; right: 14px; z-index: 1000;
+        display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    }
+
+    /* ─── Layer switcher (Apple Maps style - 4 Layers) ─── */
+    .layer-switcher {
+        display: flex; gap: 4px; padding: 4px;
+        background: rgba(20,20,20,0.88); backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 0.85rem;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    }
+    .layer-switcher button {
+        display: flex; align-items: center; gap: 6px;
+        padding: 7px 11px; border-radius: 0.65rem; font-size: 0.72rem; font-weight: 600;
+        background: transparent; color: #c7c7c7; border: none; cursor: pointer; transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .layer-switcher button .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .layer-switcher button.active { background: var(--neon); color: #fff; }
+    .layer-switcher button.thermal-btn.active {
+        background: linear-gradient(135deg, #7c3aed, #dc2626) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 16px rgba(220, 38, 38, 0.6) !important;
+    }
+    .layer-switcher button:hover:not(.active) { background: rgba(255,255,255,0.08); }
+
+    /* ─── Map Tools Dock (Pegman & Location & Zoom) ─── */
+    .map-tools-dock {
+        display: flex; flex-direction: column; gap: 8px; align-items: center;
+    }
+    .map-tool-btn {
+        width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(20,20,20,0.92); backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.14); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.5); transition: all 0.18s ease;
+        position: relative; color: #e2e8f0; font-weight: 700;
+    }
+    .map-tool-btn:hover { background: rgba(40,40,40,0.98); transform: scale(1.08); }
+    .map-tool-btn.active-pegman {
+        background: #78350f !important; border-color: #f59e0b !important;
+        box-shadow: 0 0 22px rgba(245,158,11,0.8) !important;
+        animation: pegmanPulse 1.4s ease-in-out infinite;
+    }
+    .map-tool-btn.active-location {
+        background: rgba(37,99,235,0.25) !important; border-color: #3b82f6 !important;
+        box-shadow: 0 0 18px rgba(59,130,246,0.65) !important;
+    }
+    .map-tool-btn.locating svg { animation: spinLocate 0.8s linear infinite; }
+    @keyframes spinLocate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    @keyframes pegmanPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+    }
+
+    /* Pegman Ghost when Dragging */
+    #pegmanFloatingGhost {
+        position: fixed; pointer-events: none; z-index: 100000;
+        width: 52px; height: 52px; transform: translate(-50%, -100%);
+        transition: transform 0.04s ease-out;
+        filter: drop-shadow(0 12px 24px rgba(0,0,0,0.7));
+    }
+    .pegman-ghost-body {
+        width: 46px; height: 46px; border-radius: 50%;
+        background: #f59e0b; border: 3px solid #ffffff;
+        display: grid; place-items: center;
+        box-shadow: 0 0 22px rgba(245, 158, 11, 0.9);
+        animation: pegmanWiggle 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes pegmanWiggle {
+        from { transform: rotate(-10deg) scale(1.05); }
+        to { transform: rotate(10deg) scale(1.15); }
+    }
+    body.pegman-drag-active, body.pegman-drag-active * {
+        cursor: grabbing !important;
+        user-select: none !important;
+    }
+    .pegman-cursor-active #map { cursor: crosshair !important; }
+
+    /* Pegman Instruction Toast */
+    .pegman-instruction-toast {
+        position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1000;
+        display: flex; align-items: center; gap: 8px; padding: 9px 18px;
+        border-radius: 9999px; background: rgba(245,158,11,0.96); backdrop-filter: blur(12px);
+        color: #0f172a; font-size: 0.78rem; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        border: 1px solid rgba(255,255,255,0.4); animation: fadeInDown 0.3s ease;
+    }
+
+    /* ─── Route Panel (Yo'nalish & Navigatsiya) ─── */
+    .route-panel {
+        position: absolute; top: 14px; left: 14px; z-index: 999;
+        max-width: 380px; width: calc(100% - 28px);
+        animation: fadeInDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .route-panel-card {
+        background: rgba(18,18,18,0.94); backdrop-filter: blur(18px);
+        border: 1px solid rgba(255,255,255,0.14); border-radius: 1.25rem;
+        padding: 1rem; box-shadow: 0 12px 36px rgba(0,0,0,0.65);
+    }
+
+    /* ─── Tungi Issiqlik (FLIR Thermal) HUD & Scanlines ─── */
+    .flir-scanlines {
+        position: absolute; inset: 0; pointer-events: none; z-index: 400;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(34, 197, 94, 0.05) 50%),
+                    linear-gradient(90deg, rgba(255, 0, 0, 0.015), rgba(0, 255, 0, 0.015), rgba(0, 0, 255, 0.015));
+        background-size: 100% 3px, 6px 100%;
+    }
+    .flir-hud-bar {
+        position: absolute; top: 14px; left: 14px; z-index: 900;
+        display: flex; flex-direction: column; gap: 4px; padding: 10px 14px;
+        background: rgba(10, 15, 26, 0.92); backdrop-filter: blur(14px);
+        border: 1px solid #06b6d4; border-radius: 0.85rem;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        color: #e0f2fe; font-family: monospace;
+    }
+    .flir-spectrum-bar {
+        width: 140px; height: 10px; border-radius: 4px;
+        background: linear-gradient(90deg, #0b0429 0%, #4f107b 25%, #b73779 50%, #fc8961 75%, #fec488 90%, #ffffff 100%);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    .flir-reticle {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        pointer-events: none; z-index: 800; display: flex; align-items: center; justify-content: center;
+    }
+    .flir-crosshair-h { position: absolute; width: 60px; height: 1px; background: rgba(56,189,248,0.7); }
+    .flir-crosshair-v { position: absolute; height: 60px; width: 1px; background: rgba(56,189,248,0.7); }
+    .flir-reticle-box {
+        position: absolute; top: 16px; left: 16px;
+        background: rgba(15,23,42,0.85); border: 1px solid #38bdf8; border-radius: 4px;
+        padding: 2px 6px; font-family: monospace; font-size: 11px; color: #fde047; font-weight: bold;
+    }
+    .flir-dot { width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; }
+    @keyframes thermalPulse {
+        0%, 100% { transform: scale(1); opacity: 0.85; }
+        50% { transform: scale(1.18); opacity: 1; }
+    }
+    .thermal-heat-circle { animation: thermalPulse 2.8s ease-in-out infinite; }
+    .thermal-tooltip {
+        background: #0b0f19 !important; border: 1px solid #06b6d4 !important;
+        color: #fff !important; font-size: 11px !important; border-radius: 8px !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
+    }
+
+    /* ─── Custom dark pin ─── */
+    .custom-store-marker {
+        position: relative; display: flex; align-items: center; gap: 7px;
+        width: max-content; max-width: 184px; padding: 6px 10px 6px 6px;
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+        background: rgba(18,18,18,0.92); color: #fff;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.5); backdrop-filter: blur(6px);
+    }
+    .custom-store-marker::after {
+        content: ""; position: absolute; left: 18px; bottom: -9px;
+        width: 14px; height: 14px; background: rgba(18,18,18,0.92);
+        transform: rotate(45deg); border-right: 1px solid rgba(255,255,255,0.12); border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .custom-store-marker__icon {
+        display: grid; width: 34px; height: 34px; place-items: center;
+        border-radius: 10px; background: rgba(22,163,74,0.18); font-size: 18px;
+    }
+    .custom-store-marker__label { display: flex; flex-direction: column; font-size: 11px; line-height: 1.2; }
+    .custom-store-marker__label strong { max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .custom-store-marker__label span { color: #9be3b0; }
+
+    /* ─── Cluster (dark/green) ─── */
+    .marker-cluster-custom { background: rgba(22,163,74,0.18); }
+    .marker-cluster-custom div {
+        width: 34px; height: 34px; margin: 3px; border-radius: 50%;
+        background: #16a34a; color: #fff; font-weight: 700; font-size: 0.8rem;
+        display: grid; place-items: center; box-shadow: 0 4px 14px rgba(22,163,74,0.4);
+    }
+
+    /* ─── Popup (dark) ─── */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1c1c1c; color: #fff; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+    .leaflet-popup-content { margin: 12px 14px; }
+    .leaflet-popup-close-button { color: #888 !important; }
+    .store-popup { font-family: 'Inter', sans-serif; min-width: 200px; }
+    .store-popup h3 { font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 700; margin: 0 0 4px; color: #fff; }
+    .store-popup .meta { font-size: 0.75rem; color: #aaa; margin-bottom: 4px; }
+    .store-popup .open { color: #4ade80; font-weight: 600; }
+    .store-popup .closed { color: #f87171; font-weight: 600; }
+    .store-popup .btn-link {
+        display: block; text-align: center; background: #16a34a; color: #fff;
+        border-radius: 0.75rem; padding: 8px 16px; text-decoration: none;
+        font-size: 0.8rem; font-weight: 600; margin-top: 8px; border: none; cursor: pointer;
+    }
+
+    /* ─── Bottom sheet ─── */
+    .bottom-sheet {
+        position: fixed; bottom: 0; left: 0; right: 0; background: #161616;
+        border-radius: 1.5rem 1.5rem 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+        padding: 1.25rem; z-index: 1000; transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(.16,1,.3,1); max-height: 60vh; overflow-y: auto; color: #e9e9e9;
+    }
+    .bottom-sheet.active { transform: translateY(0); }
+    .bottom-sheet .handle { width: 40px; height: 4px; background: #3a3a3a; border-radius: 2px; margin: 0 auto 12px; }
+    .bottom-sheet .store-name { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .bottom-sheet .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+    .bottom-sheet .badge-open { background: rgba(22,163,74,0.15); color: #4ade80; }
+    .bottom-sheet .badge-closed { background: rgba(239,68,68,0.15); color: #f87171; }
+    .bottom-sheet .badge-verified { background: rgba(37,99,235,0.15); color: #93c5fd; }
+    .bottom-sheet .info-row { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #aaa; padding: 6px 0; }
+    .bottom-sheet .btn-green { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 0.75rem; padding: 12px; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 12px; }
+    .bottom-sheet .btn-outline { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: transparent; color: #4ade80; border: 1.5px solid #16a34a; border-radius: 0.75rem; padding: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 8px; text-decoration: none; }
+    .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .sheet-backdrop.active { opacity: 1; pointer-events: auto; }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 768px) {
+        .map-shell { display: block; position: relative; }
+        .map-sidebar {
+            position: fixed; z-index: 500; left: 0; right: 0; bottom: 0;
+            max-height: 52vh; border-radius: 22px 22px 0 0; border-right: none;
+            box-shadow: 0 -12px 32px rgba(0,0,0,0.6);
+            transform: translateY(calc(100% - 56px)); transition: transform 0.3s cubic-bezier(.16,1,.3,1);
+        }
+        .map-sidebar.open { transform: translateY(0); }
+        .map-canvas, #map { height: calc(100vh - var(--header-height, 64px) - var(--tabbar-height, 64px)); }
+        .map-controls-group { top: 8px; right: 8px; gap: 6px; }
+        .layer-switcher { padding: 3px; gap: 2px; }
+        .layer-switcher button { padding: 5px 8px; font-size: 0.68rem; gap: 4px; }
+        .map-tool-btn { width: 38px; height: 38px; }
+        .route-panel { top: 8px; left: 8px; right: 8px; width: calc(100% - 16px); max-width: none; }
+        .pegman-instruction-toast { width: calc(100% - 24px); text-align: center; justify-content: center; font-size: 0.72rem; padding: 7px 12px; }
+    }
+
+    @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
+    .user-pulse { animation: pulse 2s infinite; }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-shell">
+    <aside class="map-sidebar" id="sidebar">
+        <div class="map-sidebar-header">
+            <h1>{{ t.map_title }}</h1>
+            <p>{{ t.map_subtitle }}</p>
+            <input id="store-search" type="search" placeholder="{{ t.search }}..." class="store-search-input" oninput="applyFilterAndSort()">
+            <!-- Category Quick Chips -->
+            <div class="category-chips-bar" id="categoryChips">
+                <button type="button" class="cat-chip active" onclick="filterByCategory('all')">Barchasi</button>
+                <button type="button" class="cat-chip" onclick="filterByCategory('food')">🍔 Ovqat & Kafe</button>
+                <button type="button" class="cat-chip" onclick="filterByCategory('grocery')">🛒 Bozor & Do'kon</button>
+                <button type="button" class="cat-chip" onclick="filterByCategory('clothing')">👕 Kiyim</button>
+                <button type="button" class="cat-chip" onclick="filterByCategory('pharma')">💊 Dorixona</button>
+                <button type="button" class="cat-chip" onclick="filterByCategory('tech')">📱 Elektronika</button>
+            </div>
+            <div class="sort-bar">
+                <button class="sort-btn active" data-sort="distance" onclick="sortStores('distance')">{{ t.map_sort_distance }}</button>
+                <button class="sort-btn" data-sort="rating" onclick="sortStores('rating')">{{ t.map_sort_rating }}</button>
+            </div>
+        </div>
+        <div class="stores-list" id="stores-list"></div>
+    </aside>
+
+    <main class="map-canvas">
+        <div id="map"></div>
+
+        <!-- Floating Pegman Avatar (follows cursor/touch when dragged) -->
+        <div id="pegmanFloatingGhost" style="display:none;">
+            <div class="pegman-ghost-body">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="#111827">
+                    <circle cx="12" cy="4" r="3"/>
+                    <path d="M12 8c-2.2 0-4 1.8-4 4v5c0 .55.45 1 1 1h1v5c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-5h1c.55 0 1-.45 1-1v-5c0-2.2-1.8-4-4-4z"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- FLIR Thermal HUD & Scanlines overlay (hidden by default) -->
+        <div id="thermalOverlay" class="hidden">
+            <div class="flir-scanlines"></div>
+            <div class="flir-hud-bar">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span class="flir-dot" style="animation: pulse 1.5s infinite;"></span>
+                        <strong style="color:#6ee7b7;font-size:12px;letter-spacing:1px;font-family:monospace;">● FLIR RADIOMETRIC IR 8-14µm</strong>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:10px;color:#a7f3d0;font-family:monospace;">14°C</span>
+                        <div class="flir-spectrum-bar"></div>
+                        <span style="font-size:10px;color:#fca5a5;font-family:monospace;">90°C</span>
+                    </div>
+                </div>
+                <div style="font-size:10px;color:#a7f3d0;font-family:monospace;display:flex;gap:14px;margin-top:2px;">
+                    <span>T-AMB: 19.2°C</span>
+                    <span>EMISSIVITY: 0.95</span>
+                    <span id="flirCenterTemp">MARKAZ: 36.8°C</span>
+                    <span style="color:#fde047;font-weight:bold;">🔥 TANDIR & ISSIQLIK MANBALARI</span>
+                </div>
+            </div>
+            <div class="flir-reticle">
+                <div class="flir-crosshair-h"></div>
+                <div class="flir-crosshair-v"></div>
+                <div class="flir-dot"></div>
+                <div class="flir-reticle-box" id="reticleTemp">36.8°C</div>
+            </div>
+        </div>
+
+        <!-- Yo'nalish & Navigatsiya paneli -->
+        <div id="routePanel" class="route-panel hidden">
+            <div class="route-panel-card">
+                <div style="display:flex;align-items:start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+                    <div>
+                        <span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:700;background:rgba(22,163,74,0.2);color:#4ade80;text-transform:uppercase;letter-spacing:0.5px;">Yo'nalish va Navigatsiya</span>
+                        <h4 id="routeStoreName" style="color:#fff;font-size:14px;font-weight:700;margin:4px 0 2px;">Do'kon nomi</h4>
+                        <p id="routeStoreAddress" style="color:#94a3b8;font-size:11px;margin:0;">Manzil</p>
+                    </div>
+                    <button onclick="closeRoutePanel()" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;padding:4px;" title="Yopish">
+                        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;padding:8px;background:rgba(255,255,255,0.04);border-radius:10px;">
+                    <div>
+                        <div style="font-size:10px;color:#94a3b8;">🚶 Piyoda vaqti</div>
+                        <div id="routeWalkEta" style="color:#4ade80;font-size:13px;font-weight:700;">— min (— km)</div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px;color:#94a3b8;">🚗 Avtomobil vaqti</div>
+                        <div id="routeDriveEta" style="color:#38bdf8;font-size:13px;font-weight:700;">— min (— km)</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <a id="taxiCallBtn" href="tel:+998672250000" style="flex:1;min-width:130px;display:flex;align-items:center;justify-content:center;gap:6px;background:#f59e0b;color:#000;font-size:11px;font-weight:700;padding:8px 10px;border-radius:8px;text-decoration:none;">
+                        🚕 Taxi Plus (+998 67 225-00-00)
+                    </a>
+                    <a id="yandexGoBtn" href="#" target="_blank" style="flex:1;min-width:110px;display:flex;align-items:center;justify-content:center;gap:6px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;border-radius:8px;text-decoration:none;">
+                        🔴 Yandex Go
+                    </a>
+                    <a id="gmapsRouteBtn" href="#" target="_blank" style="flex:1;min-width:110px;display:flex;align-items:center;justify-content:center;gap:6px;background:#3b82f6;color:#fff;font-size:11px;font-weight:700;padding:8px 10px;border-radius:8px;text-decoration:none;">
+                        🗺️ Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pegman Instruction Toast -->
+        <div id="pegmanToast" class="pegman-instruction-toast hidden">
+            <span>🚶 Odamchani xaritaning xohlagan joyiga qo'ying — 360° ko'cha panoramasi ochiladi!</span>
+            <button onclick="togglePegmanMode(false)" style="background:transparent;border:none;color:#000;cursor:pointer;font-weight:700;padding-left:6px;">✕</button>
+        </div>
+
+        <!-- Controls: Layer Switcher + Tools Dock -->
+        <div class="map-controls-group">
+            <div class="layer-switcher" id="layerSwitcher">
+                <button data-layer="dark" class="active" onclick="setBaseLayer('dark')" title="Tungi qora xarita">
+                    <span class="dot" style="background:#1e293b;border:1px solid #475569;"></span>Tungi
+                </button>
+                <button data-layer="satellite" onclick="setBaseLayer('satellite')" title="Sun'iy yo'ldosh xaritasi">
+                    <span class="dot" style="background:linear-gradient(135deg,#15803d,#0369a1);"></span>Sun'iy yo'ldosh
+                </button>
+                <button data-layer="light" onclick="setBaseLayer('light')" title="Kunduzgi ochiq xarita">
+                    <span class="dot" style="background:#f8fafc;border:1px solid #cbd5e1;"></span>Kunduzgi
+                </button>
+                <button data-layer="thermal" class="thermal-btn" onclick="setBaseLayer('thermal')" title="Tungi issiqlik kamerasi (FLIR / Issiq jonzotlar & tandirlar)">
+                    <span class="dot" style="background:#10b981;box-shadow:0 0 8px #10b981;"></span>🔥 Issiqlik
+                </button>
+            </div>
+
+            <div class="map-tools-dock">
+                <!-- Compass / Reset North -->
+                <button id="compassBtn" onclick="resetCompass()" class="map-tool-btn" title="Shimolga burish (Reset North)">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15 11 12 9 9 11 12 2" fill="#ef4444" stroke="#ef4444"/>
+                        <polygon points="12 22 9 13 12 15 15 13 12 22" fill="#94a3b8" stroke="#94a3b8"/>
+                        <circle cx="12" cy="12" r="2" fill="#fff"/>
+                    </svg>
+                </button>
+
+                <!-- Street View Pegman (Odamcha) - Draggable -->
+                <button id="pegmanBtn" class="map-tool-btn" title="Ko'cha ko'rinishi (Odamchani xaritaga surib tashlang)">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="#f59e0b">
+                        <circle cx="12" cy="4" r="3"/>
+                        <path d="M12 8c-2.2 0-4 1.8-4 4v5c0 .55.45 1 1 1h1v5c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-5h1c.55 0 1-.45 1-1v-5c0-2.2-1.8-4-4-4z"/>
+                    </svg>
+                </button>
+
+                <!-- My Location Button (GPS) -->
+                <button id="myLocationBtn" onclick="requestAndGoToMyLocation()" class="map-tool-btn" title="{{ t.map_my_location }}">
+                    <svg style="width:20px;height:20px;" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" fill="#22c55e" fill-opacity="0.25"/>
+                        <circle cx="12" cy="12" r="7"/>
+                        <line x1="12" y1="2" x2="12" y2="5"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                        <line x1="2" y1="12" x2="5" y2="12"/>
+                        <line x1="19" y1="12" x2="22" y2="12"/>
+                    </svg>
+                </button>
+
+                <!-- Zoom Controls -->
+                <button onclick="map.zoomIn()" class="map-tool-btn font-bold text-base" title="Yaqinlashtirish (+)">+</button>
+                <button onclick="map.zoomOut()" class="map-tool-btn font-bold text-base" title="Uzoqlashtirish (−)">−</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet()"></div>
+<div id="bottomSheet" class="bottom-sheet">
+    <div class="handle"></div>
+    <div id="sheetContent"></div>
+</div>
+
+<!-- Street View / 360° Panorama Modal -->
+<div id="streetViewModal" class="fixed inset-0 z-[1050] hidden items-center justify-center p-2 sm:p-4 md:p-6">
+    <div class="absolute inset-0 bg-black/85 backdrop-blur-md" onclick="closeStreetView()"></div>
+    <div class="relative bg-[#0f172a] border border-white/15 rounded-2xl w-full max-w-4xl h-[88vh] sm:h-[82vh] flex flex-col overflow-hidden shadow-2xl z-10">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#0b0f19]">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 grid place-items-center text-xl shrink-0">🚶</div>
+                <div class="min-w-0">
+                    <h3 class="text-white text-sm sm:text-base font-bold truncate" id="streetViewTitle">Ko'cha ko'rinishi (Street View / 360° Panorama)</h3>
+                    <p class="text-xs text-amber-400 font-mono truncate" id="streetViewCoords">360° shahar panoramasi va jonli ko'rinish</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="togglePanoViewMode()" id="panoSwitchModeBtn" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 transition hidden sm:inline-flex items-center gap-1">
+                    🔄 Rejimni almashtirish
+                </button>
+                <button onclick="closeStreetView()" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition" title="Yopish">
+                    <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 360 Viewer Canvas & Iframe container -->
+        <div class="flex-1 relative bg-black overflow-hidden select-none" id="streetViewCanvasContainer">
+            <!-- Interactive 360 Canvas -->
+            <canvas id="street360Canvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
+            
+            <!-- 360 Overlay Navigation & Compass -->
+            <div class="absolute top-3 left-3 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-xs text-white pointer-events-none">
+                <span class="animate-pulse text-amber-400">● 360° AYLANA KO'RINISH</span>
+                <span class="text-gray-400">|</span>
+                <span id="panoHeading">AZIMUT: 0° N</span>
+            </div>
+
+            <div class="absolute top-3 right-3 z-20 flex gap-2">
+                <button onclick="rotatePano(-45)" class="w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 text-xs transition" title="Chapga burilish">◀</button>
+                <button onclick="rotatePano(45)" class="w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 text-xs transition" title="O'ngga burilish">▶</button>
+            </div>
+
+            <!-- Hint: Drag to look around -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-black/75 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 text-xs text-white/90 shadow-lg text-center flex items-center gap-2">
+                <span>🔄 Sichqoncha yoki barmog'ingiz bilan 360° atrofga qarang</span>
+            </div>
+
+            <!-- Optional embedded iframe (can be toggled or fallback) -->
+            <iframe id="streetViewIframe" src="" class="absolute inset-0 w-full h-full border-0 hidden" allowfullscreen loading="lazy"></iframe>
+        </div>
+
+        <!-- Footer Action Toolbar -->
+        <div class="px-4 py-3 bg-[#0b0f19] border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-400">Tiniq HD ko'rinishda ochish:</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <a id="streetViewGoogleFallback" href="#" target="_blank" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md">
+                    <span>🗺️ Google Maps 360° HD</span>
+                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+                <a id="streetViewYandexFallback" href="#" target="_blank" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md">
+                    <span>🟡 Yandex Panorama HD</span>
+                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+                <a id="streetViewTaxiBtn" href="tel:+998672250000" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md">
+                    <span>🚕 Bu yerga taxi chaqirish</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Masofa tanlovi dialogi -->
+<div id="distanceChoiceDialog" class="fixed inset-0 z-[1001] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeDistanceChoice()"></div>
+    <div class="relative bg-[#1c1c1c] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+        <h3 class="font-display text-lg font-semibold text-white mb-2">Masofani qanday hisoblaymiz?</h3>
+        <p class="text-sm text-gray-400 mb-5">Tanlangan nuqtadan do'konlargacha masofani ko'rsatish usuli:</p>
+        <div class="space-y-3">
+            <button onclick="selectDistanceMode('nearest')" class="w-full flex items-center gap-3 p-4 rounded-xl bg-[#16a34a] text-white hover:bg-[#15803d] transition text-left">
+                <span class="w-10 h-10 rounded-xl bg-white/20 grid place-items-center shrink-0">📍</span>
+                <span><b class="block text-sm">Eng yaqin masofa</b><small class="text-white/80 text-xs">Eng yaqin do'kongacha aniq masofa</small></span>
+            </button>
+            <button onclick="selectDistanceMode('average')" class="w-full flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition text-left">
+                <span class="w-10 h-10 rounded-xl bg-white/10 grid place-items-center shrink-0">📏</span>
+                <span><b class="block text-sm">O'rtacha to'g'ri yo'l</b><small class="text-gray-400 text-xs">Barcha do'konlargacha o'rtacha masofa</small></span>
+            </button>
+        </div>
+        <button onclick="closeDistanceChoice()" class="w-full mt-4 py-2.5 text-sm text-gray-400 hover:text-white transition">Bekor qilish</button>
+    </div>
+</div>
+
+<!-- Boshlang'ich nuqta info -->
+<div id="startPointInfo" class="fixed bottom-20 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:max-w-md bg-[#1c1c1c] border border-white/10 rounded-2xl p-4 shadow-2xl z-[900] hidden">
+    <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Boshlang'ich nuqta</p>
+            <p class="text-sm font-medium text-white mt-1" id="startPointDistance">Hisoblanmoqda...</p>
+            <p class="text-xs text-gray-500 mt-1" id="startPointCoords"></p>
+        </div>
+        <button onclick="clearStartPoint()" class="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const T = {
+    open: '{{ t.map_open }}', closed: '{{ t.map_closed }}', delivery: '{{ t.map_delivery }}',
+    minOrder: '{{ t.map_min_order }}', hours: '{{ t.map_hours }}', goToStore: '{{ t.map_go_to_store }}',
+    directions: '{{ t.map_directions }}', storesFound: '{{ t.map_stores_found }}',
+    myLocation: '{{ t.map_my_location }}', rating: '{{ t.map_rating }}', eta: '{{ t.map_eta }}',
+    min: '{{ t.map_minutes }}', allStores: '{{ t.map_all_stores }}',
+};
+
+const shops = {{ shops_json|safe }};
+const defaultLat = {{ default_lat|stringformat:".6f" }};
+const defaultLng = {{ default_lng|stringformat:".6f" }};
+let userLat = null, userLng = null, userAccuracy = null;
+let map, userMarker, userAccuracyCircle, directionLayer, clusterGroup;
+let currentBase = 'dark';
+let currentSort = 'distance';
+let currentCategory = 'all';
+const storeMarkers = new Map();
+let sortedShops = [];
+let watchPositionId = null;
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+function formatDistance(d) {
+    return d < 1 ? Math.round(d * 1000) + ' m' : d.toFixed(1) + ' km';
+}
+
+function showToast(msg) {
+    const existing = document.getElementById('mapAppToast');
+    if (existing) existing.remove();
+    const t = document.createElement('div');
+    t.id = 'mapAppToast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);color:#fff;padding:10px 20px;border-radius:9999px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;gap:8px;animation:fadeInDown 0.3s ease;';
+    t.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#94a3b8;font-weight:bold;cursor:pointer;padding-left:8px;">✕</button>`;
+    document.body.appendChild(t);
+    setTimeout(() => { if (t.parentElement) t.remove(); }, 4000);
+}
+
+// ─── Tile layers (100% bepul, barqaror Esri & OSM manbalari) ───
+const lightTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    maxNativeZoom: 19, maxZoom: 20
+});
+
+const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxNativeZoom: 16, maxZoom: 20
+});
+const darkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '',
+    maxNativeZoom: 16, maxZoom: 20, opacity: 0.8
+});
+const darkGroup = L.layerGroup([darkBase, darkRef]);
+
+const satelliteTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxNativeZoom: 18, maxZoom: 20
+});
+const satelliteLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '',
+    maxNativeZoom: 18, maxZoom: 20, opacity: 0.85
+});
+const satelliteGroup = L.layerGroup([satelliteTile, satelliteLabels]);
+
+// FLIR Thermal: Toza qorong'u satelit taglik ustiga haqiqiy FLIR Ironbow qatlami
+const thermalBaseTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'FLIR Radiometric IR &copy; Esri',
+    maxNativeZoom: 16, maxZoom: 20
+});
+const thermalGroup = L.layerGroup([thermalBaseTile, satelliteLabels]);
+
+let currentBaseLayer = darkGroup;
+let thermalHeatLayer = null;
+const thermalSensorsGroup = L.layerGroup();
+
+// ─── Ikki tomonlama tema sinxronizatsiyasi (Navbar <-> Xarita) ───
+function setBaseLayer(name, syncPageTheme = true) {
+    currentBase = name;
+    if (currentBaseLayer) map.removeLayer(currentBaseLayer);
+
+    const mapCanvas = document.querySelector('.map-canvas');
+    const thermalOverlay = document.getElementById('thermalOverlay');
+
+    if (name === 'thermal') {
+        currentBaseLayer = thermalGroup;
+        thermalGroup.addTo(map);
+        mapCanvas.classList.add('thermal-mode');
+        if (thermalOverlay) thermalOverlay.classList.remove('hidden');
+        renderThermalHeatSignatures();
+        if (syncPageTheme && typeof setTheme === 'function') setTheme('dark');
+    } else {
+        mapCanvas.classList.remove('thermal-mode');
+        if (thermalOverlay) thermalOverlay.classList.add('hidden');
+        clearThermalHeatSignatures();
+
+        if (name === 'satellite') {
+            currentBaseLayer = satelliteGroup;
+            satelliteGroup.addTo(map);
+            if (syncPageTheme && typeof setTheme === 'function') setTheme('dark');
+        } else if (name === 'light') {
+            currentBaseLayer = lightTile;
+            lightTile.addTo(map);
+            if (syncPageTheme && typeof setTheme === 'function') setTheme('light');
+        } else {
+            currentBaseLayer = darkGroup;
+            darkGroup.addTo(map);
+            if (syncPageTheme && typeof setTheme === 'function') setTheme('dark');
+        }
+    }
+    document.querySelectorAll('#layerSwitcher button').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+}
+
+// Navbar'dagi Kun/Tun tugmasi bosilganda xarita qatlamini sinxron almashtirish
+window.addEventListener('themeChanged', (e) => {
+    const isDark = e.detail && e.detail.isDark;
+    if (isDark) {
+        if (currentBase === 'light') setBaseLayer('dark', false);
+    } else {
+        if (currentBase === 'dark' || currentBase === 'satellite' || currentBase === 'thermal') {
+            setBaseLayer('light', false);
+        }
+    }
+});
+
+// ─── Haqiqiy Professional FLIR Ironbow Heatmap Dvigateli ───
+function renderThermalHeatSignatures() {
+    clearThermalHeatSignatures();
+
+    const heatPoints = [];
+    const bLat = userLat || defaultLat, bLng = userLng || defaultLng;
+
+    // 1. Do'konlar va oshxonalarning infraqizil radiatsion issiqligi
+    sortedShops.forEach((shop, index) => {
+        if (!shop.latitude || !shop.longitude) return;
+        const isFood = (shop.category_name && /ovqat|restoran|oshxona|kafe|fast|lavash|shashlik/i.test(shop.category_name)) ||
+                       /kafe|restoran|oshxona|fast|burger|lavash|plov|kabob|somsa|pizza/i.test(shop.name);
+        const intensity = isFood ? 0.95 : 0.60;
+        heatPoints.push([shop.latitude, shop.longitude, intensity]);
+        // Issiqlik tarqalish difuziyasi
+        heatPoints.push([shop.latitude + 0.0003, shop.longitude + 0.0003, intensity * 0.7]);
+        heatPoints.push([shop.latitude - 0.0003, shop.longitude - 0.0003, intensity * 0.7]);
+        heatPoints.push([shop.latitude + 0.0003, shop.longitude - 0.0003, intensity * 0.5]);
+    });
+
+    // 2. Jonli harakatdagi kuryerlar va avto issiqlik izlari (Guliston bo'ylab)
+    const couriers = [
+        { lat: bLat + 0.0032, lng: bLng + 0.0028, name: "Kuryer #04 (Moto)", speed: "34 km/h", temp: 42.4 },
+        { lat: bLat - 0.0041, lng: bLng + 0.0035, name: "Kuryer #11 (Skuter)", speed: "26 km/h", temp: 38.6 },
+        { lat: bLat + 0.0019, lng: bLng - 0.0042, name: "Kuryer #07 (Avto)", speed: "45 km/h", temp: 46.1 }
+    ];
+    couriers.forEach(c => {
+        heatPoints.push([c.lat, c.lng, 0.85]);
+        heatPoints.push([c.lat + 0.00015, c.lng + 0.00015, 0.6]);
+    });
+
+    // 3. Leaflet HeatLayer orqali haqiqiy Ironbow/Magma spektrini chizish
+    if (typeof L.heatLayer === 'function') {
+        thermalHeatLayer = L.heatLayer(heatPoints, {
+            radius: 36,
+            blur: 26,
+            maxZoom: 18,
+            max: 1.0,
+            gradient: {
+                0.00: 'rgba(11,4,41,0)',
+                0.15: '#160b39',
+                0.35: '#420a68',
+                0.55: '#932667',
+                0.70: '#dd513a',
+                0.85: '#fca50a',
+                1.00: '#ffffff'
+            }
+        }).addTo(map);
+    }
+
+    // 4. Radiometrik sensor nuqtalari va harorat ko'rsatkichlari
+    thermalSensorsGroup.addTo(map);
+    sortedShops.forEach((shop, index) => {
+        if (!shop.latitude || !shop.longitude) return;
+        const isFood = (shop.category_name && /ovqat|restoran|oshxona|kafe|fast|lavash|shashlik/i.test(shop.category_name)) ||
+                       /kafe|restoran|oshxona|fast|burger|lavash|plov|kabob|somsa|pizza/i.test(shop.name);
+        const temp = isFood ? (64 + (index % 18)) : (36.6 + ((index % 5) * 0.5));
+        const color = isFood ? '#ef4444' : '#06b6d4';
+        const badgeBg = isFood ? 'rgba(239,68,68,0.2)' : 'rgba(6,182,212,0.2)';
+
+        const sensorIcon = L.divIcon({
+            className: '',
+            html: `
+                <div style="position:relative;width:44px;height:44px;display:grid;place-items:center;">
+                    <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:${badgeBg};animation:thermalPulse 2s ease-in-out infinite;"></div>
+                    <div style="position:absolute;width:14px;height:14px;border-radius:50%;background:${color};box-shadow:0 0 16px ${color};border:2px solid #fff;"></div>
+                    <div style="position:absolute;top:-22px;background:#0b0f19;border:1px solid ${color};color:#fde047;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:10px;font-weight:bold;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,0.8);">
+                        ${temp.toFixed(1)}°C
+                    </div>
+                </div>
+            `,
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
+        });
+
+        const marker = L.marker([shop.latitude, shop.longitude], { icon: sensorIcon, zIndexOffset: 900 });
+        marker.bindTooltip(`
+            <div style="padding:6px;font-family:monospace;line-height:1.4;">
+                <div style="color:#06b6d4;font-weight:bold;">[FLIR RADIOMETRIK O'LCHOV]</div>
+                <div style="color:#ffffff;font-weight:bold;font-size:12px;">${escapeHtml(shop.name)}</div>
+                <div style="color:#fde047;font-size:11px;">O'lchangan harorat: <b>${temp.toFixed(1)}°C</b></div>
+                <div style="color:#94a3b8;font-size:10px;">Manba turi: ${isFood ? 'Oshxona / Tandir pechi / Mangal' : 'Odamlar oqimi / Do\'kon'}</div>
+            </div>
+        `, { className: 'thermal-tooltip', direction: 'top', offset: [0, -22] });
+        thermalSensorsGroup.addLayer(marker);
+    });
+
+    couriers.forEach(c => {
+        const cIcon = L.divIcon({
+            className: '',
+            html: `
+                <div style="position:relative;width:38px;height:38px;display:grid;place-items:center;">
+                    <div style="position:absolute;width:34px;height:34px;border-radius:50%;background:rgba(245,158,11,0.3);animation:thermalPulse 1.2s ease-in-out infinite;"></div>
+                    <div style="position:absolute;width:12px;height:12px;border-radius:50%;background:#f59e0b;box-shadow:0 0 14px #f59e0b;border:2px solid #fff;"></div>
+                    <div style="position:absolute;top:-20px;background:#0b0f19;border:1px solid #f59e0b;color:#fde047;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:9px;white-space:nowrap;">
+                        🛵 ${c.temp}°C
+                    </div>
+                </div>
+            `,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19]
+        });
+        const cMarker = L.marker([c.lat, c.lng], { icon: cIcon, zIndexOffset: 950 });
+        cMarker.bindTooltip(`<div style="padding:4px;font-family:monospace;color:#fde047;">🛵 <b>${c.name}</b><br>Tezlik: ${c.speed}<br>Dvigatel harorati: ${c.temp}°C</div>`, { className: 'thermal-tooltip', direction: 'top', offset: [0, -18] });
+        thermalSensorsGroup.addLayer(cMarker);
+    });
+
+    updateFLIRReticleTemp();
+}
+
+function updateFLIRReticleTemp() {
+    if (currentBase !== 'thermal' || !map) return;
+    const center = map.getCenter();
+    let minD = 9999;
+    let closestIsFood = false;
+
+    sortedShops.forEach(s => {
+        if (!s.latitude || !s.longitude) return;
+        const d = getDistance(center.lat, center.lng, s.latitude, s.longitude);
+        if (d < minD) {
+            minD = d;
+            closestIsFood = (s.category_name && /ovqat|restoran|oshxona|kafe/i.test(s.category_name)) || /kafe|restoran|oshxona|burger|lavash|plov/i.test(s.name);
+        }
+    });
+
+    let temp = 18.5;
+    if (minD < 0.15) {
+        temp = closestIsFood ? 74.2 - (minD * 120) : 39.8 - (minD * 40);
+    } else if (minD < 0.8) {
+        temp = 24.5 - (minD * 7);
+    }
+    temp = Math.max(16.5, temp);
+
+    const reticleBox = document.getElementById('reticleTemp');
+    const flirCenterEl = document.getElementById('flirCenterTemp');
+    if (reticleBox) reticleBox.textContent = temp.toFixed(1) + '°C';
+    if (flirCenterEl) flirCenterEl.textContent = `MARKAZ: ${temp.toFixed(1)}°C`;
+}
+
+function clearThermalHeatSignatures() {
+    if (thermalHeatLayer && map && map.hasLayer(thermalHeatLayer)) {
+        map.removeLayer(thermalHeatLayer);
+        thermalHeatLayer = null;
+    }
+    thermalSensorsGroup.clearLayers();
+    if (map && map.hasLayer(thermalSensorsGroup)) {
+        map.removeLayer(thermalSensorsGroup);
+    }
+}
+
+// ─── Foydalanuvchi Joylashuvi: Ruxsat so'rash, Jonli kuzatuv & Ustiga bosganda 18x Zoom ───
+function requestAndGoToMyLocation() {
+    const btn = document.getElementById('myLocationBtn');
+    if (btn) btn.classList.add('locating');
+
+    // Agar foydalanuvchi joylashuvi allaqachon mavjud bo'lsa -> zudlik bilan 18x yaqinlashtirish!
+    if (userLat && userLng) {
+        map.flyTo([userLat, userLng], 18, { animate: true, duration: 1.2 });
+        setTimeout(() => {
+            if (userMarker) userMarker.openPopup();
+            if (btn) btn.classList.remove('locating');
+        }, 600);
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        showToast("⚠️ Brauzeringiz GPS geolokatsiyani qo'llab-quvvatlamaydi.");
+        if (btn) btn.classList.remove('locating');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+            userAccuracy = pos.coords.accuracy || 25;
+
+            updateUserLocationMarker(userAccuracy);
+            map.flyTo([userLat, userLng], 18, { animate: true, duration: 1.2 });
+            setTimeout(() => {
+                if (userMarker) userMarker.openPopup();
+                if (btn) btn.classList.remove('locating');
+            }, 800);
+
+            startLiveLocationTracking();
+
+            fetch('/map/save-location/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ lat: userLat, lng: userLng })
+            }).catch(() => {});
+
+            computeDistances();
+            renderAll();
+            showToast("📍 Sizning jonli joylashuvingiz aniqlandi!");
+        },
+        err => {
+            if (btn) btn.classList.remove('locating');
+            let msg = "Joylashuvingizni aniqlab bo'lmadi. Iltimos brauzerda lokatsiyaga ruxsat bering.";
+            if (err.code === 1) msg = "⚠️ Lokatsiyaga ruxsat berilmadi. Iltimos brauzer manzil satridan joylashuvga ruxsat bering.";
+            showToast(msg);
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+}
+
+function startLiveLocationTracking() {
+    if (watchPositionId !== null || !navigator.geolocation) return;
+    watchPositionId = navigator.geolocation.watchPosition(
+        pos => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+            userAccuracy = pos.coords.accuracy;
+            updateUserLocationMarker(userAccuracy);
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 5000 }
+    );
+}
+
+function updateUserLocationMarker(accuracy = 25) {
+    if (!userLat || !userLng) return;
+
+    const userHtml = `
+        <div style="position:relative;width:26px;height:26px;display:grid;place-items:center;cursor:pointer;">
+            <div style="position:absolute;width:26px;height:26px;background:#3b82f6;border-radius:50%;border:3px solid #ffffff;box-shadow:0 0 16px rgba(59,130,246,0.95);"></div>
+            <div class="user-pulse" style="position:absolute;width:26px;height:26px;background:rgba(59,130,246,0.4);border-radius:50%;"></div>
+            <div style="position:absolute;width:8px;height:8px;background:#ffffff;border-radius:50%;"></div>
+        </div>
+    `;
+    const icon = L.divIcon({ className: '', html: userHtml, iconSize: [26, 26], iconAnchor: [13, 13] });
+
+    if (userMarker) {
+        userMarker.setLatLng([userLat, userLng]);
+    } else {
+        userMarker = L.marker([userLat, userLng], { icon, zIndexOffset: 2500 }).addTo(map);
+        userMarker.bindPopup(`
+            <div style="font-family:'Inter',sans-serif;padding:6px;min-width:170px;text-align:center;">
+                <div style="color:#2563eb;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:4px;">
+                    <span>📍</span> Sizning joylashuvingiz
+                </div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">
+                    GPS aniqligi: ±${Math.round(accuracy)} metr
+                </div>
+                <button onclick="map.flyTo([${userLat},${userLng}], 19)" style="margin-top:6px;padding:4px 10px;background:#2563eb;color:#fff;font-size:11px;font-weight:600;border:none;border-radius:6px;cursor:pointer;">
+                    Maksimal yaqinlashtirish (19x)
+                </button>
+            </div>
+        `);
+        // USERNING JOYI USTIGA BOSILGANDA YAQINLASHTIRISH (Zoom 18)
+        userMarker.on('click', () => {
+            map.flyTo([userLat, userLng], 18, { animate: true, duration: 1.0 });
+        });
+    }
+
+    if (userAccuracyCircle) {
+        userAccuracyCircle.setLatLng([userLat, userLng]);
+        userAccuracyCircle.setRadius(Math.max(15, Math.min(accuracy, 120)));
+    } else {
+        userAccuracyCircle = L.circle([userLat, userLng], {
+            radius: Math.max(15, Math.min(accuracy, 120)),
+            color: '#3b82f6',
+            fillColor: '#60a5fa',
+            fillOpacity: 0.16,
+            weight: 1.5,
+            interactive: false
+        }).addTo(map);
+    }
+
+    const locBtn = document.getElementById('myLocationBtn');
+    if (locBtn) locBtn.classList.add('active-location');
+}
+
+// ─── Pegman (Odamcha) Drag-and-Drop & Click-to-Place Engine ───
+let isPegmanActive = false;
+let isDraggingPegman = false;
+let pegmanMarker = null;
+let dragStartX = 0, dragStartY = 0;
+let hasDragged = false;
+
+function initPegmanDrag() {
+    const pegmanBtn = document.getElementById('pegmanBtn');
+    const ghost = document.getElementById('pegmanFloatingGhost');
+    if (!pegmanBtn || !ghost) return;
+
+    function onDragStart(clientX, clientY) {
+        isDraggingPegman = true;
+        hasDragged = false;
+        dragStartX = clientX;
+        dragStartY = clientY;
+
+        ghost.style.display = 'block';
+        ghost.style.left = clientX + 'px';
+        ghost.style.top = clientY + 'px';
+        document.body.classList.add('pegman-drag-active');
+
+        const toast = document.getElementById('pegmanToast');
+        if (toast) {
+            toast.querySelector('span').textContent = "🚶 Odamchani xaritaning xohlagan joyiga qo'ying — 360° ko'cha panoramasi ochiladi!";
+            toast.classList.remove('hidden');
+        }
+    }
+
+    function onDragMove(clientX, clientY) {
+        if (!isDraggingPegman) return;
+        const dist = Math.hypot(clientX - dragStartX, clientY - dragStartY);
+        if (dist > 8) hasDragged = true;
+
+        ghost.style.left = clientX + 'px';
+        ghost.style.top = clientY + 'px';
+    }
+
+    function onDragEnd(clientX, clientY) {
+        if (!isDraggingPegman) return;
+        isDraggingPegman = false;
+        ghost.style.display = 'none';
+        document.body.classList.remove('pegman-drag-active');
+
+        if (hasDragged) {
+            const mapContainer = map.getContainer();
+            const rect = mapContainer.getBoundingClientRect();
+            if (
+                clientX >= rect.left &&
+                clientX <= rect.right &&
+                clientY >= rect.top &&
+                clientY <= rect.bottom
+            ) {
+                const point = L.point(clientX - rect.left, clientY - rect.top);
+                const latlng = map.containerPointToLatLng(point);
+                dropPegman(latlng.lat, latlng.lng);
+                return;
+            }
+        } else {
+            // Oddiy bosilganda rejimni yoqish/o'chirish
+            togglePegmanMode();
+        }
+    }
+
+    // Sichqoncha voqealari
+    pegmanBtn.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        onDragStart(e.clientX, e.clientY);
+
+        function mouseMoveHandler(ev) { onDragMove(ev.clientX, ev.clientY); }
+        function mouseUpHandler(ev) {
+            window.removeEventListener('mousemove', mouseMoveHandler);
+            window.removeEventListener('mouseup', mouseUpHandler);
+            onDragEnd(ev.clientX, ev.clientY);
+        }
+        window.addEventListener('mousemove', mouseMoveHandler);
+        window.addEventListener('mouseup', mouseUpHandler);
+    });
+
+    // Touch voqealari (mobil va planshetlar uchun)
+    pegmanBtn.addEventListener('touchstart', (e) => {
+        if (!e.touches.length) return;
+        const touch = e.touches[0];
+        onDragStart(touch.clientX, touch.clientY);
+
+        function touchMoveHandler(ev) {
+            if (!ev.touches.length) return;
+            onDragMove(ev.touches[0].clientX, ev.touches[0].clientY);
+        }
+        function touchEndHandler(ev) {
+            window.removeEventListener('touchmove', touchMoveHandler);
+            window.removeEventListener('touchend', touchEndHandler);
+            const changeTouch = ev.changedTouches[0] || touch;
+            onDragEnd(changeTouch.clientX, changeTouch.clientY);
+        }
+        window.addEventListener('touchmove', touchMoveHandler, { passive: false });
+        window.addEventListener('touchend', touchEndHandler);
+    }, { passive: true });
+}
+
+function togglePegmanMode(forceState) {
+    if (forceState !== undefined) {
+        isPegmanActive = forceState;
+    } else {
+        isPegmanActive = !isPegmanActive;
+    }
+
+    const pegmanBtn = document.getElementById('pegmanBtn');
+    const pegmanToast = document.getElementById('pegmanToast');
+    const mapCanvas = document.querySelector('.map-canvas');
+
+    if (isPegmanActive) {
+        if (pegmanBtn) pegmanBtn.classList.add('active-pegman');
+        if (pegmanToast) pegmanToast.classList.remove('hidden');
+        if (mapCanvas) mapCanvas.classList.add('pegman-cursor-active');
+    } else {
+        if (pegmanBtn) pegmanBtn.classList.remove('active-pegman');
+        if (pegmanToast) pegmanToast.classList.add('hidden');
+        if (mapCanvas) mapCanvas.classList.remove('pegman-cursor-active');
+    }
+}
+
+function dropPegman(lat, lng) {
+    togglePegmanMode(false);
+
+    if (pegmanMarker) map.removeLayer(pegmanMarker);
+    const pegmanIcon = L.divIcon({
+        className: '',
+        html: `
+            <div style="position:relative;width:44px;height:44px;display:grid;place-items:center;">
+                <div style="position:absolute;width:44px;height:44px;border-radius:50%;background:rgba(245,158,11,0.5);animation:pegmanPulse 1s ease-in-out infinite;"></div>
+                <div style="background:#f59e0b;border:3px solid #ffffff;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,0.7);transform:translateY(-4px);">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="#111827">
+                        <circle cx="12" cy="4" r="3"/>
+                        <path d="M12 8c-2.2 0-4 1.8-4 4v5c0 .55.45 1 1 1h1v5c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-5h1c.55 0 1-.45 1-1v-5c0-2.2-1.8-4-4-4z"/>
+                    </svg>
+                </div>
+            </div>
+        `,
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+    });
+    pegmanMarker = L.marker([lat, lng], { icon: pegmanIcon, zIndexOffset: 3000 }).addTo(map);
+
+    map.panTo([lat, lng], { animate: true, duration: 0.5 });
+    setTimeout(() => {
+        openStreetView(lat, lng);
+    }, 350);
+}
+
+// ─── 360° Interaktiv Ko'cha Panoramasi (Canvas + Google 360° + Yandex Panorama) ───
+let currentPanoLat = null, currentPanoLng = null;
+let panoYaw = 0, panoPitch = 0;
+let isPanoDragging = false, panoStartX = 0, panoStartY = 0;
+let panoAnimationId = null;
+
+function openStreetView(lat, lng, title) {
+    currentPanoLat = lat;
+    currentPanoLng = lng;
+    const modal = document.getElementById('streetViewModal');
+    const titleEl = document.getElementById('streetViewTitle');
+    const coordsEl = document.getElementById('streetViewCoords');
+    const gBtn = document.getElementById('streetViewGoogleFallback');
+    const yBtn = document.getElementById('streetViewYandexFallback');
+    const taxiBtn = document.getElementById('streetViewTaxiBtn');
+
+    const gUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+    const yUrl = `https://yandex.com/maps/?panorama%5Bpoint%5D=${lng}%2C${lat}&panorama%5Bdirection%5D=0%2C10&panorama%5Bspan%5D=114%2C60`;
+    const embedUrl = `https://yandex.com/map-widget/v1/?panorama%5Bpoint%5D=${lng}%2C${lat}&panorama%5Bdirection%5D=0%2C10&z=17`;
+
+    titleEl.textContent = title ? `${title} — Ko'cha ko'rinishi` : `Ko'cha ko'rinishi (Street View / Panorama)`;
+    coordsEl.textContent = `📍 Koordinata: ${lat.toFixed(5)}, ${lng.toFixed(5)} • Guliston shahar panoramasi`;
+
+    if (gBtn) gBtn.href = gUrl;
+    if (yBtn) yBtn.href = yUrl;
+    if (taxiBtn) taxiBtn.href = `tel:+998672250000`;
+
+    const iframe = document.getElementById('streetViewIframe');
+    if (iframe) iframe.src = embedUrl;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    start360CanvasRenderer(lat, lng);
+}
+
+function closeStreetView() {
+    const modal = document.getElementById('streetViewModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+    const iframe = document.getElementById('streetViewIframe');
+    if (iframe) iframe.src = '';
+    if (panoAnimationId) {
+        cancelAnimationFrame(panoAnimationId);
+        panoAnimationId = null;
+    }
+}
+
+function rotatePano(deltaDegrees) {
+    panoYaw = (panoYaw + deltaDegrees) % 360;
+    if (panoYaw < 0) panoYaw += 360;
+    updatePanoHeadingUI();
+}
+
+function updatePanoHeadingUI() {
+    const el = document.getElementById('panoHeading');
+    if (!el) return;
+    const dirs = ['N (Shimol)', 'NE', 'E (Sharq)', 'SE', 'S (Janub)', 'SW', 'W (G\'arb)', 'NW'];
+    const idx = Math.round(panoYaw / 45) % 8;
+    el.textContent = `AZIMUT: ${Math.round(panoYaw)}° ${dirs[idx]}`;
+}
+
+function togglePanoViewMode() {
+    const canvas = document.getElementById('street360Canvas');
+    const iframe = document.getElementById('streetViewIframe');
+    if (!canvas || !iframe) return;
+    if (canvas.classList.contains('hidden')) {
+        canvas.classList.remove('hidden');
+        iframe.classList.add('hidden');
+    } else {
+        canvas.classList.add('hidden');
+        iframe.classList.remove('hidden');
+    }
+}
+
+function start360CanvasRenderer(lat, lng) {
+    const canvas = document.getElementById('street360Canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 500;
+    }
+    resize();
+
+    // Mouse / Touch 360 Drag Controls
+    canvas.onmousedown = (e) => {
+        isPanoDragging = true;
+        panoStartX = e.clientX;
+        panoStartY = e.clientY;
+    };
+    window.addEventListener('mousemove', (e) => {
+        if (!isPanoDragging) return;
+        const dx = e.clientX - panoStartX;
+        const dy = e.clientY - panoStartY;
+        panoStartX = e.clientX;
+        panoStartY = e.clientY;
+
+        panoYaw = (panoYaw - dx * 0.35 + 360) % 360;
+        panoPitch = Math.max(-35, Math.min(35, panoPitch + dy * 0.25));
+        updatePanoHeadingUI();
+    });
+    window.addEventListener('mouseup', () => { isPanoDragging = false; });
+
+    canvas.ontouchstart = (e) => {
+        if (!e.touches.length) return;
+        isPanoDragging = true;
+        panoStartX = e.touches[0].clientX;
+        panoStartY = e.touches[0].clientY;
+    };
+    canvas.ontouchmove = (e) => {
+        if (!isPanoDragging || !e.touches.length) return;
+        const dx = e.touches[0].clientX - panoStartX;
+        const dy = e.touches[0].clientY - panoStartY;
+        panoStartX = e.touches[0].clientX;
+        panoStartY = e.touches[0].clientY;
+
+        panoYaw = (panoYaw - dx * 0.45 + 360) % 360;
+        panoPitch = Math.max(-35, Math.min(35, panoPitch + dy * 0.3));
+        updatePanoHeadingUI();
+    };
+    canvas.ontouchend = () => { isPanoDragging = false; };
+
+    function draw() {
+        if (canvas.classList.contains('hidden')) return;
+        const w = canvas.width, h = canvas.height;
+        const horizon = (h / 2) + (panoPitch * 4);
+
+        ctx.clearRect(0, 0, w, h);
+
+        // 1. Sky Gradient (Osmon)
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon);
+        skyGrad.addColorStop(0, '#0284c7');
+        skyGrad.addColorStop(0.65, '#38bdf8');
+        skyGrad.addColorStop(1, '#e0f2fe');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, horizon);
+
+        // 2. Ground & Asphalt (Asfalt ko'cha)
+        const groundGrad = ctx.createLinearGradient(0, horizon, 0, h);
+        groundGrad.addColorStop(0, '#334155');
+        groundGrad.addColorStop(0.3, '#1e293b');
+        groundGrad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = groundGrad;
+        ctx.fillRect(0, horizon, w, h - horizon);
+
+        // 3. 360 Panorama Cityscape & Buildings (360 daraja siluet)
+        const numBuildings = 36;
+        for (let i = 0; i < numBuildings; i++) {
+            const bAngle = (i * (360 / numBuildings));
+            let relAngle = (bAngle - panoYaw + 540) % 360 - 180;
+            if (Math.abs(relAngle) > 90) continue;
+
+            const screenX = (w / 2) + (relAngle / 45) * (w / 2);
+            const bWidth = w * 0.12;
+            const bHeight = 80 + ((i * 37) % 110);
+            const bTop = horizon - bHeight;
+
+            // Bino korpusi
+            ctx.fillStyle = (i % 2 === 0) ? '#1e293b' : '#334155';
+            ctx.fillRect(screenX - bWidth / 2, bTop, bWidth, bHeight);
+
+            // Bino oynalari
+            ctx.fillStyle = (i % 3 === 0) ? '#fef08a' : '#94a3b8';
+            for (let row = bTop + 10; row < horizon - 10; row += 16) {
+                for (let col = screenX - bWidth / 2 + 8; col < screenX + bWidth / 2 - 8; col += 14) {
+                    ctx.fillRect(col, row, 7, 9);
+                }
+            }
+        }
+
+        // 4. Yo'l chiziqlari (Perspective Road Markings)
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([16, 14]);
+        ctx.beginPath();
+        const roadCenterX = (w / 2) - ((panoYaw % 90 - 45) * 6);
+        ctx.moveTo(roadCenterX, horizon);
+        ctx.lineTo(w / 2, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 5. Compass Directions on Horizon (N, E, S, W)
+        const cardinalPoints = [
+            { angle: 0, label: 'N (SHIMOL)', color: '#ef4444' },
+            { angle: 90, label: 'E (SHARQ)', color: '#38bdf8' },
+            { angle: 180, label: 'S (JANUB)', color: '#4ade80' },
+            { angle: 270, label: 'W (G\'ARB)', color: '#f59e0b' }
+        ];
+        cardinalPoints.forEach(cp => {
+            let relA = (cp.angle - panoYaw + 540) % 360 - 180;
+            if (Math.abs(relA) < 70) {
+                const cx = (w / 2) + (relA / 45) * (w / 2);
+                ctx.fillStyle = cp.color;
+                ctx.font = 'bold 12px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(`▲ ${cp.label}`, cx, horizon - 12);
+            }
+        });
+
+        // 6. Ground Target Pin (Markaziy koordinata ko'rsatkichi)
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(w / 2, horizon + 50, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        panoAnimationId = requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+function resetCompass() {
+    map.setView([defaultLat, defaultLng], 14, { animate: true });
+}
+
+// ─── Kategoriya bo'yicha tezkor filter ───
+function filterByCategory(cat) {
+    currentCategory = cat;
+    document.querySelectorAll('.cat-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${cat}'`));
+    });
+    applyFilterAndSort();
+}
+
+function applyFilterAndSort() {
+    const q = (document.getElementById('store-search').value || '').trim().toLowerCase();
+    sortedShops = shops.filter(s => {
+        const matchText = !q || (s.name || '').toLowerCase().includes(q) || (s.address || '').toLowerCase().includes(q);
+        if (!matchText) return false;
+
+        if (currentCategory === 'all') return true;
+        const catStr = ((s.category_name || '') + ' ' + (s.name || '')).toLowerCase();
+        if (currentCategory === 'food') return /ovqat|restoran|oshxona|kafe|fast|burger|lavash|plov|kabob|somsa|pizza/i.test(catStr);
+        if (currentCategory === 'grocery') return /bozor|supermarket|do'kon|market|oziq|non/i.test(catStr);
+        if (currentCategory === 'clothing') return /kiyim|poyabzal|libos|moda|fashion/i.test(catStr);
+        if (currentCategory === 'pharma') return /dorixona|apteka|farm/i.test(catStr);
+        if (currentCategory === 'tech') return /telefon|elektronika|kompyuter|gadget|smart/i.test(catStr);
+        return true;
+    });
+
+    const bLat = userLat || defaultLat, bLng = userLng || defaultLng;
+    sortedShops.forEach(s => {
+        s._distance = (s.latitude && s.longitude) ? getDistance(bLat, bLng, s.latitude, s.longitude) : null;
+    });
+
+    applySort();
+    renderAll();
+}
+
+// ─── Xarita initsializatsiyasi ───
+function init() {
+    map = L.map('map', { zoomControl: false, attributionControl: true, maxZoom: 20 }).setView([defaultLat, defaultLng], 14);
+    currentBaseLayer.addTo(map);
+
+    clusterGroup = L.markerClusterGroup({
+        maxClusterRadius: 50, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
+        iconCreateFunction: function(cluster) {
+            return L.divIcon({ html: '<div>' + cluster.getChildCount() + '</div>', className: 'marker-cluster-custom', iconSize: L.point(40, 40) });
+        }
+    });
+    map.addLayer(clusterGroup);
+
+    map.on('click', onMapClick);
+    map.on('move', () => {
+        if (currentBase === 'thermal') updateFLIRReticleTemp();
+    });
+
+    computeDistances();
+    renderAll();
+    fitToStores();
+    initPegmanDrag();
+
+    // Avtomatik lokatsiya so'rovi
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+            userAccuracy = pos.coords.accuracy;
+            updateUserLocationMarker(userAccuracy);
+            computeDistances();
+            renderAll();
+        }, () => {}, { timeout: 4000 });
+    }
+}
+
+function fitToStores() {
+    const pts = sortedShops.filter(s => s.latitude && s.longitude);
+    if (!pts.length) { map.setView([defaultLat, defaultLng], 14); return; }
+    const bounds = L.latLngBounds(pts.map(s => [s.latitude, s.longitude]));
+    if (userLat && userLng) bounds.extend([userLat, userLng]);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+}
+
+function computeDistances() {
+    const bLat = userLat || defaultLat, bLng = userLng || defaultLng;
+    sortedShops = shops.map(s => {
+        s._distance = (s.latitude && s.longitude) ? getDistance(bLat, bLng, s.latitude, s.longitude) : null;
+        return s;
+    });
+    applySort();
+}
+
+function applySort() {
+    if (currentSort === 'distance') sortedShops.sort((a,b) => (a._distance ?? 9999) - (b._distance ?? 9999));
+    else if (currentSort === 'rating') sortedShops.sort((a,b) => (b.rating || 0) - (a.rating || 0));
+}
+
+function createStoreIcon(shop) {
+    const rating = Number(shop.rating || 0).toFixed(1);
+    return L.divIcon({
+        className: 'custom-store-marker-wrapper',
+        html: `<div class="custom-store-marker"><div class="custom-store-marker__icon">🛒</div><div class="custom-store-marker__label"><strong>${escapeHtml(shop.name)}</strong><span>★ ${rating}</span></div></div>`,
+        iconSize: [184, 56],
+        iconAnchor: [28, 56],
+        popupAnchor: [0, -54]
+    });
+}
+
+function renderAll() {
+    renderMarkers();
+    renderStoresList();
+}
+
+function renderMarkers() {
+    clusterGroup.clearLayers();
+    storeMarkers.clear();
+    if (directionLayer) { map.removeLayer(directionLayer); directionLayer = null; }
+    sortedShops.forEach(shop => {
+        if (!shop.latitude || !shop.longitude) return;
+        const marker = L.marker([shop.latitude, shop.longitude], { icon: createStoreIcon(shop) });
+        marker.bindPopup(buildPopupHtml(shop), { maxWidth: 260 });
+        marker.on('click', () => highlightCard(shop.id));
+        clusterGroup.addLayer(marker);
+        storeMarkers.set(String(shop.id), marker);
+    });
+}
+
+function buildPopupHtml(shop) {
+    const distText = shop._distance != null ? formatDistance(shop._distance) : '';
+    const statusText = shop.is_open ? T.open : T.closed;
+    const statusClass = shop.is_open ? 'open' : 'closed';
+    return `<div class="store-popup">
+        <h3>${escapeHtml(shop.name)} ${shop.is_verified ? '✓' : ''}</h3>
+        <div class="meta">⭐ ${shop.rating || '0'}${distText ? ' · 📍 ' + distText : ''} · <span class="${statusClass}">${statusText}</span></div>
+        <div class="meta">${T.delivery}: ${Number(shop.delivery_fee || 0).toLocaleString()} {{ t.catalog_som }} · ${T.minOrder}: ${Number(shop.min_order || 0).toLocaleString()} {{ t.catalog_som }}</div>
+        <div class="meta">📍 ${escapeHtml(shop.address || '')}</div>
+        <button class="btn-link" onclick="openDirections(${shop.latitude},${shop.longitude},'${escapeHtml(shop.name)}','${escapeHtml(shop.address || '')}')">${T.directions}</button>
+        <button onclick="openStreetView(${shop.latitude},${shop.longitude},'${escapeHtml(shop.name)}')" style="display:block;width:100%;text-align:center;background:#f59e0b;color:#000;border-radius:0.75rem;padding:7px 12px;font-size:0.78rem;font-weight:700;margin-top:6px;border:none;cursor:pointer;">🚶 360° Ko'cha ko'rinishi</button>
+    </div>`;
+}
+
+function renderStoresList() {
+    const list = document.getElementById('stores-list');
+    if (!sortedShops.length) {
+        list.innerHTML = `<p style="text-align:center;color:#8a8a8a;padding:2rem;">{{ t.no_data }}</p>`;
+        return;
+    }
+    list.innerHTML = sortedShops.map(shop => {
+        const distText = shop._distance != null ? formatDistance(shop._distance) : '—';
+        const initial = escapeHtml((shop.name || '?').charAt(0).toUpperCase());
+        const rating = Number(shop.rating || 0).toFixed(1);
+        return `<div class="store-list-card" data-shop-id="${shop.id}" id="card-${shop.id}">
+            <button type="button" class="store-list-card__button" onclick="focusStore('${shop.id}')">
+                ${shop.image_url ? `<img src="${escapeHtml(shop.image_url)}" alt="${escapeHtml(shop.name)}" loading="lazy" onerror="this.outerHTML='<div class=\\'store-list-card__avatar\\'>${initial}</div>'">` : `<div class="store-list-card__avatar">${initial}</div>`}
+                <span class="store-list-card__body">
+                    <strong>${escapeHtml(shop.name)} ${shop.is_verified ? '✓' : ''}</strong>
+                    <small>★ ${rating} · ${distText}</small>
+                    <small>${escapeHtml(shop.working_hours || '')}${shop.is_open ? ' · 🟢 ' + T.open : ' · 🔴 ' + T.closed}</small>
+                </span>
+                <span class="store-list-card__arrow">›</span>
+            </button>
+        </div>`;
+    }).join('');
+}
+
+function focusStore(shopId) {
+    const item = sortedShops.find(s => String(s.id) === String(shopId));
+    const marker = storeMarkers.get(String(shopId));
+    if (!item || !marker) return;
+    if (window.matchMedia('(max-width: 768px)').matches) document.getElementById('sidebar').classList.add('open');
+    highlightCard(shopId);
+    clusterGroup.zoomToShowLayer(marker, () => {
+        map.flyTo([item.latitude, item.longitude], 16, { animate: true, duration: 0.8 });
+        window.setTimeout(() => marker.openPopup(), 820);
+    });
+}
+
+function highlightCard(shopId) {
+    document.querySelectorAll('.store-list-card').forEach(c => c.classList.remove('active'));
+    const card = document.getElementById('card-' + shopId);
+    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+}
+
+function sortStores(by) {
+    currentSort = by;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.sort-btn[data-sort="${by}"]`);
+    if (btn) btn.classList.add('active');
+    applySort();
+    renderAll();
+    fitToStores();
+}
+
+function showBottomSheet(shop) {
+    const content = document.getElementById('sheetContent');
+    const distText = shop._distance != null ? formatDistance(shop._distance) : '—';
+    const statusBadge = shop.is_open ? `<span class="badge badge-open">🟢 ${T.open}</span>` : `<span class="badge badge-closed">🔴 ${T.closed}</span>`;
+    const verifiedBadge = shop.is_verified ? `<span class="badge badge-verified">✓ Verified</span>` : '';
+    content.innerHTML = `<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:12px;">
+        <div>
+            <div class="store-name">${escapeHtml(shop.name)}</div>
+            <div style="display:flex;gap:6px;margin-top:4px;">${statusBadge} ${verifiedBadge}</div>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:1.2rem;font-weight:700;color:#4ade80;">⭐ ${shop.rating || '0'}</div>
+            <div style="font-size:0.7rem;color:#888;">${shop.reviews_count || 0} reviews</div>
+        </div>
+    </div>
+    <div class="info-row"><span>📍</span> <strong>${T.delivery}:</strong> ${distText}</div>
+    <div class="info-row"><span>🕐</span> <strong>${T.hours}:</strong> ${escapeHtml(shop.working_hours || '08:00-22:00')} (${escapeHtml(shop.working_days || 'Dush-Shan')})</div>
+    <div class="info-row"><span>🚚</span> <strong>${T.delivery}:</strong> ${Number(shop.delivery_fee || 0).toLocaleString()} {{ t.catalog_som }}</div>
+    <div class="info-row"><span>📦</span> <strong>${T.minOrder}:</strong> ${Number(shop.min_order || 0).toLocaleString()} {{ t.catalog_som }}</div>
+    ${shop.free_delivery_from ? `<div class="info-row"><span>🎁</span> ${T.store_free_delivery || 'Bepul yetkazish'} ${Number(shop.free_delivery_from).toLocaleString()} {{ t.catalog_som }}+</div>` : ''}
+    <div class="info-row"><span>📞</span> ${escapeHtml(shop.phone || '')}</div>
+    <div class="info-row"><span>📍</span> ${escapeHtml(shop.address || '')}</div>
+    <button class="btn-green" onclick="openDirections(${shop.latitude},${shop.longitude},'${escapeHtml(shop.name)}','${escapeHtml(shop.address || '')}')">${T.directions}</button>
+    <button onclick="openStreetView(${shop.latitude},${shop.longitude},'${escapeHtml(shop.name)}')" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#f59e0b;color:#000;border:none;border-radius:0.75rem;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:8px;">🚶 360° Ko'cha ko'rinishi (Street View)</button>
+    <a href="/shop/${escapeHtml(shop.slug)}/" class="btn-outline">${T.goToStore}</a>`;
+    document.getElementById('bottomSheet').classList.add('active');
+    document.getElementById('sheetBackdrop').classList.add('active');
+}
+
+function closeSheet() {
+    document.getElementById('bottomSheet').classList.remove('active');
+    document.getElementById('sheetBackdrop').classList.remove('active');
+}
+
+function openDirections(destLat, destLng, name, address) {
+    closeSheet();
+    const startLat = customStartLat || userLat || defaultLat;
+    const startLng = customStartLng || userLng || defaultLng;
+
+    const routePanel = document.getElementById('routePanel');
+    const storeNameEl = document.getElementById('routeStoreName');
+    const storeAddressEl = document.getElementById('routeStoreAddress');
+    const gmapsBtn = document.getElementById('gmapsRouteBtn');
+    const yandexBtn = document.getElementById('yandexGoBtn');
+
+    if (storeNameEl) storeNameEl.textContent = name || "Do'kon";
+    if (storeAddressEl) storeAddressEl.textContent = address || `Koordinata: ${destLat.toFixed(4)}, ${destLng.toFixed(4)}`;
+    if (gmapsBtn) gmapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`;
+    if (yandexBtn) yandexBtn.href = `https://3.redirect.appmetrica.yandex.com/route?end-lat=${destLat}&end-lon=${destLng}&app=taxi&ref=guliston_store`;
+
+    if (routePanel) routePanel.classList.remove('hidden');
+
+    drawRoute(startLat, startLng, destLat, destLng, name);
+}
+
+function closeRoutePanel() {
+    const routePanel = document.getElementById('routePanel');
+    if (routePanel) routePanel.classList.add('hidden');
+    if (directionLayer) {
+        map.removeLayer(directionLayer);
+        directionLayer = null;
+    }
+}
+
+function drawRoute(sLat, sLng, eLat, eLng, destName) {
+    if (directionLayer) { map.removeLayer(directionLayer); directionLayer = null; }
+    const footUrl = `https://router.project-osrm.org/route/v1/foot/${sLng},${sLat};${eLng},${eLat}?overview=full&geometries=geojson`;
+    const carUrl = `https://router.project-osrm.org/route/v1/driving/${sLng},${sLat};${eLng},${eLat}?overview=full&geometries=geojson`;
+
+    Promise.all([
+        fetch(footUrl).then(r => r.json()).catch(() => null),
+        fetch(carUrl).then(r => r.json()).catch(() => null)
+    ]).then(([footData, carData]) => {
+        let walkKm = '—', walkMin = '—', driveKm = '—', driveMin = '—';
+
+        if (footData && footData.routes && footData.routes.length) {
+            const rt = footData.routes[0];
+            const coords = rt.geometry.coordinates.map(c => [c[1], c[0]]);
+            walkKm = (rt.distance / 1000).toFixed(1);
+            walkMin = Math.round(rt.duration / 60);
+
+            directionLayer = L.polyline(coords, {
+                color: '#4ade80',
+                weight: 6,
+                opacity: 0.92,
+                dashArray: '8,6',
+                lineCap: 'round',
+                lineJoin: 'round'
+            }).addTo(map);
+
+            directionLayer.bindPopup(`
+                <div style="font-family:'Inter',sans-serif;padding:4px;">
+                    <b style="color:#4ade80;">🚶 Piyoda yo'nalish</b><br>
+                    <span>Masofa: <b>${walkKm} km</b></span><br>
+                    <span>Taxminiy vaqt: <b>${walkMin} daqiqa</b></span>
+                </div>
+            `).openPopup();
+            map.fitBounds(directionLayer.getBounds(), { padding: [50, 50] });
+        }
+
+        if (carData && carData.routes && carData.routes.length) {
+            const crt = carData.routes[0];
+            driveKm = (crt.distance / 1000).toFixed(1);
+            driveMin = Math.max(1, Math.round(crt.duration / 60));
+        } else {
+            const dist = getDistance(sLat, sLng, eLat, eLng);
+            driveKm = dist.toFixed(1);
+            driveMin = Math.max(2, Math.round(dist * 2.2));
+        }
+
+        const walkEtaEl = document.getElementById('routeWalkEta');
+        const driveEtaEl = document.getElementById('routeDriveEta');
+        if (walkEtaEl) walkEtaEl.textContent = `${walkMin} min (${walkKm} km)`;
+        if (driveEtaEl) driveEtaEl.textContent = `${driveMin} min (${driveKm} km)`;
+    }).catch(() => {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${eLat},${eLng}&travelmode=walking`, '_blank');
+    });
+}
+
+// ─── Click-to-set-start & Distance Choice ───
+let customStartLat = null, customStartLng = null, customStartMarker = null;
+let pendingClickLat = null, pendingClickLng = null;
+let distanceMode = null;
+
+function onMapClick(e) {
+    if (isPegmanActive) {
+        dropPegman(e.latlng.lat, e.latlng.lng);
+        return;
+    }
+    pendingClickLat = e.latlng.lat;
+    pendingClickLng = e.latlng.lng;
+    const dlg = document.getElementById('distanceChoiceDialog');
+    if (dlg) { dlg.classList.remove('hidden'); dlg.classList.add('flex'); }
+}
+
+function closeDistanceChoice() {
+    const dlg = document.getElementById('distanceChoiceDialog');
+    if (dlg) { dlg.classList.add('hidden'); dlg.classList.remove('flex'); }
+}
+
+function selectDistanceMode(mode) {
+    distanceMode = mode;
+    customStartLat = pendingClickLat;
+    customStartLng = pendingClickLng;
+    closeDistanceChoice();
+    setCustomStartPoint(customStartLat, customStartLng, mode);
+}
+
+function setCustomStartPoint(lat, lng, mode) {
+    if (customStartMarker) map.removeLayer(customStartMarker);
+    const icon = L.divIcon({
+        className: '',
+        html: `<div style="position:relative;width:24px;height:24px;"><div style="position:absolute;width:24px;height:24px;background:#f97316;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div><div style="position:absolute;width:24px;height:24px;background:rgba(249,115,22,0.3);border-radius:50%;animation:pulse 2s infinite;"></div><div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#1c1c1c;color:#fff;padding:4px 8px;border-radius:8px;font-size:11px;white-space:nowrap;border:1px solid rgba(255,255,255,0.1);">Boshlang'ich nuqta</div></div>`,
+        iconSize: [24, 24], iconAnchor: [12, 12]
+    });
+    customStartMarker = L.marker([lat, lng], { icon, zIndexOffset: 1100, draggable: true }).addTo(map);
+    customStartMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        customStartLat = pos.lat;
+        customStartLng = pos.lng;
+        updateDistancesFromCustomPoint();
+    });
+    updateDistancesFromCustomPoint();
+}
+
+function updateDistancesFromCustomPoint() {
+    if (customStartLat == null) return;
+    let distances = [];
+    sortedShops.forEach(s => {
+        if (s.latitude && s.longitude) {
+            const d = getDistance(customStartLat, customStartLng, s.latitude, s.longitude);
+            distances.push(d);
+            s._customDistance = d;
+        } else {
+            s._customDistance = null;
+        }
+    });
+    sortedShops.sort((a,b) => (a._customDistance ?? 9999) - (b._customDistance ?? 9999));
+
+    let infoText = '';
+    if (distances.length) {
+        distances.sort((a,b) => a - b);
+        const nearest = distances[0];
+        const avgDist = distances.reduce((a,b) => a + b, 0) / distances.length;
+        if (distanceMode === 'nearest') {
+            const nearestShop = sortedShops[0];
+            infoText = `Eng yaqin: <b>${escapeHtml(nearestShop.name)}</b> — ${formatDistance(nearest)}`;
+        } else {
+            infoText = `O'rtacha: <b>${formatDistance(avgDist)}</b> — ${distances.length} ta do'kon`;
+        }
+        if (sortedShops[0] && storeMarkers.has(String(sortedShops[0].id))) {
+            const m = storeMarkers.get(String(sortedShops[0].id));
+            m.openPopup();
+        }
+    }
+    const distEl = document.getElementById('startPointDistance');
+    const coordsEl = document.getElementById('startPointCoords');
+    const infoEl = document.getElementById('startPointInfo');
+    if (distEl) distEl.innerHTML = infoText;
+    if (coordsEl) coordsEl.textContent = `${customStartLat.toFixed(5)}, ${customStartLng.toFixed(5)} • ${distanceMode === 'nearest' ? 'Eng yaqin' : "O'rtacha"}`;
+    if (infoEl) infoEl.classList.remove('hidden');
+    renderAll();
+}
+
+function clearStartPoint() {
+    if (customStartMarker) { map.removeLayer(customStartMarker); customStartMarker = null; }
+    customStartLat = null; customStartLng = null; distanceMode = null;
+    const infoEl = document.getElementById('startPointInfo');
+    if (infoEl) infoEl.classList.add('hidden');
+    computeDistances();
+    renderAll();
+}
+
+// store card click opens detail sheet
+document.addEventListener('click', function(e) {
+    const card = e.target.closest('.store-list-card');
+    if (card && e.target.closest('.store-list-card__button')) {
+        const id = card.dataset.shopId;
+        const shop = sortedShops.find(s => String(s.id) === String(id));
+        if (shop) showBottomSheet(shop);
+    }
+});
+
+const sidebarEl = document.getElementById('sidebar');
+if (sidebarEl) {
+    sidebarEl.addEventListener('click', function(e) {
+        if (window.matchMedia('(max-width: 768px)').matches && e.target.closest('.map-sidebar-header')) {
+            this.classList.toggle('open');
+        }
+    });
+}
+
+init();
+</script>
+{% endblock %}

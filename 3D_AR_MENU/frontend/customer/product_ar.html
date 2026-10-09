@@ -1,0 +1,285 @@
+{% extends "base_map.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ product.name }} — AR Ko'rinish{% endblock %}
+{% block extra_head %}
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<style>
+    :root { --sp: {{ product.shop.color_primary|default:'#16a34a' }}; }
+    model-viewer {
+        width: 100%; height: 65vh;
+        background: linear-gradient(180deg, #fafafa 0%, #e8e8e8 100%);
+        --poster-color: transparent;
+        border-radius: 1.5rem;
+    }
+    .ar-scope { font-family: system-ui, -apple-system, sans-serif; }
+    .ar-viewer {
+        position: relative; overflow: hidden;
+        border-radius: 1.5rem; border: 1.5px solid #e5e7eb;
+        background: #fafafa;
+    }
+    .ar-badge {
+        position: absolute; top: 1rem; left: 1rem; z-index: 10;
+        background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+        color: #fff; font-size: 11px; font-weight: 700;
+        padding: .35rem .75rem; border-radius: 999px;
+        display: flex; align-items: center; gap: .35rem;
+    }
+    .ar-ruler-badge {
+        position: absolute; top: 1rem; right: 1rem; z-index: 10;
+        background: rgba(0,0,0,.7); backdrop-filter: blur(8px);
+        color: #fff; font-size: 11px; font-weight: 600; font-family: monospace;
+        padding: .35rem .75rem; border-radius: 999px;
+        display: flex; align-items: center; gap: .35rem; border: 1px solid rgba(255,255,255,0.15);
+    }
+    .ar-color-bar {
+        position: absolute; top: 3.25rem; left: 1rem; z-index: 10;
+        background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
+        padding: .25rem .55rem; border-radius: 999px; display: flex; align-items: center; gap: .35rem;
+    }
+    .ar-color-dot {
+        width: 17px; height: 17px; border-radius: 9999px; cursor: pointer;
+        border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); transition: transform .15s;
+    }
+    .ar-color-dot:hover { transform: scale(1.2); }
+    .ar-actions {
+        position: absolute; bottom: 1rem; left: 1rem; right: 1rem; z-index: 10;
+        display: flex; gap: .5rem; justify-content: center;
+    }
+    .ar-action-btn {
+        background: rgba(255,255,255,.9); backdrop-filter: blur(8px);
+        border: 1.5px solid #e5e7eb; border-radius: 999px;
+        padding: .5rem 1rem; font-size: 12px; font-weight: 700;
+        color: #374151; cursor: pointer; transition: all .15s;
+        display: flex; align-items: center; gap: .35rem;
+    }
+    .ar-action-btn:hover { border-color: var(--sp); color: var(--sp); }
+    .ar-action-btn.primary { background: var(--sp); border-color: var(--sp); color: #fff; }
+    .ar-action-btn.primary:hover { opacity: .9; }
+
+    .ar-info {
+        background: #fff; border: 1px solid #f3f4f6; border-radius: 1.25rem;
+        padding: 1.5rem; margin-top: 1rem;
+    }
+    .ar-tip {
+        background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: .75rem;
+        padding: .75rem 1rem; font-size: 13px; color: #166534;
+        display: flex; align-items: start; gap: .5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ar-scope">
+    <div class="mx-auto max-w-3xl px-4 py-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <a href="{% url 'customer_product' product.slug %}" class="text-sm text-gray-500 hover:text-gray-900 transition flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+                    Orqaga
+                </a>
+                <h1 class="text-2xl font-bold text-gray-900 mt-1">{{ product.name }}</h1>
+                <p class="text-sm text-gray-500 mt-0.5">3D/AR ko'rinish</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full" style="background:color-mix(in srgb, var(--sp) 12%, #fff); color:var(--sp)">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2 12l5-5 5 5-5 5-5-5z" transform="rotate(90 12 12)"/></svg>
+                    3D/AR
+                </span>
+            </div>
+        </div>
+
+        <!-- 3D Viewer -->
+        <div class="ar-viewer">
+            <div class="ar-badge">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2 12l5-5 5 5-5 5-5-5z" transform="rotate(90 12 12)"/></svg>
+                3D Model
+            </div>
+
+            {% if product.get_dimensions_display %}
+            <div class="ar-ruler-badge">
+                <span>📐</span>
+                <span>{{ product.get_dimensions_display }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Real-time 3D Color Switcher -->
+            <div class="ar-color-bar">
+                <span style="font-size:10px; color:#fff; font-weight:700; text-transform:uppercase;">Rang:</span>
+                <span class="ar-color-dot" style="background:#ffffff" onclick="changeModelColor(1, 1, 1)" title="Oq"></span>
+                <span class="ar-color-dot" style="background:#0f172a" onclick="changeModelColor(0.08, 0.12, 0.18)" title="Qora"></span>
+                <span class="ar-color-dot" style="background:#dc2626" onclick="changeModelColor(0.85, 0.15, 0.15)" title="Qizil"></span>
+                <span class="ar-color-dot" style="background:#16a34a" onclick="changeModelColor(0.09, 0.64, 0.29)" title="Yashil"></span>
+                <span class="ar-color-dot" style="background:#f59e0b" onclick="changeModelColor(0.96, 0.62, 0.04)" title="Oltin"></span>
+            </div>
+
+            <model-viewer
+                id="viewer"
+                src="{{ model_url }}"
+                {% if ios_src %}ios-src="{{ ios_src }}"{% endif %}
+                {% if poster %}poster="{{ poster }}"{% endif %}
+                alt="{{ product.name }}"
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                camera-controls
+                auto-rotate
+                auto-rotate-delay="1000"
+                rotation-per-second="30deg"
+                shadow-intensity="0.8"
+                shadow-softness="0.5"
+                exposure="1.2"
+                environment-image="neutral"
+                camera-orbit="45deg 55deg 2m"
+                min-camera-orbit="auto auto 0.5m"
+                max-camera-orbit="auto auto 10m"
+                interaction-prompt="auto"
+                loading="eager"
+                touch-action="pan-y"
+                style="background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);">
+                <button slot="ar-button" class="hidden"></button>
+            </model-viewer>
+
+            <div class="ar-actions">
+                <button onclick="resetCamera()" class="ar-action-btn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Qayta tiklash
+                </button>
+                <button onclick="toggleAR()" class="ar-action-btn primary">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2 12l5-5 5 5-5 5-5-5z" transform="rotate(90 12 12)"/></svg>
+                    Joylashtirish (AR)
+                </button>
+                <button onclick="toggleRotate()" class="ar-action-btn" id="rotateBtn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Aylantirish
+                </button>
+                <button type="button" onclick="toggleQRModal()" class="ar-action-btn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                    QR AR
+                </button>
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="ar-info">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-gray-900">{{ product.name }}</h2>
+                <span class="font-bold text-lg" style="color:var(--sp)">{{ product.price|uznum }} <span class="text-xs text-gray-400 font-medium">so'm</span></span>
+            </div>
+
+            {% if product.description %}
+            <p class="text-sm text-gray-500 leading-relaxed mb-4">{{ product.description }}</p>
+            {% endif %}
+
+            <div class="flex flex-wrap gap-2">
+                {% if product.has_3d %}
+                <span class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2 12l5-5 5 5-5 5-5-5z" transform="rotate(90 12 12)"/></svg>
+                    3D Model mavjud
+                </span>
+                {% endif %}
+                {% if product.is_available %}
+                <span class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full bg-green-50 text-green-700">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Sotuvda
+                </span>
+                {% endif %}
+                {% if product.rating > 0 %}
+                <span class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full bg-amber-50 text-amber-700">
+                    <svg class="w-3 h-3 text-amber-400 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                    {{ product.rating|floatformat:1 }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="ar-tip mt-4">
+            <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div>
+                <p class="font-semibold">AR ni qanday ishlatish?</p>
+                <p class="text-xs opacity-80 mt-0.5">"Joylashtirish" tugmasini bosing → kamera ochiladi → mahsulotni haqiqiy muhitga qo'ying. Telefonda yaxshi ishlaydi!</p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="flex gap-3 mt-5">
+            <a href="{% url 'customer_product' product.slug %}" class="flex-1 text-center py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-300 transition">
+                Sahifaga qaytish
+            </a>
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="flex-1">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="w-full py-3 rounded-xl text-white text-sm font-semibold transition hover:opacity-90" style="background:var(--sp)">
+                    Savatga qo'shish
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- QR Modal -->
+<div id="qrModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+    <div style="background:#fff; border-radius:1.5rem; padding:1.75rem; max-width:320px; width:90%; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);">
+        <div style="width:48px; height:48px; border-radius:1rem; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+            <svg style="width:28px; height:28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+        </div>
+        <h3 style="font-weight:800; font-size:17px; color:#111827; margin-bottom:0.35rem;">Mobil AR rejimida ko'rish</h3>
+        <p style="font-size:12px; color:#6b7280; line-height:1.4; margin-bottom:1.25rem;">Telefon kamerangizni QR-kodga qarating va mahsulotni xonangizga joylashtiring:</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ request.build_absolute_uri|urlencode }}" alt="AR QR" style="width:160px; height:160px; margin:0 auto; border-radius:14px; border:1.5px solid #e5e7eb; box-shadow:inset 0 2px 4px rgba(0,0,0,0.06);">
+        <button type="button" onclick="toggleQRModal()" style="margin-top:1.5rem; width:100%; padding:0.75rem; border-radius:0.875rem; border:none; background:#f3f4f6; color:#374151; font-weight:700; font-size:13px; cursor:pointer; transition:background .15s;">
+            Yopish
+        </button>
+    </div>
+</div>
+
+<script>
+const viewer = document.getElementById('viewer');
+let rotating = true;
+
+function changeModelColor(r, g, b) {
+    if (viewer && viewer.model && viewer.model.materials && viewer.model.materials.length > 0) {
+        viewer.model.materials[0].pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1.0]);
+    }
+}
+
+function toggleQRModal() {
+    const modal = document.getElementById('qrModal');
+    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function resetCamera() {
+    viewer.cameraOrbit = '45deg 55deg 2m';
+    viewer.fieldOfView = '30deg';
+}
+
+function toggleAR() {
+    // Trigger AR mode
+    const arBtn = viewer.querySelector('[slot="ar-button"]');
+    if (arBtn) arBtn.click();
+    // Fallback: try activating AR
+    if (viewer.canActivateAR) {
+        viewer.activateAR();
+    }
+}
+
+function toggleRotate() {
+    rotating = !rotating;
+    viewer.autoRotate = rotating;
+    const btn = document.getElementById('rotateBtn');
+    btn.innerHTML = rotating
+        ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M10 9v6m4-6v6m7 3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> To\'xtatish'
+        : '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Aylantirish';
+}
+
+// Log AR view
+viewer.addEventListener('ar-status', (e) => {
+    if (e.detail.status === 'session-started') {
+        fetch('/api/v1/flutter/ar/view/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({product_id: {{ product.id }}, mode: 'ar', session_id: Date.now().toString()})
+        }).catch(() => {});
+    }
+});
+</script>
+{% endblock %}

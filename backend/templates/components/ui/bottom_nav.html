@@ -1,0 +1,40 @@
+{% comment %}
+UI Component: Bottom Navigation (Mobil Pastki Menyu)
+Parametrlar:
+- active_tab: home | menu | ar | cart | orders
+- cart_count: Savatchadagi soni
+{% endcomment %}
+
+<nav class="bottom-nav-ui">
+    <div class="bottom-nav-inner">
+        <a href="/" class="nav-item-ui {% if active_tab == 'home' %}active{% endif %}">
+            <span class="nav-item-icon">🏛️</span>
+            <span class="nav-item-label">Asosiy</span>
+        </a>
+
+        <a href="/menu/" class="nav-item-ui {% if active_tab == 'menu' %}active{% endif %}">
+            <span class="nav-item-icon">🍽️</span>
+            <span class="nav-item-label">Menyu</span>
+        </a>
+
+        <a href="/ar/" class="nav-item-ui {% if active_tab == 'ar' %}active{% endif %}">
+            <span class="nav-item-icon">✨</span>
+            <span class="nav-item-label">3D / AR</span>
+        </a>
+
+        <a href="/cart/" class="nav-item-ui {% if active_tab == 'cart' %}active{% endif %} nav-cart-item">
+            <div class="nav-cart-icon-wrap">
+                <span class="nav-item-icon">🛒</span>
+                <span class="nav-cart-badge" id="bottomNavCartBadge" style="display: {% if cart_count and cart_count > 0 %}flex{% else %}none{% endif %};">
+                    {{ cart_count|default:0 }}
+                </span>
+            </div>
+            <span class="nav-item-label">Savat</span>
+        </a>
+
+        <a href="/orders/" class="nav-item-ui {% if active_tab == 'orders' %}active{% endif %}">
+            <span class="nav-item-icon">📋</span>
+            <span class="nav-item-label">Hisob</span>
+        </a>
+    </div>
+</nav>

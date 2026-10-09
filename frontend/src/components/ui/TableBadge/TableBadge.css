@@ -1,0 +1,43 @@
+.react-table-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill, 9999px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.react-table-badge.status-available {
+  border-color: #BBF7D0;
+  background: #F0FDF4;
+}
+
+.react-table-badge.status-occupied {
+  border-color: #FED7AA;
+  background: #FFFBEB;
+}
+
+.table-badge-pin {
+  color: var(--brand-primary, #213827);
+  display: flex;
+  align-items: center;
+}
+
+.table-badge-text {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.table-badge-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+}
+
+.table-badge-hall {
+  font-size: 11px;
+  color: var(--text-secondary, #6C757D);
+}

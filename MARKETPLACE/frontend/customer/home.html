@@ -1,0 +1,867 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags static %}
+{% block title %}{{ t.site_name }} — {{ t.store_seller_desc }}{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
+    <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
+        <div>
+            <p class="eyebrow">{{ t.store_city }} · {{ t.local_market }}</p>
+            <h1 class="mt-4 text-4xl font-semibold leading-[1.05] sm:text-5xl">
+                {{ t.hero_new }}<br><span class="text-primary">{{ t.hero_highlight }}</span> {{ t.hero_suffix }}
+            </h1>
+            <p class="mt-5 max-w-md text-base leading-relaxed text-muted">
+                {{ t.store_seller_desc }}
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
+                    {{ t.view_products }}
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+                <a href="/ar/" class="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 px-5 py-3 text-sm font-semibold transition-all hover:bg-amber-500/20 hover:scale-105 shadow-xs">
+                    <svg class="size-4 shrink-0 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <span>3D & AR Menyu</span>
+                </a>
+                <a href="{% url 'print_3d_studio' %}" class="inline-flex items-center gap-2 rounded-full bg-indigo-600/10 border border-indigo-500/25 text-indigo-600 px-5 py-3 text-sm font-bold transition-all hover:bg-indigo-600/20 hover:scale-105 shadow-xs">
+                    <svg class="size-4 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+                    <span>3D Printer</span>
+                    <span class="bg-amber-500 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">5% Keshbek</span>
+                </a>
+                <a href="/map/" class="inline-flex items-center gap-2 rounded-full bg-emerald-600/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 px-5 py-3 text-sm font-semibold transition-all hover:bg-emerald-500/20 hover:scale-105 shadow-xs">
+                    <svg class="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                    <span>Jonli Xarita</span>
+                </a>
+                <a href="{% url 'customer_cart' %}" class="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-medium transition-colors hover:bg-secondary">
+                    {{ t.nav_cart }}
+                </a>
+            </div>
+            <dl class="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-border pt-6">
+                <div>
+                    <dt class="font-display text-2xl font-semibold">266</dt>
+                    <dd class="text-xs text-muted">{{ t.products }}</dd>
+                </div>
+                <div>
+                    <dt class="font-display text-2xl font-semibold">{{ shops|length|default:"4" }}</dt>
+                    <dd class="text-xs text-muted">{{ t.store_management_short }}</dd>
+                </div>
+                <div>
+                    <dt class="font-display text-2xl font-semibold">35–50 {{ t.map_minutes }}</dt>
+                    <dd class="text-xs text-muted">{{ t.map_delivery }}</dd>
+                </div>
+            </dl>
+        </div>
+        <div class="relative overflow-hidden rounded-[2rem] border border-border bg-sand shadow-lift">
+            {% if banners and banners.0.image %}
+            <img src="{{ banners.0.image.url }}" alt="{{ banners.0.title }}" class="aspect-[4/3] size-full object-cover">
+            {% else %}
+            <div class="aspect-[4/3] bg-gradient-to-br from-accent to-sand flex items-center justify-center">
+                <span class="material-icons-outlined text-8xl text-primary/20">storefront</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- SEARCH BAR -->
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-8">
+    <form method="get" action="{% url 'customer_search' %}" class="card-surface flex items-center gap-3 px-5 py-3.5">
+        <svg class="size-5 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        <input type="text" name="q" placeholder="{{ t.search }}..." class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted">
+        <button type="submit" class="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.btn_search }}</button>
+    </form>
+</section>
+
+<!-- 3 TA ASOSIY BIZNES VA XIZMATLAR REKLAMA SLIDERI -->
+<style>
+    /* BIZNES BANNER SLIDER VA 3D SHOWCASE */
+    #biz-banner {
+        transition: background 0.7s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.7s ease;
+    }
+    #biz-banner[data-biz="1"] { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #dcfce7 100%); }
+    #biz-banner[data-biz="2"] { background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%); }
+    #biz-banner[data-biz="3"] { background: linear-gradient(135deg, #eef2ff 0%, #ffffff 50%, #e0e7ff 100%); }
+    html.dark #biz-banner[data-biz="1"] { background: linear-gradient(135deg, #022c22 0%, #0b1320 55%, #064e3b 100%); }
+    html.dark #biz-banner[data-biz="2"] { background: linear-gradient(135deg, #451a03 0%, #15110d 55%, #78350f 100%); }
+    html.dark #biz-banner[data-biz="3"] { background: linear-gradient(135deg, #1e1b4b 0%, #0d1124 55%, #312e81 100%); }
+
+    /* Slayd matnlari almashinuvi */
+    #biz-banner .biz-texts-grid {
+        display: grid;
+    }
+    #biz-banner .biz-slide-text {
+        grid-area: 1/1;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+    }
+    #biz-banner[data-biz="1"] .biz-slide-text-1,
+    #biz-banner[data-biz="2"] .biz-slide-text-2,
+    #biz-banner[data-biz="3"] .biz-slide-text-3 {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* Ambient nurlar */
+    #biz-banner .biz-blob {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(80px);
+        pointer-events: none;
+        transition: background-color 0.6s ease;
+        animation: bizBlobFloat 12s ease-in-out infinite;
+    }
+    #biz-banner[data-biz="1"] .biz-blob-a { background: rgba(52, 211, 153, 0.32); }
+    #biz-banner[data-biz="1"] .biz-blob-b { background: rgba(16, 185, 129, 0.22); }
+    #biz-banner[data-biz="2"] .biz-blob-a { background: rgba(245, 158, 11, 0.35); }
+    #biz-banner[data-biz="2"] .biz-blob-b { background: rgba(249, 115, 22, 0.25); }
+    #biz-banner[data-biz="3"] .biz-blob-a { background: rgba(99, 102, 241, 0.35); }
+    #biz-banner[data-biz="3"] .biz-blob-b { background: rgba(168, 85, 247, 0.26); }
+    @keyframes bizBlobFloat {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-30px, 20px) scale(1.15); }
+    }
+
+    /* Nuqtalar va progress */
+    #biz-banner .biz-dot {
+        height: 8px;
+        width: 8px;
+        border-radius: 9999px;
+        background: #cbd5e1;
+        transition: all 0.35s ease;
+        border: 0;
+        cursor: pointer;
+    }
+    html.dark #biz-banner .biz-dot { background: #334155; }
+    #biz-banner[data-biz="1"] .biz-dot[aria-current="true"] { width: 32px; background: #10b981; }
+    #biz-banner[data-biz="2"] .biz-dot[aria-current="true"] { width: 32px; background: #f59e0b; }
+    #biz-banner[data-biz="3"] .biz-dot[aria-current="true"] { width: 32px; background: #6366f1; }
+
+    #biz-banner .biz-bar {
+        position: absolute;
+        left: 24px;
+        bottom: 10px;
+        height: 3px;
+        width: calc(100% - 48px);
+        border-radius: 9999px;
+        background: #10b981;
+        transform: scaleX(0);
+        transform-origin: left;
+        animation: bizProgress 5s linear infinite;
+    }
+    @keyframes bizProgress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* 3D Showcase Kartochkalari Saqlash va 3D Tilt */
+    #biz-showcase-stage {
+        perspective: 1200px;
+        transform-style: preserve-3d;
+        touch-action: pan-y;
+        transition: transform 0.12s ease-out;
+    }
+    #biz-banner .biz-cards-grid {
+        display: grid;
+        transform-style: preserve-3d;
+    }
+    #biz-banner .biz-slide-card {
+        grid-area: 1/1;
+        opacity: 0;
+        transform: scale(0.95) translateZ(-25px);
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+        transform-style: preserve-3d;
+    }
+    #biz-banner[data-biz="1"] .biz-slide-card-1,
+    #biz-banner[data-biz="2"] .biz-slide-card-2,
+    #biz-banner[data-biz="3"] .biz-slide-card-3 {
+        opacity: 1;
+        transform: scale(1) translateZ(0);
+        pointer-events: auto;
+    }
+
+    /* Glare nuri (Specular Reflection) */
+    .biz-card-glare {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: inherit;
+        z-index: 30;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #biz-banner *, #biz-banner { animation: none !important; transition: none !important; }
+        #biz-banner .biz-bar { display: none; }
+    }
+</style>
+
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-6">
+    <div id="biz-banner" data-biz="1" class="relative overflow-hidden rounded-3xl card-surface p-6 sm:p-8 pb-12 shadow-xl border border-border/80">
+        <!-- Atmosfera nurlari -->
+        <div class="biz-blob biz-blob-a -right-16 -top-24 size-72" aria-hidden="true"></div>
+        <div class="biz-blob biz-blob-b -bottom-28 -left-10 size-64" aria-hidden="true"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-6 lg:gap-8">
+            <!-- Chap tomon: 3 ta haqiqiy biznes va xizmat matnlari -->
+            <div class="biz-texts-grid relative">
+                <!-- Slayd 1 Matni: Real Taom (Osh & Milliy Taomlar) -->
+                <div class="biz-slide-text biz-slide-text-1 space-y-3.5 text-center lg:text-left z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                        <span class="relative flex size-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60"></span>
+                            <span class="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
+                        </span>
+                        <span>🍽️ Restoran & Milliy Taomlar</span>
+                    </div>
+
+                    <h3 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-display tracking-tight text-foreground dark:text-white leading-tight">
+                        Gulistonning eng mazali to'y oshi <br class="hidden sm:inline">va qaynoq milliy taomlari
+                    </h3>
+
+                    <p class="text-sm sm:text-base text-muted max-w-xl leading-relaxed dark:text-slate-300">
+                        Haqiqiy devzira guruchi, sarxil barra go'sht va tandir taomlari. Telefoningizda <b>1:1 AR 3D</b> ko'rinishida ko'ring va issiq holda dasturxoningizga buyurtma bering!
+                    </p>
+
+                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-2 text-xs font-semibold text-muted dark:text-slate-300 pt-1">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+                            <span class="material-icons-outlined text-sm">restaurant</span> Rayhon Osh Markazi
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+                            <span class="material-icons-outlined text-sm">view_in_ar</span> 1:1 AR 3D Taom
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+                            <span class="material-icons-outlined text-sm">delivery_dining</span> 20-25 daqiqa Issiq
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                        <a href="/ar/" class="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3.5 text-sm font-extrabold shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95">
+                            <span class="material-icons-outlined text-base">view_in_ar</span>
+                            <span>3D AR Menyuni ochish</span>
+                            <span>→</span>
+                        </a>
+                        <a href="{% url 'customer_catalog' %}?cat=food" class="inline-flex items-center gap-2 rounded-full border border-border bg-surface hover:bg-accent px-5 py-3.5 text-sm font-bold transition-all">
+                            <span>Barcha Taomlar</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Slayd 2 Matni: Real Do'kon (Baraka Supermarketi) -->
+                <div class="biz-slide-text biz-slide-text-2 space-y-3.5 text-center lg:text-left z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold">
+                        <span class="relative flex size-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-60"></span>
+                            <span class="relative inline-flex rounded-full size-2 bg-amber-500"></span>
+                        </span>
+                        <span>🏪 Baraka Supermarketi & Bozorlar</span>
+                    </div>
+
+                    <h3 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-display tracking-tight text-foreground dark:text-white leading-tight">
+                        Katta supermarket javonlari — <br class="hidden sm:inline">uyingizda onlayn
+                    </h3>
+
+                    <p class="text-sm sm:text-base text-muted max-w-xl leading-relaxed dark:text-slate-300">
+                        Yangi sarxil mevalar, oziq-ovqatlar va ro'zg'or mahsulotlari do'kondagi narxda. Navbatsiz va og'ir xaltalarsiz — <b>15 daqiqada eshigingizgacha</b> yetkazamiz!
+                    </p>
+
+                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-2 text-xs font-semibold text-muted dark:text-slate-300 pt-1">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                            <span class="material-icons-outlined text-sm">storefront</span> 14,000+ Sarxil Mahsulot
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                            <span class="material-icons-outlined text-sm">local_taxi</span> Taxi Plus / 15 daqiqa
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                            <span class="material-icons-outlined text-sm">loyalty</span> 2% Naqd Keshbek
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                        <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 px-6 py-3.5 text-sm font-extrabold shadow-lg shadow-amber-500/30 transition-all hover:scale-105 active:scale-95">
+                            <span class="material-icons-outlined text-base">shopping_bag</span>
+                            <span>Do'konga kirish</span>
+                            <span>→</span>
+                        </a>
+                        <a href="/map/" class="inline-flex items-center gap-2 rounded-full border border-border bg-surface hover:bg-accent px-5 py-3.5 text-sm font-bold transition-all">
+                            <span class="material-icons-outlined text-base text-amber-500">location_on</span>
+                            <span>Xaritada Ko'rish</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Slayd 3 Matni: Real 3D Printer Mahsulotlari -->
+                <div class="biz-slide-text biz-slide-text-3 space-y-3.5 text-center lg:text-left z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-800 dark:text-indigo-300 text-xs font-bold">
+                        <span class="relative flex size-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-60"></span>
+                            <span class="relative inline-flex rounded-full size-2 bg-indigo-500"></span>
+                        </span>
+                        <span>🖨️ 3D Printer & Muhandislik Studiyasi</span>
+                    </div>
+
+                    <h3 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-display tracking-tight text-foreground dark:text-white leading-tight">
+                        Murakkab mexanizmlar va g'oyalaringizni <br class="hidden sm:inline">3D printerda chop etamiz
+                    </h3>
+
+                    <p class="text-sm sm:text-base text-muted max-w-xl leading-relaxed dark:text-slate-300">
+                        Siniq tishli g'ildiraklar (shesternya), avtomobil ehtiyot qismlari yoki shaxsiy suvenirlar. O'lchamni bilmasangiz — <b>1000 so'mlik tanga yoki karta</b> yoniga qo'yib rasm yuboring, 0.1 mm aniqlikda tayyorlaymiz!
+                    </p>
+
+                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-2 text-xs font-semibold text-muted dark:text-slate-300 pt-1">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-500/20">
+                            <span class="material-icons-outlined text-sm">precision_manufacturing</span> 0.1 mm Mikron Aniqlik
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-500/20">
+                            <span class="material-icons-outlined text-sm">tune</span> PLA / PETG / Resin
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-500/20">
+                            <span class="material-icons-outlined text-sm">percent</span> 5% Keshbek
+                        </span>
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                        <a href="{% url 'print_3d_studio' %}" class="inline-flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3.5 text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95">
+                            <span class="material-icons-outlined text-base">print</span>
+                            <span>3D Buyurtma berish</span>
+                            <span>→</span>
+                        </a>
+                        <a href="{% url 'print_3d_studio' %}#calculator" class="inline-flex items-center gap-2 rounded-full border border-border bg-surface hover:bg-accent px-5 py-3.5 text-sm font-bold transition-all">
+                            <span class="material-icons-outlined text-base text-indigo-500">upload_file</span>
+                            <span>Chizma / Model Yuklash</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- O'ng tomon: Real Mahsulotlar & Do'konlar Showcase Kartochkalari (3D Tilt & Interaktiv) -->
+            <div id="biz-showcase-stage" class="relative w-full h-80 sm:h-96 lg:h-[420px] rounded-3xl overflow-hidden select-none border border-black/10 dark:border-white/10 shadow-2xl bg-slate-900 group">
+                <div class="biz-cards-grid w-full h-full relative">
+                    <!-- Slayd 1 Kartochkasi: Real Taom (Osh & Milliy Taomlar) -->
+                    <div class="biz-slide-card biz-slide-card-1 w-full h-full relative">
+                        <img src="/media/banners/real_taom_plov.jpg" alt="Rayhon Milliy Taomlar - Haqiqiy To'y Oshi" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" loading="eager">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20 pointer-events-none"></div>
+
+                        <!-- Top Badges -->
+                        <div class="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 pointer-events-none z-10">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg">
+                                <span class="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>🍽️ Rayhon Milliy Taomlar</span>
+                                <span class="text-amber-300 font-bold ml-0.5">★ 4.9</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-slate-950 text-[11px] font-black tracking-wide shadow-md">
+                                <span>🔥 QAYNOQ ISSIQ</span>
+                            </span>
+                        </div>
+
+                        <!-- Bottom Info & Action -->
+                        <div class="absolute bottom-4 left-4 right-4 space-y-2.5 z-10">
+                            <div class="flex items-end justify-between gap-2">
+                                <div>
+                                    <div class="text-[11px] font-extrabold tracking-wider uppercase text-emerald-400">1:1 AR 3D Taom</div>
+                                    <h4 class="text-lg sm:text-xl font-extrabold text-white drop-shadow-md">Samarqand Maxsus To'y Oshi</h4>
+                                    <p class="text-xs text-slate-200 line-clamp-1">Devzira guruch, barra qo'zichoq go'shti, bedana tuxum va kuzi</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <div class="text-xs text-slate-300 line-through">55,000 so'm</div>
+                                    <div class="text-base sm:text-lg font-black text-amber-300">45,000 so'm</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 pt-1">
+                                <a href="/ar/" class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm py-2.5 px-4 shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+                                    <span class="material-icons-outlined text-base">view_in_ar</span>
+                                    <span>Telefoningizda 3D AR Ko'rish</span>
+                                </a>
+                                <a href="{% url 'customer_catalog' %}?cat=food" class="inline-flex items-center justify-center size-10 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 transition-all hover:scale-105 active:scale-95" title="Taomlarga o'tish">
+                                    <span class="material-icons-outlined text-base">arrow_forward</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slayd 2 Kartochkasi: Real Do'kon (Baraka Supermarketi) -->
+                    <div class="biz-slide-card biz-slide-card-2 w-full h-full relative">
+                        <img src="/media/banners/real_dokon_market.jpg" alt="Baraka City Supermarket Guliston" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20 pointer-events-none"></div>
+
+                        <!-- Top Badges -->
+                        <div class="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 pointer-events-none z-10">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg">
+                                <span class="size-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span>🏪 Baraka Supermarket</span>
+                                <span class="text-emerald-400 font-semibold text-[11px] ml-1">● Ochiq (08:00 - 23:00)</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black tracking-wide shadow-md">
+                                <span>⚡ 15 DAQIQA</span>
+                            </span>
+                        </div>
+
+                        <!-- Bottom Info & Action -->
+                        <div class="absolute bottom-4 left-4 right-4 space-y-2.5 z-10">
+                            <div class="flex items-end justify-between gap-2">
+                                <div>
+                                    <div class="text-[11px] font-extrabold tracking-wider uppercase text-amber-400">14,000+ Sarxil Mahsulotlar</div>
+                                    <h4 class="text-lg sm:text-xl font-extrabold text-white drop-shadow-md">Guliston Baraka City Marketi</h4>
+                                    <p class="text-xs text-slate-200 line-clamp-1">Mustaqillik shohi 45 · Do'kondagi narxlar bilan uyingizga yetkazish</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="inline-block px-2.5 py-1 rounded-lg bg-amber-500/30 border border-amber-400/40 text-amber-300 font-black text-xs">
+                                        🎁 2% Keshbek
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 pt-1">
+                                <a href="{% url 'customer_catalog' %}" class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs sm:text-sm py-2.5 px-4 shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+                                    <span class="material-icons-outlined text-base">shopping_cart</span>
+                                    <span>Do'kon Javonlariga Kirish</span>
+                                </a>
+                                <a href="/map/" class="inline-flex items-center justify-center size-10 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 transition-all hover:scale-105 active:scale-95" title="Xaritadan topish">
+                                    <span class="material-icons-outlined text-base">map</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slayd 3 Kartochkasi: Real 3D Printer Mahsuloti -->
+                    <div class="biz-slide-card biz-slide-card-3 w-full h-full relative">
+                        <img src="/media/banners/real_3d_printer_gear.jpg" alt="3D Printerda Chop Etilgan Planetar Reduktor" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20 pointer-events-none"></div>
+
+                        <!-- Top Badges -->
+                        <div class="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 pointer-events-none z-10">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg">
+                                <span class="size-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                                <span>🖨️ 3D Industrial Precision</span>
+                                <span class="text-indigo-300 font-mono text-[11px] ml-1">0.1mm Tolerans</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-500 text-white text-[11px] font-black tracking-wide shadow-md">
+                                <span>⚙️ DUAL PLA/PETG</span>
+                            </span>
+                        </div>
+
+                        <!-- Bottom Info & Action -->
+                        <div class="absolute bottom-4 left-4 right-4 space-y-2.5 z-10">
+                            <div class="flex items-end justify-between gap-2">
+                                <div>
+                                    <div class="text-[11px] font-extrabold tracking-wider uppercase text-indigo-400">Muhandislik & Ehtiyot Qismlar</div>
+                                    <h4 class="text-lg sm:text-xl font-extrabold text-white drop-shadow-md">Planetar Tishli Reduktor Mexanizmi</h4>
+                                    <p class="text-xs text-slate-200 line-clamp-1">Siniq shesternya, nostandart korpus va qismlarni 0.1 mm aniqlikda chop etish</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <div class="text-xs text-slate-300">Boshlang'ich</div>
+                                    <div class="text-base sm:text-lg font-black text-indigo-300">18,000 so'm</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 pt-1">
+                                <a href="{% url 'print_3d_studio' %}" class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs sm:text-sm py-2.5 px-4 shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+                                    <span class="material-icons-outlined text-base">precision_manufacturing</span>
+                                    <span>3D Buyurtma & Hisoblash</span>
+                                </a>
+                                <a href="{% url 'print_3d_studio' %}#calculator" class="inline-flex items-center justify-center size-10 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 transition-all hover:scale-105 active:scale-95" title="Model yuklash">
+                                    <span class="material-icons-outlined text-base">upload_file</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Interactive Floating Glare (Hover Glare Reflection) -->
+                <div class="biz-card-glare"></div>
+            </div>
+        </div>
+
+        <!-- Nuqtalar va navigatsiya -->
+        <div class="relative mt-6 flex items-center justify-center gap-2.5 z-20">
+            <button type="button" class="biz-dot" data-goto="1" aria-label="Restoran va Milliy Taomlar" aria-current="true"></button>
+            <button type="button" class="biz-dot" data-goto="2" aria-label="Baraka Supermarket" aria-current="false"></button>
+            <button type="button" class="biz-dot" data-goto="3" aria-label="3D Printer Studio" aria-current="false"></button>
+        </div>
+
+        <!-- Pastki avto-progress chizig'i -->
+        <div class="biz-bar" aria-hidden="true"></div>
+    </div>
+</section>
+
+<!-- 3D SHOWCASE KONTROLLERI VA 3D TILT ENGINE -->
+<script>
+    (function () {
+        var banner = document.getElementById("biz-banner");
+        var stage = document.getElementById("biz-showcase-stage");
+        if (!banner || !stage) return;
+
+        var dots = Array.prototype.slice.call(banner.querySelectorAll(".biz-dot"));
+        var bar = banner.querySelector(".biz-bar");
+        var glare = stage.querySelector(".biz-card-glare");
+
+        var current = 1;
+        var total = 3;
+        var DELAY = 5500;
+        var timer = null;
+        var isPaused = false;
+        var barColors = ["#10b981", "#f59e0b", "#6366f1"];
+
+        function showSlide(index) {
+            current = index;
+            banner.setAttribute("data-biz", String(index));
+
+            dots.forEach(function (dot, idx) {
+                dot.setAttribute("aria-current", (idx + 1 === index) ? "true" : "false");
+            });
+
+            if (bar) {
+                bar.style.animation = "none";
+                void bar.offsetWidth;
+                bar.style.animation = "bizProgress " + (DELAY / 1000) + "s linear infinite";
+                bar.style.background = barColors[index - 1];
+            }
+        }
+
+        function nextSlide() {
+            var nxt = (current % total) + 1;
+            showSlide(nxt);
+        }
+
+        function prevSlide() {
+            var prv = (current - 2 + total) % total + 1;
+            showSlide(prv);
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(function () {
+                if (!document.hidden && !isPaused) {
+                    nextSlide();
+                }
+            }, DELAY);
+        }
+
+        dots.forEach(function (dot, idx) {
+            dot.addEventListener("click", function (e) {
+                e.stopPropagation();
+                showSlide(idx + 1);
+                startTimer();
+            });
+        });
+
+        banner.addEventListener("mouseenter", function () {
+            isPaused = true;
+            if (bar) bar.style.animationPlayState = "paused";
+        });
+
+        banner.addEventListener("mouseleave", function () {
+            isPaused = false;
+            if (bar) bar.style.animationPlayState = "running";
+        });
+
+        // 3D Tilt va Glare Effekti
+        var isHovering = false;
+        stage.addEventListener("mouseenter", function () {
+            isHovering = true;
+            if (glare) glare.style.opacity = "0.35";
+        });
+
+        stage.addEventListener("mousemove", function (e) {
+            if (!isHovering) return;
+            var rect = stage.getBoundingClientRect();
+            var x = e.clientX - rect.left;
+            var y = e.clientY - rect.top;
+            var centerX = rect.width / 2;
+            var centerY = rect.height / 2;
+
+            var rotX = ((y - centerY) / centerY) * -9;
+            var rotY = ((x - centerX) / centerX) * 11;
+
+            stage.style.transform = "perspective(1200px) rotateX(" + rotX.toFixed(2) + "deg) rotateY(" + rotY.toFixed(2) + "deg) scale3d(1.02, 1.02, 1.02)";
+
+            if (glare) {
+                glare.style.background = "radial-gradient(circle at " + x + "px " + y + "px, rgba(255,255,255,0.42) 0%, transparent 65%)";
+            }
+        });
+
+        stage.addEventListener("mouseleave", function () {
+            isHovering = false;
+            stage.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+            if (glare) glare.style.opacity = "0";
+        });
+
+        // Sensor / Swipe qo'llab-quvvatlash
+        var touchStartX = 0;
+        var touchStartY = 0;
+        banner.addEventListener("touchstart", function (e) {
+            if (e.touches && e.touches[0]) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        banner.addEventListener("touchend", function (e) {
+            if (e.changedTouches && e.changedTouches[0]) {
+                var dx = e.changedTouches[0].clientX - touchStartX;
+                var dy = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                    if (dx < 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                    startTimer();
+                }
+            }
+        }, { passive: true });
+
+        showSlide(1);
+        startTimer();
+    })();
+</script>
+
+<!-- QUICK BUY -->
+{% if quick_buy_products %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="flex items-end justify-between gap-4 mb-5">
+        <div>
+            <p class="eyebrow">{{ t.quick_buy }}</p>
+            <h2 class="mt-2 font-display text-xl font-semibold sm:text-2xl">{{ t.one_click }} {{ t.cart_add }}</h2>
+        </div>
+        <a href="{% url 'customer_quick_buy' %}" class="text-sm font-medium text-primary hover:underline">{{ t.all }}</a>
+    </div>
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        {% for p in quick_buy_products %}
+        <div class="card-surface flex flex-col items-center p-4 text-center group">
+            <div class="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mb-2 overflow-hidden">
+                {% if p.image %}
+                <img src="{{ p.image.url }}" alt="{{ p.name }}" class="w-full h-full object-cover">
+                {% else %}
+                <span class="material-icons-outlined text-primary text-2xl">shopping_cart</span>
+                {% endif %}
+            </div>
+            <p class="text-xs font-semibold leading-tight line-clamp-2 min-h-[2rem]">{{ p.name }}</p>
+            <p class="text-[11px] text-muted mt-1">{{ p.price|uznum }} {{ t.catalog_som }}</p>
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="mt-2" x-data>
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ p.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="w-8 h-8 rounded-full bg-primary text-primary-foreground text-lg font-bold transition-transform active:scale-95 hover:opacity-90">+</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- CATEGORIES -->
+{% if categories %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <p class="eyebrow">{{ t.categories }}</p>
+    <h2 class="mt-2 font-display text-xl font-semibold sm:text-2xl">{{ t.where_to_start }}</h2>
+    <div class="mt-5 flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style="-webkit-overflow-scrolling:touch;">
+        {% for cat in categories %}
+        <a href="{% url 'customer_catalog' %}?category={{ cat.id }}" class="snap-start shrink-0 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-medium transition-colors hover:border-primary hover:text-primary flex items-center gap-2">
+            {% if cat.icon %}<span class="material-icons-outlined text-base">{{ cat.icon }}</span>{% endif %}
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- NEARBY STORES -->
+{% if shops %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="flex items-end justify-between gap-4 mb-5">
+        <div>
+            <p class="eyebrow">{{ t.map_nearby }}</p>
+            <h2 class="mt-2 font-display text-xl font-semibold sm:text-2xl">{{ t.store_city }} {{ t.market }}</h2>
+        </div>
+        <a href="{% url 'customer_nearby_stores' %}" class="text-sm font-medium text-primary hover:underline">{{ t.all }}</a>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for shop in shops %}
+        <a href="{% url 'customer_shop_detail' shop.slug %}" class="card-surface p-5 transition-shadow hover:shadow-lift">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="font-display text-base font-semibold">{{ shop.name }}</h3>
+                    {% if shop.is_verified %}<span class="text-[11px] text-primary font-medium">✓ {{ t.verified }}</span>{% endif %}
+                </div>
+                <span class="text-sm font-semibold text-primary">{{ shop.rating|default:"0" }}</span>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+                <span class="flex items-center gap-1">
+                    <svg class="size-3.5 fill-primary text-primary" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294-.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                    {{ shop.rating|default:"4.8" }}
+                </span>
+                {% if shop.distance < 999 %}
+                <span>📍 {{ shop.distance|floatformat:1 }} km</span>
+                {% endif %}
+                {% if shop.is_open %}
+                <span class="text-primary">🟢 {{ t.map_open }}</span>
+                {% else %}
+                <span class="text-red-500">🔴 {{ t.map_closed }}</span>
+                {% endif %}
+                <span>🚚 35–50 {{ t.map_minutes }}</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-xs text-muted">
+                <span>{{ t.map_min_order }} {{ shop.min_order|uznum }} {{ t.catalog_som }}</span>
+                <span>{{ t.map_delivery }}: {{ shop.delivery_fee|uznum }} {{ t.catalog_som }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- POPULAR PRODUCTS -->
+{% if products %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="flex items-end justify-between gap-4 mb-5">
+        <div>
+            <p class="eyebrow">{{ t.popular }}</p>
+            <h2 class="mt-2 font-display text-xl font-semibold sm:text-2xl">{{ t.best_sellers }}</h2>
+        </div>
+        <a href="{% url 'customer_catalog' %}?sort=rating" class="text-sm font-medium text-primary hover:underline">{{ t.all }}</a>
+    </div>
+    <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
+        {% for product in products %}
+        <div class="card-surface group relative flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
+            <a href="{% url 'customer_product' product.slug %}" class="flex flex-1 flex-col">
+                <div class="relative aspect-square overflow-hidden bg-sand">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
+                    {% else %}
+                    <img src="/static/images/dish-placeholder.svg" alt="{{ product.name }}" class="size-full object-cover opacity-85">
+                    {% endif %}
+                    {% if product.old_price %}
+                    <span class="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">−{{ product.discount_percent }}%</span>
+                    {% endif %}
+                    {% if product.has_3d %}
+                    <span class="absolute right-2.5 bottom-2.5 rounded-full bg-slate-950/80 backdrop-blur text-white px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 shadow-xs border border-white/10">
+                        <span>🕶️</span> 3D
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+                    {% if product.shop %}<p class="truncate text-xs text-muted">{{ product.shop.name }}</p>{% endif %}
+                    <h3 class="font-display text-sm font-semibold leading-snug sm:text-base">{{ product.name }}</h3>
+                    <div class="mt-1 flex items-center gap-1 text-xs text-muted">
+                        <svg class="size-3.5 shrink-0 fill-primary text-primary" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294-.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                        {{ product.rating|default:"0" }}
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-baseline gap-x-2 pr-10">
+                        <span class="text-sm font-semibold sm:text-base">{{ product.price|uznum }} {{ t.catalog_som }}</span>
+                        {% if product.old_price %}<span class="text-xs text-muted line-through">{{ product.old_price|uznum }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="add-to-cart-form absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" aria-label="{{ t.cart_add }}" class="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-lift transition-transform active:scale-95 hover:scale-105">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- CHEAPEST NEARBY -->
+{% if cheapest_products %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="flex items-end justify-between gap-4 mb-5">
+        <div>
+            <p class="eyebrow">{{ t.cheap_prices }}</p>
+            <h2 class="mt-2 font-display text-xl font-semibold sm:text-2xl">{{ t.cheapest_products }}</h2>
+        </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
+        {% for product in cheapest_products %}
+        <div class="card-surface group relative flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
+            <a href="{% url 'customer_product' product.slug %}" class="flex flex-1 flex-col">
+                <div class="relative aspect-square overflow-hidden bg-sand">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
+                    {% else %}
+                    <img src="/static/images/dish-placeholder.svg" alt="{{ product.name }}" class="size-full object-cover opacity-85">
+                    {% endif %}
+                    <span class="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-medium text-white">{{ t.discount }}</span>
+                    {% if product.has_3d %}
+                    <span class="absolute right-2.5 bottom-2.5 rounded-full bg-slate-950/80 backdrop-blur text-white px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 shadow-xs border border-white/10">
+                        <span>🕶️</span> 3D
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+                    {% if product.shop %}<p class="truncate text-xs text-muted">{{ product.shop.name }}</p>{% endif %}
+                    <h3 class="font-display text-sm font-semibold leading-snug sm:text-base">{{ product.name }}</h3>
+                    <div class="mt-3 flex flex-wrap items-baseline gap-x-2 pr-10">
+                        <span class="text-sm font-semibold sm:text-base text-primary">{{ product.price|uznum }} {{ t.catalog_som }}</span>
+                        {% if product.old_price %}<span class="text-xs text-muted line-through">{{ product.old_price|uznum }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+            <form method="POST" action="{% url 'customer_cart_add' %}" class="add-to-cart-form absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" aria-label="{{ t.cart_add }}" class="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-lift transition-transform active:scale-95 hover:scale-105">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- REPEAT ORDER -->
+{% if recent_orders %}
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="card-surface p-6 sm:p-8">
+        <div class="flex items-start justify-between gap-4 mb-5">
+            <div>
+                <p class="eyebrow">{{ t.order_repeat }}</p>
+                <h2 class="mt-2 font-display text-xl font-semibold sm:text-2xl">{{ t.recent_title }}</h2>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-5">
+            {% for item in recent_orders.0.items.all %}
+            <span class="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium">{{ item.product.name }}</span>
+            {% endfor %}
+        </div>
+        <button onclick="repeatOrder({{ recent_orders.0.id }})" class="w-full sm:w-auto rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
+            {{ t.cart_add }}
+        </button>
+    </div>
+</section>
+{% endif %}
+
+<!-- MAP CTA -->
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 mt-10">
+    <a href="/map/" class="card-surface flex items-center gap-5 p-6 transition-shadow hover:shadow-lift">
+        <div class="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shrink-0">
+            <svg class="size-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+        </div>
+        <div>
+            <h3 class="font-display text-base font-semibold">{{ t.map_subtitle }}</h3>
+            <p class="text-sm text-muted mt-1">{{ t.map_nearby }}</p>
+        </div>
+        <svg class="size-5 text-muted ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+    </a>
+</section>
+
+<div class="h-8"></div>
+
+<script>
+function repeatOrder(orderId) {
+    fetch('/cart/repeat/' + orderId + '/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    }).then(r => r.json()).then(d => {
+        if (d.success) { window.location.href = '/cart/'; }
+    });
+}
+</script>
+{% endblock %}

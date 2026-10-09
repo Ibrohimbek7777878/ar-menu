@@ -1,0 +1,61 @@
+/* ─────────────────────────────────────────────────────────────
+   Clean CategoryChips Styles (Impeccable UI)
+   ───────────────────────────────────────────────────────────── */
+
+.category-chips-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 10px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #EAE4D7);
+  border-radius: 999px;
+  color: var(--text-secondary, #57534E);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-height: 38px;
+}
+
+.chip-pill:hover {
+  border-color: var(--border-strong, #D6CDBC);
+  color: var(--text-primary, #1C1917);
+}
+
+.chip-pill.active {
+  background: var(--brand-primary, #213827);
+  border-color: var(--brand-primary, #213827);
+  color: #FAF7F0;
+  box-shadow: var(--shadow-sm);
+}
+
+.chip-counter {
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.chip-pill.active .chip-counter {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FAF7F0;
+}

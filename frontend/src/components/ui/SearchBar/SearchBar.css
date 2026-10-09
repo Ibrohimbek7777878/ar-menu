@@ -1,0 +1,56 @@
+.react-search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 8px 16px;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.18s ease;
+}
+
+.react-search-bar:focus-within {
+  border-color: var(--brand-primary, #213827);
+  box-shadow: 0 0 0 3px rgba(33, 56, 39, 0.08);
+}
+
+.search-icon-prefix {
+  color: var(--text-secondary, #6C757D);
+  display: flex;
+  align-items: center;
+}
+
+.search-native-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-primary, #212529);
+  width: 100%;
+}
+
+.search-native-input::placeholder {
+  color: var(--text-secondary, #6C757D);
+}
+
+.search-clear-cross {
+  border: none;
+  background: #FAF9F5;
+  color: var(--text-secondary, #6C757D);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.search-clear-cross:hover {
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+}

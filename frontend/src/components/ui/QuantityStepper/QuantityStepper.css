@@ -1,0 +1,53 @@
+.react-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: #FAF7F0;
+  border: 1px solid #E8E0CF;
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 6px;
+  user-select: none;
+}
+
+.stepper-sz-sm .stepper-action-btn { width: 24px; height: 24px; font-size: 14px; }
+.stepper-sz-sm .stepper-display-value { font-size: 13px; min-width: 18px; }
+
+.stepper-sz-md .stepper-action-btn { width: 30px; height: 30px; font-size: 16px; }
+.stepper-sz-md .stepper-display-value { font-size: 15px; min-width: 24px; }
+
+.stepper-sz-lg .stepper-action-btn { width: 36px; height: 36px; font-size: 18px; }
+.stepper-sz-lg .stepper-display-value { font-size: 17px; min-width: 28px; }
+
+.stepper-action-btn {
+  border-radius: 50%;
+  border: none;
+  background: #FFFFFF;
+  color: #2F4836;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(44, 42, 38, 0.08);
+  transition: all 0.15s ease;
+}
+
+.stepper-action-btn:hover:not(:disabled) {
+  background: #2F4836;
+  color: #FAF7F0;
+}
+
+.stepper-action-btn:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.stepper-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepper-display-value {
+  text-align: center;
+  font-weight: 800;
+  color: #2C2A26;
+}

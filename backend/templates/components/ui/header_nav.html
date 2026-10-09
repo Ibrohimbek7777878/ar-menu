@@ -1,0 +1,46 @@
+{% comment %}
+UI Component: Header Nav (Yuqori Navigatsiya)
+Parametrlar:
+- shop: Shop obyekti
+- table: Table obyekti
+- cart_count: Savatdagi mahsulotlar soni
+- show_back: boolean
+- title: Maxsus sarlavha (agar shop o'rniga kerak bo'lsa)
+{% endcomment %}
+
+<header class="header-nav-ui">
+    <div class="header-nav-inner">
+        <div class="header-left">
+            {% if show_back %}
+                <button type="button" class="btn-nav-back" onclick="history.back()" aria-label="Orqaga">
+                    <span>←</span>
+                </button>
+            {% else %}
+                <a href="/" class="header-brand">
+                    <span class="brand-crest">G</span>
+                    <span class="brand-name serif">{{ shop.name|default:"Guliston" }}</span>
+                </a>
+            {% endif %}
+        </div>
+
+        {% if title %}
+            <h1 class="header-page-title serif">{{ title }}</h1>
+        {% endif %}
+
+        <div class="header-right">
+            {% if table %}
+                <div class="header-table-indicator">
+                    <span class="indicator-dot"></span>
+                    <span>Stol #{{ table.number }}</span>
+                </div>
+            {% endif %}
+
+            <a href="/cart/" class="header-cart-btn" aria-label="Savat">
+                <span class="cart-icon">🛒</span>
+                <span class="cart-badge-count" id="headerCartBadge" style="display: {% if cart_count and cart_count > 0 %}flex{% else %}none{% endif %};">
+                    {{ cart_count|default:0 }}
+                </span>
+            </a>
+        </div>
+    </div>
+</header>

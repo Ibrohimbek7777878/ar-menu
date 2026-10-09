@@ -1,0 +1,426 @@
+{% extends "seller/base_seller.html" %}
+{% load uznum i18n_tags %}
+{% block title %}Buyurtmalar{% endblock %}
+{% block page_title %}Buyurtmalar{% endblock %}
+
+{% block content %}
+<style>
+    :root { --sp: {{ shop.color_primary|default:'#16a34a' }}; --ac: {{ shop.color_accent|default:'#1a1a2e' }}; }
+    /* ── Hero: Deep Midnight Obsidian Glass ── */
+    .o-hero {
+        background: linear-gradient(135deg, #162432 0%, #111a24 60%, #0c131a 100%);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        box-shadow: 0 12px 30px -6px rgba(30, 64, 175, 0.2);
+        border-radius: 1.25rem;
+        padding: 1.75rem 2rem 1.5rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .o-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -12%;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.16) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .s-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .15rem;
+        padding: .65rem 1rem;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: .85rem;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        min-width: 72px;
+        transition: transform .2s ease, background .2s ease;
+    }
+    .s-pill:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .s-num { font-size: 1.15rem; font-weight: 800; line-height: 1; }
+    .s-lbl { font-size: .6rem; opacity: .8; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── Status chips ── */
+    .st {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .45rem .95rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 600;
+        border: 1.5px solid rgba(226, 217, 204, 0.8);
+        background: rgba(254, 251, 246, 0.9);
+        color: #6b6055;
+        cursor: pointer;
+        transition: all .18s cubic-bezier(0.16, 1, 0.3, 1);
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    .st:hover {
+        border-color: #16a34a;
+        color: #16a34a;
+        background: rgba(235, 227, 216, 0.85);
+        transform: translateY(-1px);
+    }
+    .st.on {
+        background: #16a34a;
+        border-color: #16a34a;
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
+    }
+    .st-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* Dark Mode chips */
+    .dark .st {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #A39789;
+    }
+    .dark .st:hover {
+        background: rgba(44, 38, 33, 0.9);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── Table card ── */
+    .tbl-card {
+        background: rgba(254, 251, 246, 0.92);
+        border: 1px solid rgba(226, 217, 204, 0.75);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 20px -2px rgba(80, 60, 40, 0.04);
+    }
+    .tbl-card th {
+        text-align: left;
+        padding: .85rem 1.25rem;
+        font-size: .72rem;
+        font-weight: 700;
+        color: #7e7366;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        border-bottom: 1px solid rgba(226, 217, 204, 0.7);
+        background: rgba(246, 241, 233, 0.6);
+    }
+    .tbl-card td {
+        padding: .85rem 1.25rem;
+        font-size: .85rem;
+        border-bottom: 1px solid rgba(226, 217, 204, 0.4);
+        color: #2e2620;
+    }
+    .tbl-card tr:last-child td { border-bottom: none; }
+    .tbl-card tr:hover td { background: rgba(244, 239, 231, 0.5); }
+
+    /* Dark Mode Table Card */
+    .dark .tbl-card {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+    .dark .tbl-card th {
+        background: rgba(20, 17, 15, 0.7);
+        color: #a99f93;
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+    .dark .tbl-card td {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+        color: #ede8e1;
+    }
+    .dark .tbl-card tr:hover td {
+        background: rgba(44, 38, 33, 0.45);
+    }
+
+    /* ── Status pill inside table ── */
+    .osp {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .25rem .7rem;
+        border-radius: 999px;
+        font-size: .7rem;
+        font-weight: 700;
+    }
+    .dark .bg-amber-50 { background: rgba(245, 158, 11, 0.18) !important; color: #fbbf24 !important; }
+    .dark .bg-blue-50 { background: rgba(59, 130, 246, 0.18) !important; color: #93c5fd !important; }
+    .dark .bg-indigo-50 { background: rgba(99, 102, 241, 0.18) !important; color: #a5b4fc !important; }
+    .dark .bg-cyan-50 { background: rgba(6, 182, 212, 0.18) !important; color: #67e8f9 !important; }
+    .dark .bg-violet-50 { background: rgba(139, 92, 246, 0.18) !important; color: #c4b5fd !important; }
+    .dark .bg-green-50 { background: rgba(34, 197, 94, 0.18) !important; color: #86efac !important; }
+    .dark .bg-red-50 { background: rgba(239, 68, 68, 0.18) !important; color: #fca5a5 !important; }
+    .dark .bg-purple-50 { background: rgba(168, 85, 247, 0.18) !important; color: #d8b4fe !important; border-color: rgba(168, 85, 247, 0.3) !important; }
+    .dark .bg-brand-50 { background: rgba(22, 163, 74, 0.18) !important; color: #86efac !important; border-color: rgba(22, 163, 74, 0.3) !important; }
+
+    /* ── Action link ── */
+    .oa {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .25rem .65rem;
+        border-radius: .6rem;
+        font-size: .75rem;
+        font-weight: 600;
+        color: #16a34a;
+        text-decoration: none;
+        transition: all .15s;
+    }
+    .oa:hover { opacity: .85; }
+    .dark .oa { color: #4ade80; }
+
+    /* ── Empty ── */
+    .empty {
+        background: rgba(254, 251, 246, 0.88);
+        border: 2px dashed rgba(226, 217, 204, 0.85);
+        border-radius: 1.25rem;
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+    .dark .empty {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #F3EFE8;
+    }
+</style>
+
+<div>
+    <!-- Hero -->
+    <div class="o-hero mb-5">
+        <div class="relative z-10 flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="text-xs opacity-70 font-medium tracking-wide uppercase">{{ shop.name }}</p>
+                <h2 class="text-xl font-bold mt-0.5">Buyurtmalar boshqaruvi</h2>
+            </div>
+            <a href="{% url 'seller_order_create_web' %}" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Yangi buyurtma
+            </a>
+        </div>
+        <div class="relative z-10 flex gap-2.5 mt-4 flex-wrap">
+            <div class="s-pill"><span class="s-num">{{ orders|length }}</span><span class="s-lbl">Jami</span></div>
+            {% for s in status_counts %}
+            <div class="s-pill"><span class="s-num">{{ s.count }}</span><span class="s-lbl">{{ s.label }}</span></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Status chips (horizontal scroll on mobile) -->
+    <div class="flex gap-1.5 mb-5 overflow-x-auto pb-1 sm:flex-wrap scrollbar-none">
+        <a href="{% url 'seller_orders_web' %}" class="st shrink-0 {% if not status_filter %}on{% endif %}">
+            <span class="st-dot" style="background:{% if not status_filter %}#fff{% else %}#6b7280{% endif %}"></span> Barchasi
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=pending" class="st shrink-0 {% if status_filter == 'pending' %}on{% endif %}" style="{% if status_filter == 'pending' %}background:#f59e0b;border-color:#f59e0b{% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'pending' %}#fff{% else %}#f59e0b{% endif %}"></span> Kutilmoqda
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=confirmed" class="st shrink-0 {% if status_filter == 'confirmed' %}on{% endif %}" style="{% if status_filter == 'confirmed' %}background:#3b82f6;border-color:#3b82f6{% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'confirmed' %}#fff{% else %}#3b82f6{% endif %}"></span> Tasdiqlangan
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=preparing" class="st shrink-0 {% if status_filter == 'preparing' %}on{% endif %}" style="{% if status_filter == 'preparing' %}background:#6366f1;border-color:#6366f1{% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'preparing' %}#fff{% else %}#6366f1{% endif %}"></span> Tayyorlanmoqda
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=ready" class="st shrink-0 {% if status_filter == 'ready' %}on{% endif %}" style="{% if status_filter == 'ready' %}background:#06b6d4;border-color:#06b6d4{% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'ready' %}#fff{% else %}#06b6d4{% endif %}"></span> Tayyor
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=out_for_delivery" class="st shrink-0 {% if status_filter == 'out_for_delivery' %}on{% endif %}" style="{% if status_filter == 'out_for_delivery' %}background:#8b5cf6;border-color:#8b5cf6{% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'out_for_delivery' %}#fff{% else %}#8b5cf6{% endif %}"></span> Yetkazilmoqda
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=delivered" class="st shrink-0 {% if status_filter == 'delivered' %}on{% endif %}" style="{% if status_filter == 'delivered' %}background:var(--sp);border-color:var(--sp){% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'delivered' %}#fff{% else %}var(--sp){% endif %}"></span> Yetkazilgan
+        </a>
+        <a href="{% url 'seller_orders_web' %}?status=cancelled" class="st shrink-0 {% if status_filter == 'cancelled' %}on{% endif %}" style="{% if status_filter == 'cancelled' %}background:#ef4444;border-color:#ef4444{% endif %}">
+            <span class="st-dot" style="background:{% if status_filter == 'cancelled' %}#fff{% else %}#ef4444{% endif %}"></span> Bekor qilingan
+        </a>
+    </div>
+
+    {% if orders %}
+    <div class="tbl-card">
+        <!-- Desktop Table View -->
+        <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full min-w-[680px]">
+                <thead>
+                    <tr>
+                        <th>Raqam</th>
+                        <th>Mijoz</th>
+                        <th>Kuryer</th>
+                        <th>Summa</th>
+                        <th>Holat</th>
+                        <th>Sana</th>
+                        <th class="!text-right">Amal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    <tr>
+                        <td>
+                            <span class="flex items-center gap-1.5 font-semibold text-gray-900 dark:text-white">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                #{{ o.order_number }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="flex items-center gap-2">
+                                <span class="grid size-6 place-items-center rounded-full text-[10px] font-bold uppercase shrink-0" style="background:color-mix(in srgb, var(--sp) 12%, #fff); color:var(--sp)">{{ o.customer_name|slice:":1" }}</span>
+                                {{ o.customer_name }}
+                            </span>
+                        </td>
+                        <td class="text-gray-500">{{ o.courier.name|default:"—" }}</td>
+                        <td class="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{{ o.final_amount|uznum }} <span class="text-[10px] text-gray-400 font-medium">so'm</span></td>
+                        <td>
+                            {% if o.status == 'pending' %}
+                            <span class="osp bg-amber-50 text-amber-700"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Kutilmoqda</span>
+                            {% elif o.status == 'confirmed' %}
+                            <span class="osp bg-blue-50 text-blue-700"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Tasdiqlangan</span>
+                            {% elif o.status == 'preparing' %}
+                            <span class="osp bg-indigo-50 text-indigo-700"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>Tayyorlanmoqda</span>
+                            {% elif o.status == 'ready' %}
+                            <span class="osp bg-cyan-50 text-cyan-700"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>Tayyor</span>
+                            {% elif o.status == 'out_for_delivery' %}
+                            <span class="osp bg-violet-50 text-violet-700"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>Yetkazilmoqda</span>
+                            {% elif o.status == 'delivered' %}
+                            <span class="osp bg-green-50 text-green-700"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Yetkazilgan</span>
+                            {% elif o.status == 'cancelled' %}
+                            <span class="osp bg-red-50 text-red-600"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Bekor qilingan</span>
+                            {% else %}
+                            <span class="osp bg-gray-100 text-gray-600">{{ o.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-gray-400 whitespace-nowrap text-xs">{{ o.created_at|date:"d.m.Y H:i" }}</td>
+                        <td class="!text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a href="{% url 'seller_order_receipt_web' o.pk %}" target="_blank" class="oa text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200" title="58mm/80mm Chek chiqarish">
+                                    🖨️ Chek
+                                </a>
+                                <a href="{% url 'seller_order_detail_web' o.pk %}" class="oa">
+                                    Ko'rish
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View (screens < 640px) -->
+        <div class="sm:hidden divide-y divide-gray-100 dark:divide-neutral-800">
+            {% for o in orders %}
+            <div class="p-3.5 space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-sm text-gray-900 dark:text-white">#{{ o.order_number }}</span>
+                    {% if o.status == 'pending' %}
+                    <span class="osp bg-amber-50 text-amber-700 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Kutilmoqda</span>
+                    {% elif o.status == 'confirmed' %}
+                    <span class="osp bg-blue-50 text-blue-700 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Tasdiqlangan</span>
+                    {% elif o.status == 'preparing' %}
+                    <span class="osp bg-indigo-50 text-indigo-700 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>Tayyorlanmoqda</span>
+                    {% elif o.status == 'ready' %}
+                    <span class="osp bg-cyan-50 text-cyan-700 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>Tayyor</span>
+                    {% elif o.status == 'out_for_delivery' %}
+                    <span class="osp bg-violet-50 text-violet-700 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>Yetkazilmoqda</span>
+                    {% elif o.status == 'delivered' %}
+                    <span class="osp bg-green-50 text-green-700 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Yetkazilgan</span>
+                    {% elif o.status == 'cancelled' %}
+                    <span class="osp bg-red-50 text-red-600 text-[11px]"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Bekor qilingan</span>
+                    {% else %}
+                    <span class="osp bg-gray-100 text-gray-600 text-[11px]">{{ o.status }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span>Mijoz: <b class="text-gray-800 dark:text-neutral-200">{{ o.customer_name }}</b></span>
+                    <span>{{ o.created_at|date:"d.m H:i" }}</span>
+                </div>
+                <div class="flex items-center justify-between pt-1 border-t border-gray-50 dark:border-neutral-850">
+                    <span class="font-bold text-sm text-brand-600 dark:text-brand-400">{{ o.final_amount|uznum }} so'm</span>
+                    <div class="flex items-center gap-2">
+                        <a href="{% url 'seller_order_receipt_web' o.pk %}" target="_blank" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+                            🖨️ Chek
+                        </a>
+                        <a href="{% url 'seller_order_detail_web' o.pk %}" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-brand-50 text-brand-700 border border-brand-200">
+                            Ko'rish ›
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty">
+        <div class="grid size-16 place-items-center mx-auto rounded-2xl mb-4" style="background:color-mix(in srgb, var(--sp) 8%, #fff)">
+            <svg class="w-7 h-7" style="color:var(--sp)" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <p class="font-semibold text-gray-600">Buyurtmalar topilmadi</p>
+        <p class="text-sm text-gray-400 mt-1">{% if status_filter %}Filtrni o'zgartirib ko'ring{% else %}Hozircha buyurtmalar yo'q{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Audio Alert Script (Yangi buyurtma baland signali) -->
+<script>
+// Web Audio API yordamida jarangdor "Ding-Dong" signali
+function playOrderChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 1-ohang (Ding)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start();
+        osc1.stop(audioCtx.currentTime + 0.5);
+
+        // 2-ohang (Dong)
+        setTimeout(() => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+            gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.8);
+        }, 150);
+    } catch(e) {
+        console.log("Audio not allowed yet:", e);
+    }
+}
+
+// Avtomatik tekshiruv (Har 15 soniyada yangi buyurtmalarni tekshirib signal chalish)
+let lastOrderCount = {{ orders|length }};
+setInterval(() => {
+    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(r => r.text())
+    .then(html => {
+        // Agar yangi buyurtma kelgan bo'lsa
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const rows = doc.querySelectorAll('tbody tr');
+        if (rows.length > lastOrderCount) {
+            playOrderChime();
+            lastOrderCount = rows.length;
+            // Ekranda bildirishnoma
+            const banner = document.createElement('div');
+            banner.className = 'fixed top-4 right-4 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl font-bold z-50 animate-bounce flex items-center gap-2';
+            banner.innerHTML = '<span>🔔</span> Yangi buyurtma keldi!';
+            document.body.appendChild(banner);
+            setTimeout(() => { window.location.reload(); }, 2000);
+        }
+    }).catch(() => {});
+}, 15000);
+</script>
+{% endblock %}

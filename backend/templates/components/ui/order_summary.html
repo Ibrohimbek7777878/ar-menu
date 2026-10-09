@@ -1,0 +1,42 @@
+{% comment %}
+UI Component: Order Summary Card
+Parametrlar:
+- subtotal: Oraliq summa
+- service_fee: Xizmat haqi summasi
+- service_percent: Xizmat haqi foizi (default 10 yoki 15)
+- total: Yakuniy summa
+- show_button: boolean
+- button_text: Tugma matni (default: "To'lovga o'tish")
+- button_url: Havola
+{% endcomment %}
+
+<div class="order-summary-ui {{ extra_class }}">
+    <h3 class="summary-title serif">Hisob-kitob</h3>
+
+    <div class="summary-rows">
+        <div class="summary-row">
+            <span class="summary-label">Taomlar summasi:</span>
+            <span class="summary-val">{{ subtotal|floatformat:0 }} so'm</span>
+        </div>
+
+        {% if service_percent %}
+        <div class="summary-row text-muted">
+            <span class="summary-label">Xizmat haqi ({{ service_percent }}%):</span>
+            <span class="summary-val">{{ service_fee|floatformat:0 }} so'm</span>
+        </div>
+        {% endif %}
+
+        <div class="summary-divider"></div>
+
+        <div class="summary-row summary-total-row">
+            <span class="summary-label">Jami to'lov:</span>
+            <span class="summary-total-val serif">{{ total|floatformat:0 }} so'm</span>
+        </div>
+    </div>
+
+    {% if show_button|default:True %}
+        <div class="summary-action-btn">
+            {% include "components/ui/button.html" with text=button_text|default:"To'lovga o'tish" url=button_url|default:"/checkout/" variant="primary" size="lg" full_width=True icon="💳" %}
+        </div>
+    {% endif %}
+</div>

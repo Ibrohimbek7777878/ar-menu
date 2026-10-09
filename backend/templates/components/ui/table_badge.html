@@ -1,0 +1,28 @@
+{% comment %}
+UI Component: Table Badge (Stol Holati & Raqami)
+Parametrlar:
+- table: Table model obyekti yoki raqam
+- hall: Zal nomi
+- status: available | occupied | reserved | bill_requested
+- show_icon: true (default) | false
+{% endcomment %}
+
+<div class="table-badge-ui status-{{ status|default:'available' }} {{ extra_class }}">
+    {% if show_icon|default:True %}
+        <span class="table-badge-icon">🪑</span>
+    {% endif %}
+    <div class="table-badge-info">
+        <span class="table-badge-num">
+            {% if table.number %}
+                Stol #{{ table.number }}
+            {% elif table %}
+                Stol #{{ table }}
+            {% else %}
+                Erkin Stol
+            {% endif %}
+        </span>
+        {% if table.hall or hall %}
+            <span class="table-badge-hall">{{ table.hall.name|default:hall }}</span>
+        {% endif %}
+    </div>
+</div>

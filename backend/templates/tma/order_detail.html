@@ -1,73 +1,164 @@
 {% extends "tma/base_tma.html" %}
 
-{% block title %}Buyurtma #{{ order.order_number }} — Telegram Mini App{% endblock %}
+{% block title %}Buyurtma #{{ order.order_number }} — {{ shop.name|default:"Guliston" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .order-detail-page {
+        padding: 20px 16px 40px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .detail-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-cream);
+        border-radius: var(--radius-2xl);
+        padding: 24px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 24px;
+    }
+
+    .status-hero {
+        text-align: center;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .status-emoji {
+        font-size: 52px;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .status-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin-bottom: 4px;
+    }
+    .status-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+        background: var(--bg-cream-soft);
+        padding: 14px;
+        border-radius: var(--radius-xl);
+    }
+    .info-col span {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-light);
+        font-weight: 700;
+        display: block;
+    }
+    .info-col strong {
+        font-size: 13px;
+        color: var(--text-dark);
+    }
+
+    .items-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 12px;
+    }
+
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 13px;
+    }
+    .item-row:last-child {
+        border-bottom: none;
+    }
+
+    .totals-sec {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-cream);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .totals-sec strong {
+        font-size: 20px;
+        color: var(--primary-green);
+    }
+
+    .btn-return-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        background: var(--primary-green);
+        color: #FFFFFF;
+        padding: 16px;
+        border-radius: var(--radius-pill);
+        font-size: 15px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 8px 24px rgba(47, 72, 54, 0.25);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-    <div style="margin-bottom: 14px;">
-        <a href="{% url 'tma_orders' %}" style="text-decoration:none;color:var(--hint-color);font-size:13px;font-weight:600;">&larr; Buyurtmalar ro'yxatiga</a>
-    </div>
-
-    <div class="tma-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <h2 style="font-size:18px;font-weight:800;">#{{ order.order_number }}</h2>
-            <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;
-                {% if order.status == 'delivered' %}background:#dcfce7;color:#16a34a;
-                {% elif order.status == 'cancelled' %}background:#fee2e2;color:#ef4444;
-                {% else %}background:#fef3c7;color:#d97706;{% endif %}">
-                {{ order.get_status_display }}
+<div class="order-detail-page">
+    <div class="detail-card">
+        <div class="status-hero">
+            <span class="status-emoji">
+                {% if order.status == 'completed' %}✅
+                {% elif order.status == 'preparing' %}👨‍🍳
+                {% elif order.status == 'ready' %}🔔
+                {% else %}⏳{% endif %}
             </span>
-        </div>
-        <div style="font-size:12px;color:var(--hint-color);margin-bottom:12px;">
-            Sana: {{ order.created_at|date:"d.m.Y H:i" }} &bull; Do'kon: <b>{{ order.shop.name }}</b>
-        </div>
-
-        <div style="border-top:1px solid var(--border-color);padding-top:10px;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:700;margin-bottom:6px;">Yetkazib berish manzili:</div>
-            <div style="font-size:13px;color:var(--text-color);">{{ order.delivery_address }}</div>
-            <div style="font-size:12px;color:var(--hint-color);margin-top:2px;">Mijoz: {{ order.customer_name }} ({{ order.customer_phone_1 }})</div>
+            <h2 class="status-title serif">Buyurtma #{{ order.order_number }}</h2>
+            <p class="status-sub">
+                Status: <strong>{{ order.get_status_display|default:order.status }}</strong>
+            </p>
         </div>
 
-        {% if order.notes %}
-            <div style="border-top:1px solid var(--border-color);padding-top:8px;margin-bottom:10px;font-size:12px;color:var(--hint-color);">
-                <b>Izoh:</b> {{ order.notes }}
+        <div class="info-grid">
+            <div class="info-col">
+                <span>Vaqt:</span>
+                <strong>{{ order.created_at|date:"d.m.Y H:i" }}</strong>
             </div>
-        {% endif %}
-    </div>
-
-    <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Buyurtma tarkibi</h3>
-    <div class="tma-card" style="padding:10px;">
-        {% for it in order.items.all %}
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;{% if not forloop.last %}border-bottom:1px solid var(--border-color);{% endif %}">
-                <div>
-                    <div style="font-size:13px;font-weight:700;">{{ it.product_name }}</div>
-                    <div style="font-size:11px;color:var(--hint-color);">{{ it.price|floatformat:0 }} so'm &times; {{ it.quantity }} {{ it.unit }}</div>
-                </div>
-                <div style="font-size:13px;font-weight:800;color:var(--text-color);">
-                    {{ it.total|floatformat:0 }} so'm
-                </div>
+            <div class="info-col">
+                <span>Joylashuv:</span>
+                <strong>{% if order.table %}Stol №{{ order.table.number }}{% else %}Dostavka{% endif %}</strong>
             </div>
+        </div>
+
+        <h3 class="items-title">Taomlar Tarkibi</h3>
+        {% for item in order.items.all %}
+        <div class="item-row">
+            <div>
+                <strong>{{ item.product_name }}</strong>
+                <span style="color:var(--text-light); font-size:12px;"> × {{ item.quantity }}</span>
+            </div>
+            <strong>{{ item.total|floatformat:0 }} so'm</strong>
+        </div>
         {% endfor %}
 
-        <div style="border-top:1px dashed var(--border-color);padding-top:10px;margin-top:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--hint-color);margin-bottom:4px;">
-                <span>Yetkazib berish:</span>
-                <span>{{ order.delivery_fee|floatformat:0 }} so'm</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:var(--primary);margin-top:6px;">
-                <span>Jami:</span>
-                <span>{{ order.final_amount|floatformat:0 }} so'm</span>
-            </div>
+        <div class="totals-sec">
+            <span style="font-size:14px; font-weight:700;">Jami To'lov:</span>
+            <strong>{{ order.final_amount|floatformat:0 }} so'm</strong>
         </div>
     </div>
 
-    {% if order.payment_status == 'unpaid' and order.status != 'cancelled' %}
-        <div class="tma-card" style="text-align:center;">
-            <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:#d97706;">
-                ⏳ Buyurtma to'lanmagan
-            </div>
-            <a href="{% url 'customer_order_pay' order.id %}" class="tma-btn-primary">
-                💳 Hozir to'lash (Click / Payme)
-            </a>
-        </div>
-    {% endif %}
+    <a href="/menu/" class="btn-return-menu">
+        <span>🍽️ Dasturxon Menyusiga Qaytish</span>
+        <span>→</span>
+    </a>
+</div>
 {% endblock %}

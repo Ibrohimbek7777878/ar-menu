@@ -184,4 +184,12 @@ class TableReservation(models.Model):
         tbl = f" (Stol #{self.table.number})" if self.table else ""
         return f"Bron: {self.customer_name} - {self.reservation_date} {self.reservation_time}{tbl}"
 
+    @property
+    def code(self):
+        return f"GS-{self.id + 2840}"
+
+    @property
+    def table_number(self):
+        return self.table.number if self.table else "--"
+
 

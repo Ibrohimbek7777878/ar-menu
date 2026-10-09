@@ -1,0 +1,458 @@
+{% extends "seller/base_seller.html" %}
+{% load uznum %}
+{% block title %}{{ product.name|default:"Yangi mahsulot" }} — tahrirlash{% endblock %}
+{% block page_title %}{% if product %}Mahsulotni tahrirlash{% else %}Yangi mahsulot{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+    :root { --sp: {{ shop.color_primary|default:'#16a34a' }}; --ac: {{ shop.color_accent|default:'#1a1a2e' }}; }
+
+    .pf-hero {
+        background: linear-gradient(135deg, var(--sp), color-mix(in srgb, var(--sp) 55%, var(--ac)));
+        border-radius:1.25rem; padding:1.5rem 2rem; color:#fff; position:relative; overflow:hidden;
+    }
+    .pf-hero::before { content:''; position:absolute; top:-50%; right:-10%; width:250px; height:250px; background:radial-gradient(circle,rgba(255,255,255,.10) 0%,transparent 70%); border-radius:50%; }
+
+    .fl { display:block; font-size:.75rem; font-weight:600; color:#374151; margin-bottom:.35rem; }
+    .fi { width:100%; border:1.5px solid #e5e7eb; border-radius:.75rem; padding:.6rem .85rem; font-size:.85rem; background:#fff; color:#111827; transition:all .15s; outline:none; }
+    .fi:focus { border-color:var(--sp); box-shadow:0 0 0 3px color-mix(in srgb, var(--sp) 10%, transparent); }
+    .fi::placeholder { color:#9ca3af; }
+    select.fi { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; padding-right:2rem; }
+    textarea.fi { resize:vertical; min-height:80px; }
+
+    .sc { background:#fff; border:1.5px solid #f3f4f6; border-radius:1rem; padding:1.25rem; }
+    .sc-title { font-size:.8rem; font-weight:700; color:#111827; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+
+    /* Image upload area */
+    .img-upload { position:relative; border:2px dashed #e5e7eb; border-radius:1rem; overflow:hidden; transition:all .2s; cursor:pointer; }
+    .img-upload:hover { border-color:var(--sp); background:color-mix(in srgb, var(--sp) 2%, #fff); }
+    .img-upload input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; z-index:2; }
+    .img-upload-inner { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; gap:.5rem; }
+    .img-preview { width:100%; height:200px; object-fit:contain; background:#f9fafb; border-radius:.75rem; }
+
+    /* Image grid */
+    .img-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:.75rem; }
+    .img-slot { position:relative; border:2px dashed #e5e7eb; border-radius:.875rem; overflow:hidden; aspect-ratio:1; transition:all .2s; }
+    .img-slot:hover { border-color:var(--sp); }
+    .img-slot input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; z-index:2; }
+    .img-slot-inner { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:.25rem; color:#9ca3af; }
+    .img-slot img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .img-slot-label { font-size:.6rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; position:relative; z-index:1; background:rgba(255,255,255,.85); padding:.15rem .5rem; border-radius:.3rem; }
+
+    /* Price box */
+    .price-box { background:color-mix(in srgb, var(--sp) 5%, #fff); border:1.5px solid color-mix(in srgb, var(--sp) 15%, #fff); border-radius:.875rem; padding:1rem; }
+    .price-row { display:flex; align-items:center; gap:.75rem; }
+    .price-input { flex:1; border:1.5px solid #e5e7eb; border-radius:.625rem; padding:.55rem .75rem; font-size:.95rem; font-weight:700; background:#fff; outline:none; transition:all .15s; }
+    .price-input:focus { border-color:var(--sp); }
+    .price-label { font-size:.65rem; color:#6b7280; font-weight:500; text-transform:uppercase; letter-spacing:.04em; }
+    .price-badge { font-size:.65rem; font-weight:700; color:var(--sp); background:color-mix(in srgb, var(--sp) 10%, #fff); padding:.2rem .6rem; border-radius:.4rem; }
+
+    /* Toggle */
+    .toggle-wrap { display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:#f9fafb; border-radius:.75rem; }
+    .toggle { position:relative; width:44px; height:24px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:#d1d5db; border-radius:999px; cursor:pointer; transition:all .2s; }
+    .toggle-slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:all .2s; }
+    .toggle input:checked + .toggle-slider { background:var(--sp); }
+    .toggle input:checked + .toggle-slider::before { transform:translateX(20px); }
+
+    /* Flash box */
+    .flash-box { background:#fffbeb; border:1.5px solid #fde68a; border-radius:.875rem; padding:1rem; }
+    .flash-title { font-size:.75rem; font-weight:700; color:#d97706; display:flex; align-items:center; gap:.4rem; margin-bottom:.75rem; }
+
+    /* Submit */
+    .submit-btn { width:100%; background:var(--sp); color:#fff; border:none; border-radius:.875rem; padding:.85rem; font-size:.9rem; font-weight:700; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .submit-btn:hover { opacity:.9; transform:translateY(-1px); box-shadow:0 4px 12px color-mix(in srgb, var(--sp) 30%, transparent); }
+
+    .back-link { display:inline-flex; align-items:center; gap:.35rem; font-size:.8rem; font-weight:600; color:#6b7280; text-decoration:none; transition:color .15s; }
+    .back-link:hover { color:var(--sp); }
+
+    /* AR box */
+    .ar-box { background:#f5f3ff; border:1.5px solid #ddd6fe; border-radius:.875rem; padding:1rem; }
+    .ar-title { font-size:.75rem; font-weight:700; color:#7c3aed; display:flex; align-items:center; gap:.4rem; margin-bottom:.75rem; }
+
+    /* Template selector card grid */
+    .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+    @media (max-width: 640px) { .tpl-grid { grid-template-columns: repeat(2, 1fr); } }
+    .tpl-card { border: 1.5px solid #e5e7eb; border-radius: .85rem; padding: .75rem .6rem; cursor: pointer; text-align: left; transition: all .2s; position: relative; background: #fff; }
+    .tpl-card:hover { border-color: var(--sp); transform: translateY(-1px); }
+    .tpl-card.active { border-color: var(--sp); background: color-mix(in srgb, var(--sp) 6%, #fff); box-shadow: 0 4px 12px color-mix(in srgb, var(--sp) 12%, transparent); }
+    .tpl-card input[type="radio"] { position: absolute; opacity: 0; }
+    .color-dot { width: 22px; height: 22px; border-radius: 9999px; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db; transition: transform .15s; }
+    .color-dot:hover { transform: scale(1.18); }
+</style>
+
+<div class="max-w-5xl mx-auto">
+    <!-- Hero -->
+    <div class="pf-hero mb-5">
+        <div class="relative z-10 flex items-center justify-between">
+            <div>
+                <p class="text-xs opacity-70 font-medium tracking-wide uppercase">{{ shop.name }}</p>
+                <h2 class="text-xl font-bold mt-0.5">{% if product %}{{ product.name }}{% else %}Yangi mahsulot{% endif %}</h2>
+            </div>
+            <a href="{% url 'seller_products_web' %}" class="back-link text-white/80 hover:text-white">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Ro'yxatga
+            </a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="productForm">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+
+            <!-- Chap: asosiy ma'lumot (3) -->
+            <div class="lg:col-span-3 space-y-4">
+
+                <!-- Nomi -->
+                <div class="sc">
+                    <div class="sc-title">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                        Mahsulot nomi
+                    </div>
+                    <input type="text" name="name" value="{{ product.name|default:'' }}" required placeholder="masalan: Osh Palov, Lag'mon..." class="fi text-base">
+                </div>
+
+                <!-- Narx -->
+                <div class="sc">
+                    <div class="sc-title">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Narx
+                    </div>
+                    <div class="price-box">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <span class="price-label">Asosiy narx *</span>
+                                <input type="number" name="price" value="{{ product.price|default:'' }}" required placeholder="0" class="price-input mt-1">
+                            </div>
+                            <div>
+                                <span class="price-label">Eski narx (chegirma)</span>
+                                <input type="number" name="old_price" value="{{ product.old_price|default:'' }}" placeholder="0" class="price-input mt-1">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <span class="price-label">O'lchov birligi</span>
+                                <input type="text" name="unit" value="{{ product.unit|default:'dona' }}" class="fi mt-1">
+                            </div>
+                            <div>
+                                <span class="price-label">Ombor zaxirasi</span>
+                                <input type="number" name="stock" value="{{ product.stock|default:0 }}" class="fi mt-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash-aksiya -->
+                <div class="sc">
+                    <div class="flash-box">
+                        <div class="flash-title">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            Flash-aksiya (countdown)
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <span class="price-label">Flash narx (so'm)</span>
+                                <input type="number" name="flash_price" value="{{ product.flash_price|default:'' }}" placeholder="17500" class="fi mt-1">
+                            </div>
+                            <div>
+                                <span class="price-label">Tugash vaqti</span>
+                                <input type="datetime-local" name="flash_until" value="{{ product.flash_until|date:'Y-m-d\\TH:i'|default:'' }}" class="fi mt-1">
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-amber-700 mt-2">Flash narx asosiy narxdan arzon bo'lishi kerak. Bo'sh qoldirilsa aksiya o'chadi.</p>
+                    </div>
+                </div>
+
+                <!-- Kategoriya + Tavsif -->
+                <div class="sc">
+                    <div class="sc-title">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        Kategoriya va tavsif
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="fl">Kategoriya</span>
+                            <select name="category" class="fi">
+                                <option value="">— tanlanmagan —</option>
+                                {% for c in categories %}
+                                <option value="{{ c.pk }}" {% if product.category_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <span class="fl">Tavsif</span>
+                            <textarea name="description" rows="3" placeholder="Mahsulot haqida qisqacha..." class="fi">{{ product.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mavjudlik -->
+                <div class="sc">
+                    <div class="toggle-wrap">
+                        <label class="toggle">
+                            <input type="checkbox" name="is_available" {% if not product or product.is_available %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">Sotuvda mavjud</p>
+                            <p class="text-[11px] text-gray-400">O'chirilgan bo'lsa, mijozlar ko'ra olmaydi</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shaxsiy Mahsulot Sahifasi Dizayni (Auto-Polisher) -->
+                <div class="sc">
+                    <div class="sc-title">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                        Mahsulot Sahifasi Dizayni & Shablon
+                        <span class="text-[10px] font-semibold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full ml-auto">AI Auto-Polisher</span>
+                    </div>
+
+                    <!-- Shablon tanlash -->
+                    <label class="fl mb-1.5">Vizual Ko'rinish Shabloni</label>
+                    <div class="tpl-grid mb-4">
+                        {% for tpl_key, tpl_name in design_templates %}
+                        <label class="tpl-card {% if product.design_template == tpl_key or not product and tpl_key == 'default' %}active{% endif %}" onclick="selectTemplate(this, '{{ tpl_key }}')">
+                            <input type="radio" name="design_template" value="{{ tpl_key }}" {% if product.design_template == tpl_key or not product and tpl_key == 'default' %}checked{% endif %}>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                {% if tpl_key == 'default' %}
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                {% elif tpl_key == 'luxury' %}
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                {% elif tpl_key == 'ar_hero' %}
+                                <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                                {% elif tpl_key == 'reels' %}
+                                <span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                                {% elif tpl_key == 'specs' %}
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                                {% elif tpl_key == 'clean' %}
+                                <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+                                {% endif %}
+                                <span class="text-[12px] font-bold text-gray-900 leading-tight">{{ tpl_name|slice:":15" }}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 line-clamp-2">
+                                {% if tpl_key == 'default' %}Universal toza ko'rinish
+                                {% elif tpl_key == 'luxury' %}Qora & Oltin VIP vitrina
+                                {% elif tpl_key == 'ar_hero' %}3D model dominant + AR
+                                {% elif tpl_key == 'reels' %}Video & Reels lookbook
+                                {% elif tpl_key == 'specs' %}Texnik parametrlar jadvali
+                                {% elif tpl_key == 'clean' %}1-klik minimal xarid{% endif %}
+                            </p>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Sozlamalar: Rang, Nishon, Fon -->
+                    <div class="bg-gray-50/70 p-3.5 rounded-xl border border-gray-100 space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <span class="fl">Asosiy Rang Urg'usi</span>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <input type="text" id="accentColorInput" name="accent_color" value="{{ product.design_config.accent_color|default:'' }}" placeholder="#16a34a" class="fi !py-1 text-xs font-mono">
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" class="color-dot" style="background:#16a34a" onclick="setAccent('#16a34a')"></button>
+                                        <button type="button" class="color-dot" style="background:#f59e0b" onclick="setAccent('#f59e0b')"></button>
+                                        <button type="button" class="color-dot" style="background:#7c3aed" onclick="setAccent('#7c3aed')"></button>
+                                        <button type="button" class="color-dot" style="background:#ec4899" onclick="setAccent('#ec4899')"></button>
+                                        <button type="button" class="color-dot" style="background:#2563eb" onclick="setAccent('#2563eb')"></button>
+                                        <button type="button" class="color-dot" style="background:#0f172a" onclick="setAccent('#0f172a')"></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="fl">Vitrina Nishoni (Badge)</span>
+                                <input type="text" name="badge_text" value="{{ product.design_config.badge_text|default:'' }}" placeholder="masalan: HIT, VIP, CHEGIRMA..." class="fi !py-1 text-xs mt-1">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-gray-200/60">
+                            <div>
+                                <span class="fl">Fon Mavzusi</span>
+                                <select name="bg_theme" class="fi !py-1 text-xs">
+                                    <option value="light" {% if product.design_config.bg_theme != 'dark' %}selected{% endif %}>Yorug' (Oq fon)</option>
+                                    <option value="dark" {% if product.design_config.bg_theme == 'dark' %}selected{% endif %}>Qorong'u (Dark VIP)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 pt-3">
+                                <span class="text-[11px] text-gray-500">⚡ Auto-Polisher shriftlar kontrasti va mobil ko'rinishni avtomatik mukammallashtiradi.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saqlash -->
+                <button type="submit" class="submit-btn">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    {% if product %}Saqlash{% else %}Mahsulot qo'shish{% endif %}
+                </button>
+            </div>
+
+            <!-- O'ng: rasm + media + AR (2) -->
+            <div class="lg:col-span-2 space-y-4">
+
+                <!-- Rasmlar -->
+                <div class="sc">
+                    <div class="sc-title">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Rasmlar
+                    </div>
+
+                    {% if product and product.image %}
+                    <div class="mb-3">
+                        <img src="{{ product.image.url }}" class="img-preview" alt="{{ product.name }}">
+                    </div>
+                    {% endif %}
+
+                    <div class="img-grid">
+                        <div class="img-slot">
+                            {% if product and product.image %}
+                            <img src="{{ product.image.url }}" alt="">
+                            {% endif %}
+                            <input type="file" name="image" accept="image/*">
+                            <div class="img-slot-inner">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span class="img-slot-label">Asosiy</span>
+                            </div>
+                        </div>
+                        <div class="img-slot">
+                            {% if product and product.image2 %}
+                            <img src="{{ product.image2.url }}" alt="">
+                            {% endif %}
+                            <input type="file" name="image2" accept="image/*">
+                            <div class="img-slot-inner">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span class="img-slot-label">2-rasm</span>
+                            </div>
+                        </div>
+                        <div class="img-slot">
+                            {% if product and product.image3 %}
+                            <img src="{{ product.image3.url }}" alt="">
+                            {% endif %}
+                            <input type="file" name="image3" accept="image/*">
+                            <div class="img-slot-inner">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span class="img-slot-label">3-rasm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video -->
+                <div class="sc">
+                    <div class="sc-title">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        Video
+                    </div>
+                    <div class="img-slot" style="aspect-ratio:16/9">
+                        {% if product and product.video %}
+                        <video src="{{ product.video.url }}" class="w-full h-full object-cover" muted></video>
+                        {% endif %}
+                        <input type="file" name="video" accept="video/*">
+                        <div class="img-slot-inner">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            <span class="img-slot-label">Video yuklash</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AR / 3D & O'lchamlar -->
+                <div class="sc">
+                    <div class="ar-box">
+                        <div class="ar-title">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                            3D / AR & Real O'lchamlar
+                        </div>
+                        <div>
+                            <span class="fl">GLB model havolasi</span>
+                            <input type="url" name="ar_model" value="{{ product.ar_model|default:'' }}" placeholder="https://...model.glb" class="fi text-xs">
+                            <p class="text-[11px] text-purple-600 mt-1">Sayt va mijoz menyusida mahsulotni 3D/AR ko'rsatadi</p>
+                        </div>
+
+                        <!-- Aniq fizik o'lchamlar (Dimension Ruler uchun) -->
+                        <div class="mt-3 pt-3 border-t border-purple-200/60">
+                            <span class="fl text-purple-950 font-semibold">Fizik O'lchamlar (sm va gramm)</span>
+                            <div class="grid grid-cols-3 gap-2 mt-1">
+                                <div>
+                                    <span class="text-[10px] text-gray-500 font-medium">Kenglik (sm)</span>
+                                    <input type="number" step="0.1" name="width_cm" value="{{ product.width_cm|default:'' }}" placeholder="15" class="fi !py-1 text-xs">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-gray-500 font-medium">Bo'yi (sm)</span>
+                                    <input type="number" step="0.1" name="height_cm" value="{{ product.height_cm|default:'' }}" placeholder="20" class="fi !py-1 text-xs">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-gray-500 font-medium">Chuqurlik (sm)</span>
+                                    <input type="number" step="0.1" name="depth_cm" value="{{ product.depth_cm|default:'' }}" placeholder="10" class="fi !py-1 text-xs">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-[10px] text-gray-500 font-medium">Og'irligi (gramm)</span>
+                                <input type="number" name="weight_g" value="{{ product.weight_g|default:'' }}" placeholder="450" class="fi !py-1 text-xs mt-0.5">
+                            </div>
+                        </div>
+
+                        <!-- 3D Funksional Toggles -->
+                        <div class="mt-3 pt-3 border-t border-purple-200/60 space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="show_ruler" class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4" {% if product.design_config.show_ruler or product.design_template == 'ar_hero' %}checked{% endif %}>
+                                <span class="text-xs font-medium text-gray-700">3D O'lcham Chizg'ichi (Ruler)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="show_ar_qr" class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4" {% if product.design_config.show_ar_qr or not product %}checked{% endif %}>
+                                <span class="text-xs font-medium text-gray-700">Desktopda AR QR-kod vidjeti</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="show_color_picker" class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4" {% if product.design_config.show_color_picker %}checked{% endif %}>
+                                <span class="text-xs font-medium text-gray-700">3D Rang O'zgartirgich (Realtime)</span>
+                            </label>
+                        </div>
+
+                        {% if product %}
+                        <div class="mt-3 pt-2">
+                            <button type="submit" formaction="{% url 'seller_product_ai3d_web' product.pk %}" formmethod="post" class="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                AI bilan 3D yaratish
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function selectTemplate(card, key) {
+    document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    card.querySelector('input[type="radio"]').checked = true;
+}
+function setAccent(color) {
+    const inp = document.getElementById('accentColorInput');
+    if (inp) inp.value = color;
+}
+
+// Image preview on select
+document.querySelectorAll('.img-slot input[type="file"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const slot = this.closest('.img-slot');
+        const existing = slot.querySelector('img');
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                if (existing) { existing.src = e.target.result; }
+                else {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    slot.appendChild(img);
+                }
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
+{% endblock %}

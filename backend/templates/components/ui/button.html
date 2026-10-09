@@ -1,0 +1,35 @@
+{% comment %}
+UI Component: Button
+Parametrlar:
+- text: Tugma matni
+- variant: primary (default) | secondary | outline | ghost | danger | warm
+- size: sm | md (default) | lg | xl
+- icon: Emoji yoki SVG ikonka (ixtiyoriy)
+- icon_pos: left (default) | right
+- url: Havola (agar berilsa <a>, aks holda <button>)
+- type: button (default) | submit
+- extra_class: Qo'shimcha CSS klasslar
+- onclick: JavaScript funksiyasi
+- disabled: true | false
+- full_width: true | false
+{% endcomment %}
+
+{% if url %}
+<a href="{{ url }}" 
+   class="btn-ui btn-{{ variant|default:'primary' }} btn-sz-{{ size|default:'md' }} {% if full_width %}btn-block{% endif %} {{ extra_class }}"
+   {% if onclick %}onclick="{{ onclick }}"{% endif %}
+   {% if role %}role="{{ role }}"{% endif %}>
+    {% if icon and icon_pos != 'right' %}<span class="btn-icon">{{ icon }}</span>{% endif %}
+    <span class="btn-text">{{ text }}</span>
+    {% if icon and icon_pos == 'right' %}<span class="btn-icon">{{ icon }}</span>{% endif %}
+</a>
+{% else %}
+<button type="{{ type|default:'button' }}"
+        class="btn-ui btn-{{ variant|default:'primary' }} btn-sz-{{ size|default:'md' }} {% if full_width %}btn-block{% endif %} {{ extra_class }}"
+        {% if onclick %}onclick="{{ onclick }}"{% endif %}
+        {% if disabled %}disabled{% endif %}>
+    {% if icon and icon_pos != 'right' %}<span class="btn-icon">{{ icon }}</span>{% endif %}
+    <span class="btn-text">{{ text }}</span>
+    {% if icon and icon_pos == 'right' %}<span class="btn-icon">{{ icon }}</span>{% endif %}
+</button>
+{% endif %}

@@ -2,24 +2,37 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{% block title %}{{ shop.name|default:"Smart 3D Restaurant Menu" }} — 3D Menyu{% endblock %}</title>
-    <!-- Telegram WebApp JS SDK -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ shop.name|default:"Guliston" }} — Oila Dasturxoni{% endblock %}</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* ─── CSS O'ZGARUVCHILARI ─── */
         :root {
-            --bg-color: var(--tg-theme-bg-color, #0b1120);
-            --card-bg: var(--tg-theme-secondary-bg-color, #1e293b);
-            --text-color: var(--tg-theme-text-color, #f8fafc);
-            --hint-color: var(--tg-theme-hint-color, #94a3b8);
-            --primary: var(--tg-theme-button-color, #f59e0b);
-            --primary-text: var(--tg-theme-button-text-color, #0f172a);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --radius-lg: 20px;
-            --radius-md: 14px;
-            --radius-sm: 8px;
+            --bg-cream: #F7F3EA;
+            --bg-cream-soft: #FAF7F0;
+            --bg-card: #FFFFFF;
+            --border-cream: #E8E0CF;
+            --border-light: #F0EADF;
+            --primary-green: #2F4836;
+            --primary-green-hover: #24382A;
+            --primary-green-light: #EBF1EC;
+            --accent-brown: #8B5E3C;
+            --accent-terracotta: #B85D19;
+            --accent-gold: #C29026;
+            --text-dark: #2C2A26;
+            --text-muted: #6B6559;
+            --text-light: #9E978B;
+            --radius-2xl: 24px;
+            --radius-xl: 18px;
+            --radius-lg: 14px;
+            --radius-pill: 9999px;
+            --shadow-soft: 0 4px 20px -2px rgba(44, 42, 38, 0.05);
+            --shadow-card: 0 10px 30px -4px rgba(44, 42, 38, 0.08);
+            --nav-height: 64px;
+            --tabbar-height: 72px;
         }
 
         * {
@@ -31,469 +44,461 @@
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: var(--bg-cream);
+            color: var(--text-dark);
             min-height: 100vh;
             font-size: 14px;
             line-height: 1.5;
-            padding-bottom: 76px; /* Mobil pastki bar uchun joy */
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Desktopda pastki bar yashiriladi va body padding tiklanadi */
-        @media (min-width: 768px) {
-            body {
-                padding-bottom: 32px;
-            }
-        }
+        .serif { font-family: 'Playfair Display', Georgia, serif; }
 
-        .tma-admin-btn-desk {
+        /* ─── DESKTOP NAV (768px+) ─── */
+        .gul-desktop-nav {
+            display: none;
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--border-cream);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            box-shadow: 0 2px 12px rgba(44, 42, 38, 0.04);
+            height: var(--nav-height);
+        }
+        .desktop-nav-inner {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .desktop-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-dark);
+            flex-shrink: 0;
+        }
+        .desktop-logo-crest {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--primary-green);
+            color: #FAF7F0;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .desktop-brand-title {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1.1;
+            display: block;
+        }
+        .desktop-brand-sub {
+            font-size: 10px;
+            color: var(--accent-brown);
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: block;
+        }
+        .desktop-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .d-nav-item {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: var(--radius-pill);
+            transition: all 0.15s;
+        }
+        .d-nav-item:hover { background: var(--bg-cream); color: var(--primary-green); }
+        .d-nav-item.active { background: var(--primary-green-light); color: var(--primary-green); font-weight: 700; }
+
+        .desktop-nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .d-status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            background: #EAF4EC;
+            color: var(--primary-green);
+            padding: 5px 12px;
+            border-radius: var(--radius-pill);
             font-size: 12px;
             font-weight: 700;
-            color: #f8fafc;
-            background: rgba(245, 158, 11, 0.16);
-            border: 1px solid rgba(245, 158, 11, 0.35);
-            border-radius: 999px;
-            padding: 8px 16px;
+        }
+        .d-table-badge {
+            background: var(--bg-cream-soft);
+            border: 1px solid var(--border-cream);
+            color: var(--text-dark);
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 700;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-desktop-admin {
+            background: var(--primary-green);
+            color: #FFFFFF;
+            padding: 8px 18px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(47, 72, 54, 0.2);
         }
-        .tma-admin-btn-desk:hover {
-            background: rgba(245, 158, 11, 0.28);
-            border-color: #f59e0b;
-            transform: translateY(-1px);
-            color: #ffffff;
-        }
+        .btn-desktop-admin:hover { background: var(--primary-green-hover); transform: translateY(-1px); }
 
-        /* Asosiy Header */
-        .tma-header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(30, 41, 59, 0.92);
-            border-bottom: 1px solid var(--border-color);
-            padding: 12px 16px;
-            backdrop-filter: blur(14px);
-        }
-        .tma-header-inner {
-            width: 100%;
-            max-width: 1720px;
-            margin: 0 auto;
+        .lang-pill-d {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--border-cream);
+            border-radius: var(--radius-pill);
+            padding: 2px;
         }
-
-        .tma-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .lang-btn-d {
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
             font-weight: 800;
-            font-size: 18px;
-            color: var(--text-color);
             text-decoration: none;
-            flex-shrink: 0;
-        }
-        .tma-brand span {
-            color: var(--primary);
-        }
-
-        /* Desktop Navigatsiya menyusi */
-        .tma-desktop-nav {
-            display: none;
-            align-items: center;
-            gap: 6px;
-        }
-        @media (min-width: 768px) {
-            .tma-desktop-nav {
-                display: flex;
-            }
-        }
-        .tma-desk-link {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border-radius: var(--radius-sm);
-            text-decoration: none;
-            color: #cbd5e1;
-            font-weight: 600;
-            font-size: 13px;
+            color: var(--text-muted);
             transition: all 0.15s;
         }
-        .tma-desk-link:hover {
-            color: #f8fafc;
-            background: rgba(255, 255, 255, 0.06);
+        .lang-btn-d.active { background: var(--primary-green); color: #FFFFFF; }
+
+        /* ─── PULSE DOT ─── */
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38A169;
+            display: inline-block;
+            animation: pulse 2s infinite;
         }
-        .tma-desk-link.active {
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.12);
-            font-weight: 700;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.85); }
         }
 
-        /* Header O'ng qism */
-        .tma-header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        /* ─── APP SHELL ─── */
+        .gul-app-shell {
+            width: 100%;
+            margin: 0 auto;
+            min-height: 100vh;
+            background-color: var(--bg-cream);
+            position: relative;
+            padding-bottom: var(--tabbar-height);
         }
-        .tma-cart-button-desk {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            background: #f59e0b;
-            color: #0f172a;
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 13px;
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
-            transition: opacity 0.15s, transform 0.15s;
+
+        /* ─── MOBILE HEADER CLASSES ─── */
+        .mobile-header-only { display: none; }
+        .gul-header { display: none; }
+        .top-header { display: none; }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 767px) {
+            .gul-app-shell { padding-left: 0; padding-right: 0; }
+            .mobile-header-only { display: flex !important; }
+            .gul-header { display: flex !important; }
+            .top-header { display: flex !important; }
         }
         @media (min-width: 768px) {
-            .tma-cart-button-desk {
-                display: flex;
+            .gul-desktop-nav { display: block; }
+            .mobile-header-only,
+            .gul-header,
+            .top-header { display: none !important; }
+            .gul-app-shell {
+                max-width: 960px;
+                padding-left: 24px;
+                padding-right: 24px;
+                padding-bottom: 50px;
+            }
+            .gul-tabbar { display: none !important; }
+        }
+        @media (min-width: 1024px) {
+            .gul-app-shell {
+                max-width: 1240px;
+                padding-left: 32px;
+                padding-right: 32px;
             }
         }
-        .tma-cart-button-desk:hover {
-            transform: translateY(-1px);
+        @media (min-width: 1400px) {
+            .gul-app-shell { max-width: 1360px; }
         }
 
-        /* Faol Stol Banneri */
-        .tma-table-strip {
-            background: linear-gradient(135deg, rgba(5, 150, 105, 0.95) 0%, rgba(13, 148, 136, 0.95) 100%);
-            color: white;
-            padding: 10px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .tma-table-strip-inner {
-            width: 100%;
-            max-width: 1720px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .tma-table-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .tma-btn-service {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .tma-btn-service:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .tma-btn-service.bill {
-            background: #f59e0b;
-            color: #0f172a;
-            border-color: #f59e0b;
-        }
-
-        /* Asosiy Kontent Konteyneri - Har qanday ekranda moslashuvchan */
-        .tma-content {
-            width: 100%;
-            max-width: 1720px;
-            margin: 0 auto;
-            padding: 14px 16px;
-        }
-        @media (min-width: 768px) {
-            .tma-content {
-                padding: 24px 28px;
-            }
-        }
-        @media (min-width: 1280px) {
-            .tma-content {
-                padding: 28px 36px;
-            }
-        }
-
-        /* Pastki Mobil Navigatsiya Bari - Faqat Mobil Telefonda */
-        .tma-bottom-bar {
+        /* ─── MOBILE TABBAR ─── */
+        .gul-tabbar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 64px;
-            background: rgba(30, 41, 59, 0.96);
-            border-top: 1px solid var(--border-color);
+            height: var(--tabbar-height);
+            background: #FFFFFF;
+            border-top: 1px solid var(--border-cream);
             display: flex;
             align-items: center;
             justify-content: space-around;
-            z-index: 200;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            z-index: 800;
+            box-shadow: 0 -4px 20px rgba(44, 42, 38, 0.06);
         }
-        @media (min-width: 768px) {
-            .tma-bottom-bar {
-                display: none !important;
-            }
-        }
-        .tma-nav-item {
+        .gul-tab-item {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 3px;
             text-decoration: none;
-            color: var(--hint-color);
-            font-size: 11px;
-            font-weight: 600;
-            position: relative;
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            transition: all 0.2s ease;
-        }
-        .tma-nav-item.active {
-            color: var(--primary);
-        }
-        .tma-nav-icon {
-            font-size: 20px;
-        }
-        .tma-badge {
-            position: absolute;
-            top: 2px;
-            right: 8px;
-            background: #ef4444;
-            color: #ffffff;
+            color: var(--text-light);
             font-size: 10px;
             font-weight: 700;
-            height: 16px;
-            min-width: 16px;
-            line-height: 16px;
-            text-align: center;
-            border-radius: 999px;
+            padding: 8px 12px;
+            border-radius: var(--radius-lg);
+            transition: all 0.15s;
+            position: relative;
+            letter-spacing: 0.02em;
+        }
+        .gul-tab-item.active { color: var(--primary-green); }
+        .gul-tab-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+        .gul-tab-badge {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            background: var(--accent-terracotta);
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 800;
+            min-width: 17px;
+            height: 17px;
+            border-radius: var(--radius-pill);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 0 4px;
+            border: 2px solid #FFFFFF;
+        }
+
+        /* ─── SHARED COMPONENTS ─── */
+        /* gul-header — Mobil sahifa ichki headeri */
+        .gul-header {
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--border-cream);
+            position: sticky;
+            top: 0;
+            z-index: 700;
+        }
+        .gul-brand { display: flex; align-items: center; gap: 10px; }
+        .gul-logo-crest {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--primary-green);
+            color: #FAF7F0;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gul-brand-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1.1;
+        }
+        .gul-brand-sub {
+            font-size: 10px;
+            color: var(--accent-brown);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .gul-header-actions { display: flex; align-items: center; gap: 8px; }
+        .gul-status-open {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #EAF4EC;
+            color: var(--primary-green);
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .header-back-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg-cream);
+            border: 1px solid var(--border-cream);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            text-decoration: none;
+        }
+        .gul-lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: var(--radius-pill);
+            background: var(--bg-cream);
+            border: 1px solid var(--border-cream);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* ─── TOAST ─── */
+        #gulToast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--primary-green);
+            color: #FFFFFF;
+            padding: 12px 24px;
+            border-radius: var(--radius-pill);
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(47, 72, 54, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #gulToast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (min-width: 768px) {
+            #gulToast { bottom: 30px; }
         }
     </style>
+
+    <!-- Global UI Component System CSS -->
+    <link rel="stylesheet" href="/static/css/ui_components.css">
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-    <!-- Asosiy Header (Faqat Restoran) -->
-    <header class="tma-header">
-        <div class="tma-header-inner">
-            <a href="/restaurant/" class="tma-brand">
-                <span style="font-size: 22px;">🍽</span>
-                <span>{{ shop.name|default:"Registon Restorani" }}</span>
+    <!-- ─── DESKTOP NAV (768px+) ─── -->
+    {% block desktop_nav %}
+    <header class="gul-desktop-nav">
+        <div class="desktop-nav-inner">
+            <a href="/" class="desktop-brand">
+                <span class="desktop-logo-crest">G</span>
+                <div>
+                    <span class="desktop-brand-title serif">Guliston</span>
+                    <span class="desktop-brand-sub">Oila Dasturxoni</span>
+                </div>
             </a>
 
-            <!-- Desktop Navigatsiya (Faqat Restoran) -->
-            <nav class="tma-desktop-nav">
-                <a href="/restaurant/" class="tma-desk-link {% if request.resolver_match.url_name == 'restaurant_home' or request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
-                    <span>🍽</span> 3D Menyu
-                </a>
-                <a href="/restaurant/catalog/" class="tma-desk-link {% if 'catalog' in request.path %}active{% endif %}">
-                    <span>🍲</span> Bo'limlar
-                </a>
-                <a href="/restaurant/table/" class="tma-desk-link {% if 'table' in request.path %}active{% endif %}">
-                    <span>📍</span> Stolim & Bron
-                </a>
-                <a href="/restaurant/orders/" class="tma-desk-link {% if 'orders' in request.path %}active{% endif %}">
-                    <span>📦</span> Buyurtmalarim
-                </a>
+            <nav class="desktop-nav-links">
+                <a href="/" class="d-nav-item {% if request.path == '/' %}active{% endif %}">Bosh sahifa</a>
+                <a href="/menu/" class="d-nav-item {% if '/menu' in request.path %}active{% endif %}">Dasturxon Menyusi</a>
+                <a href="/reservation/find/" class="d-nav-item {% if '/reservation' in request.path %}active{% endif %}">Bron Tekshirish</a>
             </nav>
 
-            <!-- O'ng taraf: Desk Savat & Boshqaruv Paneli -->
-            <div class="tma-header-actions">
-                <a href="/restaurant/cart/" class="tma-cart-button-desk">
-                    <span>🛒</span>
-                    <span>Savatcha (<span id="tma-cart-count-desk">{{ cart_count|default:0 }}</span>)</span>
-                </a>
-                <a href="/admin/" class="tma-admin-btn-desk" title="Restoran Boshqaruv Paneli">
-                    <span>⚙️</span>
-                    <span>Boshqaruv Paneli</span>
+            <div class="desktop-nav-right">
+                <span class="d-status-badge">
+                    <span class="pulse-dot"></span> Ochiq
+                </span>
+                <div class="lang-pill-d">
+                    <a href="?lang=uz" class="lang-btn-d active">UZ</a>
+                    <a href="?lang=ru" class="lang-btn-d">RU</a>
+                </div>
+                {% if table %}
+                <a href="/menu/" class="d-table-badge">🪑 Stol {{ table.number }}</a>
+                {% endif %}
+                <a href="/admin/" class="btn-desktop-admin">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    Admin Panel
                 </a>
             </div>
         </div>
     </header>
+    {% endblock %}
 
-    {% if table %}
-    <!-- Active Restaurant Table Bar -->
-    <div class="tma-table-strip">
-        <div class="tma-table-strip-inner">
-            <a href="/restaurant/table/" style="display:flex;align-items:center;gap:8px;color:white;text-decoration:none;">
-                <span style="font-size:18px;">📍</span>
-                <span>Stol №{{ table.number }} — {{ table.hall.name|default:"Asosiy zal" }}</span>
-                <span style="background:rgba(255,255,255,0.25);font-size:11px;padding:2px 8px;border-radius:999px;">Aktiv &rarr;</span>
-            </a>
-            <div class="tma-table-actions">
-                <span style="font-size:12px;color:rgba(255,255,255,0.85);margin-right:4px;">Xodim chaqirish:</span>
-                <button type="button" class="tma-btn-service" onclick="callTmaTableService('tea')">🫖 Choy</button>
-                <button type="button" class="tma-btn-service" onclick="callTmaTableService('bread')">🍞 Non</button>
-                <button type="button" class="tma-btn-service" onclick="callTmaTableService('waiter')">🔔 Ofitsiant</button>
-                <button type="button" class="tma-btn-service bill" onclick="callTmaTableService('bill')">🧾 Hisob</button>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Main Content -->
-    <main class="tma-content">
+    <!-- ─── ASOSIY KONTENT ─── -->
+    <div class="gul-app-shell">
         {% block content %}{% endblock %}
-    </main>
+    </div>
 
-    <!-- Bottom Nav (Faqat Mobil Telefonda Ko'rinadi) -->
-    <nav class="tma-bottom-bar">
-        <a href="/restaurant/" class="tma-nav-item {% if request.resolver_match.url_name == 'restaurant_home' or request.resolver_match.url_name == 'tma_home' %}active{% endif %}">
-            <span class="tma-nav-icon">🍽</span>
-            <span>3D Menyu</span>
+    <!-- ─── MOBILE TABBAR ─── -->
+    {% block tabbar %}
+    <nav class="gul-tabbar">
+        <a href="/" class="gul-tab-item {% if request.path == '/' %}active{% endif %}">
+            <span class="gul-tab-icon">🏠</span>
+            <span>Bosh sahifa</span>
         </a>
-        <a href="/restaurant/catalog/" class="tma-nav-item {% if 'catalog' in request.path %}active{% endif %}">
-            <span class="tma-nav-icon">🍲</span>
-            <span>Bo'limlar</span>
+        <a href="/menu/" class="gul-tab-item {% if '/menu' in request.path %}active{% endif %}">
+            <span class="gul-tab-icon">🍽️</span>
+            <span>Menyu</span>
         </a>
-        <a href="/restaurant/cart/" class="tma-nav-item {% if 'cart' in request.path %}active{% endif %}">
-            <span class="tma-nav-icon">🧾</span>
+        <a href="/cart/" class="gul-tab-item {% if '/cart' in request.path %}active{% endif %}">
+            <span class="gul-tab-icon">🛒</span>
             <span>Savat</span>
-            <span id="tma-cart-count" class="tma-badge" style="{% if not cart_count %}display: none;{% endif %}">
-                {{ cart_count|default:0 }}
-            </span>
+            <span id="gul-cart-badge" class="gul-tab-badge" style="{% if not cart_count %}display:none;{% endif %}">{{ cart_count|default:0 }}</span>
         </a>
-        <a href="/restaurant/table/" class="tma-nav-item {% if 'table' in request.path %}active{% endif %}">
-            <span class="tma-nav-icon">📍</span>
-            <span>Stolim</span>
-        </a>
-        <a href="/admin/" class="tma-nav-item {% if 'admin' in request.path or 'seller' in request.path %}active{% endif %}" style="color: #f59e0b;">
-            <span class="tma-nav-icon">⚙️</span>
-            <span>Admin</span>
+        <a href="/orders/" class="gul-tab-item {% if '/orders' in request.path %}active{% endif %}">
+            <span class="gul-tab-icon">📋</span>
+            <span>Buyurtmalar</span>
         </a>
     </nav>
+    {% endblock %}
 
-    <!-- Telegram Init Scripts -->
+    <!-- ─── TOAST ─── -->
+    <div id="gulToast"></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tg = window.Telegram?.WebApp;
-            if (tg) {
-                tg.ready();
-                tg.expand();
-
-                // Native BackButton
-                if (window.location.pathname !== '/tma/' && tg.BackButton) {
-                    tg.BackButton.show();
-                    tg.BackButton.onClick(() => {
-                        window.history.back();
-                    });
-                } else if (tg.BackButton) {
-                    tg.BackButton.hide();
-                }
-                
-                // Telegram user malumotlarini olish
-                const user = tg.initDataUnsafe?.user;
-                if (user && user.first_name) {
-                    const badge = document.getElementById('tg-user-greeting');
-                    if (badge) {
-                        badge.innerText = `👋 ${user.first_name}`;
-                    }
-                }
-            }
-        });
-
-        // TMA Stol xizmat chaqirish
-        function callTmaTableService(serviceType) {
-            const tg = window.Telegram?.WebApp;
-            if (tg?.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
-            fetch('/api/v1/flutter/table/service-call/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: '{{ table_token }}',
-                    service_type: serviceType
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (tg?.showAlert) {
-                        tg.showAlert(data.message || 'Xabar ofitsiantga yetkazildi!');
-                    } else {
-                        alert(data.message || 'Xabar ofitsiantga yetkazildi!');
-                    }
-                } else {
-                    alert(data.error || 'Xatolik yuz berdi');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Aloqa xatosi yuz berdi.');
-            });
-        }
-
-        // Toast bildirishnoma ko'rsatish
-        function showTmaToast(msg) {
-            let toast = document.getElementById('tma-global-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'tma-global-toast';
-                toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);color:#f8fafc;padding:12px 24px;border-radius:999px;font-size:13px;font-weight:800;border:1px solid #f59e0b;box-shadow:0 8px 24px rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity 0.3s,transform 0.3s;';
-                document.body.appendChild(toast);
-            }
-            toast.innerHTML = `<span>🛒</span> <span>${msg}</span>`;
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateX(-50%) translateY(0)';
-            clearTimeout(window._tmaToastTimeout);
-            window._tmaToastTimeout = setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(-50%) translateY(10px)';
-            }, 2400);
-        }
-
-        // Haptic feedback & savat AJAX yordamchisi (Miqdor (quantity) bilan)
-        function tmaAddToCart(productId, quantity = 1, dishName = '') {
-            const tg = window.Telegram?.WebApp;
-            if (tg?.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
-            }
-
-            fetch('/tma/api/cart/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    action: 'add', 
-                    product_id: productId,
-                    quantity: quantity || 1
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const badge = document.getElementById('tma-cart-count');
-                    if (badge) {
-                        badge.innerText = data.cart_count;
-                        badge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
-                    }
-                    const deskBadge = document.getElementById('tma-cart-count-desk');
-                    if (deskBadge) {
-                        deskBadge.innerText = data.cart_count;
-                    }
-                    const titleText = dishName ? `"${dishName}"` : "Taom";
-                    showTmaToast(`${quantity > 1 ? quantity + 'x ' : ''}${titleText} savatga qo'shildi!`);
-                }
-            })
-            .catch(err => console.error(err));
+        function showGulToast(message, icon = '✓') {
+            const t = document.getElementById('gulToast');
+            t.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2800);
         }
     </script>
-    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

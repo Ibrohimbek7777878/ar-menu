@@ -1,0 +1,154 @@
+{% extends "customer/base_customer.html" %}
+{% load uznum i18n_tags %}
+{% block title %}{{ t.order_my }} — {{ t.site_name }}{% endblock %}
+{% block content %}
+
+<section class="mx-auto max-w-7xl 2xl:max-w-[1700px] 3xl:max-w-[2000px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <p class="eyebrow">Mening xaridlarim</p>
+    <h1 class="mt-2 text-3xl font-semibold sm:text-4xl">{{ t.order_my }}</h1>
+
+    <!-- Phone Lookup -->
+    <div class="card-surface p-6 mt-8 mb-8">
+        <form method="get" class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-1 relative">
+                <svg class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                <input type="tel" name="phone" value="{{ lookup_phone }}" placeholder="{{ t.phone }}..." class="w-full rounded-full border border-border bg-card pl-12 pr-5 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+            </div>
+            <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">{{ t.btn_search }}</button>
+        </form>
+    </div>
+
+    {% if orders %}
+    <div class="space-y-4">
+        {% for order in orders %}
+        <div class="card-surface overflow-hidden">
+            <div @click="$refs.detail{{ order.id }}.classList.toggle('hidden')" class="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 cursor-pointer hover:bg-sand/50 transition">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <div class="hidden sm:flex w-12 h-12 rounded-xl bg-accent items-center justify-center shrink-0">
+                        <span class="material-icons-outlined text-primary text-xl">receipt_long</span>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="font-semibold text-sm">#{{ order.order_number }}</p>
+                            {% if order.status == 'pending' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>{{ t.order_pending }}</span>
+                            {% elif order.status == 'confirmed' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>{{ t.order_confirmed }}</span>
+                            {% elif order.status == 'preparing' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>{{ t.order_preparing }}</span>
+                            {% elif order.status == 'ready' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-cyan-50 text-cyan-700 text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>{{ t.order_ready }}</span>
+                            {% elif order.status == 'out_for_delivery' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 text-purple-700 text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>{{ t.order_delivering }}</span>
+                            {% elif order.status == 'delivered' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-accent text-primary text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>{{ t.order_delivered }}</span>
+                            {% elif order.status == 'cancelled' %}
+                            <span class="inline-flex items-center gap-1 rounded-full bg-red-50 text-red-700 text-[11px] font-semibold px-2.5 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ t.order_cancelled }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-muted mt-1">{{ order.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
+                    <span class="font-display font-semibold text-sm sm:text-base">{{ order.final_amount|uznum }} {{ t.catalog_som }}</span>
+                    <div class="flex items-center gap-2">
+                        {% if order.can_pay %}
+                        <a href="{% url 'customer_order_pay' order.pk %}" class="text-xs font-medium text-primary-foreground bg-primary rounded-full px-3 py-1 hover:opacity-90">{{ t.pay_now }}</a>
+                        {% endif %}
+                        <a href="{% url 'customer_order_tracking' order.pk %}" class="text-xs font-medium text-primary hover:underline">{{ t.order_track }}</a>
+                        <svg class="size-4 text-muted transition-transform shrink-0" :class="$refs.detail{{ order.id }}.classList.contains('hidden') ? '' : 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div x-ref="detail{{ order.id }}" class="hidden border-t border-border">
+                <div class="p-5 space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <p class="text-xs text-muted uppercase tracking-wider mb-1">{{ t.name }}</p>
+                            <p class="font-medium">{{ order.customer_name|default:"—" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted uppercase tracking-wider mb-1">{{ t.phone }}</p>
+                            <p class="font-medium">{{ order.customer_phone_1 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted uppercase tracking-wider mb-1">{{ t.address }}</p>
+                            <p class="font-medium">{{ order.delivery_address|default:"—" }}</p>
+                        </div>
+                        {% if order.notes %}
+                        <div class="sm:col-span-3">
+                            <p class="text-xs text-muted uppercase tracking-wider mb-1">{{ t.description }}</p>
+                            <p class="font-medium">{{ order.notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs text-muted uppercase tracking-wider mb-3">{{ t.cart_products }}</h4>
+                        <div class="space-y-2">
+                            {% for item in order.items.all %}
+                            <div class="flex items-center gap-3 p-3 bg-sand rounded-xl">
+                                <div class="w-12 h-12 shrink-0 bg-card rounded-lg overflow-hidden flex items-center justify-center p-1">
+                                    {% if item.product and item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
+                                    {% else %}
+                                    <img src="/static/images/dish-placeholder.svg" alt="{{ item.product_name }}" class="w-full h-full object-contain opacity-80">
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium line-clamp-1">{{ item.product_name }}</p>
+                                    <p class="text-xs text-muted">{{ item.quantity }} × {{ item.price|uznum }} {{ t.catalog_som }}</p>
+                                </div>
+                                <p class="text-sm font-semibold shrink-0">{{ item.total|uznum }} {{ t.catalog_som }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-4 border-t border-border">
+                        <span class="text-sm text-muted">
+                            {{ t.cart_products }}: {{ order.total_amount|uznum }} {{ t.catalog_som }} · {{ t.map_delivery }}: {% if order.delivery_fee %}{{ order.delivery_fee|uznum }} {{ t.catalog_som }}{% else %}{{ t.store_free_delivery }}{% endif %}
+                        </span>
+                        <span class="font-display text-lg font-semibold text-primary">{{ order.final_amount|uznum }} {{ t.catalog_som }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% elif lookup_phone %}
+    <div class="card-surface max-w-xl mx-auto my-8 p-8 sm:p-12 text-center rounded-3xl border border-border/80 shadow-sm relative overflow-hidden">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-3xl">
+            🔍
+        </div>
+        <h3 class="font-display text-xl sm:text-2xl font-bold mb-2">{{ t.order_not_found|default:"Buyurtmalar topilmadi" }}</h3>
+        <p class="text-sm text-muted mb-6 leading-relaxed">
+            <span class="font-semibold text-foreground">{{ lookup_phone }}</span> raqami bo'yicha hech qanday buyurtma topilmadi. Raqamni to'g'ri kiritganingizni tekshiring yoki menyudan buyurtma bering.
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            <a href="{% url 'customer_orders' %}" class="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-sand transition">
+                Qayta qidirish
+            </a>
+            <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
+                Taomlar menyusi →
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card-surface max-w-xl mx-auto my-8 p-8 sm:p-12 text-center rounded-3xl border border-border/80 shadow-sm relative overflow-hidden">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-3xl">
+            📦
+        </div>
+        <h3 class="font-display text-xl sm:text-2xl font-bold mb-2">Buyurtmalaringizni kuzating</h3>
+        <p class="text-sm text-muted mb-6 leading-relaxed">
+            Telefon raqamingizni yuqoridagi maydonga kiriting va oldingi barcha xaridlaringiz hamda buyurtma holatini real vaqtda ko'ring!
+        </p>
+        <a href="{% url 'customer_catalog' %}" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
+            <span>Taomlar menyusiga o'tish</span>
+            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

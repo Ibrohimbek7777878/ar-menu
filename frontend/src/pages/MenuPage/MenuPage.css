@@ -1,0 +1,121 @@
+.menu-app-container {
+  min-height: 100vh;
+  background-color: var(--bg-primary, #F8F5EE);
+  color: var(--text-primary, #212529);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  padding-bottom: 90px;
+}
+
+.menu-main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+}
+
+.menu-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.btn-toggle-3d-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6C757D);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.btn-toggle-3d-filter:hover {
+  border-color: var(--brand-primary, #213827);
+  color: var(--brand-primary, #213827);
+}
+
+.btn-toggle-3d-filter.active {
+  background: var(--brand-primary, #213827);
+  border-color: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(33, 56, 39, 0.2);
+}
+
+.menu-search-wrapper {
+  margin-bottom: 16px;
+}
+
+.menu-categories-wrapper {
+  margin-bottom: 20px;
+}
+
+.menu-dishes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .menu-dishes-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+.menu-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 56px 20px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px dashed var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  margin-top: 10px;
+}
+
+.empty-icon-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #F8F5EE;
+  color: var(--text-secondary, #6C757D);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.empty-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  color: var(--text-primary, #212529);
+  margin: 0 0 6px;
+}
+
+.empty-text {
+  font-size: 13px;
+  color: var(--text-secondary, #6C757D);
+  margin: 0 0 18px;
+}
+
+.btn-clear-filters {
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-clear-filters:hover {
+  background: #182A1D;
+}

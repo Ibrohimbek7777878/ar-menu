@@ -1,0 +1,492 @@
+/* ═══════════════════════════════════════════════════════════════
+   GULISTON RESTORAN — KDS (KITCHEN DISPLAY SYSTEM) STYLES
+   Professional Kitchen Display System — Dark Emerald Theme
+   ═══════════════════════════════════════════════════════════════ */
+
+.kds-root {
+  min-height: 100vh;
+  background-color: #0E1712;
+  color: #FAF7F0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP STATUS BAR */
+.kds-header {
+  background: #14221A;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.kds-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.kds-brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #1F3327;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #A3B899;
+}
+
+.kds-brand-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FAF7F0;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.kds-brand-subtitle {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8E9F8E;
+  margin: 0;
+}
+
+/* CONTROLS */
+.kds-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.kds-sound-btn, .kds-refresh-btn {
+  background: #1B2B21;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FAF7F0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.15s ease;
+}
+
+.kds-sound-btn:hover, .kds-refresh-btn:hover {
+  background: #25392D;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.kds-sound-btn.active {
+  background: rgba(33, 56, 39, 0.5);
+  border-color: #2F4836;
+  color: #A3D9A5;
+}
+
+/* FILTER TABS */
+.kds-nav-tabs {
+  background: #111D16;
+  padding: 0.65rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+}
+
+.kds-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #8E9F8E;
+  padding: 0.45rem 0.95rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.kds-tab-btn:hover {
+  color: #FAF7F0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.kds-tab-btn.active {
+  background: #213827;
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.kds-tab-count {
+  font-size: 0.72rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.kds-tab-btn.active .kds-tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.kds-search-box {
+  margin-left: auto;
+}
+
+.kds-search-input {
+  background: #1B2B21;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #FAF7F0;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  outline: none;
+  width: 160px;
+  transition: border-color 0.15s;
+}
+
+.kds-search-input:focus {
+  border-color: #2F4836;
+}
+
+/* MAIN CONTENT GRID */
+.kds-main {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.kds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+/* TICKET CARD */
+.kds-ticket {
+  background: #16241D;
+  border: 1.5px solid #23372B;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease;
+}
+
+.kds-ticket.status-pending {
+  border-color: #B45309;
+}
+
+.kds-ticket.status-preparing {
+  border-color: #2563EB;
+}
+
+.kds-ticket.status-ready {
+  border-color: #15803D;
+}
+
+.kds-ticket.border-late {
+  border-color: #DC2626 !important;
+}
+
+/* TICKET HEADER */
+.kds-ticket-header {
+  padding: 0.95rem 1.15rem;
+  background: #1B2D24;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.kds-order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.kds-order-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #FAF7F0;
+}
+
+.kds-table-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #23372B;
+  color: #C8D8CC;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  margin-top: 0.2rem;
+  width: fit-content;
+}
+
+.kds-customer-name {
+  font-size: 0.78rem;
+  color: #8E9F8E;
+  margin-top: 2px;
+}
+
+.kds-ticket-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.kds-elapsed-timer {
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.kds-elapsed-timer.timer-fresh {
+  background: rgba(21, 128, 61, 0.2);
+  color: #4ADE80;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.kds-elapsed-timer.timer-warning {
+  background: rgba(180, 83, 9, 0.2);
+  color: #FBBF24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.kds-elapsed-timer.timer-late {
+  background: rgba(220, 38, 38, 0.25);
+  color: #F87171;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.kds-late-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #EF4444;
+}
+
+.kds-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.badge-pending, .badge-confirmed {
+  background: rgba(180, 83, 9, 0.25);
+  color: #FBBF24;
+}
+
+.badge-preparing {
+  background: rgba(37, 99, 235, 0.25);
+  color: #60A5FA;
+}
+
+.badge-ready {
+  background: rgba(21, 128, 61, 0.25);
+  color: #4ADE80;
+}
+
+/* TICKET BODY */
+.kds-ticket-body {
+  padding: 1rem 1.15rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kds-ticket-notes {
+  background: rgba(180, 83, 9, 0.15);
+  border-left: 3px solid #B45309;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: #FDE68A;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  line-height: 1.35;
+}
+
+.kds-items-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.kds-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  background: #1B2B21;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.kds-item-row:hover {
+  background: #23372B;
+}
+
+.kds-item-row.done {
+  opacity: 0.45;
+  text-decoration: line-through;
+  background: #142018;
+}
+
+.kds-item-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+}
+
+.kds-item-qty {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FAF7F0;
+  min-width: 24px;
+}
+
+.kds-item-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #E2E8F0;
+}
+
+.kds-check-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4ADE80;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.kds-item-row.done .kds-check-box {
+  background: #15803D;
+  border-color: #15803D;
+  color: #FFFFFF;
+}
+
+/* TICKET FOOTER ACTIONS (Min 48px touch-target) */
+.kds-ticket-footer {
+  padding: 0.85rem 1.15rem;
+  background: #14221A;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kds-action-btn {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.btn-start {
+  background: #B45309;
+  color: #FFFFFF;
+}
+.btn-start:hover {
+  background: #92400E;
+}
+
+.btn-ready {
+  background: #15803D;
+  color: #FFFFFF;
+}
+.btn-ready:hover {
+  background: #166534;
+}
+
+.btn-deliver {
+  background: #1E3A8A;
+  color: #FFFFFF;
+}
+.btn-deliver:hover {
+  background: #1E40AF;
+}
+
+/* EMPTY STATE */
+.kds-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: #16241D;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  max-width: 480px;
+  margin: 40px auto;
+}
+
+.kds-empty-icon-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(21, 128, 61, 0.2);
+  color: #4ADE80;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.kds-empty-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FAF7F0;
+  margin: 0 0 6px 0;
+}
+
+.kds-empty-desc {
+  font-size: 0.88rem;
+  color: #8E9F8E;
+  margin: 0;
+}

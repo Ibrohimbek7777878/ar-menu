@@ -1,0 +1,104 @@
+{% extends "seller/base_seller.html" %}
+{% load uznum %}
+{% block title %}Do'kon builderi — {{ shop.name }}{% endblock %}
+{% block page_title %}Store Builder{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+        <p class="eyebrow mb-1">{{ shop.name }}</p>
+        <h1 class="font-display text-2xl font-semibold">{{ t.store_builder_title }}</h1>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'customer_shop_detail' shop.slug %}" target="_blank" class="btn btn-outline">{{ t.view_site }}</a>
+        <a href="{% url 'admin_shop_edit' shop.id %}" class="btn btn-outline">{{ t.shop_settings }}</a>
+    </div>
+</div>
+
+<!-- Template selector → Figma-uslubidagi galereya -->
+<div class="card p-5 mb-6 flex items-center justify-between gap-4">
+    <div>
+        <p class="eyebrow mb-1">{{ t.design_template }}</p>
+        <p class="text-sm text-gray-500">Joriy shablon: <b>{{ page.template|default:"minimal" }}</b> — 60+ tayyor dizayn ichidan tanlang yoki o'zingiz moslang.</p>
+    </div>
+    <a href="{% url 'seller_template_gallery' %}" class="btn btn-primary shrink-0">🎨 Galereyani ochish</a>
+</div>
+
+<!-- Current sections -->
+<div class="card p-5 mb-6">
+    <p class="eyebrow mb-3">{{ t.sections_order }}</p>
+    {% if sections %}
+    <div class="space-y-3">
+        {% for s in sections %}
+        <div class="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-neutral-900 p-3">
+            <span class="text-xs font-semibold uppercase text-primary w-28 shrink-0">{{ s.type }}</span>
+            <span class="flex-1 truncate text-sm">{{ s.title|default:"" }}</span>
+            <div class="flex items-center gap-1">
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="up"><input type="hidden" name="index" value="{{ forloop.counter0 }}"><button class="p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-900" title="Yuqoriga">▲</button></form>
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="down"><input type="hidden" name="index" value="{{ forloop.counter0 }}"><button class="p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-900" title="Pastga">▼</button></form>
+                <form method="post" onsubmit="return confirm('O\'chirish?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="index" value="{{ forloop.counter0 }}"><button class="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 text-red-600" title="O'chirish">✕</button></form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-500">{{ t.no_sections }}</p>
+    {% endif %}
+</div>
+
+<!-- Add section -->
+<div class="card p-5">
+    <p class="eyebrow mb-3">{{ t.add_section_title }}</p>
+    <form method="post" class="grid gap-4 sm:grid-cols-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div class="sm:col-span-2">
+            <label class="field">{{ t.field_type }}</label>
+            <select name="type" class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full">
+                {% for key, label in section_types %}
+                <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="field">{{ t.field_title }}</label>
+            <input type="text" name="title" class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full">
+        </div>
+        <div>
+            <label class="field">{{ t.field_subtitle }}</label>
+            <input type="text" name="subtitle" class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full">
+        </div>
+        <div class="sm:col-span-2">
+            <label class="field">{{ t.field_text }}</label>
+            <textarea name="text" rows="2" class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full"></textarea>
+        </div>
+        <div class="sm:col-span-2">
+            <label class="field">{{ t.field_image_url }}</label>
+            <input type="text" name="image" placeholder="https://..." class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full">
+        </div>
+        <div>
+            <label class="field">{{ t.field_product_filter }}</label>
+            <input type="text" name="product_filter" class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full">
+        </div>
+        <div>
+            <label class="field">{{ t.field_limit }}</label>
+            <input type="number" name="limit" value="12" class="rounded-xl border border-gray-200 dark:border-neutral-900 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm w-full">
+        </div>
+        <div class="sm:col-span-2">
+            <button type="submit" class="btn btn-primary">{{ t.add_section_btn }}</button>
+        </div>
+    </form>
+</div>
+
+<!-- Publish -->
+<div class="card p-5 mt-6">
+    <form method="post" class="flex items-center gap-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="publish">
+        <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="is_published" {% if page.is_published %}checked{% endif %}> Sahifa faol (publish)
+        </label>
+        <button type="submit" class="btn btn-outline">{{ t.save_status }}</button>
+    </form>
+</div>
+{% endblock %}

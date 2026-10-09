@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}To'lov xatolik — Online Store Guliston{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;padding:48px 16px;text-align:center;">
+  <div style="
+    width:80px;height:80px;border-radius:50%;background:#fef2f2;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
+  ">
+    <span style="font-size:40px;">❌</span>
+  </div>
+
+  <h1 style="font-family:'Fraunces',serif;font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">
+    To'lov amalga oshirilmadi
+  </h1>
+  <p style="color:#6b7280;font-size:15px;margin-bottom:32px;">
+    Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring yoki boshqa to'lov uslubini tanlang.
+  </p>
+
+  <div style="display:flex;gap:12px;justify-content:center;">
+    <a href="/cart/" style="
+      padding:12px 24px;background:#f3f4f6;color:#1a1a1a;
+      border-radius:10px;text-decoration:none;font-weight:600;
+    ">Savatga qaytish</a>
+    <a href="/orders/" style="
+      padding:12px 24px;background:#16a34a;color:white;
+      border-radius:10px;text-decoration:none;font-weight:600;
+    ">Buyurtmalarim</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,92 +1,29 @@
 {% extends "tma/base_tma.html" %}
 
-{% block title %}Buyurtmalarim — 3D Menyu{% endblock %}
+{% block title %}Buyurtmalarim & Hisob — {{ shop.name|default:"Guliston" }}{% endblock %}
 
 {% block extra_head %}
-<style>
-    .orders-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    @media (min-width: 768px) {
-        .orders-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-    }
-    @media (min-width: 1200px) {
-        .orders-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-    }
+<!-- React Component System CSS -->
+<link rel="stylesheet" href="/static/react/assets/index.css?v=7">
+{% endblock %}
 
-    .tma-order-card {
-        background: #1e293b;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 18px;
-        padding: 18px 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: 12px;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-        transition: transform 0.15s, border-color 0.15s;
-    }
-    .tma-order-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(245, 158, 11, 0.4);
-    }
-</style>
+{% block desktop_nav %}
+<!-- React o'zining HeaderNav komponentini render qiladi -->
 {% endblock %}
 
 {% block content %}
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px;">
-        <h2 style="font-size: 22px; font-weight: 800; color: #f8fafc;">📍 Buyurtmalarim & Stol Hisobi</h2>
-        <a href="/restaurant/" style="color: #f59e0b; font-size: 13px; font-weight: 700; text-decoration: none;">&larr; Yangi taom buyurtma qilish</a>
-    </div>
+<!-- React Mount Root -->
+<div id="root"></div>
 
-    <div class="orders-grid">
-        {% for order in orders %}
-            <div class="tma-order-card">
-                <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <span style="font-weight:800;font-size:15px;color:#f8fafc;">Buyurtma #{{ order.order_number }}</span>
-                        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;
-                            {% if order.status == 'delivered' %}background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);
-                            {% elif order.status == 'cancelled' %}background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);
-                            {% else %}background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);{% endif %}">
-                            {{ order.get_status_display }}
-                        </span>
-                    </div>
+<script>
+    // Server tomonidan uzatilgan buyurtmalar ma'lumotlari
+    window.__GULISTON_ORDERS_DATA__ = {{ react_orders_data_json|safe }};
+</script>
 
-                    <div style="font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                        {% if order.table %}
-                            <span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12px;">
-                                📍 Stol №{{ order.table.number }}
-                            </span>
-                        {% endif %}
-                        <span>🍽 {{ order.shop.name }}</span>
-                        <span>•</span>
-                        <span>{{ order.created_at|date:"d.m.Y H:i" }}</span>
-                    </div>
-                </div>
+<!-- React Application Bundle -->
+<script type="module" src="/static/react/assets/index.js?v=7"></script>
+{% endblock %}
 
-                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed rgba(255,255,255,0.1);padding-top:12px;">
-                    <span style="font-weight:800;font-size:16px;color:#f59e0b;">{{ order.final_amount|floatformat:0 }} so'm</span>
-                    <a href="/tma/order/{{ order.id }}/" style="font-size:13px;font-weight:700;color:#f8fafc;background:rgba(255,255,255,0.08);padding:6px 12px;border-radius:8px;text-decoration:none;transition:background 0.15s;">
-                        Hisob varaqasi &rarr;
-                    </a>
-                </div>
-            </div>
-        {% empty %}
-            <div style="grid-column: 1 / -1; text-align: center; padding: 70px 20px; background:#1e293b; border-radius:20px; border:1px dashed rgba(255,255,255,0.1);">
-                <div style="font-size: 52px; margin-bottom: 14px;">🍽</div>
-                <h3 style="font-size: 18px; font-weight: 800; color:#f8fafc; margin-bottom: 8px;">Hozircha buyurtma berilmadi</h3>
-                <p style="font-size: 14px; color: #94a3b8; margin-bottom: 24px;">Restoranimizning mazali taomlaridan tanlab, stolingizga buyurtma bering.</p>
-                <a href="/restaurant/" style="display:inline-block; background:#f59e0b; color:#0f172a; padding:12px 28px; border-radius:12px; font-weight:800; text-decoration:none;">Menyuni ko'rish</a>
-            </div>
-        {% endfor %}
-    </div>
+{% block tabbar %}
+<!-- React o'zining BottomNav komponentini render qiladi -->
 {% endblock %}

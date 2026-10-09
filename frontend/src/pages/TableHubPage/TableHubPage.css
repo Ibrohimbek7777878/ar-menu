@@ -1,0 +1,477 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Guliston — Table Hub & Services Page (React)
+   Clean Warm Ivory & Forest Green Aesthetics
+   ═══════════════════════════════════════════════════════════════════ */
+
+.react-table-hub-page {
+  min-height: 100vh;
+  background-color: var(--bg-primary, #F8F5EE);
+  color: var(--text-primary, #212529);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 95px;
+}
+
+.table-hub-content {
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 16px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ─── Hero Header ─── */
+.table-hub-hero {
+  text-align: center;
+  padding: 16px 16px 12px;
+}
+
+.table-current-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F2F5F3;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+.badge-kicker {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary, #6C757D);
+  text-transform: uppercase;
+}
+
+.badge-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--brand-primary, #213827);
+  line-height: 1;
+}
+
+.table-generic-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #F2F5F3;
+  color: var(--brand-primary, #213827);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+}
+
+.table-hub-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0 0 4px 0;
+}
+
+.table-hub-desc {
+  font-size: 14px;
+  color: var(--text-secondary, #6C757D);
+  margin: 0 0 12px 0;
+}
+
+.btn-leave-table {
+  background: transparent;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  color: var(--text-secondary, #6C757D);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-leave-table:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FEE2E2;
+}
+
+/* ─── Tabs ─── */
+.hub-mode-tabs {
+  display: flex;
+  gap: 6px;
+  background: #EFEBE1;
+  padding: 4px;
+  border-radius: var(--radius-pill, 9999px);
+}
+
+.hub-tab {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: var(--radius-pill, 9999px);
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, #6C757D);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.hub-tab.active {
+  background: var(--bg-surface, #FFFFFF);
+  color: var(--brand-primary, #213827);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ─── Service Cards Grid ─── */
+.service-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.service-card {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.service-card:hover {
+  border-color: var(--brand-primary, #213827);
+  transform: translateY(-1px);
+}
+
+.service-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #F2F5F3;
+  color: var(--brand-primary, #213827);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.service-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0;
+}
+
+.service-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #6C757D);
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Quick Navs */
+.hub-quick-navs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.btn-hub-menu-link, .btn-hub-orders-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.btn-hub-menu-link {
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(33, 56, 39, 0.2);
+}
+
+.btn-hub-orders-link {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  color: var(--brand-primary, #213827);
+}
+
+/* ─── Tables Directory ─── */
+.tables-directory-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.directory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.directory-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0;
+}
+
+.directory-count {
+  font-size: 12px;
+  color: var(--text-secondary, #6C757D);
+}
+
+.halls-filter-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.hall-chip {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  background: var(--bg-surface, #FFFFFF);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6C757D);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hall-chip.active {
+  background: var(--brand-primary, #213827);
+  border-color: var(--brand-primary, #213827);
+  color: #FFFFFF;
+}
+
+.tables-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 500px) {
+  .tables-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.table-item-card {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.table-item-card:hover {
+  border-color: var(--brand-primary, #213827);
+}
+
+.table-item-card.status-occupied {
+  background: #FCFBF7;
+  border-color: #E8E2D2;
+}
+
+.table-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-item-hall {
+  font-size: 11px;
+  color: var(--text-secondary, #6C757D);
+}
+
+.table-status-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 9999px;
+}
+
+.pill-free { background: #DCFCE7; color: #15803D; }
+.pill-occupied { background: #FEF3C7; color: #B45309; }
+.pill-reserved { background: #E0E7FF; color: #4338CA; }
+
+.table-item-number {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary, #212529);
+  margin-top: 4px;
+}
+
+.table-item-capacity {
+  font-size: 11px;
+  color: var(--text-secondary, #6C757D);
+}
+
+.btn-occupy-table {
+  margin-top: 8px;
+  background: #F2F5F3;
+  color: var(--brand-primary, #213827);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ─── Reservation Form ─── */
+.reservation-form-card {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.form-header {
+  margin-bottom: 6px;
+}
+
+.form-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brand-accent, #B45309);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.form-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0 0 4px 0;
+}
+
+.form-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #6C757D);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6C757D);
+}
+
+.form-input, .form-select, .form-textarea {
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  background: #FAF9F5;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--brand-primary, #213827);
+  background: #FFFFFF;
+}
+
+.guests-stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 10px;
+  background: #FAF9F5;
+}
+
+.btn-guest-step {
+  border: none;
+  background: transparent;
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-primary, #213827);
+  cursor: pointer;
+}
+
+.guest-count-val {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #212529);
+}
+
+.btn-submit-reservation {
+  margin-top: 8px;
+  background: var(--brand-primary, #213827);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  padding: 14px 22px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 3px 12px rgba(33, 56, 39, 0.2);
+  transition: all 0.18s ease;
+}
+
+.btn-submit-reservation:hover {
+  background: #182A1D;
+  transform: translateY(-1px);
+}

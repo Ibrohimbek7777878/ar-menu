@@ -117,6 +117,8 @@ urlpatterns = [
     # O'zbekcha va qisqa aliaslar
     path('restoran/', tma_views.tma_home, name='restoran_home'),
     path('ar-menu/', tma_views.tma_home, name='ar_menu_home'),
+    path('table/', tma_views.tma_table_hub, name='table_root'),
+    path('reservation/', tma_views.tma_table_hub, name='reservation_root'),
 
     # Orqaga moslik uchun /menu/ va /tma/ yo'llari
     path('tma/', tma_views.tma_home, name='tma_home'),

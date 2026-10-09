@@ -1,0 +1,513 @@
+{% extends "seller/base_seller.html" %}
+{% load i18n_tags uznum %}
+{% block title %}Mahsulotlar{% endblock %}
+{% block page_title %}Mahsulotlar{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --sp-primary: {{ shop.color_primary|default:'#16a34a' }};
+        --sp-accent: {{ shop.color_accent|default:'#1a1a2e' }};
+    }
+    /* ── Header: Eye-comfort Warm Obsidian Emerald Glass ── */
+    .p-hero {
+        background: linear-gradient(135deg, #132a1c 0%, #0e2015 60%, #09160e 100%);
+        border: 1px solid rgba(74, 222, 128, 0.22);
+        box-shadow: 0 12px 30px -6px rgba(16, 185, 129, 0.2);
+        border-radius: 1.25rem;
+        padding: 1.75rem 2rem 1.5rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .p-hero::before {
+        content: '';
+        position: absolute;
+        top: -60%;
+        right: -15%;
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(74, 222, 128, 0.16) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .p-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -40%;
+        left: -10%;
+        width: 260px;
+        height: 260px;
+        background: radial-gradient(circle, rgba(34, 197, 94, 0.10) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    /* ── Stat pill ── */
+    .s-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .15rem;
+        padding: .65rem 1rem;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: .85rem;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        min-width: 75px;
+        transition: transform .2s ease, background .2s ease;
+    }
+    .s-pill:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .s-num { font-size: 1.15rem; font-weight: 800; line-height: 1; }
+    .s-lbl { font-size: .6rem; opacity: .8; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── Search ── */
+    .s-input {
+        border: 1.5px solid rgba(226, 217, 204, 0.85);
+        border-radius: .875rem;
+        padding: .7rem 1rem .7rem 2.75rem;
+        font-size: .875rem;
+        background: rgba(254, 251, 246, 0.9);
+        color: #241E1A;
+        transition: all .2s;
+        width: 100%;
+        outline: none;
+    }
+    .s-input:focus {
+        border-color: #16a34a;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.16);
+    }
+
+    /* ── Chips ── */
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .45rem .95rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 600;
+        border: 1.5px solid rgba(226, 217, 204, 0.8);
+        background: rgba(254, 251, 246, 0.9);
+        color: #6b6055;
+        cursor: pointer;
+        transition: all .18s cubic-bezier(0.16, 1, 0.3, 1);
+        white-space: nowrap;
+    }
+    .chip:hover {
+        border-color: #16a34a;
+        color: #16a34a;
+        background: rgba(235, 227, 216, 0.85);
+        transform: translateY(-1px);
+    }
+    .chip.on {
+        background: #16a34a;
+        border-color: #16a34a;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
+    }
+
+    /* ── Product card ── */
+    .c {
+        background: rgba(254, 251, 246, 0.92);
+        border: 1px solid rgba(226, 217, 204, 0.75);
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s ease, border-color .2s;
+        position: relative;
+        box-shadow: 0 4px 18px -2px rgba(80, 60, 40, 0.04);
+    }
+    .c:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 34px -4px rgba(70, 45, 20, 0.1);
+        border-color: rgba(199, 91, 57, 0.35);
+    }
+    .c:hover .c-img img { transform: scale(1.05); }
+    .c-img {
+        overflow: hidden;
+        position: relative;
+        background: rgba(244, 239, 231, 0.75);
+    }
+    .c-img img {
+        transition: transform .4s ease;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* ── Badges ── */
+    .b { position: absolute; display: inline-flex; align-items: center; gap: .2rem; font-size: 9px; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; backdrop-filter: blur(6px); line-height: 1.3; }
+    .b-ok  { top: .45rem; left: .45rem; background: rgba(22, 163, 74, 0.88); color: #fff; }
+    .b-no  { top: .45rem; left: .45rem; background: rgba(239, 68, 68, 0.88); color: #fff; }
+    .b-fl  { top: .45rem; right: .45rem; background: linear-gradient(135deg, #f97316, #ef4444); color: #fff; }
+    .b-hit { top: 2rem;   right: .45rem; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; }
+    .b-new { top: 3.5rem; right: .45rem; background: linear-gradient(135deg, #06b6d4, #0ea5e9); color: #fff; }
+    .b-disc{ top: .45rem; left: .45rem; background: #ef4444; color: #fff; }
+    .b-ar  { top: .45rem; left: 3.5rem; background: rgba(99, 102, 241, 0.88); color: #fff; }
+
+    /* ── Price ── */
+    .pr    { font-weight: 700; font-size: .95rem; color: #16a34a; }
+    .pr-fl { color: #ea580c; font-weight: 700; }
+    .pr-old{ color: #a39789; text-decoration: line-through; font-size: .72rem; }
+
+    /* ── Action row ── */
+    .act {
+        display: flex;
+        gap: .4rem;
+        padding-top: .65rem;
+        border-top: 1px solid rgba(226, 217, 204, 0.6);
+        margin-top: .65rem;
+    }
+    .act-e {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .3rem;
+        padding: .45rem;
+        border-radius: .7rem;
+        font-size: .72rem;
+        font-weight: 600;
+        color: #4a4137;
+        background: rgba(244, 239, 231, 0.85);
+        border: 1px solid rgba(220, 210, 196, 0.7);
+        transition: all .15s;
+        text-decoration: none;
+    }
+    .act-e:hover {
+        background: rgba(22, 163, 74, 0.12);
+        color: #16a34a;
+        border-color: rgba(22, 163, 74, 0.35);
+    }
+    .act-ar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: .45rem .65rem;
+        border-radius: .7rem;
+        font-size: .72rem;
+        font-weight: 600;
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        transition: all .15s;
+        text-decoration: none;
+    }
+    .act-ar:hover {
+        background: rgba(99, 102, 241, 0.2);
+        color: #4f46e5;
+    }
+    .act-d {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: .45rem .65rem;
+        border-radius: .7rem;
+        font-size: .72rem;
+        color: #a39789;
+        background: transparent;
+        transition: all .15s;
+        border: none;
+        cursor: pointer;
+    }
+    .act-d:hover {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+    }
+
+    /* ── Empty ── */
+    .empty {
+        background: rgba(254, 251, 246, 0.88);
+        border: 2px dashed rgba(226, 217, 204, 0.85);
+        border-radius: 1.25rem;
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+
+    /* ── Dark Mode: Warm Obsidian Smoke Glass (Zero cold slate blue!) ── */
+    .dark .c {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+    }
+    .dark .c:hover {
+        border-color: rgba(199, 91, 57, 0.4);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 16px rgba(199, 91, 57, 0.15);
+    }
+    .dark .c-img {
+        background: rgba(19, 16, 14, 0.85);
+    }
+    .dark .s-input {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #F3EFE8;
+    }
+    .dark .s-input:focus {
+        border-color: #22c55e;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+    }
+    .dark .chip {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #A39789;
+    }
+    .dark .chip:hover {
+        border-color: rgba(74, 222, 128, 0.4);
+        color: #fff;
+        background: rgba(44, 38, 33, 0.9);
+    }
+    .dark .chip.on {
+        background: #16a34a;
+        border-color: #16a34a;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+    }
+    .dark .pr { color: #4ade80; }
+    .dark .act {
+        border-top-color: rgba(255, 255, 255, 0.08);
+    }
+    .dark .act-e {
+        background: rgba(36, 30, 26, 0.85);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #D3C9BE;
+    }
+    .dark .act-e:hover {
+        background: rgba(22, 163, 74, 0.2);
+        color: #4ade80;
+        border-color: rgba(74, 222, 128, 0.35);
+    }
+    .dark .act-ar {
+        background: rgba(99, 102, 241, 0.18);
+        border-color: rgba(99, 102, 241, 0.3);
+        color: #a5b4fc;
+    }
+    .dark .act-ar:hover {
+        background: rgba(99, 102, 241, 0.3);
+        color: #c7d2fe;
+    }
+    .dark .act-d:hover {
+        background: rgba(239, 68, 68, 0.18);
+        color: #f87171;
+    }
+    .dark .empty {
+        background: rgba(28, 24, 21, 0.85);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #F3EFE8;
+    }
+</style>
+
+<div>
+    <!-- ── Hero ── -->
+    <div class="p-hero mb-5">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-xs opacity-70 font-medium tracking-wide uppercase">{{ shop.name }}</p>
+                <h2 class="text-xl font-bold mt-0.5">Mahsulotlar & 3D Katalog</h2>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="document.getElementById('csv-import-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition backdrop-blur-sm border border-white/15">
+                    <span>📊</span> Excel / CSV
+                </button>
+                <form method="POST" action="{% url 'seller_products_seed_starter_web' %}" class="inline" onsubmit="return confirm('12 ta mashhur milliy taom (rasm va 3D modellari bilan) do\'koningizga yuklansinmi?')">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 font-semibold text-xs transition backdrop-blur-sm border border-amber-400/25">
+                        <span>🍲</span> Milliy taomlar
+                    </button>
+                </form>
+                <a href="{% url 'seller_ar_web' %}" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition backdrop-blur-sm border border-white/15">
+                    <span>🌐</span> 3D Menyu
+                </a>
+                <a href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-200 font-semibold text-xs transition backdrop-blur-sm border border-emerald-400/25">
+                    <span>🍽️</span> Jonli AR ↗
+                </a>
+                <a href="{% url 'seller_product_create_web' %}" class="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition backdrop-blur-sm shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" d="M12 5v14m7-7H5"/></svg>
+                    Yangi mahsulot
+                </a>
+            </div>
+        </div>
+        <div class="relative z-10 flex gap-2.5 mt-4 flex-wrap">
+            <div class="s-pill"><span class="s-num">{{ products|length }}</span><span class="s-lbl">Jami</span></div>
+            <div class="s-pill"><span class="s-num">{{ available_count|default:"0" }}</span><span class="s-lbl">Mavjud</span></div>
+            <div class="s-pill"><span class="s-num">{{ flash_count|default:"0" }}</span><span class="s-lbl">Flash</span></div>
+            <div class="s-pill"><span class="s-num">{{ hit_count|default:"0" }}</span><span class="s-lbl">Hit</span></div>
+            <div class="s-pill"><span class="s-num">{{ ar_count|default:"0" }}</span><span class="s-lbl">3D/AR</span></div>
+        </div>
+    </div>
+
+    <!-- ── Search + Chips ── -->
+    <form method="get" class="flex flex-col sm:flex-row gap-2 mb-5">
+        <div class="relative flex-1 min-w-[200px]">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.34-4.34"/></svg>
+            <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="Mahsulot qidirish..." class="s-input">
+        </div>
+        <div class="flex gap-1.5 overflow-x-auto pb-0.5" style="scrollbar-width:none">
+            <button type="submit" name="category" value="" class="chip {% if not request.GET.category %}on{% endif %}">Barchasi</button>
+            {% for c in categories %}
+            <button type="submit" name="category" value="{{ c.pk }}" class="chip {% if request.GET.category == c.pk|stringformat:'s' %}on{% endif %}">{{ c.name }}</button>
+            {% endfor %}
+        </div>
+    </form>
+
+    <!-- ── Grid ── -->
+    {% if products %}
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        {% for p in products %}
+        <div class="c">
+            <a href="{% url 'seller_product_edit_web' p.pk %}" class="block relative">
+                <div class="c-img aspect-[4/3] flex items-center justify-center">
+                    {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy" onerror="this.onerror=null;this.src='/static/images/dish-placeholder.svg';">
+                    {% else %}<img src="/static/images/dish-placeholder.svg" alt="{{ p.name }}" class="w-full h-full object-contain p-2 opacity-85">{% endif %}
+                </div>
+                {% if not p.is_available %}<span class="b b-no">Tugagan</span>
+                {% elif p.flash_active %}<span class="b b-fl">⚡ Flash</span>{% endif %}
+                {% if p.old_price %}<span class="b b-disc">-{{ p.discount_percent }}%</span>{% endif %}
+                {% if p.is_hit %}<span class="b b-hit">🔥</span>{% endif %}
+                {% if p.is_new %}<span class="b b-new">Yangi</span>{% endif %}
+                {% if p.has_3d %}<span class="b b-ar">3D</span>{% endif %}
+            </a>
+            <div class="p-3 sm:p-3.5">
+                <p class="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug">{{ p.name }}</p>
+                <div class="flex items-baseline gap-1.5 mt-1">
+                    {% if p.flash_active %}
+                    <span class="pr-fl text-sm">{{ p.effective_price|uznum }}</span>
+                    <span class="pr-old">{{ p.price|uznum }}</span>
+                    {% else %}
+                    <span class="pr text-sm">{{ p.price|uznum }}</span>
+                    {% if p.old_price %}<span class="pr-old">{{ p.old_price|uznum }}</span>{% endif %}
+                    {% endif %}
+                    <span class="text-[9px] text-gray-400 font-medium">so'm</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                    {% if p.rating > 0 %}
+                    <span class="flex items-center gap-0.5">
+                        <svg class="w-2.5 h-2.5 text-amber-400 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a2.123 2.123 0 001.595 1.16l3.461.504a.53.53 0 01.294.904l-2.5 2.44a2.123 2.123 0 00-.611 1.878l.59 3.44a.53.53 0 01-.771.56l-3.08-1.62a2.122 2.122 0 00-1.973 0l-3.08 1.62a.53.53 0 01-.77-.56l.59-3.44a2.122 2.122 0 00-.611-1.878l-2.5-2.44a.53.53 0 01.294.904l3.461-.504a2.123 2.123 0 001.595-1.16z"/></svg>
+                        {{ p.rating|floatformat:1 }}
+                    </span>
+                    {% endif %}
+                    {% if p.views > 0 %}
+                    <span class="flex items-center gap-0.5">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        {{ p.views }}
+                    </span>
+                    {% endif %}
+                    {% if p.category %}<span class="truncate">{{ p.category.name }}</span>{% endif %}
+                </div>
+                <div class="act">
+                    <a href="{% url 'seller_product_edit_web' p.pk %}" class="act-e">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Tahrir
+                    </a>
+                    {% if p.has_3d %}
+                    <a href="/ar/{{ p.pk }}/" target="_blank" class="act-ar" title="3D/AR ko'rish">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2 12l5-5 5 5-5 5-5-5z" transform="rotate(90 12 12)"/></svg>
+                        3D
+                    </a>
+                    {% endif %}
+                    <form method="post" action="{% url 'seller_product_delete_web' p.pk %}" onsubmit="return confirm('O\'chirilsinmi?')">
+                        {% csrf_token %}
+                        <button class="act-d" title="O'chirish">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty max-w-2xl mx-auto my-8 p-8 sm:p-12 text-center rounded-3xl border border-gray-200 dark:border-white/10 bg-white/60 dark:bg-card/60 backdrop-blur-md shadow-sm">
+        <div class="size-20 place-items-center mx-auto rounded-3xl mb-5 flex items-center justify-center text-4xl shadow-inner" style="background:color-mix(in srgb, var(--sp-primary) 12%, #fff)">
+            🍲
+        </div>
+        <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Hali birorta ham mahsulot yo'q</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
+            Do'kon yoki restoraningiz katalogini 3 xil oson usulda to'ldirishingiz mumkin. Birini tanlang:
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left mb-6">
+            <!-- 1-bosishda starter dishes -->
+            <form method="POST" action="{% url 'seller_products_seed_starter_web' %}" class="flex flex-col" onsubmit="return confirm('12 ta mashhur milliy taom (rasm va 3D modellari bilan) yuklansinmi?')">
+                {% csrf_token %}
+                <button type="submit" class="flex-1 w-full p-4 rounded-2xl border-2 border-amber-500/30 hover:border-amber-500 bg-amber-500/5 hover:bg-amber-500/10 transition group flex flex-col justify-between text-left">
+                    <div>
+                        <div class="size-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl mb-3 shadow-sm group-hover:scale-110 transition-transform">🍲</div>
+                        <h4 class="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-100 mb-1">Milliy taomlar to'plami</h4>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">Osh, Somsa, Shashlik, Manti va 12 ta taom 3D modellari bilan darhol yuklanadi.</p>
+                    </div>
+                    <span class="mt-3 text-[11px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline">1-klikda yuklash →</span>
+                </button>
+            </form>
+
+            <!-- Excel / CSV -->
+            <button type="button" onclick="document.getElementById('csv-import-modal').classList.remove('hidden')" class="p-4 rounded-2xl border-2 border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 transition group flex flex-col justify-between text-left">
+                <div>
+                    <div class="size-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl mb-3 shadow-sm group-hover:scale-110 transition-transform">📊</div>
+                    <h4 class="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-100 mb-1">Excel / CSV fayl</h4>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">Tayyor jadval orqali yuzlab tovarlarni 1 daqiqada bazaga kiriting.</p>
+                </div>
+                <span class="mt-3 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">Fayl yuklash →</span>
+            </button>
+
+            <!-- Manual Create -->
+            <a href="{% url 'seller_product_create_web' %}" class="p-4 rounded-2xl border-2 border-border hover:border-gray-400 dark:hover:border-white/30 bg-card hover:bg-sand transition group flex flex-col justify-between text-left">
+                <div>
+                    <div class="size-10 rounded-xl bg-gray-800 text-white flex items-center justify-center text-xl mb-3 shadow-sm group-hover:scale-110 transition-transform">➕</div>
+                    <h4 class="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-100 mb-1">Qo'lda kiritish</h4>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">Har bir mahsulotni bittalab o'zingiz kiritishingiz mumkin.</p>
+                </div>
+                <span class="mt-3 text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:underline">Mahsulot qo'shish →</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Excel / CSV Import Modal ── -->
+    <div id="csv-import-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="card-surface max-w-lg w-full p-6 sm:p-7 rounded-3xl border border-border shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="document.getElementById('csv-import-modal').classList.add('hidden')" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 dark:hover:text-white p-1 rounded-full text-lg">✕</button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="size-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl font-bold">📊</div>
+                <div>
+                    <h3 class="font-display font-bold text-lg text-gray-900 dark:text-gray-100">Excel / CSV orqali mahsulot yuklash</h3>
+                    <p class="text-xs text-gray-400">Yuzlab tovarlarni 1 daqiqada ommaviy yuklang</p>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-sand/60 dark:bg-card/40 border border-border text-xs text-gray-600 dark:text-gray-300 mb-5 leading-relaxed">
+                <p class="font-semibold text-gray-800 dark:text-gray-100 mb-1">💡 Ustunlar tartibi:</p>
+                <code class="text-emerald-700 dark:text-emerald-400 font-mono text-[11px]">Nomi, Narxi, Kategoriya, Tavsif, Qoldiq, O'lchov</code>
+                <p class="mt-2 text-gray-500 dark:text-gray-400">Agar jadvalingiz bo'lmasa, namunaviy CSV shablonini yuklab olib, o'z mahsulotlaringizni to'ldiring:</p>
+                <a href="{% url 'seller_products_sample_csv_web' %}" class="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] shadow-xs transition">
+                    <span>📥</span> Namuna shablonni yuklab olish (.csv)
+                </a>
+            </div>
+
+            <form method="POST" action="{% url 'seller_products_import_csv_web' %}" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                <div class="border-2 border-dashed border-gray-300 dark:border-white/20 rounded-2xl p-6 text-center hover:border-emerald-500 transition cursor-pointer" onclick="document.getElementById('csv_file_input').click()">
+                    <span class="text-3xl block mb-2">📁</span>
+                    <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">CSV faylni shu yerga tashlang yoki bosing</p>
+                    <p class="text-[11px] text-gray-400" id="file_chosen_label">Faqat .csv format (UTF-8)</p>
+                    <input type="file" name="csv_file" id="csv_file_input" accept=".csv,text/csv" required class="hidden" onchange="document.getElementById('file_chosen_label').textContent = this.files[0] ? this.files[0].name : 'Faqat .csv format'">
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2">
+                    <button type="button" onclick="document.getElementById('csv-import-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl border border-border text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-sand">
+                        Bekor qilish
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition">
+                        Yuklash va yaratish →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

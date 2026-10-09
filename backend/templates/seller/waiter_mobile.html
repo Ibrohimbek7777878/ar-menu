@@ -1,0 +1,28 @@
+{% extends "tma/base_tma.html" %}
+
+{% block title %}Ofitsiant Paneli & Mobil POS — {{ shop.name|default:"Guliston" }}{% endblock %}
+
+{% block extra_head %}
+<!-- React Component System CSS -->
+<link rel="stylesheet" href="/static/react/assets/index.css?v=10">
+{% endblock %}
+
+{% block desktop_nav %}
+<!-- React o'zining HeaderNav komponentini render qiladi -->
+{% endblock %}
+
+{% block content %}
+<!-- React Mount Root -->
+<div id="root"></div>
+
+<script>
+    window.__GULISTON_WAITER_DATA__ = {{ react_waiter_data_json|safe }};
+</script>
+
+<!-- React Application Bundle -->
+<script type="module" src="/static/react/assets/index.js?v=10"></script>
+{% endblock %}
+
+{% block tabbar %}
+<!-- React o'zining BottomNav komponentini render qiladi -->
+{% endblock %}

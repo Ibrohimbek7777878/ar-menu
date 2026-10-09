@@ -1,0 +1,55 @@
+.react-order-summary {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: var(--radius-card, 16px);
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.summary-card-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+  margin: 0 0 14px;
+}
+
+.summary-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary, #6C757D);
+}
+
+.summary-card-row.row-muted {
+  font-size: 12px;
+}
+
+.summary-card-line {
+  height: 1px;
+  background: var(--border-subtle, #E8E2D2);
+  margin: 4px 0;
+}
+
+.summary-card-row.row-total {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #212529);
+}
+
+.row-val-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--brand-primary, #213827);
+}
+
+.summary-card-cta {
+  margin-top: 18px;
+}

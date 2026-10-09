@@ -977,12 +977,24 @@ def seller_kds(request):
     count_preparing = sum(1 for o in active if o.status == 'preparing')
     count_ready = sum(1 for o in active if o.status == 'ready')
     
+    import json
+    from web.tma_views import _serialize_kds_orders
+    serialized_orders = _serialize_kds_orders(active)
+    react_kds_data = {
+        'shop': {'name': shop.name if shop else 'Guliston Restoran'},
+        'orders': serialized_orders,
+        'count_pending': count_pending,
+        'count_preparing': count_preparing,
+        'count_ready': count_ready,
+    }
+
     ctx = {
         'orders': active,
         'shop': shop,
         'count_pending': count_pending,
         'count_preparing': count_preparing,
         'count_ready': count_ready,
+        'react_kds_data_json': json.dumps(react_kds_data, ensure_ascii=False),
     }
     return render(request, 'seller/kds.html', ctx)
 

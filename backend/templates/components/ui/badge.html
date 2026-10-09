@@ -1,0 +1,15 @@
+{% comment %}
+UI Component: Badge & Tag
+Parametrlar:
+- text: Nishon matni
+- variant: success (default) | warning | danger | info | ar | neutral | dark
+- icon: Emoji yoki ikonka
+- size: sm | md (default)
+- pill: true (default) | false
+- extra_class: Qo'shimcha CSS
+{% endcomment %}
+
+<span class="badge-ui badge-{{ variant|default:'success' }} badge-sz-{{ size|default:'md' }} {% if pill|default:True %}badge-pill{% endif %} {{ extra_class }}">
+    {% if icon %}<span class="badge-icon">{{ icon }}</span>{% endif %}
+    <span class="badge-text">{{ text }}</span>
+</span>
