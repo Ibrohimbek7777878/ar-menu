@@ -6,16 +6,18 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: process.env.VERCEL ? 'dist' : path.resolve(import.meta.dirname, '../backend/static/react'),
+    outDir: process.env.BUILD_TO_DJANGO
+      ? path.resolve(import.meta.dirname, '../backend/static/react')
+      : 'dist',
     emptyOutDir: true,
-    rollupOptions: process.env.VERCEL
-      ? {}
-      : {
+    rollupOptions: process.env.BUILD_TO_DJANGO
+      ? {
           output: {
             entryFileNames: 'assets/[name].js',
             chunkFileNames: 'assets/[name].js',
             assetFileNames: 'assets/[name].[ext]',
           },
-        },
+        }
+      : {},
   },
 })
