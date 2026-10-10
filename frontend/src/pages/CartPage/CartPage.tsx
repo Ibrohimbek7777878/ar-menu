@@ -27,12 +27,36 @@ interface InitialCartData {
   totalAmount?: number;
 }
 
+const DEFAULT_CART_ITEMS: CartItem[] = [
+  {
+    product_id: 101,
+    name: "To'y Oshi (Devzira Palov)",
+    price: 48000,
+    quantity: 2,
+    subtotal: 96000,
+    image: "/media/dish/plov.jpg",
+    unit: "porsiya",
+  },
+  {
+    product_id: 104,
+    name: "Tandir Somsa (Go'shtli)",
+    price: 15000,
+    quantity: 4,
+    subtotal: 60000,
+    image: "/media/dish/somsa.jpg",
+    unit: "dona",
+  },
+];
+
 export const CartPage: React.FC = () => {
   const initialData: InitialCartData = (window as any).__GULISTON_CART_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
-  const initialItems = initialData.items || [];
+  const initialItems =
+    initialData.items && initialData.items.length > 0
+      ? initialData.items
+      : DEFAULT_CART_ITEMS;
 
   const [items, setItems] = useState<CartItem[]>(initialItems);
   const [customerNote, setCustomerNote] = useState('');

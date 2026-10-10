@@ -28,7 +28,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
   if (!isOpen || !product) return null;
 
   const formattedPrice = new Intl.NumberFormat('uz-UZ').format(product.price);
-  const modelUrl = product.ar_model || '/media/ar/glb/plov.glb';
+  const modelUrl = product.ar_model || '/models/plov.glb';
 
   const handleARClick = () => {
     const viewer = document.getElementById('reactModelViewer') as any;

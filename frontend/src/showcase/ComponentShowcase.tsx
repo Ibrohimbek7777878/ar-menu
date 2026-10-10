@@ -13,69 +13,11 @@ import {
   Toast,
 } from '../components/ui';
 import type { Product, Category } from '../types/dish';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/mockDishes';
 import './ComponentShowcase.css';
 
-const DEMO_CATEGORIES: Category[] = [
-  { id: 1, name: 'Milliy Taomlar', icon: '🍲', count: 12 },
-  { id: 2, name: 'Kavob & Gril', icon: '🥩', count: 8 },
-  { id: 3, name: 'Salatlar', icon: '🥗', count: 6 },
-  { id: 4, name: 'Shirinliklar', icon: '🍰', count: 5 },
-  { id: 5, name: 'Ichimliklar', icon: '🍹', count: 14 },
-];
-
-const DEMO_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: "To'y Oshi (Maxsus Palov)",
-    description: "Devzira guruch, barra qo'zichoq go'shti, sariq sabzi, bedana tuxumi va mayiz bilan damlangan an'anaviy to'y oshi.",
-    price: 45000,
-    old_price: 52000,
-    image: "/media/dish/plov.jpg",
-    has_3d: true,
-    ar_model: "/media/ar/glb/plov.glb",
-    weight: "400 gr",
-    prep_time: "15 daq",
-    is_halal: true,
-    is_popular: true,
-  },
-  {
-    id: 2,
-    name: "Mastava (Sho'rva)",
-    description: "Barra mol go'shti, guruch, pomidor va yangi ko'katlar bilan pishirilgan to'yimli issiq sho'rva.",
-    price: 36000,
-    image: "/media/dish/mastava.jpg",
-    has_3d: true,
-    ar_model: "/media/ar/glb/mastava.glb",
-    weight: "350 ml",
-    prep_time: "10 daq",
-    is_halal: true,
-  },
-  {
-    id: 3,
-    name: "Sezar Salati",
-    description: "Tovuq filesi, aysberg barglari, parmezan pishlog'i, sarimsoqli suxariklar va klassik sezar sousi.",
-    price: 38000,
-    image: "/media/dish/salad.jpg",
-    has_3d: true,
-    ar_model: "/media/ar/glb/salad_bahor.glb",
-    weight: "250 gr",
-    prep_time: "8 daq",
-    is_halal: true,
-  },
-  {
-    id: 4,
-    name: "Dimlama Go'sht va Sabzavotlar",
-    description: "O'z sharbatida past olovda 2 soat dimlangan mol go'shti, kartoshka va yangi sabzavotlar.",
-    price: 58000,
-    image: "/media/dish/qozon_kabob.jpg",
-    has_3d: true,
-    ar_model: "/media/ar/glb/steak_meat.glb",
-    weight: "450 gr",
-    prep_time: "20 daq",
-    is_halal: true,
-    is_popular: true,
-  },
-];
+const DEMO_CATEGORIES: Category[] = INITIAL_CATEGORIES;
+const DEMO_PRODUCTS: Product[] = INITIAL_PRODUCTS.slice(0, 4);
 
 export const ComponentShowcase: React.FC = () => {
   // State management

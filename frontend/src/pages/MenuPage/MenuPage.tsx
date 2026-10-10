@@ -10,6 +10,7 @@ import {
   Toast,
 } from '../../components/ui';
 import type { Product, Category } from '../../types/dish';
+import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../../data/mockDishes';
 import './MenuPage.css';
 
 interface InitialData {
@@ -27,8 +28,14 @@ export const MenuPage: React.FC = () => {
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
-  const categoriesList = initialData.categories || [];
-  const productsList = initialData.products || [];
+  const categoriesList =
+    initialData.categories && initialData.categories.length > 0
+      ? initialData.categories
+      : INITIAL_CATEGORIES;
+  const productsList =
+    initialData.products && initialData.products.length > 0
+      ? initialData.products
+      : INITIAL_PRODUCTS;
 
   // Local state
   const [categories, setCategories] = useState<Category[]>(categoriesList);

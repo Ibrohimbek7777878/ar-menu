@@ -107,8 +107,13 @@ backend/venv/
 backend/db.sqlite3
 staticfiles/
 backend/staticfiles/
-media/
+/media/
 backend/media/
+3D_AR_MENU/AR_MENU_LOYIHA/media/
+backend/static/react/media/
+backend/static/react/models/
+!frontend/public/media/
+!frontend/public/models/
 .env
 
 # Node
