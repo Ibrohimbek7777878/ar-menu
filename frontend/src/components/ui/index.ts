@@ -10,3 +10,4 @@ export * from './HeaderNav';
 export * from './BottomNav';
 export * from './OrderSummary';
 export * from './Toast';
+export * from './StaffNavHeader';

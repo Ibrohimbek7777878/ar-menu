@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigation } from '../../../context/NavigationContext';
 import './HeaderNav.css';
 
 export interface HeaderNavProps {
@@ -11,36 +12,100 @@ export interface HeaderNavProps {
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   brandName = 'Guliston',
-  tableNumber,
-  cartCount = 0,
+  tableNumber: propTable,
+  cartCount: propCartCount,
   onCartClick,
   className = '',
 }) => {
+  const { currentPath, navigate, tableNumber: ctxTable, cartCount: ctxCartCount } = useNavigation();
+
+  const tableNumber = propTable !== undefined ? propTable : ctxTable;
+  const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
+
+  const navLinks = [
+    { path: '/', label: 'Asosiy' },
+    { path: '/menu', label: 'Menyu' },
+    { path: '/ar', label: '360° Taomlar' },
+    { path: '/table', label: 'Stol xizmatlari' },
+    { path: '/orders', label: 'Buyurtmalar' },
+  ];
+
+  const isLinkActive = (path: string) => {
+    if (path === '/') return currentPath === '/' || currentPath.includes('/welcome');
+    return currentPath.startsWith(path);
+  };
+
   return (
     <header className={`header-nav ${className}`}>
       <div className="header-nav-container">
         {/* Brand */}
-        <a href="/" className="header-brand-link">
+        <div 
+          className="header-brand-link" 
+          onClick={() => navigate('/')} 
+          role="button" 
+          tabIndex={0}
+        >
           <span className="brand-crest">G</span>
-          <span className="brand-name serif-heading">{brandName}</span>
-        </a>
+          <span className="brand-name">{brandName}</span>
+        </div>
 
-        {/* Right side info */}
+        {/* ─── Desktop-Only Navigation Bar ─── */}
+        <nav className="header-desktop-links" aria-label="Desktop asosiy menyu">
+          {navLinks.map((link) => {
+            const active = isLinkActive(link.path);
+            return (
+              <button
+                key={link.path}
+                type="button"
+                className={`desktop-nav-item ${active ? 'active' : ''}`}
+                onClick={() => navigate(link.path)}
+              >
+                {link.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Right side info: Table & Cart & Staff */}
         <div className="header-nav-actions">
           {tableNumber && (
-            <div className="header-table-badge">
+            <div 
+              className="header-table-badge" 
+              onClick={() => navigate('/table')} 
+              role="button" 
+              tabIndex={0}
+              title="Stol holatini ko'rish"
+            >
               <span className="table-status-dot" />
               <span>Stol {tableNumber}</span>
             </div>
           )}
 
+          {/* Quick Staff Button (Desktop) */}
+          <button
+            type="button"
+            className="btn-header-staff"
+            onClick={() => navigate('/waiter')}
+            title="Xodimlar paneli (Ofitsiant / KDS / Admin)"
+            aria-label="Xodimlar paneli"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span className="staff-btn-text">Xodimlar</span>
+          </button>
+
+          {/* Cart Trigger */}
           <button
             type="button"
             className="header-cart-btn"
-            onClick={onCartClick || (() => { window.location.href = '/cart/'; })}
+            onClick={onCartClick || (() => navigate('/cart'))}
             aria-label="Savat"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"></circle>
               <circle cx="20" cy="21" r="1"></circle>
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>

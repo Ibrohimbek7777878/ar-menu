@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { HeaderNav, Toast } from '../../components/ui';
+import { HeaderNav, StaffNavHeader, Toast } from '../../components/ui';
 import './HostessDeskPage.css';
 
 export interface HostessGuest {
@@ -188,6 +188,7 @@ export const HostessDeskPage: React.FC = () => {
     <div className="react-hostess-page">
       {/* ─── Header Navigation ─── */}
       <HeaderNav brandName={`${shopName} · Hostess`} cartCount={0} />
+      <StaffNavHeader activeTab="admin" />
 
       <main className="hostess-main-content">
         {/* ─── Hero Section ─── */}

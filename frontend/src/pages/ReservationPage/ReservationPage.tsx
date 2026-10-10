@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './ReservationPage.css';
 
 export interface ReservationInfo {
@@ -23,6 +24,7 @@ interface InitialReservationData {
 }
 
 export const ReservationPage: React.FC = () => {
+  const { navigate, cartCount: navCartCount } = useNavigation();
   const initialData: InitialReservationData = (window as any).__GULISTON_RESERVATION_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -62,7 +64,7 @@ export const ReservationPage: React.FC = () => {
       showToast('Qidirish uchun kod yoki telefon kiriting');
       return;
     }
-    window.location.href = `/reservation/find/?q=${encodeURIComponent(query.trim())}`;
+    navigate(`/reservation/find/?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleConfirmArrival = (tableNum: string | number) => {
@@ -92,8 +94,8 @@ export const ReservationPage: React.FC = () => {
       {/* ─── Header Navigation ─── */}
       <HeaderNav
         brandName={shopName}
-        cartCount={initialData.cartCount || 0}
-        onCartClick={() => (window.location.href = '/cart/')}
+        cartCount={navCartCount || initialData.cartCount || 0}
+        onCartClick={() => navigate('/cart/')}
       />
 
       <main className="reservation-main-content">
@@ -290,13 +292,13 @@ export const ReservationPage: React.FC = () => {
       {/* ─── Bottom Navigation ─── */}
       <BottomNav
         activeTab="home"
-        cartCount={initialData.cartCount || 0}
+        cartCount={navCartCount || initialData.cartCount || 0}
         onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
-          else if (tab === 'orders') window.location.href = '/orders/';
+          if (tab === 'home') navigate('/');
+          else if (tab === 'menu') navigate('/menu/');
+          else if (tab === 'ar') navigate('/ar/');
+          else if (tab === 'cart') navigate('/cart/');
+          else if (tab === 'orders') navigate('/orders/');
         }}
       />
 

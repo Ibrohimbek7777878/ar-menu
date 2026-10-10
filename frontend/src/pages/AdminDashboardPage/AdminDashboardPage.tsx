@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { StaffNavHeader } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './AdminDashboardPage.css';
 
 export interface AdminTableItem {
@@ -102,6 +104,7 @@ const DEFAULT_ADMIN_DATA: AdminDashboardData = {
 };
 
 export const AdminDashboardPage: React.FC = () => {
+  const { navigate } = useNavigation();
   const serverData = typeof window !== 'undefined' ? window.__GULISTON_ADMIN_DATA__ : undefined;
 
   const [data] = useState<AdminDashboardData>(() => {
@@ -134,7 +137,14 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
 
         <nav className="admin-nav">
-          <a href="/admin/dashboard/" className="admin-nav-item active">
+          <a
+            href="/admin/dashboard/"
+            className="admin-nav-item active"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/admin/dashboard/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect width="7" height="9" x="3" y="3" rx="1" />
               <rect width="7" height="5" x="14" y="3" rx="1" />
@@ -143,7 +153,14 @@ export const AdminDashboardPage: React.FC = () => {
             </svg>
             <span>Boshqaruv markazi</span>
           </a>
-          <a href="/kds/" className="admin-nav-item">
+          <a
+            href="/kds/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/kds/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
               <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
@@ -154,7 +171,14 @@ export const AdminDashboardPage: React.FC = () => {
             <span>Oshxona (KDS)</span>
             <span className="admin-nav-badge tabular-nums">{data.pending_kds_count}</span>
           </a>
-          <a href="/ofitsiant/" className="admin-nav-item">
+          <a
+            href="/ofitsiant/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/ofitsiant/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
@@ -162,13 +186,27 @@ export const AdminDashboardPage: React.FC = () => {
             </svg>
             <span>Ofitsiant paneli</span>
           </a>
-          <a href="/table/" className="admin-nav-item">
+          <a
+            href="/table/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/table/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
             </svg>
             <span>Stollar &amp; Bron</span>
           </a>
-          <a href="/arrival/desk/" className="admin-nav-item">
+          <a
+            href="/arrival/desk/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/arrival/desk/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
@@ -177,13 +215,27 @@ export const AdminDashboardPage: React.FC = () => {
             </svg>
             <span>Hostess paneli</span>
           </a>
-          <a href="/menu/" className="admin-nav-item">
+          <a
+            href="/menu/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/menu/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M18 2v20M6 2v20M4 6h4M4 10h4M16 6h4M16 10h4" />
             </svg>
             <span>Menyu</span>
           </a>
-          <a href="/ar/" className="admin-nav-item">
+          <a
+            href="/ar/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/ar/');
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
               <path d="m3.29 7 8.71 5.37L20.71 7" />
@@ -216,6 +268,8 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* ─── ASOSIY MAZMUN (MAIN CONTENT) ─── */}
       <main className="admin-main">
+        <StaffNavHeader activeTab="admin" />
+
         {/* Yuqori sarlavha paneli */}
         <header className="admin-topbar">
           <div>

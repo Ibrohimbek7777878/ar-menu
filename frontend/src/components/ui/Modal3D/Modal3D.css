@@ -97,23 +97,23 @@
 }
 
 .modal-dish-name {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary, #212529);
+  color: var(--text-primary, #181513);
   margin: 0;
 }
 
 .modal-dish-price {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--brand-primary, #213827);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--brand-primary, #EA580C);
 }
 
 .modal-dish-desc {
-  font-size: 13px;
-  color: var(--text-secondary, #6C757D);
-  line-height: 1.45;
+  font-size: 13.5px;
+  color: var(--text-secondary, #4A443E);
+  line-height: 1.5;
   margin: 0;
 }
 
@@ -125,14 +125,14 @@
 
 .btn-modal-ar {
   flex: 1;
-  background: #FAF9F5;
-  color: var(--text-primary, #212529);
-  border: 1px solid var(--border-subtle, #E8E2D2);
-  border-radius: var(--radius-pill, 9999px);
-  padding: 11px;
+  background: var(--brand-primary-light, #FFF7ED);
+  color: var(--brand-primary, #EA580C);
+  border: 1px solid var(--brand-primary-subtle, #FED7AA);
+  border-radius: 12px;
+  padding: 12px;
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -141,29 +141,29 @@
   transition: all 0.15s ease;
 }
 .btn-modal-ar:hover {
-  background: #FFFFFF;
-  border-color: var(--brand-primary, #213827);
-  color: var(--brand-primary, #213827);
+  background: var(--brand-primary, #EA580C);
+  border-color: var(--brand-primary, #EA580C);
+  color: #FFFFFF;
 }
 
 .btn-modal-cart {
-  flex: 1;
-  background: var(--brand-primary, #213827);
+  flex: 1.2;
+  background: var(--brand-primary, #EA580C);
   color: #FFFFFF;
   border: none;
-  border-radius: var(--radius-pill, 9999px);
-  padding: 11px;
+  border-radius: 12px;
+  padding: 12px;
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 3px 10px rgba(33, 56, 39, 0.2);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25);
   transition: all 0.15s ease;
 }
 .btn-modal-cart:hover {
-  background: #182A1D;
+  background: var(--brand-primary-hover, #C2410C);
 }

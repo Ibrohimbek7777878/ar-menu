@@ -4,28 +4,28 @@ import './DishCard.css';
 
 export interface DishCardProps {
   product: Product;
-  layout?: 'vertical' | 'horizontal';
   quantity?: number;
   onAddToCart?: (product: Product) => void;
   onUpdateQuantity?: (productId: number, delta: number) => void;
   onOpen3D?: (product: Product) => void;
   className?: string;
+  layout?: 'grid' | 'horizontal';
 }
 
 export const DishCard: React.FC<DishCardProps> = ({
   product,
-  layout = 'vertical',
   quantity = 0,
   onAddToCart,
   onUpdateQuantity,
   onOpen3D,
   className = '',
+  layout = 'grid',
 }) => {
   const [imgError, setImgError] = useState(false);
 
   const formattedPrice = new Intl.NumberFormat('uz-UZ').format(product.price);
-  const formattedOldPrice = product.old_price 
-    ? new Intl.NumberFormat('uz-UZ').format(product.old_price) 
+  const formattedOldPrice = product.old_price
+    ? new Intl.NumberFormat('uz-UZ').format(product.old_price)
     : null;
 
   const handleMediaClick = () => {
@@ -75,27 +75,27 @@ export const DishCard: React.FC<DishCardProps> = ({
           </div>
         )}
 
-        {/* Minimalist Top Badges */}
+        {/* Top Badges (No technical jargon, only food status) */}
         <div className="dish-card-badges">
           {product.has_3d && (
             <span className="badge-3d-clean">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                 <line x1="12" y1="22.08" x2="12" y2="12"/>
               </svg>
-              <span>3D</span>
+              <span>360°</span>
             </span>
-          )}
-          {product.is_halal && (
-            <span className="badge-tag-clean tag-halal">Halol</span>
           )}
           {product.is_popular && (
             <span className="badge-tag-clean tag-popular">Tavsiya</span>
           )}
+          {product.is_halal && (
+            <span className="badge-tag-clean tag-halal">Halol</span>
+          )}
         </div>
 
-        {/* 360 View Trigger */}
+        {/* 360 View Trigger (Human, clear Uzbek phrase) */}
         {product.has_3d && (
           <button 
             type="button" 
@@ -104,13 +104,13 @@ export const DishCard: React.FC<DishCardProps> = ({
               e.stopPropagation();
               if (onOpen3D) onOpen3D(product);
             }}
-            title="3D ko'rinishda tomosha qilish"
-            aria-label="3D ko'rinish"
+            title="Taomni 360 daraja aylantirib ko'rish"
+            aria-label="360 daraja ko'rish"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
-            <span>360° ko'rish</span>
+            <span>360° aylantirish</span>
           </button>
         )}
       </div>
@@ -128,13 +128,16 @@ export const DishCard: React.FC<DishCardProps> = ({
 
         <h3 className="dish-card-title">{product.name}</h3>
         
+        {/* Description strictly clamped so it fits on mobile screens */}
         {product.description && (
-          <p className="dish-card-desc">{product.description}</p>
+          <div className="dish-card-desc-wrap">
+            <p className="dish-card-desc">{product.description}</p>
+          </div>
         )}
 
-        {/* ─── Footer: Price & Add Action ─── */}
+        {/* ─── Separated Footer: Price Row and Action Row on Mobile ─── */}
         <div className="dish-card-footer">
-          <div className="dish-card-price-group">
+          <div className="dish-card-price-row">
             {formattedOldPrice && (
               <span className="price-old tabular-nums">{formattedOldPrice} so'm</span>
             )}
@@ -144,36 +147,41 @@ export const DishCard: React.FC<DishCardProps> = ({
             </div>
           </div>
 
-          {quantity > 0 ? (
-            <div className="card-stepper" onClick={(e) => e.stopPropagation()}>
+          <div className="dish-card-action-row">
+            {quantity > 0 ? (
+              <div className="card-stepper" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  type="button" 
+                  className="stepper-btn" 
+                  onClick={handleDecrement}
+                  aria-label="Kamaytirish"
+                >
+                  −
+                </button>
+                <span className="stepper-val tabular-nums">{quantity}</span>
+                <button 
+                  type="button" 
+                  className="stepper-btn" 
+                  onClick={handleIncrement}
+                  aria-label="Ko'paytirish"
+                >
+                  +
+                </button>
+              </div>
+            ) : (
               <button 
                 type="button" 
-                className="stepper-btn" 
-                onClick={handleDecrement}
-                aria-label="Kamaytirish"
+                className="btn-add-to-cart"
+                onClick={handleAdd}
+                aria-label={`${product.name} savatga qo'shish`}
               >
-                −
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span>Qo'shish</span>
               </button>
-              <span className="stepper-val tabular-nums">{quantity}</span>
-              <button 
-                type="button" 
-                className="stepper-btn" 
-                onClick={handleIncrement}
-                aria-label="Oshirish"
-              >
-                +
-              </button>
-            </div>
-          ) : (
-            <button 
-              type="button" 
-              className="btn-add-to-cart"
-              onClick={handleAdd}
-              aria-label="Savatga qo'shish"
-            >
-              <span>+ Savatga</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </article>

@@ -6,6 +6,7 @@ import {
   BottomNav,
   Toast,
 } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './CheckoutPage.css';
 
 interface InitialCheckoutData {
@@ -18,6 +19,7 @@ interface InitialCheckoutData {
 }
 
 export const CheckoutPage: React.FC = () => {
+  const { navigate } = useNavigation();
   const initialData: InitialCheckoutData = (window as any).__GULISTON_CHECKOUT_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -73,7 +75,7 @@ export const CheckoutPage: React.FC = () => {
     formData.append('notes', notes);
 
     try {
-      const response = await fetch('/checkout/', {
+      await fetch('/checkout/', {
         method: 'POST',
         headers: {
           'X-CSRFToken': csrfToken,
@@ -81,23 +83,17 @@ export const CheckoutPage: React.FC = () => {
         body: formData,
       });
 
-      if (response.redirected) {
-        sessionStorage.removeItem('order_note');
-        window.location.href = response.url;
-      } else {
-        const text = await response.text();
-        if (text.includes('orders') || response.status === 200) {
-          sessionStorage.removeItem('order_note');
-          window.location.href = '/orders/';
-        } else {
-          window.location.href = '/orders/';
-        }
-      }
-    } catch {
-      showToast("Buyurtma qabul qilindi");
+      sessionStorage.removeItem('order_note');
+      showToast("Buyurtmangiz qabul qilindi!");
       setTimeout(() => {
-        window.location.href = '/orders/';
-      }, 1000);
+        navigate('/orders');
+      }, 700);
+    } catch {
+      sessionStorage.removeItem('order_note');
+      showToast("Buyurtma qabul qilindi!");
+      setTimeout(() => {
+        navigate('/orders');
+      }, 700);
     }
   };
 
@@ -109,17 +105,17 @@ export const CheckoutPage: React.FC = () => {
         brandName={shopName}
         tableNumber={table?.number}
         cartCount={cartCount}
-        onCartClick={() => { window.location.href = '/cart/'; }}
+        onCartClick={() => navigate('/cart')}
       />
 
       <main className="checkout-main-content">
         <div className="checkout-top-bar">
-          <a href="/cart/" className="btn-back-to-cart">
+          <button type="button" onClick={() => navigate('/cart')} className="btn-back-to-cart">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             <span>Savatga qaytish</span>
-          </a>
+          </button>
 
           {table?.number && (
             <TableBadge
@@ -340,11 +336,11 @@ export const CheckoutPage: React.FC = () => {
         activeTab="cart"
         cartCount={cartCount}
         onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
-          else if (tab === 'orders') window.location.href = '/orders/';
+          if (tab === 'home') navigate('/');
+          else if (tab === 'menu') navigate('/menu/');
+          else if (tab === 'ar') navigate('/ar/');
+          else if (tab === 'cart') navigate('/cart/');
+          else if (tab === 'orders') navigate('/orders/');
         }}
       />
     </div>

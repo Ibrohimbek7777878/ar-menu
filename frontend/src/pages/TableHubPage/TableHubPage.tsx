@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './TableHubPage.css';
 
 export interface HallData {
@@ -26,6 +27,7 @@ interface InitialTableData {
 }
 
 export const TableHubPage: React.FC = () => {
+  const { navigate, cartCount: navCartCount } = useNavigation();
   const initialData: InitialTableData = (window as any).__GULISTON_TABLE_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -178,8 +180,8 @@ export const TableHubPage: React.FC = () => {
       <HeaderNav
         brandName={shopName}
         tableNumber={table?.number}
-        cartCount={initialData.cartCount || 0}
-        onCartClick={() => (window.location.href = '/cart/')}
+        cartCount={navCartCount || initialData.cartCount || 0}
+        onCartClick={() => navigate('/cart/')}
       />
 
       <main className="table-hub-content">
@@ -499,13 +501,13 @@ export const TableHubPage: React.FC = () => {
       {/* ─── Bottom Navigation ─── */}
       <BottomNav
         activeTab="home"
-        cartCount={initialData.cartCount || 0}
+        cartCount={navCartCount || initialData.cartCount || 0}
         onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
-          else if (tab === 'orders') window.location.href = '/orders/';
+          if (tab === 'home') navigate('/');
+          else if (tab === 'menu') navigate('/menu/');
+          else if (tab === 'ar') navigate('/ar/');
+          else if (tab === 'cart') navigate('/cart/');
+          else if (tab === 'orders') navigate('/orders/');
         }}
       />
 

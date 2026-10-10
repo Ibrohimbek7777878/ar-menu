@@ -1,27 +1,66 @@
 import React from 'react';
+import { useNavigation } from '../../../context/NavigationContext';
 import './BottomNav.css';
 
 export interface BottomNavProps {
-  activeTab: 'home' | 'menu' | 'ar' | 'cart' | 'orders';
+  activeTab?: 'home' | 'menu' | 'ar' | 'cart' | 'orders';
   cartCount?: number;
-  onTabChange: (tab: 'home' | 'menu' | 'ar' | 'cart' | 'orders') => void;
+  onTabChange?: (tab: 'home' | 'menu' | 'ar' | 'cart' | 'orders') => void;
   className?: string;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
-  activeTab,
-  cartCount = 0,
+  activeTab: propActiveTab,
+  cartCount: propCartCount,
   onTabChange,
   className = '',
 }) => {
+  const { currentPath, navigate, cartCount: ctxCartCount } = useNavigation();
+
+  const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
+
+  // Determine active tab from URL if not explicitly provided
+  const activeTab = propActiveTab || (() => {
+    if (currentPath === '/' || currentPath.includes('/welcome')) return 'home';
+    if (currentPath.includes('/menu')) return 'menu';
+    if (currentPath.includes('/ar')) return 'ar';
+    if (currentPath.includes('/cart')) return 'cart';
+    if (currentPath.includes('/orders') || currentPath.includes('/order')) return 'orders';
+    return 'menu';
+  })();
+
+  const handleTab = (tab: 'home' | 'menu' | 'ar' | 'cart' | 'orders') => {
+    if (onTabChange) {
+      onTabChange(tab);
+      return;
+    }
+    switch (tab) {
+      case 'home':
+        navigate('/');
+        break;
+      case 'menu':
+        navigate('/menu');
+        break;
+      case 'ar':
+        navigate('/ar');
+        break;
+      case 'cart':
+        navigate('/cart');
+        break;
+      case 'orders':
+        navigate('/orders');
+        break;
+    }
+  };
+
   return (
-    <nav className={`bottom-nav ${className}`}>
+    <nav className={`bottom-nav ${className}`} aria-label="Mobil pastki navigatsiya">
       <div className="bottom-nav-container">
         {/* Asosiy */}
         <button
           type="button"
           className={`bottom-tab ${activeTab === 'home' ? 'active' : ''}`}
-          onClick={() => onTabChange('home')}
+          onClick={() => handleTab('home')}
           aria-label="Asosiy sahifa"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -35,7 +74,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <button
           type="button"
           className={`bottom-tab ${activeTab === 'menu' ? 'active' : ''}`}
-          onClick={() => onTabChange('menu')}
+          onClick={() => handleTab('menu')}
           aria-label="Menyu"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -48,26 +87,26 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <span className="bottom-tab-label">Menyu</span>
         </button>
 
-        {/* 3D Taomlar */}
+        {/* 360° Taomlar (No technical AR jargon) */}
         <button
           type="button"
           className={`bottom-tab ${activeTab === 'ar' ? 'active' : ''}`}
-          onClick={() => onTabChange('ar')}
-          aria-label="3D taomlar"
+          onClick={() => handleTab('ar')}
+          aria-label="360 daraja taomlar"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
           </svg>
-          <span className="bottom-tab-label">3D Taom</span>
+          <span className="bottom-tab-label">360° Ko'rish</span>
         </button>
 
         {/* Savat */}
         <button
           type="button"
           className={`bottom-tab ${activeTab === 'cart' ? 'active' : ''}`}
-          onClick={() => onTabChange('cart')}
+          onClick={() => handleTab('cart')}
           aria-label="Savat"
         >
           <div className="tab-icon-wrap">
@@ -77,7 +116,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
             </svg>
             {cartCount > 0 && (
-              <span className="tab-cart-badge tabular-nums">{cartCount}</span>
+              <span className="tab-badge tabular-nums">{cartCount}</span>
             )}
           </div>
           <span className="bottom-tab-label">Savat</span>
@@ -87,8 +126,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <button
           type="button"
           className={`bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
-          onClick={() => onTabChange('orders')}
-          aria-label="Buyurtmalar va hisob"
+          onClick={() => handleTab('orders')}
+          aria-label="Buyurtmalar"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>

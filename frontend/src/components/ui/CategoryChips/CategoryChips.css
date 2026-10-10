@@ -41,10 +41,10 @@
 }
 
 .chip-pill.active {
-  background: var(--brand-primary, #213827);
-  border-color: var(--brand-primary, #213827);
-  color: #FAF7F0;
-  box-shadow: var(--shadow-sm);
+  background: var(--brand-primary, #EA580C);
+  border-color: var(--brand-primary, #EA580C);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
 }
 
 .chip-counter {

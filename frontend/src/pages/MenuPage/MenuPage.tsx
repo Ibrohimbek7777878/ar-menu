@@ -11,6 +11,8 @@ import {
 } from '../../components/ui';
 import type { Product, Category } from '../../types/dish';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../../data/mockDishes';
+import { matchUzbekQuery } from '../../utils/uzbekSearch';
+import { useNavigation } from '../../context/NavigationContext';
 import './MenuPage.css';
 
 interface InitialData {
@@ -18,11 +20,11 @@ interface InitialData {
   table?: { number: string | number; hall?: string };
   categories?: Category[];
   products?: Product[];
-  cart?: Record<number, number>;
-  cartCount?: number;
 }
 
 export const MenuPage: React.FC = () => {
+  const { tableNumber, cart, addToCart, updateQuantity, cartCount, navigate } = useNavigation();
+
   // Read initial injected data or use fallback
   const initialData: InitialData = (window as any).__GULISTON_DATA__ || {};
 
@@ -43,7 +45,9 @@ export const MenuPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [only3D, setOnly3D] = useState(false);
-  const [cart, setCart] = useState<Record<number, number>>(initialData.cart || {});
+
+  // Pagination state: start with 6 dishes
+  const [visibleCount, setVisibleCount] = useState(6);
   
   // 3D Modal state
   const [selected3DProduct, setSelected3DProduct] = useState<Product | null>(null);
@@ -61,7 +65,22 @@ export const MenuPage: React.FC = () => {
     setTimeout(() => setToastVisible(false), 2400);
   };
 
-  // If products were not preloaded, fetch them from backend API
+  const handleCategorySelect = (id: number | 'all') => {
+    setActiveCategory(id);
+    setVisibleCount(6);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setVisibleCount(6);
+  };
+
+  const handleToggle3D = () => {
+    setOnly3D((prev) => !prev);
+    setVisibleCount(6);
+  };
+
+  // If products were not preloaded, fetch them from backend API if available
   useEffect(() => {
     if (productsList.length === 0) {
       fetch('/api/v1/products/?is_available=true')
@@ -87,53 +106,16 @@ export const MenuPage: React.FC = () => {
     }
   }, [productsList.length, categoriesList.length]);
 
-  // Sync with Django /api/cart/ backend
-  const syncCartWithBackend = async (productId: number, action: 'add' | 'remove' | 'delete', qty = 1) => {
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-    try {
-      await fetch('/api/cart/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        body: JSON.stringify({
-          action,
-          product_id: productId,
-          quantity: qty,
-        }),
-      });
-    } catch (e) {
-      console.warn("Cart backend sync failed:", e);
-    }
-  };
-
   const handleAddToCart = (product: Product) => {
-    setCart((prev) => {
-      const current = prev[product.id] || 0;
-      const next = current + 1;
-      return { ...prev, [product.id]: next };
-    });
-    syncCartWithBackend(product.id, 'add', 1);
+    addToCart(product.id, 1);
     showToast(`${product.name} savatga qo'shildi`);
   };
 
   const handleUpdateQuantity = (productId: number, delta: number) => {
-    setCart((prev) => {
-      const current = prev[productId] || 0;
-      const next = current + delta;
-      const updated = { ...prev };
-      if (next <= 0) {
-        delete updated[productId];
-        syncCartWithBackend(productId, 'delete');
-        showToast("Taom savatdan olib tashlandi");
-      } else {
-        updated[productId] = next;
-        if (delta > 0) syncCartWithBackend(productId, 'add', 1);
-        else syncCartWithBackend(productId, 'remove', 1);
-      }
-      return updated;
-    });
+    updateQuantity(productId, delta);
+    if (delta < 0 && (cart[productId] || 0) <= 1) {
+      showToast("Taom savatdan olib tashlandi");
+    }
   };
 
   const handleOpen3D = (product: Product) => {
@@ -141,7 +123,7 @@ export const MenuPage: React.FC = () => {
     setIs3DOpen(true);
   };
 
-  // Filtered products list
+  // Smart Uzbek Semantic Filtered products list
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       // Category filter
@@ -152,20 +134,23 @@ export const MenuPage: React.FC = () => {
       if (only3D && !p.has_3d) {
         return false;
       }
-      // Search query
+      // Smart Uzbek Search query (handles o', g', sh, ch and all apostrophes)
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchName = p.name.toLowerCase().includes(q);
-        const matchDesc = p.description ? p.description.toLowerCase().includes(q) : false;
-        if (!matchName && !matchDesc) return false;
+        const isMatch = matchUzbekQuery([p.name, p.description, p.category_name], searchQuery);
+        if (!isMatch) return false;
       }
       return true;
     });
   }, [products, activeCategory, only3D, searchQuery]);
 
-  const totalCartCount = useMemo(() => {
-    return Object.values(cart).reduce((a, b) => a + b, 0);
-  }, [cart]);
+  // Paginated visible items
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => Math.min(prev + 6, filteredProducts.length));
+  };
 
   return (
     <div className="menu-app-container">
@@ -183,16 +168,16 @@ export const MenuPage: React.FC = () => {
       {/* ─── 1. Header Nav ─── */}
       <HeaderNav
         brandName={shopName}
-        tableNumber={table?.number}
-        cartCount={totalCartCount}
-        onCartClick={() => { window.location.href = '/cart/'; }}
+        tableNumber={tableNumber || table?.number}
+        cartCount={cartCount}
+        onCartClick={() => navigate('/cart')}
       />
 
       <main className="menu-main-content">
         {/* ─── Table & Status Bar ─── */}
         <div className="menu-top-bar">
           <TableBadge
-            tableNumber={table?.number || 1}
+            tableNumber={tableNumber || table?.number || 5}
             hallName={table?.hall || "Asosiy Zal"}
             status="available"
           />
@@ -200,15 +185,15 @@ export const MenuPage: React.FC = () => {
           <button
             type="button"
             className={`btn-toggle-3d-filter ${only3D ? 'active' : ''}`}
-            onClick={() => setOnly3D(!only3D)}
+            onClick={handleToggle3D}
             aria-pressed={only3D}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
               <path d="m3.29 7 8.71 5.37L20.71 7" />
               <path d="M12 12.37V22" />
             </svg>
-            <span>Faqat 3D modellar</span>
+            <span>Faqat 360° taomlar</span>
           </button>
         </div>
 
@@ -216,7 +201,7 @@ export const MenuPage: React.FC = () => {
         <div className="menu-search-wrapper">
           <SearchBar
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={handleSearchChange}
             placeholder="Osh, kabob, sho'rva, salat qidirish..."
           />
         </div>
@@ -226,13 +211,13 @@ export const MenuPage: React.FC = () => {
           <CategoryChips
             categories={categories}
             activeId={activeCategory}
-            onSelect={setActiveCategory}
+            onSelect={handleCategorySelect}
           />
         </div>
 
-        {/* ─── 4. Dishes Grid ─── */}
+        {/* ─── 4. Dishes Grid with Pagination ─── */}
         <div className="menu-dishes-grid">
-          {filteredProducts.map((dish) => (
+          {visibleProducts.map((dish) => (
             <DishCard
               key={dish.id}
               product={dish}
@@ -264,19 +249,33 @@ export const MenuPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* ─── 5. Pagination / Load More Bar ─── */}
+        {filteredProducts.length > 0 && (
+          <div className="menu-pagination-bar">
+            <span className="pagination-count-label">
+              {filteredProducts.length} tadan {visibleProducts.length} tasi ko'rsatilmoqda
+            </span>
+            {filteredProducts.length > visibleCount && (
+              <button
+                type="button"
+                className="btn-load-more-dishes"
+                onClick={handleLoadMore}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span>Yana taomlarni ko'rish</span>
+              </button>
+            )}
+          </div>
+        )}
       </main>
 
-      {/* ─── 5. Bottom Navigation ─── */}
+      {/* ─── 6. Mobile-Only Bottom Navigation ─── */}
       <BottomNav
         activeTab="menu"
-        cartCount={totalCartCount}
-        onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
-          else if (tab === 'orders') window.location.href = '/orders/';
-        }}
+        cartCount={cartCount}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { StaffNavHeader } from '../../components/ui';
 import './KDSPage.css';
 
 export interface KDSOrderItem {
@@ -224,6 +225,7 @@ export const KDSPage: React.FC = () => {
 
   return (
     <div className="kds-root">
+      <StaffNavHeader activeTab="kds" />
       {/* ─── STATUS HEADER ─── */}
       <header className="kds-header">
         <div className="kds-brand">

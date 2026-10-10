@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { HeaderNav, Toast } from '../../components/ui';
+import { HeaderNav, StaffNavHeader, Toast } from '../../components/ui';
 import './WaiterPanelPage.css';
 
 export interface ServiceCall {
@@ -230,6 +230,7 @@ export const WaiterPanelPage: React.FC = () => {
     <div className="react-waiter-page">
       {/* ─── Header Navigation ─── */}
       <HeaderNav brandName={`${shopName} · POS`} cartCount={0} />
+      <StaffNavHeader activeTab="waiter" />
 
       <main className="waiter-main-content">
         {/* ─── Greeting & KPI Row ─── */}

@@ -12,73 +12,82 @@ import { WaiterPanelPage } from './pages/WaiterPanelPage/WaiterPanelPage';
 import { HostessDeskPage } from './pages/HostessDeskPage/HostessDeskPage';
 import { KDSPage } from './pages/KDSPage/KDSPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
+import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import './App.css';
 
-export const App: React.FC = () => {
-  const path = window.location.pathname;
+const AppContent: React.FC = () => {
+  const { currentPath } = useNavigation();
 
   // Showcase laboratoriyasi
-  if (path.includes('/ui-components') || path.includes('/design-system')) {
+  if (currentPath.includes('/ui-components') || currentPath.includes('/design-system')) {
     return <ComponentShowcase />;
   }
 
   // Restoran Admin & Boshqaruv Markazi (/admin/dashboard/, /admin/)
-  if (path.includes('/admin/dashboard') || path === '/admin' || path === '/admin/') {
+  if (currentPath.includes('/admin/dashboard') || currentPath === '/admin' || currentPath === '/admin/') {
     return <AdminDashboardPage />;
   }
 
   // Oshxona Ekrani (KDS) (/kds/ yoki /kitchen/ yoki /seller/kds/)
-  if (path.includes('/kds') || path.includes('/kitchen')) {
+  if (currentPath.includes('/kds') || currentPath.includes('/kitchen')) {
     return <KDSPage />;
   }
 
   // 3D / AR Interaktiv Menyu (/ar/)
-  if (path.includes('/ar')) {
+  if (currentPath.includes('/ar')) {
     return <ARMenuPage />;
   }
 
   // Hostess / Kutib Olish Paneli (/arrival/desk, /arrival/timeline, /arrival/checklist, /hostess)
-  if (path.includes('/arrival/') || path.includes('/hostess')) {
+  if (currentPath.includes('/arrival/') || currentPath.includes('/hostess')) {
     return <HostessDeskPage />;
   }
 
   // Ofitsiant va Xizmat Paneli (/waiter yoki /ofitsiant)
-  if (path.includes('/waiter') || path.includes('/ofitsiant')) {
+  if (currentPath.includes('/waiter') || currentPath.includes('/ofitsiant')) {
     return <WaiterPanelPage />;
   }
 
   // Bron qidirish & Kelishni tasdiqlash (/reservation/arrival yoki /reservation/find)
-  if (path.includes('/reservation/arrival') || path.includes('/reservation/find')) {
+  if (currentPath.includes('/reservation/arrival') || currentPath.includes('/reservation/find')) {
     return <ReservationPage />;
   }
 
   // Stol & Bron Hubi (/table/ yoki /reservation/)
-  if (path.includes('/table') || path.includes('/reservation')) {
+  if (currentPath.includes('/table') || currentPath.includes('/reservation')) {
     return <TableHubPage />;
   }
 
   // Buyurtmalar & Hisob (/orders/ yoki /order/)
-  if (path.includes('/orders') || path.includes('/order')) {
+  if (currentPath.includes('/orders') || currentPath.includes('/order')) {
     return <OrdersPage />;
   }
 
   // Buyurtmani rasmiylashtirish (Checkout)
-  if (path.includes('/checkout')) {
+  if (currentPath.includes('/checkout')) {
     return <CheckoutPage />;
   }
 
   // Savat sahifasi
-  if (path.includes('/cart')) {
+  if (currentPath.includes('/cart')) {
     return <CartPage />;
   }
 
   // Bosh sahifa (Welcome / Root)
-  if (path === '/' || path.includes('/welcome')) {
+  if (currentPath === '/' || currentPath.includes('/welcome')) {
     return <WelcomePage />;
   }
 
   // Standart: Asosiy Menyu sahifasi (/menu/)
   return <MenuPage />;
+};
+
+export const App: React.FC = () => {
+  return (
+    <NavigationProvider>
+      <AppContent />
+    </NavigationProvider>
+  );
 };
 
 export default App;

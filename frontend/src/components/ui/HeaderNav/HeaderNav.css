@@ -1,5 +1,6 @@
 /* ─────────────────────────────────────────────────────────────
-   Clean HeaderNav Styles (Impeccable UI)
+   Clean HeaderNav Styles (Appetizing & Modern)
+   Desktop Navigation Links + Mobile Clean Header
    ───────────────────────────────────────────────────────────── */
 
 .header-nav {
@@ -7,47 +8,93 @@
   top: 0;
   z-index: 40;
   background: var(--bg-surface, #FFFFFF);
-  border-bottom: 1px solid var(--border-subtle, #EAE4D7);
-  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.03);
+  border-bottom: 1px solid var(--border-subtle, #EFE9E2);
+  box-shadow: 0 1px 4px rgba(24, 21, 19, 0.04);
 }
 
 .header-nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  height: 56px;
+  height: 58px;
   padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
 .header-brand-link {
   display: flex;
   align-items: center;
   gap: 10px;
-  text-decoration: none;
-  color: var(--text-primary, #1C1917);
+  cursor: pointer;
+  user-select: none;
 }
 
 .brand-crest {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: var(--brand-primary, #213827);
-  color: #FAF7F0;
+  background: var(--brand-primary, #EA580C);
+  color: #FFFFFF;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
 }
 
 .brand-name {
-  font-size: 18px;
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #181513);
 }
 
+/* ─── Desktop Links (Hidden on Mobile) ─── */
+.header-desktop-links {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .header-desktop-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-primary, #FAF8F5);
+    border: 1px solid var(--border-subtle, #EFE9E2);
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .desktop-nav-item {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #4A443E);
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .desktop-nav-item:hover {
+    color: var(--brand-primary, #EA580C);
+    background: rgba(234, 88, 12, 0.05);
+  }
+
+  .desktop-nav-item.active {
+    background: #FFFFFF;
+    color: var(--brand-primary, #EA580C);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(24, 21, 19, 0.08);
+  }
+}
+
+/* ─── Right Actions ─── */
 .header-nav-actions {
   display: flex;
   align-items: center;
@@ -58,56 +105,88 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-surface-subtle, #F3EEE4);
-  border: 1px solid var(--border-subtle, #EAE4D7);
-  color: var(--brand-primary, #213827);
+  background: var(--brand-primary-light, #FFF7ED);
+  border: 1px solid var(--brand-primary-subtle, #FED7AA);
+  color: var(--brand-primary, #EA580C);
   padding: 5px 10px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .table-status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--status-success, #15803D);
+  background: #16A34A;
 }
 
+/* Staff Quick Button */
+.btn-header-staff {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--bg-surface-subtle, #F5EFEA);
+  border: 1px solid var(--border-subtle, #EFE9E2);
+  border-radius: 8px;
+  color: var(--text-secondary, #4A443E);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-header-staff:hover {
+  background: var(--brand-primary-light, #FFF7ED);
+  color: var(--brand-primary, #EA580C);
+  border-color: var(--brand-primary-subtle, #FED7AA);
+}
+
+@media (min-width: 900px) {
+  .btn-header-staff {
+    display: flex;
+  }
+}
+
+/* Cart Button */
 .header-cart-btn {
   position: relative;
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  border: 1px solid var(--border-subtle, #EAE4D7);
+  border: 1px solid var(--border-subtle, #EFE9E2);
   background: var(--bg-surface, #FFFFFF);
-  color: var(--text-primary, #1C1917);
-  cursor: pointer;
+  color: var(--text-primary, #181513);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .header-cart-btn:hover {
-  background: var(--bg-surface-subtle, #F3EEE4);
-  border-color: var(--brand-primary, #213827);
+  background: var(--brand-primary-light, #FFF7ED);
+  border-color: var(--brand-primary, #EA580C);
+  color: var(--brand-primary, #EA580C);
 }
 
 .cart-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: var(--brand-primary, #213827);
+  background: var(--brand-primary, #EA580C);
   color: #FFFFFF;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   min-width: 18px;
   height: 18px;
-  border-radius: 999px;
+  padding: 0 5px;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
-  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 5px rgba(234, 88, 12, 0.4);
 }

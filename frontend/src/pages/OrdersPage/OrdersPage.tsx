@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './OrdersPage.css';
 
 export interface OrderItem {
@@ -35,6 +36,7 @@ declare global {
 }
 
 export const OrdersPage: React.FC = () => {
+  const { navigate, cartCount: navCartCount } = useNavigation();
   const initialData: InitialOrdersData =
     typeof window !== 'undefined' ? window.__GULISTON_ORDERS_DATA__ || {} : {};
 
@@ -157,8 +159,8 @@ export const OrdersPage: React.FC = () => {
       <HeaderNav
         brandName={shopName}
         tableNumber={table?.number}
-        cartCount={initialData.cartCount || 0}
-        onCartClick={() => (window.location.href = '/cart/')}
+        cartCount={navCartCount || initialData.cartCount || 0}
+        onCartClick={() => navigate('/cart/')}
       />
 
       <main className="orders-main-content">
@@ -442,12 +444,12 @@ export const OrdersPage: React.FC = () => {
       {/* ─── Bottom Navigation ─── */}
       <BottomNav
         activeTab="orders"
-        cartCount={initialData.cartCount || 0}
+        cartCount={navCartCount || initialData.cartCount || 0}
         onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
+          if (tab === 'home') navigate('/');
+          else if (tab === 'menu') navigate('/menu/');
+          else if (tab === 'ar') navigate('/ar/');
+          else if (tab === 'cart') navigate('/cart/');
           else if (tab === 'orders') {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }

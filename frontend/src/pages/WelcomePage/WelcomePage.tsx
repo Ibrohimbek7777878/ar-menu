@@ -4,6 +4,7 @@ import {
   BottomNav,
   Toast,
 } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './WelcomePage.css';
 
 interface InitialWelcomeData {
@@ -13,11 +14,12 @@ interface InitialWelcomeData {
 }
 
 export const WelcomePage: React.FC = () => {
+  const { navigate, setTableNumber, cartCount: navCartCount } = useNavigation();
   const initialData: InitialWelcomeData = (window as any).__GULISTON_WELCOME_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
-  const cartCount = initialData.cartCount || 0;
+  const cartCount = navCartCount || initialData.cartCount || 0;
 
   const [inputTableNum, setInputTableNum] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
@@ -40,7 +42,8 @@ export const WelcomePage: React.FC = () => {
       showToast("Iltimos, stol raqamini kiriting");
       return;
     }
-    window.location.href = `/menu/?table=${encodeURIComponent(inputTableNum.trim())}`;
+    setTableNumber(inputTableNum.trim());
+    navigate('/menu');
   };
 
   return (
@@ -51,7 +54,7 @@ export const WelcomePage: React.FC = () => {
         brandName={shopName}
         tableNumber={table?.number}
         cartCount={cartCount}
-        onCartClick={() => { window.location.href = '/cart/'; }}
+        onCartClick={() => navigate('/cart')}
       />
 
       <main className="welcome-main-shell">
@@ -63,18 +66,18 @@ export const WelcomePage: React.FC = () => {
           </div>
           <h1 className="welcome-hero-title">{shopName} Restorani</h1>
           <p className="welcome-hero-subtitle">
-            Haqiqiy o'zbek milliy taomlari, interaktiv 3D menyu va samimiy mehmondo'stlik.
+            Haqiqiy o'zbek milliy taomlari, interaktiv 360° menyu va samimiy mehmondo'stlik.
           </p>
 
-          <a href="/menu/" className="btn-enter-menu-giant">
+          <button type="button" onClick={() => navigate('/menu')} className="btn-enter-menu-giant">
             <span>Menyuni ko'rish</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          </a>
+          </button>
         </div>
 
-        {/* 3D Special Banner */}
+        {/* 360 Special Banner */}
         <div className="welcome-3d-banner">
           <div className="banner-3d-text">
             <div className="banner-pill">
@@ -83,17 +86,17 @@ export const WelcomePage: React.FC = () => {
                 <path d="m3.29 7 8.71 5.37L20.71 7" />
                 <path d="M12 12.37V22" />
               </svg>
-              <span>3D Taomlar</span>
+              <span>360° Taomlar</span>
             </div>
-            <h3>Taomlarni 3D ko'rinishda tomosha qiling</h3>
-            <p>Taom porsiyasi va tarkibini 360° burchak ostida ko'rishingiz mumkin.</p>
+            <h3>Taomlarni 360° ko'rinishda tomosha qiling</h3>
+            <p>Taom porsiyasi va tarkibini har taraflama ko'rishingiz mumkin.</p>
           </div>
-          <a href="/ar/" className="btn-banner-3d-cta">
+          <button type="button" onClick={() => navigate('/ar')} className="btn-banner-3d-cta">
             <span>Ko'rish</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          </a>
+          </button>
         </div>
 
         {/* Connect Section */}
@@ -243,11 +246,11 @@ export const WelcomePage: React.FC = () => {
         activeTab="home"
         cartCount={cartCount}
         onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
-          else if (tab === 'orders') window.location.href = '/orders/';
+          if (tab === 'home') navigate('/');
+          else if (tab === 'menu') navigate('/menu/');
+          else if (tab === 'ar') navigate('/ar/');
+          else if (tab === 'cart') navigate('/cart/');
+          else if (tab === 'orders') navigate('/orders/');
         }}
       />
     </div>

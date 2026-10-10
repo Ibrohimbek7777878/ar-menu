@@ -7,6 +7,7 @@ import {
   BottomNav,
   Toast,
 } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './CartPage.css';
 
 interface CartItem {
@@ -49,6 +50,7 @@ const DEFAULT_CART_ITEMS: CartItem[] = [
 ];
 
 export const CartPage: React.FC = () => {
+  const { navigate } = useNavigation();
   const initialData: InitialCartData = (window as any).__GULISTON_CART_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -262,7 +264,7 @@ export const CartPage: React.FC = () => {
                 if (customerNote) {
                   sessionStorage.setItem('order_note', customerNote);
                 }
-                window.location.href = '/checkout/';
+                navigate('/checkout');
               }}
               checkoutButtonText="Buyurtmani rasmiylashtirish"
             />
@@ -281,12 +283,12 @@ export const CartPage: React.FC = () => {
             <p className="empty-cart-desc">
               Dasturxonimizdagi sara va milliy taomlarni tanlab, buyurtma berishingiz mumkin.
             </p>
-            <a href="/menu/" className="btn-go-menu-primary">
+            <button type="button" onClick={() => navigate('/menu')} className="btn-go-menu-primary">
               <span>Menyudan taom tanlash</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-            </a>
+            </button>
           </div>
         )}
       </main>
@@ -296,11 +298,11 @@ export const CartPage: React.FC = () => {
         activeTab="cart"
         cartCount={totalCartCount}
         onTabChange={(tab) => {
-          if (tab === 'home') window.location.href = '/';
-          else if (tab === 'menu') window.location.href = '/menu/';
-          else if (tab === 'ar') window.location.href = '/ar/';
-          else if (tab === 'cart') window.location.href = '/cart/';
-          else if (tab === 'orders') window.location.href = '/orders/';
+          if (tab === 'home') navigate('/');
+          else if (tab === 'menu') navigate('/menu/');
+          else if (tab === 'ar') navigate('/ar/');
+          else if (tab === 'cart') navigate('/cart/');
+          else if (tab === 'orders') navigate('/orders/');
         }}
       />
     </div>
