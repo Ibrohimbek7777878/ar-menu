@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { HeaderNav, StaffNavHeader, Toast } from '../../components/ui';
+import { StaffNavHeader, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import './WaiterPanelPage.css';
 
@@ -177,8 +177,7 @@ export const WaiterPanelPage: React.FC = () => {
 
   return (
     <div className="react-waiter-page">
-      {/* ─── Header Navigation ─── */}
-      <HeaderNav brandName={`${shopName} · POS`} cartCount={0} />
+      {/* ─── Xodimlar Navigatsiyasi (StaffNavHeader) ─── */}
       <StaffNavHeader activeTab="waiter" />
 
       <main className="waiter-main-content">

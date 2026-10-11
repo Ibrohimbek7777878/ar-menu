@@ -13,6 +13,13 @@ export const StaffNavHeader: React.FC<StaffNavHeaderProps> = ({ activeTab, title
   return (
     <div className="staff-nav-header">
       <div className="staff-nav-container">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <span style={{ fontSize: '1.1rem' }}>🍽️</span>
+          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#fff', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+            Guliston POS
+          </span>
+        </div>
+
         <div className="staff-tabs-scroll">
           <button
             type="button"

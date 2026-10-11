@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { HeaderNav, StaffNavHeader, Toast } from '../../components/ui';
+import { StaffNavHeader, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import './HostessDeskPage.css';
 
@@ -33,7 +33,6 @@ export const HostessDeskPage: React.FC = () => {
   const initialData: InitialHostessData =
     typeof window !== 'undefined' ? window.__GULISTON_HOSTESS_DATA__ || {} : {};
 
-  const shopName = initialData.shop?.name || 'Guliston';
   const hostessName = initialData.hostess_name || 'Zarina (Hostess)';
 
   const initialGuests: HostessGuest[] = initialData.guests || [
@@ -192,8 +191,7 @@ export const HostessDeskPage: React.FC = () => {
 
   return (
     <div className="react-hostess-page">
-      {/* ─── Header Navigation ─── */}
-      <HeaderNav brandName={`${shopName} · Hostess`} cartCount={0} />
+      {/* ─── Xodimlar Navigatsiyasi (StaffNavHeader) ─── */}
       <StaffNavHeader activeTab="hostess" />
 
       <main className="hostess-main-content">
