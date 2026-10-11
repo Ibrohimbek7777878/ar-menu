@@ -1,5 +1,6 @@
 # Flutter
 build/
+**/build/
 .DS_Store
 
 # Android
@@ -56,7 +57,7 @@ windows/flutter/generated_plugin_registrant.h
 *.dll
 
 # Dart
-.dart_tool/
+**/.dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
@@ -98,32 +99,44 @@ Thumbs.db
 
 # Python & Django
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 venv/
 .venv/
+**/venv/
+**/.venv/
 backend/venv/
 *.sqlite3
 backend/db.sqlite3
 staticfiles/
+**/staticfiles/
 backend/staticfiles/
 /media/
 backend/media/
 3D_AR_MENU/AR_MENU_LOYIHA/media/
 backend/static/react/media/
 backend/static/react/models/
+3D_AR_MENU/backend/
 !frontend/public/media/
 !frontend/public/models/
 .env
 
 # Node
 node_modules/
+**/node_modules/
 backend/node_modules/
+dist/
+**/dist/
 
 # Runtime logs & PID
 backend/logs/
+**/logs/
 
 # Large media files
 *.mp4
 *.mkv
 *.mov
+
+# Local paste/drop artifacts
+Pasted image*.png

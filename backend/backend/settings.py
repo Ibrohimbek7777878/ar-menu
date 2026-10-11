@@ -129,7 +129,9 @@ if os.environ.get('POSTGRES_DB'):
             'USER': os.environ.get('POSTGRES_USER', 'postgres'),
             'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
             'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+            'PORT': os.environ.get('POSTGRES_PORT', '6432'),  # PgBouncer transaction pool port
+            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', 0)),  # 0 talab qilinadi (PgBouncer transaction pooling)
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 else:
@@ -165,11 +167,15 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-# Kunlik reyting hisoblash (faqat redis/beat mavjud bo'lganda ishlaydi)
+# Celery davriy rejalashtiruvchi (Beat Schedule)
 CELERY_BEAT_SCHEDULE = {
     'recompute-ranking-daily': {
         'task': 'ai.tasks.recompute_ranking',
         'schedule': 86400.0,
+    },
+    'drain-outbox-events-periodic': {
+        'task': 'notifications.tasks.process_outbox_queue',
+        'schedule': 10.0,  # Har 10 soniyada outbox navbatini tekshiradi va tozalaydi
     },
 }
 

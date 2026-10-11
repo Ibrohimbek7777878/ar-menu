@@ -36,6 +36,8 @@ class Table(models.Model):
     status = models.CharField(max_length=20, choices=STATUS, default='free', db_index=True)
     assigned_waiter = models.ForeignKey('accounts.AdminUser', null=True, blank=True, on_delete=models.SET_NULL)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'restaurant_tables'
@@ -173,6 +175,8 @@ class TableReservation(models.Model):
     reservation_time = models.TimeField(verbose_name="Bron vaqti")
     notes = models.TextField(blank=True, verbose_name="Maxsus istaklar / Izoh")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="O'chirilgan (Soft delete)")
+    deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

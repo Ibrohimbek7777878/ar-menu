@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import type { Product } from '../../../types/dish';
+import { RestaurantAPI } from '../../../services/RestaurantAPI';
 import './PhotogrammetryStudioModal.css';
 
 export interface PhotogrammetryStudioModalProps {
@@ -160,6 +161,9 @@ export const PhotogrammetryStudioModal: React.FC<PhotogrammetryStudioModalProps>
       ar_model: '/models/plov.glb',
       spin_frames: generatedFrames.length > 0 ? generatedFrames : undefined,
     };
+
+    // Backend PostgreSQL/SQLite bazasiga 3D model va 360 spin freymlarni yozish
+    RestaurantAPI.saveProduct3DScan(newDish as any);
 
     onSaveProduct3D(newDish);
     onClose();

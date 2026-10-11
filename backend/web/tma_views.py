@@ -21,6 +21,44 @@ from notifications.services.telegram_service import send_order_created
 from notifications.admin_bot import get_restaurant_shop
 
 
+def _calculate_cart_count(cart) -> int:
+    """Xavfsiz savatcha elementlari sonini hisoblash (har qanday session strukturasi uchun)."""
+    if not isinstance(cart, dict):
+        return 0
+    total = 0
+    for val in cart.values():
+        if isinstance(val, dict):
+            for item in val.values():
+                if isinstance(item, dict):
+                    total += int(item.get('quantity', 1))
+                elif isinstance(item, (int, float)):
+                    total += int(item)
+        elif isinstance(val, (int, float)):
+            total += int(val)
+    return total
+
+
+def _calculate_cart_totals(cart):
+    """Xavfsiz savatcha soni va umumiy summasi hisobi."""
+    if not isinstance(cart, dict):
+        return 0, Decimal('0')
+    total_qty = 0
+    total_sum = Decimal('0')
+    for val in cart.values():
+        if isinstance(val, dict):
+            for item in val.values():
+                if isinstance(item, dict):
+                    q = int(item.get('quantity', 1))
+                    p = Decimal(str(item.get('price', 0)))
+                    total_qty += q
+                    total_sum += p * q
+                elif isinstance(item, (int, float)):
+                    total_qty += int(item)
+        elif isinstance(val, (int, float)):
+            total_qty += int(val)
+    return total_qty, total_sum
+
+
 def _get_tma_table(request):
     """URL ?table= yoki sessiya orqali faol restoran stolini aniqlash."""
     table_token = request.GET.get('table') or request.GET.get('t') or request.POST.get('table')
@@ -95,10 +133,7 @@ def tma_home(request):
 
     # Savat miqdori
     cart = request.session.get('cart', {})
-    cart_count = sum(
-        int(item.get('quantity', 1))
-        for items in cart.values() for item in items.values()
-    )
+    cart_count = _calculate_cart_count(cart)
 
     # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
     react_products = []
@@ -189,7 +224,7 @@ def tma_catalog(request):
         products = products.filter(Q(name__icontains=q) | Q(description__icontains=q))
 
     cart = request.session.get('cart', {})
-    cart_count = sum(len(items) for items in cart.values())
+    cart_count = _calculate_cart_count(cart)
 
     context = {
         'products': products[:80],
@@ -335,14 +370,7 @@ def tma_cart_api(request):
                 del cart[shop_key]
 
     request.session.modified = True
-    total_qty = sum(
-        int(item.get('quantity', 1))
-        for items in cart.values() for item in items.values()
-    )
-    total_sum = sum(
-        Decimal(str(item.get('price', 0))) * int(item.get('quantity', 1))
-        for items in cart.values() for item in items.values()
-    )
+    total_qty, total_sum = _calculate_cart_totals(cart)
     item_qty = 0
     if shop_key in cart and product_id in cart[shop_key]:
         item_qty = cart[shop_key][product_id].get('quantity', 0)
@@ -675,7 +703,7 @@ def tma_table_hub(request):
 
     # Cart count
     cart = request.session.get('cart', {})
-    cart_count = sum(len(items) for items in cart.values())
+    cart_count = _calculate_cart_count(cart)
 
     # React TableHubPage uchun ma'lumotlar
     react_tables = []
@@ -845,10 +873,11 @@ def restaurant_admin_dashboard(request):
     Restoran Boshqaruv Markazi (Dashboard).
     Stollar, Oshxona (KDS), Ofitsiant (POS), Menyu, Kassa va Telegram nazorati.
     """
-    # Prototip va demonstratsiya uchun to'g'ridan-to'g'ri ko'rishga ruxsat
-    # Agar foydalanuvchi tizimga kirmagan bo'lsa ham, demonstratsiya boshqaruv panelini ko'radi
+    if not request.user.is_authenticated:
+        return redirect('restaurant_admin_login')
+
     role = getattr(request.user, 'role', 'shop_manager')
-    if request.user.is_authenticated and role == 'waiter':
+    if role == 'waiter':
         return redirect('waiter_panel_web')
 
     from tables_restaurant.models import Table, Hall
@@ -987,10 +1016,7 @@ def tma_welcome(request):
     shop = get_restaurant_shop()
     table, table_token = _get_tma_table(request)
     cart = request.session.get('cart', {})
-    cart_count = sum(
-        int(item.get('quantity', 1))
-        for items in cart.values() for item in items.values()
-    )
+    cart_count = _calculate_cart_count(cart)
     react_welcome_data = {
         'shop': {'name': shop.name if shop else 'Guliston'},
         'table': {

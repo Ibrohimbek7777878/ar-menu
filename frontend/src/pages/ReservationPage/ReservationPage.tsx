@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { RestaurantAPI } from '../../services/RestaurantAPI';
 import './ReservationPage.css';
 
 export interface ReservationInfo {
@@ -44,7 +45,7 @@ export const ReservationPage: React.FC = () => {
   const [mode, setMode] = useState<'find' | 'arrival'>(defaultMode);
   const [searchTab, setSearchTab] = useState<'code' | 'phone'>('code');
   const [query, setQuery] = useState(initialData.query || '');
-  const [foundReservation] = useState<ReservationInfo | null>(defaultReservation);
+  const [foundReservation, setFoundReservation] = useState<ReservationInfo | null>(defaultReservation);
 
   // Toast
   const [toastMsg, setToastMsg] = useState('');
@@ -64,10 +65,26 @@ export const ReservationPage: React.FC = () => {
       showToast('Qidirish uchun kod yoki telefon kiriting');
       return;
     }
+
+    // Backend orqali qidirish
+    RestaurantAPI.findReservation(query.trim()).then((res) => {
+      if (res?.reservation) {
+        setFoundReservation(res.reservation);
+        showToast('Bron topildi!', '✓');
+      } else {
+        showToast('Bron topilmadi');
+      }
+    });
+
     navigate(`/reservation/find/?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleConfirmArrival = (tableNum: string | number) => {
+    // Backend API statusini yangilash
+    if (foundReservation?.id) {
+      RestaurantAPI.updateReservationStatus(foundReservation.id, 'arrived');
+    }
+
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/reservation/arrival/';

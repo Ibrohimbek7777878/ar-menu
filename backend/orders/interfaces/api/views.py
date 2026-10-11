@@ -236,3 +236,91 @@ class RestaurantFinanceSyncView(APIView):
             'transactions': tx_list,
             'debts': debt_list
         })
+
+
+class TableAddItemView(APIView):
+    """
+    POST /api/v1/restaurant/tables/<str:table_number>/add-item/
+    Ofitsiant ochiq stolga yangi taom qo'shishi (Atomic).
+    """
+    def post(self, request, table_number):
+        try:
+            res = RestaurantOrderService.add_item_to_table(table_number, request.data)
+            return Response(res, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RestaurantReservationListView(APIView):
+    """
+    GET /api/v1/restaurant/reservations/ - Ro'yxat
+    POST /api/v1/restaurant/reservations/ - Yangi bron yaratish
+    """
+    def get(self, request):
+        filters = {
+            'date': request.GET.get('date'),
+            'status': request.GET.get('status'),
+            'q': request.GET.get('q'),
+        }
+        res_list = RestaurantOrderService.get_reservations(filters)
+        return Response({'status': 'success', 'reservations': res_list})
+
+    def post(self, request):
+        try:
+            created = RestaurantOrderService.create_reservation(request.data)
+            return Response({'status': 'success', 'reservation': created}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RestaurantReservationStatusView(APIView):
+    """
+    PATCH /api/v1/restaurant/reservations/<int:reservation_id>/status/
+    Holatni o'zgartirish (arrived, seated, confirmed, cancelled).
+    """
+    def patch(self, request, reservation_id):
+        new_status = request.data.get('status', 'arrived')
+        res = RestaurantOrderService.update_reservation_status(reservation_id, new_status)
+        if res.get('error'):
+            return Response(res, status=status.HTTP_404_NOT_FOUND)
+        return Response(res)
+
+
+class RestaurantReservationFindView(APIView):
+    """
+    GET /api/v1/restaurant/reservations/find/?q=...
+    Bronni kod yoki telefon raqam bo'yicha qidirish.
+    """
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        if not q:
+            return Response({'error': "Qidiruv so'zi kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
+        res_list = RestaurantOrderService.get_reservations({'q': q})
+        if res_list:
+            return Response({'status': 'success', 'reservation': res_list[0], 'all_matches': res_list})
+        return Response({'status': 'not_found', 'reservation': None}, status=status.HTTP_404_NOT_FOUND)
+
+
+class RestaurantProduct3DScanView(APIView):
+    """
+    POST /api/v1/restaurant/products/3d-scan/ (yangi taom yaratish)
+    POST /api/v1/restaurant/products/<int:product_id>/3d-scan/ (mavjud taomga biriktirish)
+    """
+    def post(self, request, product_id=None):
+        try:
+            res = RestaurantOrderService.save_product_3d_scan(request.data, product_id=product_id)
+            if res.get('error'):
+                return Response(res, status=status.HTTP_404_NOT_FOUND)
+            return Response(res, status=status.HTTP_201_CREATED if not product_id else status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RestaurantMenuView(APIView):
+    """
+    GET /api/v1/restaurant/menu/
+    Dinamik Menyu va Katalog REST API (Pure SPA fallback).
+    """
+    def get(self, request):
+        data = RestaurantOrderService.get_restaurant_menu()
+        return Response(data)

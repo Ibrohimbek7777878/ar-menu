@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Online Store Guliston — Noutbuk Serverini To'xtatish (Multi-Port)
+# ==============================================================================
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PID_FILE="$DIR/backend/logs/server_daemon.pid"
+
+echo "🛑 Guliston Noutbuk Server to'xtatilmoqda..."
+
+if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE" 2>/dev/null || true)
+    if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+        kill -TERM "$PID" 2>/dev/null || true
+        for i in {1..5}; do
+            if ! kill -0 "$PID" 2>/dev/null; then
+                break
+            fi
+            sleep 1
+        done
+        # Agar hali ham o'lmagan bo'lsa
+        if kill -0 "$PID" 2>/dev/null; then
+            kill -KILL "$PID" 2>/dev/null || true
+        fi
+    fi
+    rm -f "$PID_FILE"
+fi
+
+# Gunicorn va Cloudflared jarayonlarini tozalash
+pkill -f "laptop_server_daemon.py" 2>/dev/null || true
+pkill -f "gunicorn.*backend.wsgi" 2>/dev/null || true
+pkill -f "cloudflared.*tunnel" 2>/dev/null || true
+
+# 8001, 8002, 8003 va 8000 portlarini tozalash
+fuser -k 8001/tcp 2>/dev/null || true
+fuser -k 8002/tcp 2>/dev/null || true
+fuser -k 8003/tcp 2>/dev/null || true
+fuser -k 8000/tcp 2>/dev/null || true
+
+echo "✅ Barcha 3 ta server (8001, 8002, 8003) to'liq to'xtatildi."

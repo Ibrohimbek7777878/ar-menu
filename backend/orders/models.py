@@ -77,12 +77,21 @@ class Order(models.Model):
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     out_for_delivery_at = models.DateTimeField(null=True, blank=True)
+    # 4-QOIDA: Soft Delete (Hech narsa butunlay o'chirilmaydi)
+    is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="O'chirilgan (Soft delete)")
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'orders'
         verbose_name = 'Buyurtma'
         verbose_name_plural = 'Buyurtmalar'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['shop', 'status', '-created_at'], name='orders_shop_stat_idx'),
+            models.Index(fields=['customer', '-created_at'], name='orders_cust_cr_idx'),
+            models.Index(fields=['status', '-created_at'], name='orders_stat_cr_idx'),
+            models.Index(fields=['is_deleted', '-created_at'], name='orders_del_cr_idx'),
+        ]
 
     def __str__(self):
         return f'{self.order_number} — {self.customer_name}'
@@ -138,6 +147,10 @@ class OrderItem(models.Model):
         db_table = 'order_items'
         verbose_name = 'Buyurtma mahsuloti'
         verbose_name_plural = 'Buyurtma mahsulotlari'
+        indexes = [
+            models.Index(fields=['order', 'course'], name='item_ord_crs_idx'),
+            models.Index(fields=['order', 'is_done'], name='item_ord_done_idx'),
+        ]
 
     @property
     def unit_price(self):

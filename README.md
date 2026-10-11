@@ -27,7 +27,9 @@ docs/
 ├── 00_ARCHITECTURE_MASTER/
 │   ├── MASTER_ECOSYSTEM_OVERVIEW.md       # 3 mahsulotli ekotizim umumiy arxitekturasi
 │   ├── MULTI_BOT_AND_MINI_ERP_ARCHITECTURE.md # Ko'p botli marshrutlash va ERP xaritasi
-│   └── DEVELOPER_AND_AI_GUIDE.md          # Dasturchi va AI uchun qat'iy qoidalar
+│   ├── DEVELOPER_AND_AI_GUIDE.md          # Dasturchi va AI uchun qat'iy qoidalar
+│   ├── REPOSITORY_STRUCTURE.md            # Aktiv kod, legacy va archive xaritasi
+│   └── SIX_YEAR_PRODUCTION_ARCHITECTURE.md # 6 yilga mo'ljallangan target production arxitektura
 ├── 01_PRODUCT_RESTAURANT_3D_AR/
 │   ├── README.md                          # Mahsulot #1 umumiy tavsifi va xususiyatlari
 │   ├── CODEBASE_MAP.md                    # Restoran backend, frontend va template fayllari
@@ -47,6 +49,8 @@ docs/
     ├── SHARED_CORE_ENGINE.md              # Umumiy Django modullari (Auth, Payme, Storage)
     └── ARCHIVE_SPECS/                     # Tarixiy va eski TZ fayllari arxivi
 ```
+
+> **6 yillik target arxitektura:** [`docs/00_ARCHITECTURE_MASTER/SIX_YEAR_PRODUCTION_ARCHITECTURE.md`](docs/00_ARCHITECTURE_MASTER/SIX_YEAR_PRODUCTION_ARCHITECTURE.md). Fayl strukturasi bo'yicha asosiy manba: [`docs/00_ARCHITECTURE_MASTER/REPOSITORY_STRUCTURE.md`](docs/00_ARCHITECTURE_MASTER/REPOSITORY_STRUCTURE.md). Root papkaga yangi hujjat tashlamang; yangi `.md` materiallar `docs/` ichiga joylanadi. Joriy handoff: [`docs/04_SHARED_MODULES_AND_ARCHIVE/HANDOFF_CURRENT.md`](docs/04_SHARED_MODULES_AND_ARCHIVE/HANDOFF_CURRENT.md).
 
 ---
 

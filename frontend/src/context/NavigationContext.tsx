@@ -867,6 +867,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           return [newOrder, ...prev];
         }
       });
+
+      // Backend server bazasiga darhol atomik yozish (PostgreSQL/SQLite)
+      RestaurantAPI.addDishToTable(tableNum, dish);
     },
     []
   );

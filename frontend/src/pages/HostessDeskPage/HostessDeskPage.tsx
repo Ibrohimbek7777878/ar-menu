@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { StaffNavHeader, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { RestaurantAPI } from '../../services/RestaurantAPI';
 import './HostessDeskPage.css';
 
 export interface HostessGuest {
@@ -86,6 +87,16 @@ export const HostessDeskPage: React.FC = () => {
   ];
 
   const [guests, setGuests] = useState<HostessGuest[]>(initialGuests);
+
+  // Jonli backend bronlarini yuklash
+  useEffect(() => {
+    RestaurantAPI.getReservations().then((res) => {
+      if (res?.reservations && res.reservations.length > 0) {
+        setGuests(res.reservations);
+      }
+    });
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'desk' | 'timeline' | 'checklist'>('desk');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -122,6 +133,7 @@ export const HostessDeskPage: React.FC = () => {
     setGuests((prev) =>
       prev.map((g) => (g.id === id ? { ...g, status: 'arrived' } : g))
     );
+    RestaurantAPI.updateReservationStatus(id, 'arrived');
     showToast('Mehmon yetib kelgani qayd etildi');
   };
 
@@ -133,6 +145,7 @@ export const HostessDeskPage: React.FC = () => {
     setGuests((prev) =>
       prev.map((g) => (g.id === id ? { ...g, status: 'seated' } : g))
     );
+    RestaurantAPI.updateReservationStatus(id, 'seated');
     showToast("Mehmon stolga o'tqazildi va stol band deb belgilandi");
   };
 
@@ -170,6 +183,22 @@ export const HostessDeskPage: React.FC = () => {
     setIsAddModalOpen(false);
     setNewGuestName('');
     setNewGuestNotes('');
+    
+    // Backend bazasiga yozish
+    RestaurantAPI.createReservation({
+      customer_name: newGuest.name,
+      customer_phone: newGuest.phone,
+      table_number: newGuest.table_number,
+      hall: newGuest.hall,
+      guests_count: newGuest.guests_count,
+      notes: newGuest.notes,
+      status: 'arrived',
+    }).then((saved) => {
+      if (saved?.reservation?.id) {
+        setGuests((prev) => prev.map((g) => g === newGuest ? { ...g, id: saved.reservation.id, code: saved.reservation.code } : g));
+      }
+    });
+
     showToast(`${newGuest.name} qabul qilindi va #${newGuest.table_number} stolga biriktirildi`);
   };
 

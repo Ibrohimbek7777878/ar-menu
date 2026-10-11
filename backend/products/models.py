@@ -112,12 +112,20 @@ class Product(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 4-QOIDA: Soft Delete (Hech narsa butunlay o'chirilmaydi)
+    is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="O'chirilgan (Soft delete)")
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'products'
         verbose_name = 'Mahsulot'
         verbose_name_plural = 'Mahsulotlar'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['shop', 'is_available', 'is_deleted'], name='prod_shop_av_idx'),
+            models.Index(fields=['category', 'is_available', 'is_deleted'], name='prod_cat_av_idx'),
+            models.Index(fields=['is_deleted', '-created_at'], name='prod_del_cr_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(stock__gte=0),

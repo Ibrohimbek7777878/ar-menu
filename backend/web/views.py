@@ -1258,8 +1258,9 @@ def admin_shop_edit(request, pk):
 @login_required(login_url='web_login')
 def admin_shop_delete(request, pk):
     shop = get_object_or_404(Shop, pk=pk)
-    shop.delete()
-    messages.success(request, "Do'kon o'chirildi")
+    shop.is_active = False
+    shop.save(update_fields=['is_active'])
+    messages.success(request, "Do'kon o'chirildi (yashirildi)")
     return redirect('admin_shops')
 
 
@@ -1632,8 +1633,11 @@ def admin_telegram(request):
 @login_required(login_url='web_login')
 def admin_product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    product.delete()
-    messages.success(request, 'Mahsulot o\'chirildi')
+    product.is_deleted = True
+    product.is_available = False
+    product.deleted_at = timezone.now()
+    product.save(update_fields=['is_deleted', 'is_available', 'deleted_at'])
+    messages.success(request, 'Mahsulot o\'chirildi (arxivlandi)')
     return redirect('admin_products')
 
 
@@ -1742,8 +1746,9 @@ def admin_category_edit(request, pk):
 @login_required(login_url='web_login')
 def admin_category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
-    category.delete()
-    messages.success(request, 'Kategoriya o\'chirildi')
+    category.is_active = False
+    category.save(update_fields=['is_active'])
+    messages.success(request, 'Kategoriya o\'chirildi (yashirildi)')
     return redirect('admin_categories')
 
 
@@ -1797,8 +1802,9 @@ def admin_courier_edit(request, pk):
 @login_required(login_url='web_login')
 def admin_courier_delete(request, pk):
     courier = get_object_or_404(Courier, pk=pk)
-    courier.delete()
-    messages.success(request, 'Kuryer o\'chirildi')
+    courier.status = 'offline'
+    courier.save(update_fields=['status'])
+    messages.success(request, 'Kuryer o\'chirildi (nofaol qilindi)')
     return redirect('admin_couriers')
 
 
@@ -1856,8 +1862,9 @@ def admin_banner_edit(request, pk):
 @login_required(login_url='web_login')
 def admin_banner_delete(request, pk):
     banner = get_object_or_404(Banner, pk=pk)
-    banner.delete()
-    messages.success(request, 'Banner o\'chirildi')
+    banner.is_active = False
+    banner.save(update_fields=['is_active'])
+    messages.success(request, 'Banner o\'chirildi (yashirildi)')
     return redirect('admin_banners')
 
 

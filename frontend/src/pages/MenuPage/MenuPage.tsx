@@ -13,6 +13,7 @@ import type { Product, Category } from '../../types/dish';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../../data/mockDishes';
 import { matchUzbekQuery } from '../../utils/uzbekSearch';
 import { useNavigation } from '../../context/NavigationContext';
+import { RestaurantAPI } from '../../services/RestaurantAPI';
 import './MenuPage.css';
 
 interface InitialData {
@@ -42,6 +43,21 @@ export const MenuPage: React.FC = () => {
   // Local state
   const [categories, setCategories] = useState<Category[]>(categoriesList);
   const [products, setProducts] = useState<Product[]>(productsList);
+
+  // Jonli backend menyusini yuklash (Pure SPA rejimida)
+  useEffect(() => {
+    if (!initialData.products || initialData.products.length === 0) {
+      RestaurantAPI.getMenu().then((res) => {
+        if (res?.products && res.products.length > 0) {
+          setProducts(res.products);
+          if (res.categories && res.categories.length > 0) {
+            setCategories(res.categories);
+          }
+        }
+      });
+    }
+  }, []);
+
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [only3D, setOnly3D] = useState(false);

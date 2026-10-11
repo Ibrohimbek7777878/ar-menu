@@ -4,9 +4,15 @@ from orders.interfaces.api.views import (
     RestaurantOrderListView,
     KitchenItemToggleView,
     TableSettleBillView,
+    TableAddItemView,
     RestaurantTablesStateView,
     ServiceCallActionView,
     RestaurantFinanceSyncView,
+    RestaurantReservationListView,
+    RestaurantReservationStatusView,
+    RestaurantReservationFindView,
+    RestaurantProduct3DScanView,
+    RestaurantMenuView,
 )
 
 urlpatterns = [
@@ -20,6 +26,19 @@ urlpatterns = [
     # Tables & Billing
     path('tables/', RestaurantTablesStateView.as_view(), name='restaurant_tables_list'),
     path('tables/<str:table_number>/settle/', TableSettleBillView.as_view(), name='restaurant_table_settle'),
+    path('tables/<str:table_number>/add-item/', TableAddItemView.as_view(), name='restaurant_table_add_item'),
+
+    # Reservations & Hostess Desk
+    path('reservations/', RestaurantReservationListView.as_view(), name='restaurant_reservations'),
+    path('reservations/find/', RestaurantReservationFindView.as_view(), name='restaurant_reservations_find'),
+    path('reservations/<int:reservation_id>/status/', RestaurantReservationStatusView.as_view(), name='restaurant_reservation_status'),
+
+    # 3D Photogrammetry & 360 Spin Upload
+    path('products/3d-scan/', RestaurantProduct3DScanView.as_view(), name='restaurant_product_3d_scan_create'),
+    path('products/<int:product_id>/3d-scan/', RestaurantProduct3DScanView.as_view(), name='restaurant_product_3d_scan_update'),
+
+    # Dynamic Menu (Pure SPA fallback)
+    path('menu/', RestaurantMenuView.as_view(), name='restaurant_menu'),
 
     # Service Calls (Guest / Waiter / Kitchen)
     path('calls/', ServiceCallActionView.as_view(), name='restaurant_calls'),

@@ -168,3 +168,47 @@ class BotMessage(models.Model):
 
     def __str__(self):
         return f'{self.first_name or self.chat_id}: {self.text[:50]}'
+
+
+import uuid
+
+
+class OutboxEvent(models.Model):
+    """
+    Transactional Outbox Pattern — 1,000+ concurrent requests uchun:
+    Hodisalar (Telegram xabarlar, Push, KDS yangilanishi, Webhooklar)
+    asosiy tranzaksiya ichida tezkor (in-transaction) saqlanadi.
+    Celery worker 'SELECT ... FOR UPDATE SKIP LOCKED' orqali asinxron,
+    hech qanday qotish va blokirovkasiz qayta ishlaydi.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Kutilmoqda'),
+        ('processing', 'Jarayonda'),
+        ('completed', 'Bajarildi'),
+        ('failed', 'Xato berdi'),
+    ]
+
+    event_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    aggregate_type = models.CharField(max_length=50, db_index=True)
+    aggregate_id = models.CharField(max_length=100, db_index=True)
+    event_type = models.CharField(max_length=100, db_index=True)
+    payload = models.JSONField(default=dict)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    retry_count = models.IntegerField(default=0)
+    max_retries = models.IntegerField(default=5)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'outbox_events'
+        verbose_name = 'Outbox Hodisasi'
+        verbose_name_plural = 'Outbox Hodisalari'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['status', 'created_at'], name='outbox_status_created_idx'),
+            models.Index(fields=['aggregate_type', 'aggregate_id'], name='outbox_agg_idx'),
+        ]
+
+    def __str__(self):
+        return f"[{self.status.upper()}] {self.event_type} ({self.aggregate_type}:{self.aggregate_id})"
