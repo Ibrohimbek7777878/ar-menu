@@ -203,6 +203,19 @@ export const AdminDashboardPage: React.FC = () => {
             <span>Menyu</span>
           </a>
           <a
+            href="/finance/"
+            className="admin-nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/finance/');
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            <span>Moliya &amp; Kassa</span>
+          </a>
+          <a
             href="/ar/"
             className="admin-nav-item"
             onClick={(e) => {
@@ -298,9 +311,14 @@ export const AdminDashboardPage: React.FC = () => {
         {/* ─── 4 TA KPI METRIKASI ─── */}
         <section className="admin-stats-grid">
           {/* 1. Bugungi Tushum */}
-          <div className="admin-stat-card">
+          <div
+            className="admin-stat-card"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate('/finance/')}
+            title="Batafsil moliya va kassa hisobotini ko'rish"
+          >
             <div className="admin-stat-top">
-              <span className="admin-stat-label">Bugungi tushum (kassa)</span>
+              <span className="admin-stat-label">Bugungi tushum (kassa) ↗</span>
               <div className="admin-stat-icon-wrap icon-green" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="1" x2="12" y2="23" />
@@ -310,7 +328,7 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
             <div className="admin-stat-val tabular-nums">{formattedRevenue}</div>
             <div className="admin-stat-trend">
-              <span>+18.4% kechagiga nisbatan</span>
+              <span>Sobir Tog'a Moliya Tizimi &rarr;</span>
             </div>
           </div>
 

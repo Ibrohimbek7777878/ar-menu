@@ -46,6 +46,38 @@ export interface LiveServiceCall {
   status: 'pending' | 'accepted' | 'done';
 }
 
+export interface FinanceTransaction {
+  id: string | number;
+  type: 'income' | 'expense';
+  category: string;
+  amount: number;
+  payment_method: 'cash' | 'card';
+  source_type: 'receipt' | 'manual' | 'debt_payment';
+  reference_id?: string;
+  table_number?: string | number;
+  order_number?: string;
+  customer_name?: string;
+  description: string;
+  created_at: string;
+  is_cancelled?: boolean;
+  cancellation_reason?: string;
+  cancelled_at?: string;
+}
+
+export interface FinanceDebt {
+  id: string | number;
+  type: 'receivable' | 'payable'; // receivable: bizga berishadi (mijozlar), payable: biz beramiz (ta'minotchilar)
+  person_name: string;
+  phone?: string;
+  description?: string;
+  total_amount: number;
+  paid_amount: number;
+  remaining_amount: number;
+  status: 'pending' | 'partially_paid' | 'settled';
+  created_at: string;
+  due_date?: string;
+}
+
 export interface NavigationContextType {
   // Navigation & Routing
   currentPath: string;
@@ -80,7 +112,7 @@ export interface NavigationContextType {
   tables: LiveTable[];
   updateTableStatus: (tableNumber: string | number, status: LiveTable['status'], guestsCount?: number) => void;
   addDishToTable: (tableNumber: string | number, dish: { name: string; price: number }) => void;
-  settleTableBill: (tableNumber: string | number) => void;
+  settleTableBill: (tableNumber: string | number, paymentMethod?: 'cash' | 'card') => void;
 
   // Service Calls (Guest -> Waiter & KDS -> Waiter)
   serviceCalls: LiveServiceCall[];
@@ -97,6 +129,14 @@ export interface NavigationContextType {
   todayRevenue: number;
   stopList: number[];
   toggleStopList: (productId: number) => void;
+
+  // Sobir Tog'a Moliya Tizimi (Finance System)
+  financeTransactions: FinanceTransaction[];
+  financeDebts: FinanceDebt[];
+  addFinanceTransaction: (tx: Omit<FinanceTransaction, 'id' | 'created_at'>) => void;
+  cancelFinanceTransaction: (id: string | number, reason: string) => void;
+  addFinanceDebt: (debt: Omit<FinanceDebt, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at'>) => void;
+  payDebtPartial: (debtId: string | number, payAmount: number, paymentMethod: 'cash' | 'card', notes?: string) => void;
 
   // Reusable Modals
   isCallWaiterOpen: boolean;
@@ -247,6 +287,108 @@ const DEFAULT_SERVICE_CALLS: LiveServiceCall[] = [
   },
 ];
 
+const DEFAULT_FINANCE_TRANSACTIONS: FinanceTransaction[] = [
+  {
+    id: 'tx-1',
+    type: 'income',
+    category: 'Restoran Tushumi (Chek)',
+    amount: 1250000,
+    payment_method: 'cash',
+    source_type: 'receipt',
+    table_number: 'VIP-2',
+    order_number: '#098',
+    customer_name: 'Bekzod aka',
+    description: 'Stol VIP-2 yopildi (Chek #098)',
+    created_at: new Date(Date.now() - 95 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'tx-2',
+    type: 'income',
+    category: 'Restoran Tushumi (Chek)',
+    amount: 980000,
+    payment_method: 'card',
+    source_type: 'receipt',
+    table_number: '03',
+    order_number: '#099',
+    customer_name: 'Shohruh',
+    description: 'Stol 03 yopildi (Payme/Click)',
+    created_at: new Date(Date.now() - 70 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'tx-3',
+    type: 'expense',
+    category: 'Go\'sht & Masalliq',
+    amount: 650000,
+    payment_method: 'cash',
+    source_type: 'manual',
+    description: 'Qassob Ilhom akadan 15 kg lahm go\'sht olindi',
+    created_at: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'tx-4',
+    type: 'income',
+    category: 'Nasiya Qaytarildi',
+    amount: 400000,
+    payment_method: 'cash',
+    source_type: 'debt_payment',
+    customer_name: 'Alisher aka',
+    description: 'Alisher aka qisman qarzini qaytardi',
+    created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'tx-5',
+    type: 'expense',
+    category: 'Kommunal & Gaz',
+    amount: 220000,
+    payment_method: 'card',
+    source_type: 'manual',
+    description: 'Elektr energiyasi to\'lovi (Click)',
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+  },
+];
+
+const DEFAULT_FINANCE_DEBTS: FinanceDebt[] = [
+  {
+    id: 'debt-1',
+    type: 'receivable',
+    person_name: 'Alisher aka',
+    phone: '+998 90 333 44 55',
+    description: 'Tug\'ilgan kun ziyofatidan qolgan qoldiq',
+    total_amount: 1000000,
+    paid_amount: 400000,
+    remaining_amount: 600000,
+    status: 'partially_paid',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    due_date: 'Dushanba kuni',
+  },
+  {
+    id: 'debt-2',
+    type: 'receivable',
+    person_name: 'Bobur (Hokimiyat)',
+    phone: '+998 97 111 22 33',
+    description: 'Stol 01 tushlik buyurtmasi',
+    total_amount: 350000,
+    paid_amount: 0,
+    remaining_amount: 350000,
+    status: 'pending',
+    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    due_date: 'Ertaga',
+  },
+  {
+    id: 'debt-3',
+    type: 'payable',
+    person_name: 'Ilhom Qassob (Go\'shtchi)',
+    phone: '+998 93 777 88 99',
+    description: 'Ertalabki mol go\'shti partiyasi',
+    total_amount: 2400000,
+    paid_amount: 1000000,
+    remaining_amount: 1400000,
+    status: 'partially_paid',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    due_date: 'Hafta oxiri',
+  },
+];
+
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const rawPath = window.location.pathname || '/';
@@ -317,6 +459,23 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return 3480000;
   });
 
+  // Sobir Tog'a Moliya Tizimi (Transactions & Debts)
+  const [financeTransactions, setFinanceTransactions] = useState<FinanceTransaction[]>(() => {
+    try {
+      const saved = localStorage.getItem('guliston_finance_txs');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_FINANCE_TRANSACTIONS;
+  });
+
+  const [financeDebts, setFinanceDebts] = useState<FinanceDebt[]>(() => {
+    try {
+      const saved = localStorage.getItem('guliston_finance_debts');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_FINANCE_DEBTS;
+  });
+
   // Stop List (Unavailable products)
   const [stopList, setStopList] = useState<number[]>(() => {
     try {
@@ -368,6 +527,18 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       localStorage.setItem('guliston_today_revenue', String(todayRevenue));
     } catch {}
   }, [todayRevenue]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guliston_finance_txs', JSON.stringify(financeTransactions));
+    } catch {}
+  }, [financeTransactions]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guliston_finance_debts', JSON.stringify(financeDebts));
+    } catch {}
+  }, [financeDebts]);
 
   useEffect(() => {
     try {
@@ -607,12 +778,111 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     );
   }, []);
 
-  const settleTableBill = useCallback((tableNum: string | number) => {
+  // Finance helpers
+  const addFinanceTransaction = useCallback((tx: Omit<FinanceTransaction, 'id' | 'created_at'>) => {
+    const newTx: FinanceTransaction = {
+      ...tx,
+      id: `tx-${Date.now()}`,
+      created_at: new Date().toISOString(),
+    };
+    setFinanceTransactions((prev) => [newTx, ...prev]);
+
+    // Agar kirim bo'lsa darhol todayRevenue ga ham ta'sir qiladi
+    if (tx.type === 'income') {
+      setTodayRevenue((prev) => prev + tx.amount);
+    }
+  }, []);
+
+  const cancelFinanceTransaction = useCallback((id: string | number, reason: string) => {
+    setFinanceTransactions((prev) =>
+      prev.map((tx) => {
+        if (String(tx.id) === String(id) && !tx.is_cancelled) {
+          // Agar bekor qilinayotgan tranzaksiya kirim bo'lsa, tushumni kamaytirish
+          if (tx.type === 'income') {
+            setTodayRevenue((rev) => Math.max(0, rev - tx.amount));
+          }
+          return {
+            ...tx,
+            is_cancelled: true,
+            cancellation_reason: reason,
+            cancelled_at: new Date().toISOString(),
+          };
+        }
+        return tx;
+      })
+    );
+  }, []);
+
+  const addFinanceDebt = useCallback(
+    (debt: Omit<FinanceDebt, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at'>) => {
+      const newDebt: FinanceDebt = {
+        ...debt,
+        id: `debt-${Date.now()}`,
+        paid_amount: 0,
+        remaining_amount: debt.total_amount,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      };
+      setFinanceDebts((prev) => [newDebt, ...prev]);
+    },
+    []
+  );
+
+  const payDebtPartial = useCallback(
+    (debtId: string | number, payAmount: number, paymentMethod: 'cash' | 'card', notes?: string) => {
+      setFinanceDebts((prev) =>
+        prev.map((debt) => {
+          if (String(debt.id) === String(debtId)) {
+            const newPaid = Math.min(debt.total_amount, debt.paid_amount + payAmount);
+            const remaining = Math.max(0, debt.total_amount - newPaid);
+            const status: FinanceDebt['status'] = remaining === 0 ? 'settled' : 'partially_paid';
+
+            // Agar mijoz bizga qarzini to'lagan bo'lsa (receivable) -> Kassaga KIRIM tushadi!
+            // Agar biz ta'minotchiga qarzimizni to'lagan bo'lsak (payable) -> Kassadan CHIQIM bo'ladi!
+            const txType = debt.type === 'receivable' ? ('income' as const) : ('expense' as const);
+            const txCategory = debt.type === 'receivable' ? 'Nasiya Qaytarildi' : 'Qarz To\'lovi (Yetkazib beruvchi)';
+
+            const autoTx: FinanceTransaction = {
+              id: `tx-debt-${Date.now()}`,
+              type: txType,
+              category: txCategory,
+              amount: payAmount,
+              payment_method: paymentMethod,
+              source_type: 'debt_payment',
+              customer_name: debt.person_name,
+              description: `${debt.person_name} (${debt.type === 'receivable' ? 'Nasiya qaytardi' : 'Qarz to\'landi'})${notes ? ': ' + notes : ''}`,
+              created_at: new Date().toISOString(),
+            };
+
+            setFinanceTransactions((txs) => [autoTx, ...txs]);
+
+            if (txType === 'income') {
+              setTodayRevenue((rev) => rev + payAmount);
+            }
+
+            return {
+              ...debt,
+              paid_amount: newPaid,
+              remaining_amount: remaining,
+              status,
+            };
+          }
+          return debt;
+        })
+      );
+    },
+    []
+  );
+
+  const settleTableBill = useCallback((tableNum: string | number, paymentMethod: 'cash' | 'card' = 'cash') => {
     let billSum = 0;
+    let tableHall = 'Asosiy Zal';
+
     setTables((prev) =>
       prev.map((t) => {
         if (String(t.number) === String(tableNum)) {
           billSum = t.total_bill;
+          tableHall = t.hall;
           return {
             ...t,
             status: 'free',
@@ -626,20 +896,42 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     );
 
     // Mark orders as paid
+    let customerName = 'Mijoz';
+    let orderNum = '#Chek';
+
     setOrders((prev) =>
-      prev.map((o) =>
-        String(o.table_number) === String(tableNum) && o.status !== 'paid'
-          ? { ...o, status: 'paid' }
-          : o
-      )
+      prev.map((o) => {
+        if (String(o.table_number) === String(tableNum) && o.status !== 'paid') {
+          customerName = o.customer_name || customerName;
+          orderNum = o.order_number || orderNum;
+          return { ...o, status: 'paid' };
+        }
+        return o;
+      })
     );
 
     // Remove pending service calls for this table
     setServiceCalls((prev) => prev.filter((c) => String(c.table_number) !== String(tableNum)));
 
-    // Increase today's revenue
+    // Increase today's revenue and auto-create Finance Transaction
     if (billSum > 0) {
       setTodayRevenue((prev) => prev + billSum);
+
+      const autoReceiptTx: FinanceTransaction = {
+        id: `tx-rcpt-${Date.now()}`,
+        type: 'income',
+        category: 'Restoran Tushumi (Chek)',
+        amount: billSum,
+        payment_method: paymentMethod,
+        source_type: 'receipt',
+        table_number: tableNum,
+        order_number: orderNum,
+        customer_name: customerName,
+        description: `Stol ${tableNum} (${tableHall}) hisobi yopildi. Chek ${orderNum}`,
+        created_at: new Date().toISOString(),
+      };
+
+      setFinanceTransactions((prev) => [autoReceiptTx, ...prev]);
     }
   }, []);
 
@@ -725,6 +1017,14 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         todayRevenue,
         stopList,
         toggleStopList,
+
+        // Sobir Tog'a Moliya Tizimi
+        financeTransactions,
+        financeDebts,
+        addFinanceTransaction,
+        cancelFinanceTransaction,
+        addFinanceDebt,
+        payDebtPartial,
 
         isCallWaiterOpen,
         setIsCallWaiterOpen,

@@ -1,0 +1,687 @@
+.finance-page-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+  padding-bottom: 80px;
+}
+
+.finance-container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+  box-sizing: border-box;
+}
+
+/* Header Banner */
+.finance-header-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.finance-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.finance-brand-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+}
+
+.finance-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.finance-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.finance-controls-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 4 Big KPI Tiles (Sobir Tog'a) */
+.finance-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1100px) {
+  .finance-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .finance-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.kpi-tile {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 18px 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.kpi-tile.tile-income {
+  border-color: #d1fae5;
+}
+
+.kpi-tile.tile-expense {
+  border-color: #ffe4e6;
+}
+
+.kpi-tile.tile-profit {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.25);
+}
+
+.kpi-tile.tile-debt {
+  border-color: #fef3c7;
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.kpi-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tile-income .kpi-tag { color: #047857; }
+.tile-expense .kpi-tag { color: #be123c; }
+.tile-profit .kpi-tag { color: rgba(255, 255, 255, 0.95); }
+.tile-debt .kpi-tag { color: #b45309; }
+
+.kpi-amount-box {
+  margin: 6px 0;
+}
+
+.kpi-amount-val {
+  font-size: 1.65rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.kpi-amount-unit {
+  font-size: 0.82rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.kpi-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.tile-profit .kpi-desc {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Breakdown footer (Naqd vs Karta) */
+.kpi-breakdown {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.tile-profit .kpi-breakdown {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.breakdown-item b {
+  font-weight: 800;
+}
+
+/* 4 Big Action Buttons */
+.finance-actions-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .finance-actions-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .finance-actions-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.finance-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  color: #ffffff;
+}
+
+.finance-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+}
+
+.btn-income-action {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-expense-action {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
+}
+
+.btn-debt-action {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.btn-receipt-action {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+/* Tab Navigation & Search Bar */
+.finance-content-box {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.finance-nav-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 12px;
+}
+
+.finance-tabs-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.finance-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.finance-tab-pill:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.finance-tab-pill.active {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.pill-count {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.finance-tab-pill.active .pill-count {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.finance-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 6px 12px;
+  width: 260px;
+}
+
+.finance-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.82rem;
+  color: #0f172a;
+  width: 100%;
+}
+
+/* Transactions Table */
+.finance-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.finance-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.finance-data-table th {
+  background: #f8fafc;
+  padding: 12px 18px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.finance-data-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.finance-data-table tr:hover {
+  background: #fbfcfe;
+}
+
+.finance-data-table tr.is-cancelled {
+  opacity: 0.55;
+  text-decoration: line-through;
+  background: #fff5f5;
+}
+
+.tx-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tx-type-income {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tx-type-expense {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
+.payment-method-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.tx-amount {
+  font-weight: 800;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.tx-amount.income {
+  color: #059669;
+}
+
+.tx-amount.expense {
+  color: #e11d48;
+}
+
+.btn-row-action {
+  background: none;
+  border: 1px solid #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-row-action:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+/* Debt Cards Grid */
+.debt-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.debt-item-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+}
+
+.debt-item-card.receivable {
+  border-left: 5px solid #10b981;
+}
+
+.debt-item-card.payable {
+  border-left: 5px solid #f43f5e;
+}
+
+.debt-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.debt-person-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.debt-person-phone {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.debt-status-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.debt-status-tag.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.debt-status-tag.partially_paid {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.debt-status-tag.settled {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.debt-progress-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.debt-progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+.debt-sums-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  margin-bottom: 12px;
+}
+
+.debt-sums-row span b {
+  font-weight: 800;
+}
+
+/* Thermal Receipt Generator Preview Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 540px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.modal-footer {
+  padding: 14px 22px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #f8fafc;
+}
+
+/* Thermal Paper Styling */
+.thermal-receipt-preview {
+  background: #ffffff;
+  border: 1px dashed #94a3b8;
+  padding: 16px;
+  width: 290px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #000000;
+  line-height: 1.35;
+}
+
+.thermal-divider {
+  border-top: 1px dashed #000000;
+  margin: 8px 0;
+}
+
+.thermal-double-divider {
+  border-top: 2px solid #000000;
+  margin: 8px 0;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .thermal-receipt-preview, .thermal-receipt-preview * {
+    visibility: visible;
+  }
+  .thermal-receipt-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    border: none;
+    box-shadow: none;
+  }
+}

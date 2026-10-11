@@ -12,6 +12,7 @@ import { WaiterPanelPage } from './pages/WaiterPanelPage/WaiterPanelPage';
 import { HostessDeskPage } from './pages/HostessDeskPage/HostessDeskPage';
 import { KDSPage } from './pages/KDSPage/KDSPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
+import { FinancePage } from './pages/FinancePage/FinancePage';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { CallWaiterModal, NFCGatewayModal, QRGeneratorModal, PhotogrammetryStudioModal } from './components/ui';
 import './App.css';
@@ -22,6 +23,11 @@ const AppContent: React.FC = () => {
   // Showcase laboratoriyasi
   if (currentPath.includes('/ui-components') || currentPath.includes('/design-system')) {
     return <ComponentShowcase />;
+  }
+
+  // Moliya & Kassa Paneli (/finance, /admin/finance/)
+  if (currentPath.includes('/finance')) {
+    return <FinancePage />;
   }
 
   // Restoran Admin & Boshqaruv Markazi (/admin/dashboard/, /admin/)
