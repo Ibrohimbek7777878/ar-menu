@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { HeaderNav, StaffNavHeader, Toast } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './WaiterPanelPage.css';
 
 export interface ServiceCall {
@@ -80,47 +81,17 @@ export const WaiterPanelPage: React.FC = () => {
   const shopName = initialData.shop?.name || 'Guliston';
   const waiterName = initialData.waiter_name || 'Alisher (Navbatchi)';
 
-  const initialCalls: ServiceCall[] = initialData.calls || [
-    {
-      id: 1,
-      table_number: '05',
-      hall_name: 'Asosiy Zal',
-      type: 'bill',
-      title: 'Hisob-kitob (chek) so\'raldi',
-      time: '1 daqiqa oldin',
-      status: 'pending',
-    },
-    {
-      id: 2,
-      table_number: 'VIP-1',
-      hall_name: 'VIP Xona',
-      type: 'tea',
-      title: 'Ko\'k choy yangilash',
-      time: '3 daqiqa oldin',
-      status: 'pending',
-    },
-    {
-      id: 3,
-      table_number: '08',
-      hall_name: 'Registon Zali',
-      type: 'waiter',
-      title: 'Ofitsiant chaqiruvi',
-      time: '5 daqiqa oldin',
-      status: 'accepted',
-    },
-  ];
+  const {
+    tables: sharedTables,
+    serviceCalls: sharedCalls,
+    acceptServiceCall,
+    completeServiceCall,
+    settleTableBill,
+    addDishToTable,
+  } = useNavigation();
 
-  const initialTables: WaiterTable[] = initialData.tables || [
-    { id: 1, number: '01', hall: 'Asosiy Zal', status: 'occupied', guests_count: 4, total_bill: 125000, active_orders_count: 2 },
-    { id: 2, number: '02', hall: 'Asosiy Zal', status: 'free', guests_count: 0, total_bill: 0, active_orders_count: 0 },
-    { id: 3, number: '05', hall: 'Asosiy Zal', status: 'bill_requested', guests_count: 6, total_bill: 315000, active_orders_count: 1 },
-    { id: 4, number: '08', hall: 'Registon Zali', status: 'occupied', guests_count: 3, total_bill: 85000, active_orders_count: 1 },
-    { id: 5, number: 'VIP-1', hall: 'VIP Xona', status: 'occupied', guests_count: 8, total_bill: 572000, active_orders_count: 3 },
-    { id: 6, number: 'Y-1', hall: 'Yozgi Ayvon', status: 'free', guests_count: 0, total_bill: 0, active_orders_count: 0 },
-  ];
-
-  const [calls, setCalls] = useState<ServiceCall[]>(initialCalls);
-  const [tables, setTables] = useState<WaiterTable[]>(initialTables);
+  const calls = sharedCalls as ServiceCall[];
+  const tables = sharedTables as WaiterTable[];
   const [activeTab, setActiveTab] = useState<'calls' | 'tables'>('calls');
 
   // Modal & Active Table State
@@ -142,14 +113,12 @@ export const WaiterPanelPage: React.FC = () => {
   };
 
   const handleAcceptCall = (callId: number) => {
-    setCalls((prev) =>
-      prev.map((c) => (c.id === callId ? { ...c, status: 'accepted' } : c))
-    );
+    acceptServiceCall(callId);
     showToast('Chaqiruv qabul qilindi');
   };
 
   const handleCompleteCall = (callId: number) => {
-    setCalls((prev) => prev.filter((c) => c.id !== callId));
+    completeServiceCall(callId);
     showToast('Chaqiruv bajarildi');
   };
 
@@ -163,8 +132,9 @@ export const WaiterPanelPage: React.FC = () => {
   const handleQuickAddDish = (dish: { name: string; price: number }) => {
     if (!activeModalTable) return;
     const tblNum = activeModalTable.number;
-    const currentItems = tableItemsMap[tblNum] || [];
+    addDishToTable(tblNum, dish);
 
+    const currentItems = tableItemsMap[tblNum] || [];
     const existingIdx = currentItems.findIndex((it) => it.name === dish.name);
     let updated: WaiterTableItem[];
     if (existingIdx >= 0) {
@@ -179,18 +149,6 @@ export const WaiterPanelPage: React.FC = () => {
     }
 
     setTableItemsMap((prev) => ({ ...prev, [tblNum]: updated }));
-
-    // Stol summasini yangilash
-    const newSubtotal = updated.reduce((s, it) => s + it.quantity * it.price, 0);
-    const newTotal = Math.round(newSubtotal * 1.1); // +10% service
-    setTables((prev) =>
-      prev.map((t) =>
-        t.number === tblNum
-          ? { ...t, status: 'occupied', total_bill: newTotal, guests_count: t.guests_count || 2 }
-          : t
-      )
-    );
-    setActiveModalTable((prev) => (prev ? { ...prev, total_bill: newTotal, status: 'occupied' } : null));
     showToast(`${dish.name} stolga qo'shildi`);
   };
 
@@ -203,16 +161,7 @@ export const WaiterPanelPage: React.FC = () => {
   const handleAcceptPayment = () => {
     if (!activeModalTable) return;
     const tblNum = activeModalTable.number;
-
-    setTables((prev) =>
-      prev.map((t) =>
-        t.number === tblNum
-          ? { ...t, status: 'free', total_bill: 0, guests_count: 0, active_orders_count: 0 }
-          : t
-      )
-    );
-
-    setCalls((prev) => prev.filter((c) => String(c.table_number) !== String(tblNum)));
+    settleTableBill(tblNum);
     showToast(`Stol #${tblNum} hisobi yopildi`);
     setActiveModalTable(null);
   };

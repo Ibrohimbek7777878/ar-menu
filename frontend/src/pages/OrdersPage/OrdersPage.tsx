@@ -36,44 +36,66 @@ declare global {
 }
 
 export const OrdersPage: React.FC = () => {
-  const { navigate, cartCount: navCartCount } = useNavigation();
+  const {
+    navigate,
+    cartCount: navCartCount,
+    orders: sharedOrders,
+    tableNumber: ctxTableNumber,
+    setIsCallWaiterOpen,
+    setIsNfcModalOpen,
+  } = useNavigation();
+
   const initialData: InitialOrdersData =
     typeof window !== 'undefined' ? window.__GULISTON_ORDERS_DATA__ || {} : {};
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
-  const initialOrders: OrderData[] = initialData.orders || [
-    {
-      id: 1,
-      order_number: '1042',
-      created_at: 'Bugun, 20:45',
-      status: 'preparing',
-      status_display: 'Tayyorlanmoqda',
-      total_amount: 145000,
-      table_number: table?.number || '05',
-      items: [
-        { name: "To'y Oshi (Maxsus)", quantity: 2, price: 45000, total: 90000 },
-        { name: 'Achchiq-chuchuk salat', quantity: 1, price: 15000, total: 15000 },
-        { name: 'Ko\'k choy (choynak)', quantity: 2, price: 10000, total: 20000 },
-        { name: 'Tandir non', quantity: 2, price: 10000, total: 20000 },
-      ],
-    },
-    {
-      id: 2,
-      order_number: '1028',
-      created_at: 'Kecha, 19:15',
-      status: 'completed',
-      status_display: 'Yetkazilgan',
-      total_amount: 85000,
-      table_number: table?.number || '05',
-      items: [
-        { name: 'Mastava sho\'rva', quantity: 2, price: 30000, total: 60000 },
-        { name: 'Qaymoq va non', quantity: 1, price: 25000, total: 25000 },
-      ],
-    },
-  ];
 
-  const [orders] = useState<OrderData[]>(initialOrders);
+  const orders: OrderData[] = useMemo(() => {
+    if (sharedOrders && sharedOrders.length > 0) {
+      return sharedOrders.map((o) => ({
+        id: typeof o.id === 'number' ? o.id : 1,
+        order_number: o.order_number.replace('#', ''),
+        created_at: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+        status: (o.status === 'paid' ? 'completed' : o.status) as any,
+        status_display:
+          o.status === 'pending'
+            ? 'Kutilmoqda'
+            : o.status === 'preparing'
+            ? 'Tayyorlanmoqda'
+            : o.status === 'ready'
+            ? 'Oshxonada tayyor!'
+            : o.status === 'delivered'
+            ? 'Yetkazildi'
+            : 'To\'landi',
+        total_amount: o.total_amount,
+        table_number: o.table_number,
+        items: o.items.map((it) => ({
+          name: it.name,
+          quantity: it.quantity,
+          price: it.price,
+          total: it.quantity * it.price,
+        })),
+      }));
+    }
+    return [
+      {
+        id: 1,
+        order_number: '101',
+        created_at: 'Bugun, 20:45',
+        status: 'preparing' as const,
+        status_display: 'Tayyorlanmoqda',
+        total_amount: 156000,
+        table_number: ctxTableNumber || '05',
+        items: [
+          { name: "To'y Oshi (Maxsus devzira)", quantity: 2, price: 48000, total: 96000 },
+          { name: "Qo'y Go'shti Shashlik", quantity: 4, price: 28000, total: 112000 },
+          { name: "Tandir Non", quantity: 2, price: 5000, total: 10000 },
+        ],
+      },
+    ];
+  }, [sharedOrders, ctxTableNumber]);
+
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed'>('all');
   
   // URL parametr bo'yicha buyurtmani avtomatik ochish (/order/<pk>/)
@@ -82,7 +104,7 @@ export const OrdersPage: React.FC = () => {
     const match = window.location.pathname.match(/\/order\/(\d+)/);
     if (match && match[1]) {
       return (
-        initialOrders.find(
+        orders.find(
           (o) => String(o.id) === match[1] || o.order_number.includes(match[1])
         ) || null
       );
@@ -173,6 +195,53 @@ export const OrdersPage: React.FC = () => {
           <p className="orders-page-desc">
             Buyurtma holati, taomlar ro'yxati va umumiy hisob-kitob.
           </p>
+        </div>
+
+        {/* ─── Tezkor ofitsiant chaqirish va NFC orqali stol tanlash ─── */}
+        <div className="orders-quick-call-bar" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn-call-waiter-banner"
+            onClick={() => setIsCallWaiterOpen(true)}
+            style={{
+              flex: 1,
+              minWidth: '180px',
+              padding: '0.75rem 1rem',
+              background: '#FFF7ED',
+              border: '1.5px solid #FFEDD5',
+              borderRadius: '0.75rem',
+              color: '#EA580C',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <span>🛎️ Ofitsiantni chaqirish (Choy, Non, Hisob)</span>
+          </button>
+          <button
+            type="button"
+            className="btn-nfc-switch-banner"
+            onClick={() => setIsNfcModalOpen(true)}
+            style={{
+              padding: '0.75rem 1rem',
+              background: '#FFFFFF',
+              border: '1.5px solid #E2E8F0',
+              borderRadius: '0.75rem',
+              color: '#475569',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <span>📶 Stol #{ctxTableNumber || '05'} (NFC/QR)</span>
+          </button>
         </div>
 
         {/* ─── Table Active Bill Card (If table is active) ─── */}

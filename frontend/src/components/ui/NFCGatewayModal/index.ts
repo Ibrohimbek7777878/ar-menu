@@ -1,0 +1,1 @@
+export { NFCGatewayModal } from './NFCGatewayModal';

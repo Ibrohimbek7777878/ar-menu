@@ -19,7 +19,7 @@ interface InitialCheckoutData {
 }
 
 export const CheckoutPage: React.FC = () => {
-  const { navigate } = useNavigation();
+  const { navigate, createOrder, tableNumber: ctxTable } = useNavigation();
   const initialData: InitialCheckoutData = (window as any).__GULISTON_CHECKOUT_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -73,6 +73,35 @@ export const CheckoutPage: React.FC = () => {
     formData.append('address', deliveryAddress);
     formData.append('payment_method', paymentMethod);
     formData.append('notes', notes);
+
+    const orderItems = (initialData.items && initialData.items.length > 0)
+      ? initialData.items.map((it, idx) => ({
+          id: idx + 1,
+          name: it.name,
+          quantity: it.quantity,
+          price: it.price,
+          unit: 'porsiya',
+          course: it.name.toLowerCase().includes('sho\'rva') || it.name.toLowerCase().includes('mastava')
+            ? ('1-taom' as const)
+            : it.name.toLowerCase().includes('choy')
+            ? ('ichimlik' as const)
+            : it.name.toLowerCase().includes('salat')
+            ? ('salat' as const)
+            : ('2-taom' as const),
+        }))
+      : [
+          { id: 1, name: "To'y Oshi (Devzira)", quantity: 2, price: 48000, unit: 'porsiya', course: '2-taom' as const },
+          { id: 2, name: "Tandir Somsa Go'shtli", quantity: 4, price: 15000, unit: 'dona', course: '2-taom' as const },
+        ];
+
+    createOrder({
+      tableNumber: tableNumber || ctxTable || '05',
+      customerName: guestName || 'Hurmatli Mehmon',
+      phone: guestPhone,
+      notes: notes,
+      items: orderItems,
+      totalAmount: subtotal || 156000,
+    });
 
     try {
       await fetch('/checkout/', {

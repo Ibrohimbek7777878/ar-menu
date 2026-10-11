@@ -122,6 +122,38 @@
   background: #16A34A;
 }
 
+/* Call Waiter Quick Button */
+.btn-header-call-waiter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 11px;
+  background: #FFF7ED;
+  border: 1.5px solid #FFEDD5;
+  border-radius: 8px;
+  color: #EA580C;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-header-call-waiter:hover {
+  background: #EA580C;
+  color: #FFFFFF;
+  border-color: #EA580C;
+}
+
+@media (max-width: 480px) {
+  .call-waiter-text {
+    display: none;
+  }
+  .btn-header-call-waiter {
+    padding: 0 8px;
+  }
+}
+
 /* Staff Quick Button */
 .btn-header-staff {
   display: none;

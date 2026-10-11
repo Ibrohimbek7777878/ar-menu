@@ -17,7 +17,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onCartClick,
   className = '',
 }) => {
-  const { currentPath, navigate, tableNumber: ctxTable, cartCount: ctxCartCount } = useNavigation();
+  const { currentPath, navigate, tableNumber: ctxTable, cartCount: ctxCartCount, setIsCallWaiterOpen, setIsNfcModalOpen } = useNavigation();
 
   const tableNumber = propTable !== undefined ? propTable : ctxTable;
   const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
@@ -71,15 +71,30 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           {tableNumber && (
             <div 
               className="header-table-badge" 
-              onClick={() => navigate('/table')} 
+              onClick={() => setIsNfcModalOpen(true)} 
               role="button" 
               tabIndex={0}
-              title="Stol holatini ko'rish"
+              title="NFC / QR orqali stolni o'zgartirish"
             >
               <span className="table-status-dot" />
               <span>Stol {tableNumber}</span>
             </div>
           )}
+
+          {/* Quick Call Waiter Button */}
+          <button
+            type="button"
+            className="btn-header-call-waiter"
+            onClick={() => setIsCallWaiterOpen(true)}
+            title="Ofitsiantni chaqirish (Choy, Non, Hisob)"
+            aria-label="Ofitsiant chaqirish"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span className="call-waiter-text">Chaqiruv</span>
+          </button>
 
           {/* Quick Staff Button (Desktop) */}
           <button

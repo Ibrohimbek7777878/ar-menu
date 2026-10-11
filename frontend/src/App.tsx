@@ -13,6 +13,7 @@ import { HostessDeskPage } from './pages/HostessDeskPage/HostessDeskPage';
 import { KDSPage } from './pages/KDSPage/KDSPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
+import { CallWaiterModal, NFCGatewayModal } from './components/ui';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -86,6 +87,8 @@ export const App: React.FC = () => {
   return (
     <NavigationProvider>
       <AppContent />
+      <CallWaiterModal />
+      <NFCGatewayModal />
     </NavigationProvider>
   );
 };

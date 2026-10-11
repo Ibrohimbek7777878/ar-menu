@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { StaffNavHeader } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './KDSPage.css';
 
 export interface KDSOrderItem {
@@ -7,6 +8,7 @@ export interface KDSOrderItem {
   name: string;
   quantity: number;
   unit?: string;
+  course?: '1-taom' | '2-taom' | 'salat' | 'ichimlik' | 'shirinlik';
   notes?: string;
   done?: boolean;
 }
@@ -15,8 +17,9 @@ export interface KDSOrder {
   id: number | string;
   order_number: string;
   table_name: string;
+  table_number?: string | number;
   customer_name: string;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled' | 'paid';
   created_at: string;
   notes?: string;
   items: KDSOrderItem[];
@@ -54,63 +57,9 @@ function playKdsBeep() {
   }
 }
 
-const DEFAULT_ORDERS: KDSOrder[] = [
-  {
-    id: 101,
-    order_number: '#101',
-    table_name: 'Stol 4 (Zal)',
-    customer_name: 'Rustam aka',
-    status: 'preparing',
-    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    notes: 'Oshga achchiq murch solinmasin, piyoz alohida.',
-    items: [
-      { id: 1, name: 'To\'y Oshi (Maxsus devzira)', quantity: 2, unit: 'porsiya' },
-      { id: 2, name: 'Qo\'y Go\'shti Shashlik', quantity: 4, unit: 'six' },
-      { id: 3, name: 'Tandir Non (Issiq)', quantity: 2, unit: 'dona' },
-      { id: 4, name: 'Achchiq-chuchuk Salati', quantity: 1, unit: 'porsiya' },
-      { id: 5, name: 'Ko\'k Choy (Limon bilan)', quantity: 1, unit: 'choynak' },
-    ],
-  },
-  {
-    id: 102,
-    order_number: '#102',
-    table_name: 'VIP Xona 2',
-    customer_name: 'Dilshod',
-    status: 'pending',
-    created_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
-    notes: 'Tezroq olib kelinsin, mehmonlar kutmoqda.',
-    items: [
-      { id: 6, name: 'Qozon Kabob (Qovurilgan go\'sht)', quantity: 3, unit: 'porsiya' },
-      { id: 7, name: 'Mastava (Issiq sho\'rva)', quantity: 2, unit: 'kosa' },
-      { id: 8, name: 'Suzma ko\'katlar bilan', quantity: 1, unit: 'likop' },
-    ],
-  },
-  {
-    id: 103,
-    order_number: '#103',
-    table_name: 'Stol 8 (Terassa)',
-    customer_name: 'Aziza',
-    status: 'ready',
-    created_at: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
-    notes: 'Yetkazib berishga tayyor.',
-    items: [
-      { id: 9, name: 'Somsa Tandir (Go\'shtli)', quantity: 6, unit: 'dona' },
-      { id: 10, name: 'Qora Choy (Qand bilan)', quantity: 2, unit: 'choynak' },
-    ],
-  },
-];
-
 export const KDSPage: React.FC = () => {
-  const serverData = typeof window !== 'undefined' ? window.__GULISTON_KDS_DATA__ : undefined;
+  const { orders: sharedOrders, updateOrderStatus, toggleOrderItemDone } = useNavigation();
 
-  const [orders, setOrders] = useState<KDSOrder[]>(() => {
-    if (serverData && serverData.orders && serverData.orders.length > 0) {
-      return serverData.orders;
-    }
-    return DEFAULT_ORDERS;
-  });
-
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'preparing' | 'ready'>('all');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [, setCurrentTime] = useState<string>('');
@@ -132,60 +81,40 @@ export const KDSPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const orders = sharedOrders;
+
+  const kitchenItemSummary = useMemo(() => {
+    const summary: Record<string, { count: number; unit: string }> = {};
+    orders
+      .filter((o) => o.status === 'pending' || o.status === 'preparing')
+      .forEach((o) => {
+        o.items.forEach((it) => {
+          if (!it.done) {
+            const unit = it.unit || 'ta';
+            if (!summary[it.name]) {
+              summary[it.name] = { count: 0, unit };
+            }
+            summary[it.name].count += it.quantity;
+          }
+        });
+      });
+    return Object.entries(summary);
+  }, [orders]);
+
   // Polling / Yangilanish funksiyasi
   const fetchOrders = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch('/api/kds/orders/', {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setOrders(data);
-        } else if (data.orders && Array.isArray(data.orders)) {
-          setOrders(data.orders);
-        }
-      }
-    } catch {
-      // Offline fallback
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 500);
   }, []);
 
-  // Har 10 soniyada avto-yangilanish
-  useEffect(() => {
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
-  }, [fetchOrders]);
-
   // Buyurtma holatini yangilash
-  const handleUpdateStatus = async (orderId: number | string, newStatus: KDSOrder['status']) => {
+  const handleUpdateStatus = (orderId: number | string, newStatus: KDSOrder['status']) => {
     if (soundEnabled) playKdsBeep();
-
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
-
-    try {
-      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-      await fetch(`/api/kds/orders/${orderId}/status/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-    } catch (e) {
-      console.warn("KDS status sync error:", e);
-    }
+    updateOrderStatus(orderId, newStatus as any);
   };
 
   const toggleItemDone = (orderId: number | string, itemId: number | string) => {
-    const key = `${orderId}-${itemId}`;
-    setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+    toggleOrderItemDone(orderId, itemId);
   };
 
   const getElapsedMinutes = useCallback(
@@ -199,7 +128,7 @@ export const KDSPage: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
-      if (activeFilter === 'pending' && o.status !== 'pending' && o.status !== 'confirmed') return false;
+      if (activeFilter === 'pending' && o.status !== 'pending') return false;
       if (activeFilter === 'preparing' && o.status !== 'preparing') return false;
       if (activeFilter === 'ready' && o.status !== 'ready') return false;
 
@@ -217,7 +146,7 @@ export const KDSPage: React.FC = () => {
   const counts = useMemo(() => {
     return {
       all: orders.length,
-      pending: orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length,
+      pending: orders.filter((o) => o.status === 'pending').length,
       preparing: orders.filter((o) => o.status === 'preparing').length,
       ready: orders.filter((o) => o.status === 'ready').length,
     };
@@ -321,6 +250,25 @@ export const KDSPage: React.FC = () => {
         </div>
       </nav>
 
+      {/* ─── OSHXONA JAMI MAHSULOTLAR SVODKASI (BULK KITCHEN COUNTER) ─── */}
+      {kitchenItemSummary.length > 0 && (
+        <section className="kds-summary-bar">
+          <div className="summary-bar-header">
+            <span className="summary-icon">🔥</span>
+            <span className="summary-title">Pishirilishi kerak bo'lgan taomlar svodkasi:</span>
+            <span className="summary-total-badge">{kitchenItemSummary.length} xil</span>
+          </div>
+          <div className="summary-chips-scroll">
+            {kitchenItemSummary.map(([name, data]) => (
+              <div key={name} className="summary-dish-chip">
+                <span className="summary-dish-name">{name}</span>
+                <span className="summary-dish-count tabular-nums">{data.count} {data.unit}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ─── TICKETLAR GRIDI ─── */}
       <main className="kds-main">
         {filteredOrders.length === 0 ? (
@@ -339,8 +287,8 @@ export const KDSPage: React.FC = () => {
           <div className="kds-grid">
             {filteredOrders.map((order) => {
               const elapsed = getElapsedMinutes(order.created_at);
-              const isLate = elapsed >= 15;
-              const isWarning = elapsed >= 8 && elapsed < 15;
+              const isLate = elapsed >= 20;
+              const isWarning = elapsed >= 10 && elapsed < 20;
 
               return (
                 <article
@@ -373,7 +321,7 @@ export const KDSPage: React.FC = () => {
                         <span>{elapsed} daq</span>
                       </div>
                       <div className={`kds-status-badge badge-${order.status}`}>
-                        {order.status === 'pending' || order.status === 'confirmed'
+                        {order.status === 'pending'
                           ? 'Yangi'
                           : order.status === 'preparing'
                           ? 'Tayyorlanmoqda'
@@ -397,7 +345,7 @@ export const KDSPage: React.FC = () => {
 
                     <ul className="kds-items-list">
                       {order.items.map((item) => {
-                        const isDone = !!checkedItems[`${order.id}-${item.id}`];
+                        const isDone = !!item.done;
                         return (
                           <li
                             key={item.id}
@@ -408,6 +356,11 @@ export const KDSPage: React.FC = () => {
                             <div className="kds-item-left">
                               <span className="kds-item-qty tabular-nums">{item.quantity}×</span>
                               <span className="kds-item-name">{item.name}</span>
+                              {item.course && (
+                                <span className={`kds-course-tag course-${item.course}`}>
+                                  {item.course}
+                                </span>
+                              )}
                             </div>
                             <div className="kds-check-box">
                               {isDone && (
@@ -424,7 +377,7 @@ export const KDSPage: React.FC = () => {
 
                   {/* Chipta pastki qismi (Amallar) */}
                   <div className="kds-ticket-footer">
-                    {order.status === 'pending' || order.status === 'confirmed' ? (
+                    {order.status === 'pending' ? (
                       <button
                         type="button"
                         className="kds-action-btn btn-start"

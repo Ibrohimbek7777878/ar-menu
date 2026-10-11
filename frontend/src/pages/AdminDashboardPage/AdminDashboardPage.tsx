@@ -43,78 +43,51 @@ declare global {
   }
 }
 
-const DEFAULT_ADMIN_DATA: AdminDashboardData = {
-  shop: { name: 'Guliston' },
-  tables_count: 16,
-  free_tables_count: 10,
-  occupied_tables_count: 6,
-  today_orders_count: 38,
-  today_revenue: 3480000,
-  pending_kds_count: 4,
-  products_count: 42,
-  ar_dishes_count: 12,
-  tables_list: [
-    { id: 1, number: '1', hall: 'Asosiy Zal', status: 'occupied', capacity: 4 },
-    { id: 2, number: '2', hall: 'Asosiy Zal', status: 'free', capacity: 4 },
-    { id: 3, number: '3', hall: 'Asosiy Zal', status: 'free', capacity: 6 },
-    { id: 4, number: '4', hall: 'Asosiy Zal', status: 'occupied', capacity: 4 },
-    { id: 5, number: 'VIP 1', hall: 'VIP Xona', status: 'occupied', capacity: 8 },
-    { id: 6, number: 'VIP 2', hall: 'VIP Xona', status: 'free', capacity: 10 },
-    { id: 7, number: '7', hall: 'Terassa', status: 'free', capacity: 4 },
-    { id: 8, number: '8', hall: 'Terassa', status: 'occupied', capacity: 4 },
-  ],
-  recent_orders: [
-    {
-      id: 101,
-      order_number: '#GLS-3765',
-      table_name: 'Stol 4',
-      customer_name: 'Rustam aka',
-      status: 'preparing',
-      final_amount: 198000,
-      created_at: '14:20',
-    },
-    {
-      id: 102,
-      order_number: '#GLS-3764',
-      table_name: 'VIP 1',
-      customer_name: 'Sherzod',
-      status: 'pending',
-      final_amount: 450000,
-      created_at: '14:12',
-    },
-    {
-      id: 103,
-      order_number: '#GLS-3763',
-      table_name: 'Stol 1',
-      customer_name: 'Aziza',
-      status: 'ready',
-      final_amount: 112000,
-      created_at: '13:50',
-    },
-    {
-      id: 104,
-      order_number: '#GLS-3762',
-      table_name: 'Stol 8',
-      customer_name: 'Jahongir',
-      status: 'delivered',
-      final_amount: 320000,
-      created_at: '13:30',
-    },
-  ],
-};
-
 export const AdminDashboardPage: React.FC = () => {
-  const { navigate } = useNavigation();
-  const serverData = typeof window !== 'undefined' ? window.__GULISTON_ADMIN_DATA__ : undefined;
-
-  const [data] = useState<AdminDashboardData>(() => {
-    if (serverData && serverData.tables_count !== undefined) {
-      return serverData;
-    }
-    return DEFAULT_ADMIN_DATA;
-  });
+  const {
+    navigate,
+    tables: sharedTables,
+    orders: sharedOrders,
+    todayRevenue,
+  } = useNavigation();
 
   const [filterPeriod, setFilterPeriod] = useState<'today' | 'week' | 'month'>('today');
+
+  const liveData: AdminDashboardData = useMemo(() => {
+    const freeCount = sharedTables.filter((t) => t.status === 'free').length;
+    const occCount = sharedTables.filter((t) => t.status === 'occupied' || t.status === 'bill_requested').length;
+    const pendingCount = sharedOrders.filter((o) => o.status === 'pending' || o.status === 'preparing').length;
+
+    return {
+      shop: { name: 'Guliston' },
+      tables_count: sharedTables.length,
+      free_tables_count: freeCount,
+      occupied_tables_count: occCount,
+      today_orders_count: sharedOrders.length,
+      today_revenue: todayRevenue,
+      pending_kds_count: pendingCount,
+      products_count: 42,
+      ar_dishes_count: 12,
+      tables_list: sharedTables.map((t) => ({
+        id: t.id,
+        number: String(t.number),
+        hall: t.hall,
+        status: t.status,
+        capacity: t.capacity,
+      })),
+      recent_orders: sharedOrders.slice(0, 8).map((o) => ({
+        id: o.id,
+        order_number: o.order_number,
+        table_name: o.table_name,
+        customer_name: o.customer_name,
+        status: (o.status === 'paid' ? 'delivered' : o.status) as any,
+        final_amount: o.total_amount,
+        created_at: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+      })),
+    };
+  }, [sharedTables, sharedOrders, todayRevenue]);
+
+  const data = liveData;
 
   const formattedRevenue = useMemo(() => {
     return new Intl.NumberFormat('uz-UZ').format(data.today_revenue) + " so'm";
