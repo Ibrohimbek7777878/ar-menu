@@ -24,7 +24,7 @@ interface InitialARData {
 const DEFAULT_AR_PRODUCTS: Product[] = INITIAL_PRODUCTS.filter((p) => p.has_3d);
 
 export const ARMenuPage: React.FC = () => {
-  const { tableNumber, cart, addToCart, updateQuantity, cartCount, navigate } = useNavigation();
+  const { tableNumber, cart, addToCart, updateQuantity, cartCount, navigate, setIsStudioModalOpen } = useNavigation();
 
   // Read initial injected data or use fallback
   const initialData: InitialARData =
@@ -141,10 +141,11 @@ export const ARMenuPage: React.FC = () => {
               </button>
               <button 
                 type="button" 
-                onClick={() => navigate('/')} 
+                onClick={() => setIsStudioModalOpen(true)} 
                 className="btn-ar-action btn-ar-action-secondary"
+                style={{ background: '#EA580C', color: '#FFFFFF', borderColor: '#EA580C' }}
               >
-                Bosh sahifa
+                📸 Yangi 3D/360 Taom Yaratish
               </button>
             </div>
           </div>

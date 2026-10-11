@@ -9,6 +9,8 @@ export interface Product {
   category_name?: string;
   has_3d?: boolean;
   ar_model?: string;
+  spin_frames?: string[];
+  spin_video?: string;
   unit?: string;
   weight?: string;
   prep_time?: string;

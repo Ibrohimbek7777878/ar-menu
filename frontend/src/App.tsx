@@ -13,7 +13,7 @@ import { HostessDeskPage } from './pages/HostessDeskPage/HostessDeskPage';
 import { KDSPage } from './pages/KDSPage/KDSPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
-import { CallWaiterModal, NFCGatewayModal, QRGeneratorModal } from './components/ui';
+import { CallWaiterModal, NFCGatewayModal, QRGeneratorModal, PhotogrammetryStudioModal } from './components/ui';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -84,7 +84,7 @@ const AppContent: React.FC = () => {
 };
 
 const GlobalModals: React.FC = () => {
-  const { isQrModalOpen, setIsQrModalOpen } = useNavigation();
+  const { isQrModalOpen, setIsQrModalOpen, isStudioModalOpen, setIsStudioModalOpen } = useNavigation();
   return (
     <>
       <CallWaiterModal />
@@ -92,6 +92,13 @@ const GlobalModals: React.FC = () => {
       <QRGeneratorModal
         isOpen={isQrModalOpen}
         onClose={() => setIsQrModalOpen(false)}
+      />
+      <PhotogrammetryStudioModal
+        isOpen={isStudioModalOpen}
+        onClose={() => setIsStudioModalOpen(false)}
+        onSaveProduct3D={(dish) => {
+          console.log('New 3D/360 Dish generated:', dish);
+        }}
       />
     </>
   );

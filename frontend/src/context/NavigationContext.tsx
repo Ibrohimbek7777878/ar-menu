@@ -105,6 +105,8 @@ export interface NavigationContextType {
   setIsNfcModalOpen: (open: boolean) => void;
   isQrModalOpen: boolean;
   setIsQrModalOpen: (open: boolean) => void;
+  isStudioModalOpen: boolean;
+  setIsStudioModalOpen: (open: boolean) => void;
 }
 
 export const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -247,7 +249,16 @@ const DEFAULT_SERVICE_CALLS: LiveServiceCall[] = [
 
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentPath, setCurrentPath] = useState<string>(() => {
-    return window.location.pathname || '/';
+    const rawPath = window.location.pathname || '/';
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableFromUrl = urlParams.get('table');
+
+    // Agar mijoz QR kod yoki NFC orqali stol parametri bilan kirsa,
+    // to'g'ridan-to'g'ri taomlar menyusiga (/menu/) yo'naltiriladi!
+    if (tableFromUrl && (rawPath === '/' || rawPath === '/welcome' || rawPath === '/welcome/')) {
+      return '/menu/';
+    }
+    return rawPath;
   });
 
   const [tableNumber, setTableNumber] = useState<string | number>(() => {
@@ -319,6 +330,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
   const [isNfcModalOpen, setIsNfcModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
 
   // Sync to localStorage
   useEffect(() => {
@@ -720,6 +732,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setIsNfcModalOpen,
         isQrModalOpen,
         setIsQrModalOpen,
+        isStudioModalOpen,
+        setIsStudioModalOpen,
       }}
     >
       {children}

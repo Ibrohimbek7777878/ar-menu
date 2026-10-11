@@ -14,3 +14,4 @@ export * from './StaffNavHeader';
 export * from './CallWaiterModal';
 export * from './NFCGatewayModal';
 export * from './QRGeneratorModal';
+export * from './PhotogrammetryStudioModal';
