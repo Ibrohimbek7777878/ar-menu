@@ -193,3 +193,38 @@ class TableReservation(models.Model):
         return self.table.number if self.table else "--"
 
 
+class ServiceCall(models.Model):
+    """
+    Mehmon yoki Oshxona tomonidan Ofitsiantni chaqirish xizmati (Real-time Service Calls).
+    Masalan: 'choy', 'non', 'ofitsiant', 'hisob', 'dish_ready' (oshxonadan taom tayyor).
+    """
+    TYPE_CHOICES = [
+        ('waiter', 'Ofitsiant chaqiruvi'),
+        ('bill', 'Hisob-kitob (chek)'),
+        ('tea', 'Choy / Yangilash'),
+        ('bread', 'Non / Issiq non'),
+        ('dish_ready', 'Taom tayyor (Oshxona)'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Kutilmoqda'),
+        ('accepted', 'Qabul qilindi'),
+        ('done', 'Bajarildi'),
+    ]
+
+    shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, related_name='service_calls')
+    table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='service_calls')
+    call_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='waiter')
+    title = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'restaurant_service_calls'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Chaqiruv: Stol #{self.table.number} - {self.get_call_type_display()} ({self.get_status_display()})"
+
+
+

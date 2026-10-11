@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { RestaurantAPI } from '../services/RestaurantAPI';
 
 export interface OrderItem {
   id: number | string;
@@ -555,6 +556,40 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Server data sync on mount (Offline-first fallback)
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const [serverOrders, serverTables, serverCalls] = await Promise.all([
+          RestaurantAPI.getOrders(),
+          RestaurantAPI.getTables(),
+          RestaurantAPI.getFinanceData(),
+        ]);
+
+        if (isMounted) {
+          if (Array.isArray(serverOrders) && serverOrders.length > 0) {
+            setOrders(serverOrders);
+          }
+          if (Array.isArray(serverTables) && serverTables.length > 0) {
+            setTables(serverTables);
+          }
+          if (serverCalls?.transactions && Array.isArray(serverCalls.transactions)) {
+            setFinanceTransactions(serverCalls.transactions);
+          }
+          if (serverCalls?.debts && Array.isArray(serverCalls.debts)) {
+            setFinanceDebts(serverCalls.debts);
+          }
+        }
+      } catch (e) {
+        console.warn('Initial server sync completed with local storage fallback', e);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const navigate = useCallback((path: string) => {
     if (path === currentPath) return;
     window.history.pushState({}, '', path);
@@ -645,6 +680,29 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Clear current user cart
       setCart({});
 
+      // Single-Request: Serverga bitta so'rov orqali yuborish
+      RestaurantAPI.createOrder({
+        table_number: orderData.tableNumber,
+        customer_name: orderData.customerName || 'Mehmon',
+        phone: orderData.phone,
+        notes: orderData.notes,
+        items: orderData.items.map((it) => ({
+          name: it.name,
+          price: it.price,
+          quantity: it.quantity,
+          unit: it.unit,
+          course: it.course,
+          notes: it.notes,
+          product_id: typeof it.id === 'number' ? it.id : null,
+        })),
+      }).then((serverRes) => {
+        if (serverRes?.id) {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === newOrder.id ? { ...o, id: serverRes.id, order_number: serverRes.order_number } : o))
+          );
+        }
+      }).catch((e) => console.warn('Order sync fallback', e));
+
       return newOrder;
     },
     []
@@ -696,6 +754,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           return o;
         })
       );
+
+      // Single-Request: Oshpaz holatini serverga yuborish
+      if (typeof itemId === 'number') {
+        RestaurantAPI.toggleKitchenItem(itemId).catch((e) => console.warn('Kitchen toggle fallback', e));
+      }
     },
     []
   );
@@ -933,6 +996,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       setFinanceTransactions((prev) => [autoReceiptTx, ...prev]);
     }
+
+    // Single-Request: Serverda bitta so'rov orqali stolni bo'shatish va Moliya kassasiga kirim qilish
+    RestaurantAPI.settleTableBill(tableNum, paymentMethod).catch((e) =>
+      console.warn('Settle table sync fallback', e)
+    );
   }, []);
 
   // Service Call Operations
@@ -965,6 +1033,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       playNotificationSound('call');
+
+      // Single-Request: Mehmon chaqiruvini serverga yuborish
+      RestaurantAPI.createServiceCall(call.table_number, call.type, call.title).catch((e) =>
+        console.warn('ServiceCall sync fallback', e)
+      );
     },
     []
   );

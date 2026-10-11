@@ -122,6 +122,17 @@ class OrderItem(models.Model):
     quantity = models.IntegerField(default=1)
     unit = models.CharField(max_length=20)
     total = models.DecimalField(max_digits=12, decimal_places=0)
+    # Restoran / Oshxona (KDS) xususiyatlari:
+    COURSE_CHOICES = [
+        ('1-taom', '1-taom (Sho\'rva)'),
+        ('2-taom', '2-taom (Asosiy taom)'),
+        ('salat', 'Salat & Gazak'),
+        ('ichimlik', 'Ichimlik'),
+        ('shirinlik', 'Shirinlik'),
+    ]
+    course = models.CharField(max_length=20, choices=COURSE_CHOICES, default='2-taom', blank=True)
+    is_done = models.BooleanField(default=False, verbose_name="Oshpaz tayyorladi")
+    notes = models.CharField(max_length=255, blank=True, verbose_name="Taomga maxsus istak")
 
     class Meta:
         db_table = 'order_items'
