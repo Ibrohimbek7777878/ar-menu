@@ -4,8 +4,15 @@
   padding: 8px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: sticky;
-  top: 58px;
+  top: 0;
   z-index: 30;
+}
+
+/* Agar sahifada .header-nav bo'lsa, uning ostiga (top: 58px) tushsin */
+.header-nav + .staff-nav-header,
+.react-waiter-page .staff-nav-header,
+.react-hostess-page .staff-nav-header {
+  top: 58px;
 }
 
 .staff-nav-container {
@@ -86,4 +93,28 @@
   font-size: 14px;
   color: #A8A29E;
   font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .staff-nav-header {
+    padding: 6px 10px;
+  }
+
+  .staff-nav-container {
+    gap: 8px;
+  }
+
+  .staff-nav-tab {
+    padding: 5px 9px;
+    font-size: 11.5px;
+  }
+
+  .btn-exit-to-guest {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .btn-exit-to-guest span {
+    display: none; /* Kichik telefonlarda matnni yashirib faqat ikonka qoldiramiz */
+  }
 }

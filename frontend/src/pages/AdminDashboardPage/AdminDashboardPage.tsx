@@ -253,18 +253,19 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
       </aside>
 
-      {/* ─── ASOSIY MAZMUN (MAIN CONTENT) ─── */}
-      <main className="admin-main">
+      {/* ─── ASOSIY MAZMUN (MAIN CONTENT WRAPPER) ─── */}
+      <div className="admin-content-wrapper">
         <StaffNavHeader activeTab="admin" />
 
-        {/* Yuqori sarlavha paneli */}
-        <header className="admin-topbar">
-          <div>
-            <h2 className="admin-page-title">Restoran Boshqaruv Markazi</h2>
-            <p className="admin-page-subtitle">
-              Jonli kassa, stollar yuklamasi va oshxona operatsiyalari nazorati
-            </p>
-          </div>
+        <main className="admin-main">
+          {/* Yuqori sarlavha paneli */}
+          <header className="admin-topbar">
+            <div>
+              <h2 className="admin-page-title">Restoran Boshqaruv Markazi</h2>
+              <p className="admin-page-subtitle">
+                Jonli kassa, stollar yuklamasi va oshxona operatsiyalari nazorati
+              </p>
+            </div>
 
           <div className="admin-topbar-actions">
             <div className="admin-period-switch">
@@ -490,5 +491,6 @@ export const AdminDashboardPage: React.FC = () => {
         </section>
       </main>
     </div>
-  );
+  </div>
+);
 };

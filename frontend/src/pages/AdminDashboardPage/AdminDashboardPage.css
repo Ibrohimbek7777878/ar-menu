@@ -155,10 +155,18 @@
 }
 
 /* ─── MAIN CONTENT ─── */
+.admin-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
 .admin-main {
   flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
+  padding: 1.5rem 2rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -425,4 +433,114 @@
   font-weight: 600;
   text-decoration: none;
   font-size: 0.82rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN (IPHONE, ANDROID, TABLET, DESKTOP)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle, #E8E2D2);
+    padding: 1rem 1.25rem;
+    box-sizing: border-box;
+  }
+
+  .admin-brand {
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-nav-item {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .admin-user-profile {
+    display: none; /* Mobile/tabletda yashirish yoki pastga olish */
+  }
+
+  .admin-content-wrapper {
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .admin-main {
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .admin-topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-period-switch {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .btn-period {
+    flex: 1;
+    text-align: center;
+  }
+
+  .admin-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.85rem;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .admin-tables-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .admin-page-title {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-sidebar {
+    padding: 0.75rem;
+  }
+
+  .admin-nav-item span {
+    font-size: 0.78rem;
+  }
+
+  .admin-main {
+    padding: 1rem 0.75rem 4rem;
+  }
 }
