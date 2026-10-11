@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigation } from '../../../context/NavigationContext';
+import { StaffLoginModal } from '../../../core/auth/StaffLoginModal';
 import './HeaderNav.css';
 
 export interface HeaderNavProps {
@@ -18,6 +19,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   className = '',
 }) => {
   const { currentPath, navigate, tableNumber: ctxTable, cartCount: ctxCartCount, setIsCallWaiterOpen, setIsNfcModalOpen } = useNavigation();
+  const [isStaffLoginOpen, setIsStaffLoginOpen] = useState(false);
 
   const tableNumber = propTable !== undefined ? propTable : ctxTable;
   const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
@@ -96,12 +98,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <span className="call-waiter-text">Chaqiruv</span>
           </button>
 
-          {/* Quick Staff Button (Desktop) */}
+          {/* Quick Staff Button (Desktop) with Secure PIN Protection */}
           <button
             type="button"
             className="btn-header-staff"
-            onClick={() => navigate('/waiter')}
-            title="Xodimlar paneli (Ofitsiant / KDS / Admin)"
+            onClick={() => setIsStaffLoginOpen(true)}
+            title="Xodimlar tizimiga kirish (PIN-kod bilan himoyalangan)"
             aria-label="Xodimlar paneli"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -131,6 +133,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           </button>
         </div>
       </div>
+
+      {/* ─── Xodimlar Kirish PIN Modali ─── */}
+      <StaffLoginModal
+        isOpen={isStaffLoginOpen}
+        onClose={() => setIsStaffLoginOpen(false)}
+      />
     </header>
   );
 };

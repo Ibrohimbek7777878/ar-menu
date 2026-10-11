@@ -1,5 +1,8 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { RestaurantAPI } from '../services/RestaurantAPI';
+import { RouteGuard } from '../core/guards/RouteGuard';
+import { roleService } from '../core/auth/RoleService';
+import type { UserRole } from '../core/auth/types';
 
 export interface OrderItem {
   id: number | string;
@@ -80,9 +83,12 @@ export interface FinanceDebt {
 }
 
 export interface NavigationContextType {
-  // Navigation & Routing
+  // Navigation & Routing with RBAC Middleware
   currentPath: string;
   navigate: (path: string) => void;
+  userRole: UserRole;
+  loginStaff: (role: UserRole, name?: string) => void;
+  logoutStaff: () => void;
 
   // Table & Guest Session
   tableNumber: string | number;
@@ -404,6 +410,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return rawPath;
   });
 
+  const [userRole, setUserRole] = useState<UserRole>(() => roleService.getCurrentRole());
+
+  const loginStaff = useCallback((role: UserRole, name = 'Xodim') => {
+    roleService.loginAsStaff(role, name);
+    setUserRole(role);
+  }, []);
+
+  const logoutStaff = useCallback(() => {
+    roleService.logoutToGuest();
+    setUserRole('guest');
+    window.history.pushState({}, '', '/menu');
+    setCurrentPath('/menu');
+  }, []);
+
   const [tableNumber, setTableNumber] = useState<string | number>(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tableFromUrl = urlParams.get('table');
@@ -590,7 +610,29 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
+  // ─── ROUTE GUARD MIDDLEWARE CHECK (INITIAL LOAD) ───
+  useEffect(() => {
+    const guard = RouteGuard.canActivate(currentPath);
+    if (!guard.allowed) {
+      const fallback = guard.redirectTo || '/menu';
+      window.history.replaceState({}, '', fallback);
+      setCurrentPath(fallback);
+    }
+  }, [currentPath]);
+
+  // ─── ROUTE GUARD MIDDLEWARE CHECK (NAVIGATION) ───
   const navigate = useCallback((path: string) => {
+    const guard = RouteGuard.canActivate(path);
+    if (!guard.allowed) {
+      console.warn(`[RouteGuard] Blocked navigation to ${path}. Redirecting to ${guard.redirectTo}`);
+      const fallback = guard.redirectTo || '/menu';
+      if (fallback !== currentPath) {
+        window.history.pushState({}, '', fallback);
+        setCurrentPath(fallback);
+      }
+      return;
+    }
+
     if (path === currentPath) return;
     window.history.pushState({}, '', path);
     setCurrentPath(path);
@@ -1063,6 +1105,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       value={{
         currentPath,
         navigate,
+        userRole,
+        loginStaff,
+        logoutStaff,
         tableNumber,
         setTableNumber,
         cart,

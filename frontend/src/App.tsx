@@ -14,11 +14,18 @@ import { KDSPage } from './pages/KDSPage/KDSPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
 import { FinancePage } from './pages/FinancePage/FinancePage';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
+import { RouteGuard } from './core/guards/RouteGuard';
 import { CallWaiterModal, NFCGatewayModal, QRGeneratorModal, PhotogrammetryStudioModal } from './components/ui';
 import './App.css';
 
 const AppContent: React.FC = () => {
   const { currentPath } = useNavigation();
+
+  // ─── ROUTE GUARD MIDDLEWARE ENFORCEMENT ───
+  const guard = RouteGuard.canActivate(currentPath);
+  if (!guard.allowed) {
+    return <MenuPage />;
+  }
 
   // Showcase laboratoriyasi
   if (currentPath.includes('/ui-components') || currentPath.includes('/design-system')) {

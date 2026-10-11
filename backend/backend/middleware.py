@@ -203,3 +203,31 @@ class MultiProductHostPortMiddleware(MiddlewareMixin):
         # Standart holatda ROOT_URLCONF ishlaydi
         request.product_code = 'default'
         return None
+
+
+class RestaurantStaffRBACMiddleware(MiddlewareMixin):
+    """
+    Restoran operatsiyalari uchun Role-Based Access Control (RBAC) Middleware.
+    - Oddiy mijozlar (/api/finance/, /api/admin/) ma'lumotlarini so'ray olmaydi.
+    - Xodimlar uchun o'z sohalariga doir kirishni kafolatlaydi.
+    """
+    def process_request(self, request):
+        path = request.path
+
+        # Faqat restoran moliya va boshqaruv xavfsiz URL-larini tekshirish
+        if path.startswith(('/api/restaurant/finance/', '/api/restaurant/admin/')):
+            user = getattr(request, 'user', None)
+            is_auth = user and user.is_authenticated
+            user_role = getattr(user, 'role', 'guest') if is_auth else 'guest'
+
+            # Agar xodim yoki admin bo'lmasa:
+            if not is_auth and user_role not in ('admin', 'manager', 'shop_owner', 'shop_manager', 'waiter'):
+                from django.http import JsonResponse
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Kirish taqiqlangan: Ushbu amal faqat vakolatli restoran xodimlari uchun.',
+                    'code': 'FORBIDDEN_STAFF_ONLY'
+                }, status=403)
+
+        return None
+

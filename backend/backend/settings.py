@@ -80,6 +80,7 @@ MIDDLEWARE = [
     'backend.middleware.SellerTenantMiddleware',
     'backend.middleware.LanguageMiddleware',
     'backend.security_middleware.SecurityHeadersMiddleware',
+    'backend.middleware.RestaurantStaffRBACMiddleware',
 ]
 
 # 3 Ta Mustaqil Mahsulot uchun maxsus portlar
