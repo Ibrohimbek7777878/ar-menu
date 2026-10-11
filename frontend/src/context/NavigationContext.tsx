@@ -87,6 +87,8 @@ export interface NavigationContextType {
   currentPath: string;
   navigate: (path: string) => void;
   userRole: UserRole;
+  grantStaffRole: (role: UserRole, name?: string) => void;
+  revokeStaffRole: () => void;
   loginStaff: (role: UserRole, name?: string) => void;
   logoutStaff: () => void;
 
@@ -413,12 +415,12 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [userRole, setUserRole] = useState<UserRole>(() => roleService.getCurrentRole());
 
   const loginStaff = useCallback((role: UserRole, name = 'Xodim') => {
-    roleService.loginAsStaff(role, name);
+    roleService.grantRole(role, name);
     setUserRole(role);
   }, []);
 
   const logoutStaff = useCallback(() => {
-    roleService.logoutToGuest();
+    roleService.revokeRole();
     setUserRole('guest');
     window.history.pushState({}, '', '/menu');
     setCurrentPath('/menu');
@@ -1106,6 +1108,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         currentPath,
         navigate,
         userRole,
+        grantStaffRole: loginStaff,
+        revokeStaffRole: logoutStaff,
         loginStaff,
         logoutStaff,
         tableNumber,
