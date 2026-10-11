@@ -669,7 +669,22 @@
   margin: 8px 0;
 }
 
+.finance-table-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.finance-table-card:hover {
+  transform: translateY(-3px);
+  border-color: #3b82f6 !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12) !important;
+}
+
 @media print {
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
   body * {
     visibility: hidden;
   }
@@ -677,11 +692,13 @@
     visibility: visible;
   }
   .thermal-receipt-preview {
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
     width: 80mm;
-    border: none;
-    box-shadow: none;
+    margin: 0;
+    padding: 6mm;
+    border: none !important;
+    box-shadow: none !important;
   }
 }

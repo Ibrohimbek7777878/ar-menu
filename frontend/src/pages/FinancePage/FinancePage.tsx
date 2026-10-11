@@ -659,20 +659,67 @@ export const FinancePage: React.FC = () => {
                   .filter((t) => t.total_bill > 0)
                   .map((table) => {
                     const linkedOrders = orders.filter((o) => String(o.table_number) === String(table.number));
+                    
+                    // Handler to open receipt for this table
+                    const handleOpenReceipt = () => {
+                      if (linkedOrders.length > 0) {
+                        // If multiple orders on same table, aggregate their items
+                        const allItems = linkedOrders.flatMap((ord) => ord.items || []);
+                        setSelectedReceiptOrder({
+                          id: linkedOrders[0].id || `tbl-${table.number}`,
+                          order_number: linkedOrders[0].order_number || `#Stol-${table.number}`,
+                          table_number: table.number,
+                          table_name: `Stol ${table.number} (${table.hall})`,
+                          customer_name: linkedOrders[0].customer_name || 'Mehmon',
+                          status: 'pending',
+                          created_at: linkedOrders[0].created_at || new Date().toISOString(),
+                          total_amount: table.total_bill,
+                          items: allItems.length > 0 ? allItems : [
+                            { id: 1, name: `Stol #${table.number} buyurtmasi`, price: table.total_bill, quantity: 1, unit: 'ta' }
+                          ],
+                        });
+                      } else {
+                        // Synthetic receipt from table total
+                        setSelectedReceiptOrder({
+                          id: `tbl-${table.number}`,
+                          order_number: `#Stol-${table.number}`,
+                          table_number: table.number,
+                          table_name: `Stol ${table.number} (${table.hall})`,
+                          customer_name: 'Mehmon',
+                          status: 'pending',
+                          created_at: new Date().toISOString(),
+                          total_amount: table.total_bill,
+                          items: [
+                            { id: 1, name: `Stol #${table.number} hisobi`, price: table.total_bill, quantity: 1, unit: 'hisob' }
+                          ],
+                        });
+                      }
+                    };
+
                     return (
                       <div
                         key={table.id}
+                        onClick={handleOpenReceipt}
+                        className="finance-table-card"
                         style={{
                           background: '#ffffff',
-                          border: '1px solid #e2e8f0',
+                          border: '1.5px solid #e2e8f0',
                           borderRadius: '16px',
                           padding: '16px',
-                          boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
+                          boxShadow: '0 2px 8px rgba(15,23,42,0.05)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          position: 'relative',
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                           <div>
-                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Stol #{table.number}</h4>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>Stol #{table.number}</h4>
+                              <span style={{ fontSize: '0.72rem', color: '#0284c7', background: '#e0f2fe', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                🧾 Chek
+                              </span>
+                            </div>
                             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{table.hall}</span>
                           </div>
                           <span
@@ -689,20 +736,22 @@ export const FinancePage: React.FC = () => {
                           </span>
                         </div>
 
-                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#059669', margin: '8px 0' }}>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#059669', margin: '8px 0' }}>
                           {formatUZS(table.total_bill)} so'm
                         </div>
 
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '14px' }}>
-                          Buyurtmalar soni: {linkedOrders.length} ta
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b', marginBottom: '14px' }}>
+                          <span>Buyurtmalar soni: {linkedOrders.length} ta</span>
+                          <span style={{ color: '#2563eb', fontWeight: 600 }}>Bosib ko'rish / Print →</span>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
                             className="finance-action-btn"
                             style={{ flex: 1, padding: '8px 10px', fontSize: '0.78rem', background: '#059669' }}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               settleTableBill(table.number, 'cash');
                               alert(`Stol #${table.number} hisobi yopildi va Kassaga ${formatUZS(table.total_bill)} so'm kirim qilindi!`);
                             }}
@@ -713,24 +762,26 @@ export const FinancePage: React.FC = () => {
                             type="button"
                             className="finance-action-btn"
                             style={{ flex: 1, padding: '8px 10px', fontSize: '0.78rem', background: '#0284c7' }}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               settleTableBill(table.number, 'card');
                               alert(`Stol #${table.number} hisobi (Karta) yopildi va Kassaga ${formatUZS(table.total_bill)} so'm kirim qilindi!`);
                             }}
                           >
                             💳 Karta/Click
                           </button>
-                          {linkedOrders.length > 0 && (
-                            <button
-                              type="button"
-                              className="btn-row-action"
-                              style={{ padding: '8px 10px', fontSize: '0.85rem' }}
-                              title="Chekni ko'rish va chop etish"
-                              onClick={() => setSelectedReceiptOrder(linkedOrders[0])}
-                            >
-                              🧾
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            className="btn-row-action"
+                            style={{ padding: '8px 10px', fontSize: '0.85rem' }}
+                            title="Chekni ko'rish va chop etish"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenReceipt();
+                            }}
+                          >
+                            🖨️
+                          </button>
                         </div>
                       </div>
                     );
