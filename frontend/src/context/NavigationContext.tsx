@@ -78,6 +78,7 @@ export interface NavigationContextType {
 
   // Real-time Tables (Shared between Waiter, Admin, Hostess)
   tables: LiveTable[];
+  updateTableStatus: (tableNumber: string | number, status: LiveTable['status'], guestsCount?: number) => void;
   addDishToTable: (tableNumber: string | number, dish: { name: string; price: number }) => void;
   settleTableBill: (tableNumber: string | number) => void;
 
@@ -102,6 +103,8 @@ export interface NavigationContextType {
   setIsCallWaiterOpen: (open: boolean) => void;
   isNfcModalOpen: boolean;
   setIsNfcModalOpen: (open: boolean) => void;
+  isQrModalOpen: boolean;
+  setIsQrModalOpen: (open: boolean) => void;
 }
 
 export const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -315,6 +318,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Modals
   const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
   const [isNfcModalOpen, setIsNfcModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Sync to localStorage
   useEffect(() => {
@@ -577,6 +581,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     []
   );
 
+  const updateTableStatus = useCallback((tableNum: string | number, status: LiveTable['status'], guestsCount?: number) => {
+    setTables((prev) =>
+      prev.map((t) =>
+        String(t.number) === String(tableNum)
+          ? {
+              ...t,
+              status,
+              ...(guestsCount !== undefined ? { guests_count: guestsCount } : {}),
+            }
+          : t
+      )
+    );
+  }, []);
+
   const settleTableBill = useCallback((tableNum: string | number) => {
     let billSum = 0;
     setTables((prev) =>
@@ -683,6 +701,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         toggleOrderItemDone,
 
         tables,
+        updateTableStatus,
         addDishToTable,
         settleTableBill,
 
@@ -699,6 +718,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setIsCallWaiterOpen,
         isNfcModalOpen,
         setIsNfcModalOpen,
+        isQrModalOpen,
+        setIsQrModalOpen,
       }}
     >
       {children}

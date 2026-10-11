@@ -49,6 +49,7 @@ export const AdminDashboardPage: React.FC = () => {
     tables: sharedTables,
     orders: sharedOrders,
     todayRevenue,
+    setIsQrModalOpen,
   } = useNavigation();
 
   const [filterPeriod, setFilterPeriod] = useState<'today' | 'week' | 'month'>('today');
@@ -269,6 +270,20 @@ export const AdminDashboardPage: React.FC = () => {
                 Hafta
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsQrModalOpen(true)}
+              className="admin-btn admin-btn-secondary"
+              style={{ background: '#213827', color: '#ffffff', border: 'none' }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M7 7h.01M17 7h.01M7 17h.01M12 12h.01" />
+                <path d="M12 7v5M7 12h5M12 17v-2M17 12v5" />
+              </svg>
+              <span>QR Kodlar (Print)</span>
+            </button>
 
             <a href="/kds/" className="admin-btn admin-btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

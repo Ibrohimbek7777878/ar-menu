@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { HeaderNav, StaffNavHeader, Toast } from '../../components/ui';
+import { useNavigation } from '../../context/NavigationContext';
 import './HostessDeskPage.css';
 
 export interface HostessGuest {
@@ -28,6 +29,7 @@ declare global {
 }
 
 export const HostessDeskPage: React.FC = () => {
+  const { tables: sharedTables, updateTableStatus } = useNavigation();
   const initialData: InitialHostessData =
     typeof window !== 'undefined' ? window.__GULISTON_HOSTESS_DATA__ || {} : {};
 
@@ -125,10 +127,14 @@ export const HostessDeskPage: React.FC = () => {
   };
 
   const handleMarkSeated = (id: number) => {
+    const targetGuest = guests.find((g) => g.id === id);
+    if (targetGuest) {
+      updateTableStatus(targetGuest.table_number, 'occupied', targetGuest.guests_count);
+    }
     setGuests((prev) =>
       prev.map((g) => (g.id === id ? { ...g, status: 'seated' } : g))
     );
-    showToast('Mehmon stolga o\'tqazildi');
+    showToast("Mehmon stolga o'tqazildi va stol band deb belgilandi");
   };
 
   const handleSendReminder = (guest: HostessGuest) => {
@@ -188,7 +194,7 @@ export const HostessDeskPage: React.FC = () => {
     <div className="react-hostess-page">
       {/* ─── Header Navigation ─── */}
       <HeaderNav brandName={`${shopName} · Hostess`} cartCount={0} />
-      <StaffNavHeader activeTab="admin" />
+      <StaffNavHeader activeTab="hostess" />
 
       <main className="hostess-main-content">
         {/* ─── Hero Section ─── */}
@@ -442,13 +448,20 @@ export const HostessDeskPage: React.FC = () => {
               <div className="hostess-form-row">
                 <div className="hostess-field">
                   <label>Stol raqami:</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="02"
+                  <select
                     value={newGuestTable}
-                    onChange={(e) => setNewGuestTable(e.target.value)}
-                  />
+                    onChange={(e) => {
+                      setNewGuestTable(e.target.value);
+                      const found = sharedTables.find((t) => String(t.number) === e.target.value);
+                      if (found) setNewGuestHall(found.hall);
+                    }}
+                  >
+                    {sharedTables.map((t) => (
+                      <option key={t.id} value={String(t.number)}>
+                        Stol #{t.number} ({t.hall}) — {t.status === 'free' ? "Bo'sh" : 'Band'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="hostess-field">

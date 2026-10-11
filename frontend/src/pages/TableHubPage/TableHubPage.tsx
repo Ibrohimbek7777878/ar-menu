@@ -27,7 +27,7 @@ interface InitialTableData {
 }
 
 export const TableHubPage: React.FC = () => {
-  const { navigate, cartCount: navCartCount } = useNavigation();
+  const { navigate, cartCount: navCartCount, setIsQrModalOpen } = useNavigation();
   const initialData: InitialTableData = (window as any).__GULISTON_TABLE_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -209,15 +209,26 @@ export const TableHubPage: React.FC = () => {
               : 'O\'tirish uchun bo\'sh stolni tanlang yoki oldindan bron qiling'}
           </p>
 
-          {table && (
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
+            {table && (
+              <button
+                type="button"
+                className="btn-leave-table"
+                onClick={handleClearTable}
+              >
+                Stoldan chiqish ↩
+              </button>
+            )}
             <button
               type="button"
               className="btn-leave-table"
-              onClick={handleClearTable}
+              style={{ background: '#213827', color: '#ffffff', borderColor: '#213827' }}
+              onClick={() => setIsQrModalOpen(true)}
             >
-              Stoldan chiqish ↩
+              <span style={{ marginRight: '6px' }}>🖨️</span>
+              QR Kodlarni chop etish
             </button>
-          )}
+          </div>
         </section>
 
         {/* ─── Top Switch Tabs ─── */}

@@ -14,7 +14,7 @@ interface InitialWelcomeData {
 }
 
 export const WelcomePage: React.FC = () => {
-  const { navigate, setTableNumber, cartCount: navCartCount } = useNavigation();
+  const { navigate, setTableNumber, cartCount: navCartCount, setIsQrModalOpen, setIsNfcModalOpen } = useNavigation();
   const initialData: InitialWelcomeData = (window as any).__GULISTON_WELCOME_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -22,7 +22,6 @@ export const WelcomePage: React.FC = () => {
   const cartCount = navCartCount || initialData.cartCount || 0;
 
   const [inputTableNum, setInputTableNum] = useState('');
-  const [showQRModal, setShowQRModal] = useState(false);
 
   // Toast
   const [toastMsg, setToastMsg] = useState('');
@@ -125,12 +124,12 @@ export const WelcomePage: React.FC = () => {
             <button
               type="button"
               className="btn-card-action-outline"
-              onClick={() => setShowQRModal(true)}
+              onClick={() => setIsQrModalOpen(true)}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v2M16 20h2a2 2 0 0 0 2-2v-2" />
               </svg>
-              <span>QR kodni ekranda ko'rsatish</span>
+              <span>QR kod generatori &amp; chop etish</span>
             </button>
           </div>
 
@@ -174,6 +173,16 @@ export const WelcomePage: React.FC = () => {
                 <p>Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.</p>
               </div>
             </div>
+            <button
+              type="button"
+              className="btn-card-action-outline"
+              onClick={() => setIsNfcModalOpen(true)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36M9.46 6.21a11.76 11.76 0 0 1 0 11.58M12.91 4.1a16.1 16.1 0 0 1 0 15.8" />
+              </svg>
+              <span>NFC / Stolni tanlash</span>
+            </button>
           </div>
 
           {/* 4. Find Reservation */}
@@ -190,57 +199,20 @@ export const WelcomePage: React.FC = () => {
                 <p>Oldindan joy band qilgan bo'lsangiz, raqamingiz orqali toping.</p>
               </div>
             </div>
-            <a
-              href="/reservation/find/"
+            <button
+              type="button"
               className="btn-card-action-outline"
-              style={{ textDecoration: 'none' }}
+              onClick={() => navigate('/reservation/find')}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
               </svg>
               <span>Bronni tekshirish</span>
-            </a>
+            </button>
           </div>
         </div>
       </main>
-
-      {/* QR Code Modal */}
-      {showQRModal && (
-        <div
-          className="welcome-modal-backdrop"
-          onClick={() => setShowQRModal(false)}
-        >
-          <div
-            className="welcome-modal-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="welcome-modal-title">Stol QR Kodi</h3>
-            <p className="welcome-modal-desc">
-              Menyuni ochish uchun kamerangizni QR kodga qarating:
-            </p>
-            <div className="welcome-modal-qr-frame">
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://unripened-nonpersonal-giselle.ngrok-free.dev/menu/"
-                alt="QR Code"
-                className="welcome-modal-qr-img"
-              />
-            </div>
-            <div className="welcome-modal-actions">
-              <a href="/ar/" className="btn-modal-3d">
-                3D Menyu
-              </a>
-              <button
-                type="button"
-                onClick={() => setShowQRModal(false)}
-                className="btn-modal-close"
-              >
-                Yopish
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <BottomNav
         activeTab="home"
