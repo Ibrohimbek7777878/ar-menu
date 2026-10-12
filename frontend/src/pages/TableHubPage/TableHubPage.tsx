@@ -26,7 +26,11 @@ interface InitialTableData {
   flashMsg?: string;
 }
 
-export const TableHubPage: React.FC = () => {
+export interface TableHubPageProps {
+  embedded?: boolean;
+}
+
+export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) => {
   const { navigate, cartCount: navCartCount, setIsQrModalOpen } = useNavigation();
   const initialData: InitialTableData = (window as any).__GULISTON_TABLE_DATA__ || {};
 
@@ -177,12 +181,14 @@ export const TableHubPage: React.FC = () => {
   return (
     <div className="react-table-hub-page">
       {/* ─── Header Navigation ─── */}
-      <HeaderNav
-        brandName={shopName}
-        tableNumber={table?.number}
-        cartCount={navCartCount || initialData.cartCount || 0}
-        onCartClick={() => navigate('/cart/')}
-      />
+      {!embedded && (
+        <HeaderNav
+          brandName={shopName}
+          tableNumber={table?.number}
+          cartCount={navCartCount || initialData.cartCount || 0}
+          onCartClick={() => navigate('/cart/')}
+        />
+      )}
 
       <main className="table-hub-content">
         {/* ─── Hero Header ─── */}
@@ -510,17 +516,19 @@ export const TableHubPage: React.FC = () => {
       </main>
 
       {/* ─── Bottom Navigation ─── */}
-      <BottomNav
-        activeTab="home"
-        cartCount={navCartCount || initialData.cartCount || 0}
-        onTabChange={(tab) => {
-          if (tab === 'home') navigate('/');
-          else if (tab === 'menu') navigate('/menu/');
-          else if (tab === 'ar') navigate('/ar/');
-          else if (tab === 'cart') navigate('/cart/');
-          else if (tab === 'orders') navigate('/orders/');
-        }}
-      />
+      {!embedded && (
+        <BottomNav
+          activeTab="home"
+          cartCount={navCartCount || initialData.cartCount || 0}
+          onTabChange={(tab) => {
+            if (tab === 'home') navigate('/');
+            else if (tab === 'menu') navigate('/menu/');
+            else if (tab === 'ar') navigate('/ar/');
+            else if (tab === 'cart') navigate('/cart/');
+            else if (tab === 'orders') navigate('/orders/');
+          }}
+        />
+      )}
 
       {/* ─── Toast Feedback ─── */}
       <Toast message={toastMsg} icon={toastIcon} visible={toastVisible} />

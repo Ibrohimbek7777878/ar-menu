@@ -92,7 +92,7 @@ export class RouteGuard {
 
     // ─── 6. AGAR QURILMA HALI MEHMON (GUEST) HOLATIDA BO'LSA ───
     // Tegishli kirish yo'li orqali xodim roli faollashadi:
-    if (cleanPath.includes('/admin')) {
+    if (cleanPath.includes('/admin') || cleanPath.includes('/finance')) {
       roleService.grantRole('admin', 'Admin');
       return { allowed: true };
     }
@@ -107,10 +107,6 @@ export class RouteGuard {
     if (cleanPath.includes('/hostess') || cleanPath.includes('/arrival')) {
       roleService.grantRole('hostess', 'Hostess');
       return { allowed: true };
-    }
-    if (cleanPath.includes('/finance')) {
-      // Finance faqat admin uchun
-      return { allowed: false, redirectTo: '/menu/admin', reason: 'Moliya bo\'limi faqat admin uchun.' };
     }
 
     // Mijoz sahifalari barcha uchun ochiq

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigation } from '../../context/NavigationContext';
 import { StaffDeviceManagerModal } from '../../core/auth/StaffDeviceManagerModal';
 import { KDSPage } from '../KDSPage/KDSPage';
@@ -50,6 +50,28 @@ declare global {
 
 export type AdminNavTab = 'dashboard' | 'kds' | 'waiter' | 'tables' | 'hostess' | 'finance' | 'menu' | 'ar';
 
+export const TAB_TO_URL: Record<AdminNavTab, string> = {
+  dashboard: '/menu/admin',
+  kds: '/menu/kitchen',
+  waiter: '/menu/waiter',
+  tables: '/menu/table',
+  hostess: '/menu/hostess',
+  finance: '/menu/finance',
+  menu: '/menu/admin/menu',
+  ar: '/menu/ar',
+};
+
+export const getTabFromPath = (path: string): AdminNavTab => {
+  if (path.includes('/kitchen') || path.includes('/kds')) return 'kds';
+  if (path.includes('/waiter') || path.includes('/ofitsiant')) return 'waiter';
+  if (path.includes('/finance')) return 'finance';
+  if (path.includes('/table')) return 'tables';
+  if (path.includes('/hostess') || path.includes('/arrival')) return 'hostess';
+  if (path.includes('/menu/admin/menu')) return 'menu';
+  if (path.includes('/ar')) return 'ar';
+  return 'dashboard';
+};
+
 export interface AdminDashboardPageProps {
   initialTab?: AdminNavTab;
 }
@@ -67,17 +89,36 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
   const [activeTab, setActiveTab] = useState<AdminNavTab>(() => {
     if (initialTab && initialTab !== 'dashboard') return initialTab;
     if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path.includes('/kitchen') || path.includes('/kds')) return 'kds';
-      if (path.includes('/waiter') || path.includes('/ofitsiant')) return 'waiter';
-      if (path.includes('/finance')) return 'finance';
-      if (path.includes('/table')) return 'tables';
-      if (path.includes('/hostess') || path.includes('/arrival')) return 'hostess';
-      if (path.includes('/menu') && !path.includes('/menu/admin')) return 'menu';
-      if (path.includes('/ar')) return 'ar';
+      return getTabFromPath(window.location.pathname);
     }
     return 'dashboard';
   });
+
+  // URL sinxronizatsiyasi - tab bosilganda brauzer manzilini yangilash
+  const handleTabChange = useCallback((tab: AdminNavTab) => {
+    setActiveTab(tab);
+    const targetUrl = TAB_TO_URL[tab];
+    if (targetUrl && typeof window !== 'undefined' && window.location.pathname !== targetUrl) {
+      window.history.pushState({}, '', targetUrl);
+    }
+  }, []);
+
+  // Brauzer orqaga / oldinga (Back / Forward) tugmalari bosilganda tabni moslashtirish
+  useEffect(() => {
+    const handlePopState = () => {
+      const tab = getTabFromPath(window.location.pathname);
+      setActiveTab(tab);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Tashqi initialTab prop o'zgarsa (masalan, yo'naltirish orqali)
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const [filterPeriod, setFilterPeriod] = useState<'today' | 'week' | 'month'>('today');
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -142,7 +183,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleTabChange('dashboard')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect width="7" height="9" x="3" y="3" rx="1" />
@@ -155,7 +196,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'kds' ? 'active' : ''}`}
-            onClick={() => setActiveTab('kds')}
+            onClick={() => handleTabChange('kds')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
@@ -170,7 +211,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'waiter' ? 'active' : ''}`}
-            onClick={() => setActiveTab('waiter')}
+            onClick={() => handleTabChange('waiter')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -182,7 +223,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'tables' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tables')}
+            onClick={() => handleTabChange('tables')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
@@ -192,7 +233,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'hostess' ? 'active' : ''}`}
-            onClick={() => setActiveTab('hostess')}
+            onClick={() => handleTabChange('hostess')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -205,7 +246,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'menu' ? 'active' : ''}`}
-            onClick={() => setActiveTab('menu')}
+            onClick={() => handleTabChange('menu')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M18 2v20M6 2v20M4 6h4M4 10h4M16 6h4M16 10h4" />
@@ -215,7 +256,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'finance' ? 'active' : ''}`}
-            onClick={() => setActiveTab('finance')}
+            onClick={() => handleTabChange('finance')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -225,7 +266,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'ar' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ar')}
+            onClick={() => handleTabChange('ar')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
@@ -321,7 +362,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
 
                   <button
                     type="button"
-                    onClick={() => setActiveTab('kds')}
+                    onClick={() => handleTabChange('kds')}
                     className="admin-btn admin-btn-primary"
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -338,7 +379,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                 <div
                   className="admin-stat-card"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => setActiveTab('finance')}
+                  onClick={() => handleTabChange('finance')}
                   title="Batafsil moliya va kassa hisobotini ko'rish"
                 >
                   <div className="admin-stat-top">
@@ -375,7 +416,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                 <div
                   className="admin-stat-card"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => setActiveTab('tables')}
+                  onClick={() => handleTabChange('tables')}
                 >
                   <div className="admin-stat-top">
                     <span className="admin-stat-label">Stollar bandligi</span>
@@ -396,7 +437,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                 <div
                   className="admin-stat-card"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => setActiveTab('kds')}
+                  onClick={() => handleTabChange('kds')}
                 >
                   <div className="admin-stat-top">
                     <span className="admin-stat-label">Oshxona (KDS) navbati</span>
@@ -422,7 +463,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setActiveTab('tables')}
+                    onClick={() => handleTabChange('tables')}
                     className="admin-link-more"
                     style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                   >
@@ -436,7 +477,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                     return (
                       <div
                         key={table.id}
-                        onClick={() => setActiveTab('tables')}
+                        onClick={() => handleTabChange('tables')}
                         className={`admin-table-chip ${isOccupied ? 'occupied' : 'free'}`}
                         style={{ cursor: 'pointer' }}
                         title={isOccupied ? 'Band stol' : "Bo'sh stol"}
@@ -464,7 +505,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setActiveTab('kds')}
+                    onClick={() => handleTabChange('kds')}
                     className="admin-link-more"
                     style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                   >
@@ -513,7 +554,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                           <td>
                             <button
                               type="button"
-                              onClick={() => setActiveTab('finance')}
+                              onClick={() => handleTabChange('finance')}
                               className="admin-table-action"
                               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                             >
@@ -546,7 +587,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
           {/* TAB 4: Stollar & Bron */}
           {activeTab === 'tables' && (
             <div className="admin-subview-wrapper">
-              <TableHubPage />
+              <TableHubPage embedded={true} />
             </div>
           )}
 

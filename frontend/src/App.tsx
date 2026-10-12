@@ -10,9 +10,7 @@ import { TableHubPage } from './pages/TableHubPage/TableHubPage';
 import { ReservationPage } from './pages/ReservationPage/ReservationPage';
 import { WaiterPanelPage } from './pages/WaiterPanelPage/WaiterPanelPage';
 import { HostessDeskPage } from './pages/HostessDeskPage/HostessDeskPage';
-import { KDSPage } from './pages/KDSPage/KDSPage';
-import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
-import { FinancePage } from './pages/FinancePage/FinancePage';
+import { AdminDashboardPage, getTabFromPath } from './pages/AdminDashboardPage/AdminDashboardPage';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { RouteGuard } from './core/guards/RouteGuard';
 import { CallWaiterModal, NFCGatewayModal, QRGeneratorModal, PhotogrammetryStudioModal } from './components/ui';
@@ -25,7 +23,7 @@ const AppContent: React.FC = () => {
   const guard = RouteGuard.canActivate(currentPath);
   if (!guard.allowed) {
     if (guard.redirectTo?.includes('/waiter')) return <WaiterPanelPage />;
-    if (guard.redirectTo?.includes('/kitchen') || guard.redirectTo?.includes('/kds')) return <KDSPage />;
+    if (guard.redirectTo?.includes('/kitchen') || guard.redirectTo?.includes('/kds')) return <AdminDashboardPage initialTab="kds" />;
     if (guard.redirectTo?.includes('/hostess')) return <HostessDeskPage />;
     return <MenuPage />;
   }
@@ -35,19 +33,31 @@ const AppContent: React.FC = () => {
     return <ComponentShowcase />;
   }
 
-  // Moliya & Kassa Paneli (/finance, /admin/finance/)
-  if (currentPath.includes('/finance')) {
-    return <FinancePage />;
-  }
-
-  // Restoran Admin & Boshqaruv Markazi (/menu/admin, /admin, /admin/dashboard/)
-  if (currentPath.includes('/admin')) {
-    return <AdminDashboardPage initialTab="dashboard" />;
+  // ─── RESTORAN ADMIN PANELI & GULISTON UNIFIED MANAGEMENT SUITE ───
+  // Clean paths: /menu/admin, /menu/kitchen, /menu/kds, /menu/waiter, /menu/table, /menu/hostess, /menu/finance, /menu/ar, /admin
+  if (
+    currentPath.startsWith('/menu/admin') ||
+    currentPath.startsWith('/menu/kitchen') ||
+    currentPath.startsWith('/menu/kds') ||
+    currentPath.startsWith('/menu/waiter') ||
+    currentPath.startsWith('/menu/table') ||
+    currentPath.startsWith('/menu/hostess') ||
+    currentPath.startsWith('/menu/finance') ||
+    currentPath.startsWith('/menu/ar') ||
+    currentPath.startsWith('/admin')
+  ) {
+    const tab = getTabFromPath(currentPath);
+    return <AdminDashboardPage initialTab={tab} />;
   }
 
   // Oshxona Ekrani (KDS) (/kds/ yoki /kitchen/ yoki /seller/kds/)
   if (currentPath.includes('/kds') || currentPath.includes('/kitchen')) {
     return <AdminDashboardPage initialTab="kds" />;
+  }
+
+  // Moliya & Kassa Paneli (/finance)
+  if (currentPath.includes('/finance')) {
+    return <AdminDashboardPage initialTab="finance" />;
   }
 
   // 3D / AR Interaktiv Menyu (/ar/)
