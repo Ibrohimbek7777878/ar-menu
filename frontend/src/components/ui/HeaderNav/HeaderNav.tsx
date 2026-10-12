@@ -138,7 +138,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <button
               type="button"
               className="btn-header-staff"
-              onClick={() => navigate('/admin')}
+              onClick={() => navigate('/menu/admin')}
               title="Admin & Boshqaruv paneli"
               aria-label="Admin paneli"
             >

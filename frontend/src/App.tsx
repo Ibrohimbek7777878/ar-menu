@@ -37,8 +37,8 @@ const AppContent: React.FC = () => {
     return <FinancePage />;
   }
 
-  // Restoran Admin & Boshqaruv Markazi (/admin/dashboard/, /admin/)
-  if (currentPath.includes('/admin/dashboard') || currentPath === '/admin' || currentPath === '/admin/') {
+  // Restoran Admin & Boshqaruv Markazi (/menu/admin, /admin, /admin/dashboard/)
+  if (currentPath.includes('/admin')) {
     return <AdminDashboardPage />;
   }
 

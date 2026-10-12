@@ -32,8 +32,8 @@ export class RouteGuard {
       }
     }
 
-    // 2. ADMIN VA MOLIYA PANELI (/admin, /finance)
-    if (cleanPath.startsWith('/admin') || cleanPath.startsWith('/finance')) {
+    // 2. ADMIN VA MOLIYA PANELI (/admin, /finance, /menu/admin)
+    if (cleanPath.startsWith('/admin') || cleanPath.startsWith('/finance') || cleanPath.includes('/admin')) {
       // PIN-kod olib tashlangan: To'g'ridan-to'g'ri admin ruxsati beriladi
       roleService.grantRole('admin', 'Admin');
       return { allowed: true };
