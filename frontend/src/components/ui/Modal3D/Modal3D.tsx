@@ -7,6 +7,7 @@ export interface Modal3DProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToCart?: (product: Product) => void;
+  enable360PhotoTab?: boolean; // Default false (Rule 4: Soft-toggle preserved for dynamic control)
 }
 
 export const Modal3D: React.FC<Modal3DProps> = ({
@@ -14,13 +15,14 @@ export const Modal3D: React.FC<Modal3DProps> = ({
   isOpen,
   onClose,
   onAddToCart,
+  enable360PhotoTab = false,
 }) => {
-  // If product has spin_frames, use 360 Spin Mode by default, else model-viewer
+  // Always default to 3D mode. If enable360PhotoTab is explicitly turned on and spin_frames exists, can support spin.
   const [viewMode, setViewMode] = useState<'3d' | 'spin'>('3d');
   const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStartX, setDragStartX] = useState<number>(0);
-  const [isAutoSpinning, setIsAutoSpinning] = useState<boolean>(true);
+  const [isAutoSpinning, setIsAutoSpinning] = useState<boolean>(false);
 
   // Fallback 360 frames generated from the dish image with multi-angle rotation perspective
   const spinFrames = product?.spin_frames && product.spin_frames.length > 0
@@ -30,13 +32,10 @@ export const Modal3D: React.FC<Modal3DProps> = ({
     : ['/media/dish/plov.jpg'];
 
   useEffect(() => {
-    if (product?.spin_frames && product.spin_frames.length > 0) {
-      setViewMode('spin');
-    } else {
-      setViewMode('3d');
-    }
+    // 3D & AR GLB model is strictly default
+    setViewMode('3d');
     setCurrentFrameIndex(0);
-    setIsAutoSpinning(true);
+    setIsAutoSpinning(false);
   }, [product]);
 
   // Auto-spin animation for 360 frame mode
@@ -116,8 +115,8 @@ export const Modal3D: React.FC<Modal3DProps> = ({
           ✕
         </button>
 
-        {/* View Mode Tabs (Agar ikkala rejim ham mavjud bo'lsa) */}
-        {product.spin_frames && product.spin_frames.length > 0 && (
+        {/* View Mode Tabs (Faqat enable360PhotoTab yoqilgan bo'lsa va spin_frames mavjud bo'lsa chiqadi - 4-Qoida) */}
+        {enable360PhotoTab && product.spin_frames && product.spin_frames.length > 0 && (
           <div className="modal-view-mode-tabs">
             <button
               type="button"
@@ -167,8 +166,8 @@ export const Modal3D: React.FC<Modal3DProps> = ({
           </div>
         )}
 
-        {/* 2. Instant 360° High-FPS Photogrammetry Spin Viewport */}
-        {viewMode === 'spin' && (
+        {/* 2. Instant 360° High-FPS Photogrammetry Spin Viewport (Faqat enable360PhotoTab faol bo'lsa) */}
+        {enable360PhotoTab && viewMode === 'spin' && (
           <div
             className="modal-360-spin-viewport"
             onPointerDown={handlePointerDown}

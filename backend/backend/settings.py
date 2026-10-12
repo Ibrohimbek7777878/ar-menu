@@ -21,7 +21,7 @@ except Exception:
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 STATIC_SECRET_KEY = 'django-insecure-MVZfwO0RUY8EaznN3m4r2Wxnh7bPLOFlqIWX4i5NWC53dvtXtkAPpF0DcFLW83io2Mw'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip() or STATIC_SECRET_KEY
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',') if h.strip()]
 
 # CSRF Trusted Origins (Production web va admin panel uchun)
 CSRF_TRUSTED_ORIGINS = [
