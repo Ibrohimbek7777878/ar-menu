@@ -637,6 +637,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const fallback = guard.redirectTo || '/menu';
       window.history.replaceState({}, '', fallback);
       setCurrentPath(fallback);
+      setUserRole(roleService.getCurrentRole());
     }
   }, [currentPath]);
 
@@ -649,6 +650,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (fallback !== currentPath) {
         window.history.pushState({}, '', fallback);
         setCurrentPath(fallback);
+        setUserRole(roleService.getCurrentRole());
       }
       return;
     }

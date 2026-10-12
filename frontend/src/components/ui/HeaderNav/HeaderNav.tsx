@@ -111,7 +111,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               <button
                 type="button"
                 className="btn-header-staff"
-                onClick={() => navigate(userRole === 'admin' ? '/admin' : userRole === 'kitchen' ? '/kds' : userRole === 'waiter' ? '/waiter' : '/hostess')}
+                onClick={() => navigate(userRole === 'admin' ? '/menu/admin' : userRole === 'kitchen' ? '/menu/kitchen' : userRole === 'waiter' ? '/menu/waiter' : '/menu/hostess')}
                 title="Xodimlar paneliga o'tish"
                 style={{ display: 'flex', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700 }}
               >

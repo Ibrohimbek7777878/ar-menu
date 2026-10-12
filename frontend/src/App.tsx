@@ -21,9 +21,12 @@ import './App.css';
 const AppContent: React.FC = () => {
   const { currentPath } = useNavigation();
 
-  // ─── ROUTE GUARD MIDDLEWARE ENFORCEMENT ───
+  // ─── ROUTE GUARD MIDDLEWARE ENFORCEMENT (Zero Data Leakage) ───
   const guard = RouteGuard.canActivate(currentPath);
   if (!guard.allowed) {
+    if (guard.redirectTo?.includes('/waiter')) return <WaiterPanelPage />;
+    if (guard.redirectTo?.includes('/kitchen') || guard.redirectTo?.includes('/kds')) return <KDSPage />;
+    if (guard.redirectTo?.includes('/hostess')) return <HostessDeskPage />;
     return <MenuPage />;
   }
 
