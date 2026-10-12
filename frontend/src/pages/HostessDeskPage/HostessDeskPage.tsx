@@ -29,7 +29,11 @@ declare global {
   }
 }
 
-export const HostessDeskPage: React.FC = () => {
+export interface HostessDeskPageProps {
+  embedded?: boolean;
+}
+
+export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = false }) => {
   const { tables: sharedTables, updateTableStatus } = useNavigation();
   const initialData: InitialHostessData =
     typeof window !== 'undefined' ? window.__GULISTON_HOSTESS_DATA__ || {} : {};
@@ -219,9 +223,9 @@ export const HostessDeskPage: React.FC = () => {
   }, [guests, searchQuery]);
 
   return (
-    <div className="react-hostess-page">
+    <div className={`react-hostess-page ${embedded ? 'hostess-embedded' : ''}`}>
       {/* ─── Xodimlar Navigatsiyasi (StaffNavHeader) ─── */}
-      <StaffNavHeader activeTab="hostess" />
+      {!embedded && <StaffNavHeader activeTab="hostess" />}
 
       <main className="hostess-main-content">
         {/* ─── Hero Section ─── */}

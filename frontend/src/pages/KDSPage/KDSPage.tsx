@@ -57,7 +57,11 @@ function playKdsBeep() {
   }
 }
 
-export const KDSPage: React.FC = () => {
+export interface KDSPageProps {
+  embedded?: boolean;
+}
+
+export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
   const { orders: sharedOrders, updateOrderStatus, toggleOrderItemDone } = useNavigation();
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'preparing' | 'ready'>('all');
@@ -153,8 +157,8 @@ export const KDSPage: React.FC = () => {
   }, [orders]);
 
   return (
-    <div className="kds-root">
-      <StaffNavHeader activeTab="kds" />
+    <div className={`kds-root ${embedded ? 'kds-embedded' : ''}`}>
+      {!embedded && <StaffNavHeader activeTab="kds" />}
       {/* ─── STATUS HEADER ─── */}
       <header className="kds-header">
         <div className="kds-brand">

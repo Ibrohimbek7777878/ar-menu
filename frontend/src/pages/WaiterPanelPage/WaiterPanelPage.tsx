@@ -74,7 +74,11 @@ const POPULAR_ADD_DISHES = [
   { name: 'Osh (1 pors)', price: 45000 },
 ];
 
-export const WaiterPanelPage: React.FC = () => {
+export interface WaiterPanelPageProps {
+  embedded?: boolean;
+}
+
+export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = false }) => {
   const initialData: InitialWaiterData =
     typeof window !== 'undefined' ? window.__GULISTON_WAITER_DATA__ || {} : {};
 
@@ -176,9 +180,9 @@ export const WaiterPanelPage: React.FC = () => {
   const finalTotal = subtotal + serviceFee;
 
   return (
-    <div className="react-waiter-page">
+    <div className={`react-waiter-page ${embedded ? 'waiter-embedded' : ''}`}>
       {/* ─── Xodimlar Navigatsiyasi (StaffNavHeader) ─── */}
-      <StaffNavHeader activeTab="waiter" />
+      {!embedded && <StaffNavHeader activeTab="waiter" />}
 
       <main className="waiter-main-content">
         {/* ─── Greeting & KPI Row ─── */}

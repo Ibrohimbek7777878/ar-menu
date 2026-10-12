@@ -8,7 +8,11 @@ function formatUZS(num: number): string {
   return new Intl.NumberFormat('uz-UZ').format(num);
 }
 
-export const FinancePage: React.FC = () => {
+export interface FinancePageProps {
+  embedded?: boolean;
+}
+
+export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) => {
   const {
     financeTransactions,
     financeDebts,
@@ -235,8 +239,8 @@ export const FinancePage: React.FC = () => {
   };
 
   return (
-    <div className="finance-page-layout">
-      <StaffNavHeader activeTab="finance" />
+    <div className={`finance-page-layout ${embedded ? 'finance-embedded' : ''}`}>
+      {!embedded && <StaffNavHeader activeTab="finance" />}
 
       <div className="finance-container">
         {/* Banner */}

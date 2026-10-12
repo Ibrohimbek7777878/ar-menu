@@ -597,3 +597,190 @@
   color: #F472B6;
   border: 1px solid rgba(236, 72, 153, 0.35);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN PORTAL EMBEDDED KDS THEME (WARM IVORY & FOREST GREEN)
+   Harmonizes with Admin Dashboard
+   ═══════════════════════════════════════════════════════════════ */
+.kds-root.kds-embedded {
+  min-height: auto;
+  background-color: transparent;
+  color: var(--text-primary, #212529);
+  padding: 0;
+}
+
+.kds-root.kds-embedded .kds-header {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.25rem;
+  position: static;
+}
+
+.kds-root.kds-embedded .kds-brand-title {
+  color: var(--text-primary, #212529);
+}
+
+.kds-root.kds-embedded .kds-brand-subtitle {
+  color: var(--text-secondary, #6C757D);
+}
+
+.kds-root.kds-embedded .kds-brand-logo {
+  background: #F2F5F3;
+  color: var(--brand-primary, #213827);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+}
+
+.kds-root.kds-embedded .kds-sound-btn,
+.kds-root.kds-embedded .kds-refresh-btn {
+  background: #F8F5EE;
+  color: #212529;
+  border: 1px solid #E8E2D2;
+}
+
+.kds-root.kds-embedded .kds-sound-btn:hover,
+.kds-root.kds-embedded .kds-refresh-btn:hover {
+  background: #ECE6D8;
+}
+
+.kds-root.kds-embedded .kds-sound-btn.active {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border-color: #A5D6A7;
+}
+
+.kds-root.kds-embedded .kds-nav-tabs {
+  background: transparent;
+  border-bottom: none;
+  padding: 0;
+  margin-bottom: 1.25rem;
+}
+
+.kds-root.kds-embedded .kds-tab-btn {
+  background: #FFFFFF;
+  color: #6C757D;
+  border: 1px solid #E8E2D2;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.kds-root.kds-embedded .kds-tab-btn:hover {
+  background: #F8F5EE;
+  color: #213827;
+}
+
+.kds-root.kds-embedded .kds-tab-btn.active {
+  background: #213827;
+  color: #FFFFFF;
+  border-color: #213827;
+}
+
+.kds-root.kds-embedded .kds-tab-btn.active .kds-tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.kds-root.kds-embedded .kds-tab-count {
+  background: #F2F5F3;
+  color: #6C757D;
+}
+
+.kds-root.kds-embedded .kds-search-box {
+  background: #FFFFFF;
+  border: 1px solid #E8E2D2;
+  border-radius: 10px;
+}
+
+.kds-root.kds-embedded .kds-search-input {
+  color: #212529;
+}
+
+.kds-root.kds-embedded .kds-summary-bar {
+  background: #FFFFFF;
+  border: 1px solid #E8E2D2;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.kds-root.kds-embedded .summary-title {
+  color: #212529;
+}
+
+.kds-root.kds-embedded .summary-dish-chip {
+  background: #F8F5EE;
+  border: 1px solid #E8E2D2;
+}
+
+.kds-root.kds-embedded .summary-dish-name {
+  color: #212529;
+}
+
+.kds-root.kds-embedded .summary-dish-count {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.kds-root.kds-embedded .kds-ticket {
+  background: #FFFFFF;
+  border: 1px solid #E8E2D2;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.kds-root.kds-embedded .kds-ticket-header {
+  background: #FAF9F5;
+  border-bottom: 1px solid #E8E2D2;
+}
+
+.kds-root.kds-embedded .kds-order-num {
+  color: #212529;
+  font-weight: 800;
+}
+
+.kds-root.kds-embedded .kds-table-badge {
+  background: #F2F5F3;
+  color: #213827;
+  border: 1px solid #E8E2D2;
+}
+
+.kds-root.kds-embedded .kds-customer-name {
+  color: #6C757D;
+}
+
+.kds-root.kds-embedded .kds-item-row {
+  border-bottom: 1px solid #F0ECE1;
+}
+
+.kds-root.kds-embedded .item-name {
+  color: #212529;
+}
+
+.kds-root.kds-embedded .item-qty {
+  color: #212529;
+  font-weight: 700;
+}
+
+.kds-root.kds-embedded .course-tag {
+  background: #F2F5F3;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+
+.kds-root.kds-embedded .kds-ticket-notes {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.kds-root.kds-embedded .item-checkbox {
+  border: 1px solid #D1D5DB;
+  background: #FFFFFF;
+}
+
+.kds-root.kds-embedded .item-checkbox.checked {
+  background: #15803D;
+  border-color: #15803D;
+}
+

@@ -78,6 +78,12 @@
   font-size: 0.88rem;
   font-weight: 600;
   transition: all 0.15s ease;
+  background: none;
+  border: 1px solid transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .admin-nav-item:hover {
@@ -89,6 +95,28 @@
   background: #F2F5F3;
   color: var(--brand-primary, #213827);
   border: 1px solid var(--border-subtle, #E8E2D2);
+}
+
+.admin-subview-wrapper {
+  width: 100%;
+  animation: adminFadeIn 0.18s ease-in-out;
+}
+
+@keyframes adminFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-tab-placeholder {
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E8E2D2);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
 .admin-nav-badge {

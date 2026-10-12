@@ -42,12 +42,12 @@ const AppContent: React.FC = () => {
 
   // Restoran Admin & Boshqaruv Markazi (/menu/admin, /admin, /admin/dashboard/)
   if (currentPath.includes('/admin')) {
-    return <AdminDashboardPage />;
+    return <AdminDashboardPage initialTab="dashboard" />;
   }
 
   // Oshxona Ekrani (KDS) (/kds/ yoki /kitchen/ yoki /seller/kds/)
   if (currentPath.includes('/kds') || currentPath.includes('/kitchen')) {
-    return <KDSPage />;
+    return <AdminDashboardPage initialTab="kds" />;
   }
 
   // 3D / AR Interaktiv Menyu (/ar/)
