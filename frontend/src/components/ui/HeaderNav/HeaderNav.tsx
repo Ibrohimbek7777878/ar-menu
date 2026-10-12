@@ -17,7 +17,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onCartClick,
   className = '',
 }) => {
-  const { currentPath, navigate, tableNumber: ctxTable, cartCount: ctxCartCount, setIsCallWaiterOpen, setIsNfcModalOpen } = useNavigation();
+  const {
+    currentPath,
+    navigate,
+    userRole,
+    logoutStaff,
+    tableNumber: ctxTable,
+    cartCount: ctxCartCount,
+    setIsCallWaiterOpen,
+    setIsNfcModalOpen,
+  } = useNavigation();
 
   const tableNumber = propTable !== undefined ? propTable : ctxTable;
   const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
@@ -95,6 +104,47 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </svg>
             <span className="call-waiter-text">Chaqiruv</span>
           </button>
+
+          {/* Admin / Staff Navigation Button */}
+          {userRole !== 'guest' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                className="btn-header-staff"
+                onClick={() => navigate(userRole === 'admin' ? '/admin' : userRole === 'kitchen' ? '/kds' : userRole === 'waiter' ? '/waiter' : '/hostess')}
+                title="Xodimlar paneliga o'tish"
+                style={{ display: 'flex', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700 }}
+              >
+                {userRole === 'admin' ? '👑 Admin' : userRole === 'kitchen' ? '👨‍🍳 Oshxona' : userRole === 'waiter' ? '🤵 Ofitsiant' : '💁‍♀️ Hostess'}
+              </button>
+              <button
+                type="button"
+                onClick={logoutStaff}
+                title="Chiqish va mehmon menyusiga qaytish"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9CA3AF',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                ✕ Chiqish
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn-header-staff"
+              onClick={() => navigate('/admin')}
+              title="Admin & Boshqaruv paneli"
+              aria-label="Admin paneli"
+            >
+              🛡️ Admin
+            </button>
+          )}
 
           {/* Cart Trigger */}
           <button

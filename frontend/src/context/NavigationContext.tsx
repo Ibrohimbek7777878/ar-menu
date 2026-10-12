@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useMemo, useCallback } from 
 import { RestaurantAPI } from '../services/RestaurantAPI';
 import { RouteGuard } from '../core/guards/RouteGuard';
 import { roleService } from '../core/auth/RoleService';
+import { SubdomainService } from '../core/routing/SubdomainService';
 import type { UserRole } from '../core/auth/types';
 
 export interface OrderItem {
@@ -401,6 +402,15 @@ const DEFAULT_FINANCE_DEBTS: FinanceDebt[] = [
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const rawPath = window.location.pathname || '/';
+    const subInfo = SubdomainService.getSubdomainInfo();
+
+    // Agar subdomen aniqlangan bo'lsa (masalan admin.domain.uz)
+    if (subInfo.isStaffDomain && subInfo.defaultPath) {
+      if (rawPath === '/' || rawPath === '/welcome' || rawPath === '/welcome/' || rawPath === '/menu') {
+        return subInfo.defaultPath;
+      }
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const tableFromUrl = urlParams.get('table');
 
@@ -412,7 +422,14 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return rawPath;
   });
 
-  const [userRole, setUserRole] = useState<UserRole>(() => roleService.getCurrentRole());
+  const [userRole, setUserRole] = useState<UserRole>(() => {
+    const subInfo = SubdomainService.getSubdomainInfo();
+    if (subInfo.detectedRole) {
+      roleService.grantRole(subInfo.detectedRole, `${subInfo.detectedRole.toUpperCase()} Subdomeni`);
+      return subInfo.detectedRole;
+    }
+    return roleService.getCurrentRole();
+  });
 
   const loginStaff = useCallback((role: UserRole, name = 'Xodim') => {
     roleService.grantRole(role, name);
@@ -573,6 +590,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     const handlePopState = () => {
       setCurrentPath(window.location.pathname || '/');
+      setUserRole(roleService.getCurrentRole());
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -638,6 +656,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (path === currentPath) return;
     window.history.pushState({}, '', path);
     setCurrentPath(path);
+    setUserRole(roleService.getCurrentRole());
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPath]);
 

@@ -1,4 +1,5 @@
 import type { UserRole, UserSession } from './types';
+import { SubdomainService } from '../routing/SubdomainService';
 
 const STORAGE_KEY = 'restaurant_device_grant';
 
@@ -30,7 +31,7 @@ class RoleService {
       if (staffGrant && validRoles.includes(staffGrant)) {
         this.grantRole(staffGrant, staffName || `${staffGrant.toUpperCase()} Qurilmasi`);
 
-        // URL manzilidan ?staff_grant parametrini tozalash (foydalanuvchi ko'ziga ko'rinmasligi uchun)
+        // URL manzilidan ?staff_grant parametrini tozalash
         urlParams.delete('staff_grant');
         urlParams.delete('staff_name');
         const newSearch = urlParams.toString();
@@ -47,6 +48,17 @@ class RoleService {
    */
   public getSession(): UserSession {
     if (typeof window === 'undefined') return this.defaultSession;
+
+    // 1. Agar subdomen xodimlar subdomeni bo'lsa (masalan: admin.domain.uz)
+    const subInfo = SubdomainService.getSubdomainInfo();
+    if (subInfo.detectedRole) {
+      return {
+        role: subInfo.detectedRole,
+        name: `${subInfo.detectedRole.toUpperCase()} (Subdomen)`,
+        isAuthenticatedStaff: true,
+      };
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -59,14 +71,14 @@ class RoleService {
   }
 
   /**
-   * Joriy rolni olish (Default: 'guest')
+   * Joriy rolni olish (Default: 'guest' yoki subdomen roli)
    */
   public getCurrentRole(): UserRole {
     return this.getSession().role;
   }
 
   /**
-   * Admin tomonidan xodim qurilmasiga ruxsat berish
+   * Admin yoki xodim qurilmasiga ruxsat berish (Parolsiz, PIN-kodsiz)
    */
   public grantRole(role: UserRole, name = 'Xodim'): void {
     const session: UserSession = {

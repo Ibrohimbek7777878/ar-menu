@@ -5,6 +5,7 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   build: {
     outDir: process.env.BUILD_TO_DJANGO
       ? path.resolve(import.meta.dirname, '../backend/static/react')

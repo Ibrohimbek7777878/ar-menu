@@ -1,4 +1,5 @@
 import { roleService } from '../auth/RoleService';
+import { SubdomainService } from '../routing/SubdomainService';
 
 export interface GuardCheckResult {
   allowed: boolean;
@@ -8,62 +9,55 @@ export interface GuardCheckResult {
 
 /**
  * RouteGuard - Har qanday sahifaga o'tishdan oldin rolni tekshiruvchi sof Middleware.
- * Parolsiz, kodsiz — faqat admin bergan qurilma ruxsati asosida ishlaydi.
+ * PIN-kodsiz — Subdomen yoki to'g'ridan-to'g'ri ruxsat berish asosida ishlaydi.
  */
 export class RouteGuard {
   public static canActivate(targetPath: string): GuardCheckResult {
     const cleanPath = targetPath.split('?')[0].split('#')[0] || '/';
-    const currentRole = roleService.getCurrentRole();
+    const subInfo = SubdomainService.getSubdomainInfo();
 
-    // 1. ADMIN VA MOLIYA PANELI (/admin, /finance)
+    // 1. Agar xodimlar subdomeni orqali kirilgan bo'lsa (masalan: admin.domain.uz)
+    if (subInfo.isStaffDomain) {
+      if (subInfo.detectedRole === 'admin') {
+        return { allowed: true };
+      }
+      if (subInfo.detectedRole === 'kitchen' && (cleanPath.startsWith('/kds') || cleanPath.startsWith('/kitchen'))) {
+        return { allowed: true };
+      }
+      if (subInfo.detectedRole === 'waiter' && (cleanPath.startsWith('/waiter') || cleanPath.startsWith('/ofitsiant'))) {
+        return { allowed: true };
+      }
+      if (subInfo.detectedRole === 'hostess' && (cleanPath.startsWith('/hostess') || cleanPath.startsWith('/arrival'))) {
+        return { allowed: true };
+      }
+    }
+
+    // 2. ADMIN VA MOLIYA PANELI (/admin, /finance)
     if (cleanPath.startsWith('/admin') || cleanPath.startsWith('/finance')) {
-      if (currentRole === 'admin') {
-        return { allowed: true };
-      }
-      return {
-        allowed: false,
-        redirectTo: '/menu',
-        reason: 'Ushbu bo\'lim faqat restoran administratsiyasi uchun.',
-      };
+      // PIN-kod olib tashlangan: To'g'ridan-to'g'ri admin ruxsati beriladi
+      roleService.grantRole('admin', 'Admin');
+      return { allowed: true };
     }
 
-    // 2. OSHXONA KDS PANELI (/kds, /kitchen)
+    // 3. OSHXONA KDS PANELI (/kds, /kitchen)
     if (cleanPath.startsWith('/kds') || cleanPath.startsWith('/kitchen')) {
-      if (currentRole === 'kitchen' || currentRole === 'admin') {
-        return { allowed: true };
-      }
-      return {
-        allowed: false,
-        redirectTo: '/menu',
-        reason: 'Oshxona monitori faqat oshpazlar uchun.',
-      };
+      roleService.grantRole('kitchen', 'Oshpaz');
+      return { allowed: true };
     }
 
-    // 3. OFITSIANT PANELI (/waiter, /ofitsiant)
+    // 4. OFITSIANT PANELI (/waiter, /ofitsiant)
     if (cleanPath.startsWith('/waiter') || cleanPath.startsWith('/ofitsiant')) {
-      if (currentRole === 'waiter' || currentRole === 'admin') {
-        return { allowed: true };
-      }
-      return {
-        allowed: false,
-        redirectTo: '/menu',
-        reason: 'Ofitsiant paneli faqat xizmat ko\'rsatuvchi xodimlar uchun.',
-      };
+      roleService.grantRole('waiter', 'Ofitsiant');
+      return { allowed: true };
     }
 
-    // 4. KUTIB OLISH (HOSTESS) PANELI (/hostess, /arrival)
+    // 5. KUTIB OLISH (HOSTESS) PANELI (/hostess, /arrival)
     if (cleanPath.startsWith('/hostess') || cleanPath.startsWith('/arrival')) {
-      if (currentRole === 'hostess' || currentRole === 'admin') {
-        return { allowed: true };
-      }
-      return {
-        allowed: false,
-        redirectTo: '/menu',
-        reason: 'Kutib olish stoli faqat ma\'muriyat uchun.',
-      };
+      roleService.grantRole('hostess', 'Hostess');
+      return { allowed: true };
     }
 
-    // 5. ODDIY MEHMON (GUEST) VA BARCHA UCHUN OCHIQ BO'LGAN SAHIFALAR
+    // 6. ODDIY MEHMON (GUEST) VA BARCHA UCHUN OCHIQ BO'LGAN SAHIFALAR
     // (/menu, /ar, /cart, /checkout, /orders, /table, /)
     return { allowed: true };
   }
