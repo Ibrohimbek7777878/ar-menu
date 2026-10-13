@@ -12,6 +12,7 @@ import type { Product, Category } from '../../types/dish';
 import { INITIAL_PRODUCTS } from '../../data/mockDishes';
 import { matchUzbekQuery } from '../../utils/uzbekSearch';
 import { useNavigation } from '../../context/NavigationContext';
+import { enrichDishWith3D } from '../../services/Smart3DMatcher';
 import './ARMenuPage.css';
 
 interface InitialARData {
@@ -39,11 +40,31 @@ export const ARMenuPage: React.FC = () => {
     ? initialData.products
     : DEFAULT_AR_PRODUCTS;
 
+  const getMergedARProducts = () => {
+    try {
+      const raw = localStorage.getItem('guliston_custom_products');
+      const customList = raw ? JSON.parse(raw) : [];
+      const custom3D = customList.map(enrichDishWith3D).filter((p: Product) => p.has_3d);
+      return [...custom3D, ...productsList.map(enrichDishWith3D).filter((p) => p.has_3d)];
+    } catch {
+      return productsList.map(enrichDishWith3D).filter((p) => p.has_3d);
+    }
+  };
+
   // Local state
   const [categories, setCategories] = useState<Category[]>(categoriesList);
-  const [products] = useState<Product[]>(productsList);
+  const [products, setProducts] = useState<Product[]>(getMergedARProducts);
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Live menu sync & custom product update listener
+  useEffect(() => {
+    const handleUpdate = () => {
+      setProducts(getMergedARProducts());
+    };
+    window.addEventListener('guliston_menu_updated', handleUpdate);
+    return () => window.removeEventListener('guliston_menu_updated', handleUpdate);
+  }, []);
 
   // 3D Modal state
   const [selected3DProduct, setSelected3DProduct] = useState<Product | null>(null);

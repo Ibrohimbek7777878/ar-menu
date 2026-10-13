@@ -14,6 +14,7 @@ import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../../data/mockDishes';
 import { matchUzbekQuery } from '../../utils/uzbekSearch';
 import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
+import { enrichDishWith3D } from '../../services/Smart3DMatcher';
 import './MenuPage.css';
 
 interface InitialData {
@@ -40,22 +41,47 @@ export const MenuPage: React.FC = () => {
       ? initialData.products
       : INITIAL_PRODUCTS;
 
+  // Function to load and enrich all dishes (including custom dishes from Studio)
+  const getMergedProducts = () => {
+    try {
+      const raw = localStorage.getItem('guliston_custom_products');
+      const customList = raw ? JSON.parse(raw) : [];
+      return [...customList, ...productsList].map(enrichDishWith3D);
+    } catch {
+      return productsList.map(enrichDishWith3D);
+    }
+  };
+
   // Local state
   const [categories, setCategories] = useState<Category[]>(categoriesList);
-  const [products, setProducts] = useState<Product[]>(productsList);
+  const [products, setProducts] = useState<Product[]>(getMergedProducts);
 
-  // Jonli backend menyusini yuklash (Pure SPA rejimida)
+  // Live menu sync & custom product update listener
   useEffect(() => {
+    const handleUpdate = () => {
+      setProducts(getMergedProducts());
+    };
+    window.addEventListener('guliston_menu_updated', handleUpdate);
+
     if (!initialData.products || initialData.products.length === 0) {
       RestaurantAPI.getMenu().then((res) => {
         if (res?.products && res.products.length > 0) {
-          setProducts(res.products);
+          const enriched = res.products.map(enrichDishWith3D);
+          try {
+            const raw = localStorage.getItem('guliston_custom_products');
+            const customList = raw ? JSON.parse(raw) : [];
+            setProducts([...customList, ...enriched]);
+          } catch {
+            setProducts(enriched);
+          }
           if (res.categories && res.categories.length > 0) {
             setCategories(res.categories);
           }
         }
       });
     }
+
+    return () => window.removeEventListener('guliston_menu_updated', handleUpdate);
   }, []);
 
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');

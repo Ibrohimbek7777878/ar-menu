@@ -123,7 +123,15 @@ const GlobalModals: React.FC = () => {
         isOpen={isStudioModalOpen}
         onClose={() => setIsStudioModalOpen(false)}
         onSaveProduct3D={(dish) => {
-          console.log('New 3D/360 Dish generated:', dish);
+          try {
+            const raw = localStorage.getItem('guliston_custom_products');
+            const list = raw ? JSON.parse(raw) : [];
+            const updated = [dish, ...list.filter((x: any) => x.id !== dish.id)];
+            localStorage.setItem('guliston_custom_products', JSON.stringify(updated));
+            window.dispatchEvent(new Event('guliston_menu_updated'));
+          } catch (err) {
+            console.error('Save custom product failed:', err);
+          }
         }}
       />
     </>

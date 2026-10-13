@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useId, useEffect } from 'react';
 import type { Product } from '../../../types/dish';
 import { RestaurantAPI } from '../../../services/RestaurantAPI';
+import { AVAILABLE_3D_MODELS, match3DModel, type Model3DItem } from '../../../services/Smart3DMatcher';
 import './PhotogrammetryStudioModal.css';
 
 export interface PhotogrammetryStudioModalProps {
@@ -18,151 +19,91 @@ export const PhotogrammetryStudioModal: React.FC<PhotogrammetryStudioModalProps>
   const [dishPrice, setDishPrice] = useState('45000');
   const [dishCategory, setDishCategory] = useState('Asosiy taomlar');
   const [dishDesc, setDishDesc] = useState('');
+  const [dishImage, setDishImage] = useState<string>('/media/dish/plov.jpg');
 
-  // 4 photos (Oldindan, Orqadan, O'ngdan, Chapdan)
-  const [photos, setPhotos] = useState<{
-    front: string | null;
-    right: string | null;
-    back: string | null;
-    left: string | null;
-  }>({
-    front: null,
-    right: null,
-    back: null,
-    left: null,
-  });
+  // 3D Configuration
+  const [enable3D, setEnable3D] = useState(true);
+  const [selectedModel, setSelectedModel] = useState<Model3DItem | null>(AVAILABLE_3D_MODELS[0]);
+  const [customGlbUrl, setCustomGlbUrl] = useState<string | null>(null);
+  const [customGlbName, setCustomGlbName] = useState<string>('');
+  const [autoMatched, setAutoMatched] = useState<boolean>(false);
 
-  // Short 360 rotation video file
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const fileInputId = useId();
+  const glbInputId = useId();
 
-  // Generation Pipeline State
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progressPercent, setProgressPercent] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('');
+  // Smart 3D Auto-Match trigger whenever dishName or dishCategory changes
+  useEffect(() => {
+    if (!dishName.trim()) return;
 
-  // Resulting 360 Spin Frames
-  const [generatedFrames, setGeneratedFrames] = useState<string[]>([]);
-  const [previewFrameIndex, setPreviewFrameIndex] = useState(0);
-
-  const videoInputRef = useRef<HTMLInputElement>(null);
+    const matched = match3DModel(dishName, dishCategory);
+    if (matched) {
+      setSelectedModel(matched);
+      setCustomGlbUrl(null);
+      setAutoMatched(true);
+      setEnable3D(true);
+    } else {
+      setAutoMatched(false);
+    }
+  }, [dishName, dishCategory]);
 
   if (!isOpen) return null;
 
-  // Handle Photo Upload
-  const handlePhotoUpload = (angle: 'front' | 'right' | 'back' | 'left', e: React.ChangeEvent<HTMLInputElement>) => {
+  // Active GLB URL for preview
+  const activeGlbUrl = customGlbUrl || (selectedModel ? selectedModel.glbUrl : '');
+
+  // 2D Photo Upload
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      setPhotos((prev) => ({ ...prev, [angle]: url }));
+      setDishImage(url);
     }
   };
 
-  // Handle 360 Orbit Video Upload
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Custom GLB File Upload
+  const handleGlbUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setVideoFile(file);
+      if (!file.name.toLowerCase().endsWith('.glb')) {
+        alert("Iltimos, faqat .glb formatidagi 3D model faylini yuklang!");
+        return;
+      }
       const url = URL.createObjectURL(file);
-      setVideoPreviewUrl(url);
+      setCustomGlbUrl(url);
+      setCustomGlbName(file.name);
+      setSelectedModel(null);
+      setAutoMatched(false);
+      setEnable3D(true);
     }
   };
 
-  // Instant Client-side / Algorithmic Photogrammetry Frame Extraction
-  // (Har qanday server yoki sun'iy intellektsiz, 100% tez, mahalliy HTML5 Canvas algoritmi orqali!)
-  const handleStartGeneration = async () => {
+  const handleSelectModel = (model: Model3DItem) => {
+    setSelectedModel(model);
+    setCustomGlbUrl(null);
+    setAutoMatched(false);
+    setEnable3D(true);
+  };
+
+  const handleSave = () => {
     if (!dishName.trim()) {
       alert("Iltimos, taom nomini kiriting!");
       return;
     }
 
-    setIsProcessing(true);
-    setProgressPercent(15);
-    setStatusMessage("1/3. 4 ta burchak suratlari kalibrlanmoqda (Aligning coordinates)...");
+    const has3D = enable3D && Boolean(activeGlbUrl);
 
-    // Agar video yuklangan bo'lsa, videoni canvas orqali 16 ta 360° kadrga ajratamiz:
-    if (videoPreviewUrl) {
-      try {
-        const video = document.createElement('video');
-        video.src = videoPreviewUrl;
-        video.crossOrigin = 'anonymous';
-        video.muted = true;
-        video.playsInline = true;
-
-        await new Promise((resolve) => {
-          video.onloadeddata = () => resolve(true);
-        });
-
-        setStatusMessage("2/3. 360° video kadrlari yuqori aniqlikda chiqarilmoqda (Extracting 16 orbit frames)...");
-        setProgressPercent(45);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 480;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-
-        const duration = video.duration || 3;
-        const totalFrames = 16;
-        const extracted: string[] = [];
-
-        for (let i = 0; i < totalFrames; i++) {
-          const targetTime = (duration / totalFrames) * i;
-          video.currentTime = targetTime;
-          await new Promise((resolve) => {
-            video.onseeked = () => resolve(true);
-          });
-
-          if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            extracted.push(canvas.toDataURL('image/jpeg', 0.85));
-          }
-          setProgressPercent(45 + Math.floor((i / totalFrames) * 45));
-        }
-
-        setStatusMessage("3/3. 360° Interaktiv Fotogrammetriya modeli tayyorlandi!");
-        setProgressPercent(100);
-        setGeneratedFrames(extracted);
-        setIsProcessing(false);
-        return;
-      } catch (err) {
-        console.warn("Video extract fallback to 4 photos", err);
-      }
-    }
-
-    // Agar video bo'lmasa, 4 ta burchak suratlari va oraliq silliq aylanish kadrlari:
-    await new Promise((r) => setTimeout(r, 600));
-    setProgressPercent(60);
-    setStatusMessage("2/3. Suratlar 360° sferik aylana traektoriyasiga yig'ilmoqda...");
-
-    const baseList = [
-      photos.front || '/media/dish/plov.jpg',
-      photos.right || photos.front || '/media/dish/qozon_kabob.jpg',
-      photos.back || photos.front || '/media/dish/shashlik.jpg',
-      photos.left || photos.front || '/media/dish/manti.jpg',
-    ];
-
-    await new Promise((r) => setTimeout(r, 600));
-    setProgressPercent(100);
-    setStatusMessage("3/3. 360° interaktiv fotomodel yaratildi!");
-    setGeneratedFrames(baseList);
-    setIsProcessing(false);
-  };
-
-  const handleSave = () => {
     const newDish: Partial<Product> = {
       id: Date.now(),
       name: dishName,
       price: Number(dishPrice) || 45000,
       category_name: dishCategory,
       description: dishDesc || "Restoran oshpazi tomonidan tayyorlangan mazali taom",
-      image: photos.front || generatedFrames[0] || '/media/dish/plov.jpg',
-      has_3d: true,
-      ar_model: '/models/plov.glb',
-      spin_frames: generatedFrames.length > 0 ? generatedFrames : undefined,
+      image: dishImage,
+      has_3d: has3D,
+      ar_model: has3D ? activeGlbUrl : undefined,
     };
 
-    // Backend PostgreSQL/SQLite bazasiga 3D model va 360 spin freymlarni yozish
+    // Backend PostgreSQL/SQLite bazasiga yozish
     RestaurantAPI.saveProduct3DScan(newDish as any);
 
     onSaveProduct3D(newDish);
@@ -175,11 +116,11 @@ export const PhotogrammetryStudioModal: React.FC<PhotogrammetryStudioModalProps>
         {/* HEADER */}
         <header className="photogram-header">
           <div className="photogram-header-left">
-            <div className="photogram-icon-mark">📸</div>
+            <div className="photogram-icon-mark">🧊</div>
             <div>
-              <h2 className="photogram-title">Tezkor 3D/AR Fotogrammetriya Studiyasi</h2>
+              <h2 className="photogram-title">Smart 3D Taomlar Studiyasi</h2>
               <p className="photogram-subtitle">
-                4 ta surat va 1 ta qisqa video aylanishdan <strong>bir zumda</strong> interaktiv 360° taom modelini yarating
+                Restoran taomlari uchun fotorealistik 3D GLB modellari va WebXR AR boshqaruvi
               </p>
             </div>
           </div>
@@ -188,27 +129,39 @@ export const PhotogrammetryStudioModal: React.FC<PhotogrammetryStudioModalProps>
           </button>
         </header>
 
-        {/* BODY */}
+        {/* MODAL BODY */}
         <div className="photogram-body">
-          {/* LEFT: INPUTS & CAPTURE */}
+          {/* LEFT: TAOM VA 3D SOZLAMALARI */}
           <div className="photogram-controls">
             <div className="photo-group">
-              <label className="photo-label">1. Taom ma'lumotlari</label>
+              <label className="photo-label">Taom Nomi</label>
               <input
                 type="text"
                 className="photo-input-text"
-                placeholder="Taom nomi (masalan: Samarqandcha Qozon Kabob)"
+                placeholder="Masalan: G'ijduvoncha qiyma shashlik, To'y oshi..."
                 value={dishName}
                 onChange={(e) => setDishName(e.target.value)}
               />
-              <div className="photo-row mt-2">
+              {autoMatched && selectedModel && (
+                <div className="smart-match-badge">
+                  <span>✨ Aqlli moslandi:</span>
+                  <strong>{selectedModel.name}</strong>
+                </div>
+              )}
+            </div>
+
+            <div className="photo-row">
+              <div className="photo-group" style={{ flex: 1 }}>
+                <label className="photo-label">Narxi (so'm)</label>
                 <input
                   type="number"
                   className="photo-input-text"
-                  placeholder="Narxi (so'm)"
                   value={dishPrice}
                   onChange={(e) => setDishPrice(e.target.value)}
                 />
+              </div>
+              <div className="photo-group" style={{ flex: 1.2 }}>
+                <label className="photo-label">Toifasi</label>
                 <select
                   className="photo-input-text"
                   value={dishCategory}
@@ -216,166 +169,159 @@ export const PhotogrammetryStudioModal: React.FC<PhotogrammetryStudioModalProps>
                 >
                   <option value="Asosiy taomlar">Asosiy taomlar</option>
                   <option value="Shoʻrvalar">Shoʻrvalar</option>
-                  <option value="Salatlar">Salatlar</option>
+                  <option value="Salatlar & Desert">Salatlar & Desert</option>
                   <option value="Pishiriqlar & Non">Pishiriqlar & Non</option>
                   <option value="Ichimliklar">Ichimliklar</option>
                 </select>
               </div>
+            </div>
+
+            <div className="photo-group">
+              <label className="photo-label">Taomning 2D Fotosurati</label>
+              <div className="photo-upload-row">
+                <img src={dishImage} alt="Dish preview" className="photo-thumb-preview" />
+                <label htmlFor={fileInputId} className="photo-upload-btn">
+                  📷 Rasm Tanlash
+                </label>
+                <input
+                  id={fileInputId}
+                  type="file"
+                  accept="image/*"
+                  className="hidden-file-input"
+                  onChange={handlePhotoUpload}
+                />
+              </div>
+            </div>
+
+            {/* 3D TOGGLE */}
+            <div className="photo-group 3d-toggle-group">
+              <label className="switch-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={enable3D}
+                  onChange={(e) => setEnable3D(e.target.checked)}
+                />
+                <span className="switch-text">Ushbu taom uchun 3D ko'rinishni faollashtirish</span>
+              </label>
+            </div>
+
+            {enable3D && (
+              <>
+                {/* 3D LIBRARY SELECTION */}
+                <div className="photo-group">
+                  <div className="section-label-row">
+                    <label className="photo-label">3D Kutubxonadan Tanlash ({AVAILABLE_3D_MODELS.length} ta)</label>
+                  </div>
+                  <div className="models-catalog-grid">
+                    {AVAILABLE_3D_MODELS.map((model) => {
+                      const isSelected = selectedModel?.id === model.id && !customGlbUrl;
+                      return (
+                        <button
+                          key={model.id}
+                          type="button"
+                          className={`model-catalog-card ${isSelected ? 'active' : ''}`}
+                          onClick={() => handleSelectModel(model)}
+                          title={model.description}
+                        >
+                          <span className="card-model-icon">{model.icon}</span>
+                          <span className="card-model-name">{model.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* CUSTOM GLB UPLOAD */}
+                <div className="photo-group">
+                  <label className="photo-label">Yoki O'z .glb 3D Faylingizni Yuklang</label>
+                  <div className="glb-upload-zone">
+                    <label htmlFor={glbInputId} className="glb-upload-label">
+                      <span className="glb-upload-icon">📦</span>
+                      <div className="glb-upload-text">
+                        {customGlbName ? (
+                          <strong className="text-green">✓ {customGlbName}</strong>
+                        ) : (
+                          <span>Kompyuterdan .glb faylni tanlang</span>
+                        )}
+                        <small>Fotorealistik PBR 3D model (max 15MB)</small>
+                      </div>
+                    </label>
+                    <input
+                      id={glbInputId}
+                      type="file"
+                      accept=".glb,model/gltf-binary"
+                      className="hidden-file-input"
+                      onChange={handleGlbUpload}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="photo-group">
+              <label className="photo-label">Qisqacha Tavsifi</label>
               <textarea
-                className="photo-input-text mt-2"
+                className="photo-input-text photo-textarea"
                 rows={2}
-                placeholder="Taom tavsifi va tarkibi (ixtiyoriy)..."
+                placeholder="Retsepti, asosiy masalliqlari va xususiyatlari..."
                 value={dishDesc}
                 onChange={(e) => setDishDesc(e.target.value)}
               />
             </div>
-
-            {/* 4 Photos Grid */}
-            <div className="photo-group">
-              <label className="photo-label">
-                2. Taomning 4 ta tomonlama surati (Old, O'ng, Orqa, Chap)
-              </label>
-              <div className="angles-upload-grid">
-                {(['front', 'right', 'back', 'left'] as const).map((angle) => {
-                  const labelMap = {
-                    front: "1. Oldindan",
-                    right: "2. O'ngdan",
-                    back: "3. Orqadan",
-                    left: "4. Chapdan",
-                  };
-                  const preview = photos[angle];
-
-                  return (
-                    <label key={angle} className={`angle-box ${preview ? 'has-photo' : ''}`}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden-file-input"
-                        onChange={(e) => handlePhotoUpload(angle, e)}
-                      />
-                      {preview ? (
-                        <img src={preview} alt={labelMap[angle]} className="angle-thumb" />
-                      ) : (
-                        <div className="angle-placeholder">
-                          <span className="angle-icon">📷</span>
-                          <span className="angle-text">{labelMap[angle]}</span>
-                        </div>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 1 Short Orbit Video */}
-            <div className="photo-group">
-              <label className="photo-label">
-                3. Qisqa aylana video (Taom atrofidan 3-5 soniya sekin olingan)
-              </label>
-              <div
-                className={`video-dropzone ${videoPreviewUrl ? 'has-video' : ''}`}
-                onClick={() => videoInputRef.current?.click()}
-              >
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  className="hidden-file-input"
-                  onChange={handleVideoUpload}
-                />
-                {videoPreviewUrl ? (
-                  <div className="video-uploaded-row">
-                    <span className="video-ok-icon">🎬</span>
-                    <div className="video-ok-meta">
-                      <strong>{videoFile?.name || 'Aylana video yuklandi'}</strong>
-                      <span>Kadrlar avtomatik fotogrammetriyaga tayyor</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="video-empty-prompt">
-                    <span className="video-icon">🎥</span>
-                    <strong>Aylana video yuklang</strong>
-                    <span>yoki telefon kamerasidan tanlang (3-5 soniya)</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="btn-start-photogrammetry"
-              disabled={isProcessing}
-              onClick={handleStartGeneration}
-            >
-              {isProcessing ? '⚡ Generatsiya qilinmoqda...' : '⚡ 3D & 360° Modelni Generatsiya Qilish'}
-            </button>
           </div>
 
-          {/* RIGHT: PREVIEW & PROCESSING STATE */}
-          <div className="photogram-preview">
-            <div className="preview-card-frame">
-              {isProcessing && (
-                <div className="processing-overlay">
-                  <div className="proc-spinner" />
-                  <strong className="proc-percent tabular-nums">{progressPercent}%</strong>
-                  <p className="proc-status-msg">{statusMessage}</p>
-                </div>
-              )}
+          {/* RIGHT: LIVE 3D PREVIEW */}
+          <div className="photogram-preview-panel">
+            <div className="preview-viewport-header">
+              <span className="preview-badge">
+                {enable3D && activeGlbUrl ? '🎮 Jonli 3D Viewport' : '🖼️ 2D Foto Viewport'}
+              </span>
+              <span className="preview-model-tag">
+                {customGlbName ? `Yuklangan: ${customGlbName}` : selectedModel?.name || "3D o'chirilgan"}
+              </span>
+            </div>
 
-              {!isProcessing && generatedFrames.length === 0 && (
-                <div className="preview-empty-state">
-                  <span className="preview-empty-icon">🍱</span>
-                  <h4>Natija bu yerda ko'rinadi</h4>
-                  <p>Suratlar va videoni yuklab, generatsiya tugmasini bosing.</p>
-                </div>
-              )}
-
-              {!isProcessing && generatedFrames.length > 0 && (
-                <div className="preview-spin-canvas">
-                  <div className="preview-spin-topbar">
-                    <span className="live-model-badge">✨ 360° Interaktiv Tayyor</span>
-                    <span className="live-frames-count tabular-nums">
-                      {previewFrameIndex + 1} / {generatedFrames.length} burchak
-                    </span>
-                  </div>
-
-                  <img
-                    src={generatedFrames[previewFrameIndex]}
-                    alt="Generatsiya qilingan fotomodel"
-                    className="generated-spin-img"
+            <div className="preview-canvas-container">
+              {enable3D && activeGlbUrl ? (
+                <>
+                  {/* @ts-ignore */}
+                  <model-viewer
+                    src={activeGlbUrl}
+                    poster={dishImage}
+                    alt={dishName || "3D Dish"}
+                    auto-rotate
+                    rotation-per-second="25deg"
+                    camera-controls
+                    shadow-intensity="1.5"
+                    environment-image="neutral"
+                    ar
+                    ar-modes="webxr scene-viewer quick-look"
+                    ar-scale="auto"
+                    style={{ width: '100%', height: '100%' }}
                   />
-
-                  {/* Manual scrub slider */}
-                  <div className="scrub-slider-row">
-                    <span>0°</span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={generatedFrames.length - 1}
-                      value={previewFrameIndex}
-                      onChange={(e) => setPreviewFrameIndex(Number(e.target.value))}
-                      className="scrub-range"
-                    />
-                    <span>360°</span>
+                  <div className="preview-tip-banner">
+                    <span>🔄 Sichqoncha yoki barmoq bilan 360° aylantiring</span>
                   </div>
-                  <span className="scrub-hint">Aylana ko'rinishini tekshirish uchun slayderni suring</span>
+                </>
+              ) : (
+                <div className="preview-2d-display">
+                  <img src={dishImage} alt={dishName} className="preview-2d-img" />
+                  <p className="preview-2d-hint">Ushbu taom standart 2D formatda ko'rsatiladi.</p>
                 </div>
               )}
             </div>
-
-            {generatedFrames.length > 0 && (
-              <div className="photogram-action-footer">
-                <button
-                  type="button"
-                  className="btn-save-to-menu"
-                  onClick={handleSave}
-                >
-                  ✓ Taomlar Menyusiga Qo'shish
-                </button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* FOOTER */}
+        <footer className="photogram-footer">
+          <button type="button" className="btn-cancel" onClick={onClose}>
+            Bekor qilish
+          </button>
+          <button type="button" className="btn-save-3d" onClick={handleSave}>
+            💾 Taomni Menyuga Saqlash
+          </button>
+        </footer>
       </div>
     </div>
   );

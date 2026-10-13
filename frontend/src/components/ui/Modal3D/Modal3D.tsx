@@ -28,7 +28,8 @@ export const Modal3D: React.FC<Modal3DProps> = ({
   if (!isOpen || !product) return null;
 
   const formattedPrice = new Intl.NumberFormat('uz-UZ').format(product.price);
-  const modelUrl = product.ar_model || '/models/plov.glb';
+  const hasValid3D = Boolean(product.has_3d && product.ar_model);
+  const modelUrl = product.ar_model || '';
 
   const handleARClick = () => {
     const viewer = document.getElementById('reactModelViewer') as any;
@@ -53,30 +54,45 @@ export const Modal3D: React.FC<Modal3DProps> = ({
           ✕
         </button>
 
-        {/* 1. Sof Haqiqiy 3D Model Viewport (GLB) & AR */}
+        {/* 1. Sof Haqiqiy 3D Model Viewport (GLB) & AR yoki Yuqori sifatli 2D Foto */}
         <div className="modal-3d-viewport">
-          {/* @ts-ignore */}
-          <model-viewer
-            id="reactModelViewer"
-            src={modelUrl}
-            poster={product.image || ''}
-            alt={product.name}
-            auto-rotate
-            rotation-per-second="25deg"
-            camera-controls
-            shadow-intensity="1.5"
-            environment-image="neutral"
-            ar
-            ar-modes="webxr scene-viewer quick-look"
-            ar-scale="auto"
-          />
-          <span className="modal-3d-tip">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-              <path d="M21 3v5h-5" />
-            </svg>
-            <span>Barmoq bilan 360° aylantiring</span>
-          </span>
+          {hasValid3D ? (
+            <>
+              {/* @ts-ignore */}
+              <model-viewer
+                id="reactModelViewer"
+                src={modelUrl}
+                poster={product.image || ''}
+                alt={product.name}
+                auto-rotate
+                rotation-per-second="25deg"
+                camera-controls
+                shadow-intensity="1.5"
+                environment-image="neutral"
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                ar-scale="auto"
+              />
+              <span className="modal-3d-tip">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+                <span>Barmoq bilan 360° aylantiring</span>
+              </span>
+            </>
+          ) : (
+            <div className="modal-2d-fallback" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9F8F6', position: 'relative' }}>
+              <img
+                src={product.image || '/media/dish/plov.jpg'}
+                alt={product.name}
+                style={{ maxWidth: '90%', maxHeight: '85%', objectFit: 'contain', borderRadius: '16px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.08))' }}
+              />
+              <span className="modal-3d-tip" style={{ background: 'rgba(255,255,255,0.92)', color: '#374151' }}>
+                <span>📸 Real Fotosurat ko'rinishi</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Details & Actions */}
