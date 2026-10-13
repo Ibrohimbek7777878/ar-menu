@@ -66,10 +66,11 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'preparing' | 'ready'>('all');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [, setCurrentTime] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>('');
   const [currentTimestamp, setCurrentTimestamp] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Jonli soat va vaqt tamg'asi
   useEffect(() => {
@@ -83,6 +84,27 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
     updateClock();
     const timer = setInterval(updateClock, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Fullscreen boshqaruvi
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => setIsFullscreen(true));
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => setIsFullscreen(false));
+      } else {
+        setIsFullscreen(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   const orders = sharedOrders;
@@ -157,13 +179,14 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
   }, [orders]);
 
   return (
-    <div className={`kds-root ${embedded ? 'kds-embedded' : ''}`}>
+    <div className={`kds-root ${embedded ? 'kds-embedded' : ''} ${isFullscreen ? 'is-fullscreen' : ''}`}>
       {!embedded && <StaffNavHeader activeTab="kds" />}
+      
       {/* ─── STATUS HEADER ─── */}
       <header className="kds-header">
         <div className="kds-brand">
-          <div className="kds-brand-logo">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <div className="kds-brand-logo" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
               <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
               <line x1="6" y1="2" x2="6" y2="4" />
@@ -178,11 +201,21 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
         </div>
 
         <div className="kds-top-actions">
+          {currentTime && (
+            <div className="kds-clock-badge tabular-nums" title="Jonli server vaqti">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>{currentTime}</span>
+            </div>
+          )}
+
           <button
             type="button"
             className={`kds-sound-btn ${soundEnabled ? 'active' : ''}`}
             onClick={() => setSoundEnabled(!soundEnabled)}
-            title="Ovozli signal"
+            title="Yangi buyurtmalar uchun ovozli signal"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -200,11 +233,32 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
             className="kds-refresh-btn"
             onClick={fetchOrders}
             disabled={isLoading}
+            title="Buyurtmalar ro'yxatini yangilash"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg className={isLoading ? 'kds-spin' : ''} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
             </svg>
             <span>{isLoading ? 'Yangilanmoqda...' : 'Yangilash'}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`kds-fullscreen-btn ${isFullscreen ? 'active' : ''}`}
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Odatdagi o\'lchamga qaytish' : 'KDS ni to\'liq ekranga yoyish'}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {isFullscreen ? (
+                <>
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />
+                </>
+              ) : (
+                <>
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                </>
+              )}
+            </svg>
+            <span>{isFullscreen ? 'Kichraytirish' : 'To\'liq ekran'}</span>
           </button>
         </div>
       </header>
@@ -216,34 +270,42 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
           className={`kds-tab-btn ${activeFilter === 'all' ? 'active' : ''}`}
           onClick={() => setActiveFilter('all')}
         >
-          Barchasi <span className="kds-tab-count tabular-nums">{counts.all}</span>
+          <span>Barchasi</span>
+          <span className="kds-tab-count tabular-nums">{counts.all}</span>
         </button>
 
         <button
           type="button"
-          className={`kds-tab-btn ${activeFilter === 'pending' ? 'active' : ''}`}
+          className={`kds-tab-btn tab-pending ${activeFilter === 'pending' ? 'active' : ''}`}
           onClick={() => setActiveFilter('pending')}
         >
-          Yangi <span className="kds-tab-count tabular-nums">{counts.pending}</span>
+          <span>Yangi</span>
+          <span className="kds-tab-count tabular-nums">{counts.pending}</span>
         </button>
 
         <button
           type="button"
-          className={`kds-tab-btn ${activeFilter === 'preparing' ? 'active' : ''}`}
+          className={`kds-tab-btn tab-preparing ${activeFilter === 'preparing' ? 'active' : ''}`}
           onClick={() => setActiveFilter('preparing')}
         >
-          Jarayonda <span className="kds-tab-count tabular-nums">{counts.preparing}</span>
+          <span>Jarayonda</span>
+          <span className="kds-tab-count tabular-nums">{counts.preparing}</span>
         </button>
 
         <button
           type="button"
-          className={`kds-tab-btn ${activeFilter === 'ready' ? 'active' : ''}`}
+          className={`kds-tab-btn tab-ready ${activeFilter === 'ready' ? 'active' : ''}`}
           onClick={() => setActiveFilter('ready')}
         >
-          Tayyor <span className="kds-tab-count tabular-nums">{counts.ready}</span>
+          <span>Tayyor</span>
+          <span className="kds-tab-count tabular-nums">{counts.ready}</span>
         </button>
 
         <div className="kds-search-box">
+          <svg className="kds-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
           <input
             type="text"
             placeholder="Stol yoki № qidirish..."
@@ -260,7 +322,7 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
           <div className="summary-bar-header">
             <span className="summary-icon">🔥</span>
             <span className="summary-title">Pishirilishi kerak bo'lgan taomlar svodkasi:</span>
-            <span className="summary-total-badge">{kitchenItemSummary.length} xil</span>
+            <span className="summary-total-badge tabular-nums">{kitchenItemSummary.length} xil</span>
           </div>
           <div className="summary-chips-scroll">
             {kitchenItemSummary.map(([name, data]) => (
@@ -278,13 +340,13 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
         {filteredOrders.length === 0 ? (
           <div className="kds-empty">
             <div className="kds-empty-icon-circle" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <h2 className="kds-empty-title">Ayni paytda faol buyurtmalar yo'q</h2>
             <p className="kds-empty-desc">
-              Barcha buyurtmalar o'z vaqtida tayyorlab bo'lingan.
+              Barcha buyurtmalar o'z vaqtida tayyorlab bo'lingan. Yangi buyurtmalar kelishi bilan ekranda avtomatik aks etadi.
             </p>
           </div>
         ) : (
@@ -302,15 +364,27 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                   {/* Chipta bosh qismi */}
                   <div className="kds-ticket-header">
                     <div className="kds-order-info">
-                      <div className="kds-order-num tabular-nums">
-                        {order.order_number}
+                      <div className="kds-order-num-row">
+                        <span className="kds-order-num tabular-nums">{order.order_number}</span>
+                        <div className={`kds-status-badge badge-${order.status}`}>
+                          {order.status === 'pending'
+                            ? 'Yangi'
+                            : order.status === 'preparing'
+                            ? 'Tayyorlanmoqda'
+                            : order.status === 'ready'
+                            ? 'Tayyor'
+                            : order.status}
+                        </div>
                       </div>
                       <div className="kds-table-badge">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
+                        </svg>
                         <span>{order.table_name || 'Stol ko\'rsatilmagan'}</span>
                       </div>
                       {order.customer_name && (
                         <div className="kds-customer-name">
-                          {order.customer_name}
+                          👤 {order.customer_name}
                         </div>
                       )}
                     </div>
@@ -320,18 +394,10 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                         className={`kds-elapsed-timer tabular-nums ${
                           isLate ? 'timer-late' : isWarning ? 'timer-warning' : 'timer-fresh'
                         }`}
+                        title={`${elapsed} daqiqa avval qabul qilingan`}
                       >
-                        {isLate && <span className="kds-late-indicator" />}
+                        <span className="kds-timer-icon">⏱</span>
                         <span>{elapsed} daq</span>
-                      </div>
-                      <div className={`kds-status-badge badge-${order.status}`}>
-                        {order.status === 'pending'
-                          ? 'Yangi'
-                          : order.status === 'preparing'
-                          ? 'Tayyorlanmoqda'
-                          : order.status === 'ready'
-                          ? 'Tayyor'
-                          : order.status}
                       </div>
                     </div>
                   </div>
@@ -340,9 +406,7 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                   <div className="kds-ticket-body">
                     {order.notes && (
                       <div className="kds-ticket-notes">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
+                        <span className="notes-icon">⚠️</span>
                         <span>{order.notes}</span>
                       </div>
                     )}
@@ -366,9 +430,9 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                                 </span>
                               )}
                             </div>
-                            <div className="kds-check-box">
+                            <div className={`kds-check-box ${isDone ? 'checked' : ''}`}>
                               {isDone && (
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                   <polyline points="20 6 9 17 4 12" />
                                 </svg>
                               )}
@@ -387,7 +451,7 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                         className="kds-action-btn btn-start"
                         onClick={() => handleUpdateStatus(order.id, 'preparing')}
                       >
-                        Tayyorlashni boshlash
+                        <span>🔥 Tayyorlashni boshlash</span>
                       </button>
                     ) : order.status === 'preparing' ? (
                       <button
@@ -395,7 +459,7 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                         className="kds-action-btn btn-ready"
                         onClick={() => handleUpdateStatus(order.id, 'ready')}
                       >
-                        Tayyor bo'ldi
+                        <span>✅ Tayyor bo'ldi</span>
                       </button>
                     ) : (
                       <button
@@ -403,7 +467,7 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
                         className="kds-action-btn btn-deliver"
                         onClick={() => handleUpdateStatus(order.id, 'delivered')}
                       >
-                        Ofitsiantga topshirildi
+                        <span>🚀 Ofitsiantga topshirildi</span>
                       </button>
                     )}
                   </div>

@@ -1,21 +1,36 @@
 /* ═══════════════════════════════════════════════════════════════
    GULISTON RESTORAN — KDS (KITCHEN DISPLAY SYSTEM) STYLES
-   Professional Kitchen Display System — Dark Emerald Theme
+   Executive Kitchen Display System — Warm Gourmet Light Palette
    ═══════════════════════════════════════════════════════════════ */
 
 .kds-root {
   min-height: 100vh;
-  background-color: #0E1712;
-  color: #FAF7F0;
+  background-color: var(--bg-primary, #FAF8F5);
+  color: var(--text-primary, #181513);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   display: flex;
   flex-direction: column;
 }
 
-/* TOP STATUS BAR */
+/* KDS Embedded (Admin Dashboard ichida ochilganda) */
+.kds-root.kds-embedded {
+  min-height: auto;
+  background: transparent;
+}
+
+/* Fullscreen Rejimi (Oshxona televizorlari / devor planshetlari uchun) */
+.kds-root.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background-color: #FAF8F5;
+  overflow-y: auto;
+}
+
+/* ─── YUQORI STATUS PANELI (HEADER) ─── */
 .kds-header {
-  background: #14221A;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface, #FFFFFF);
+  border-bottom: 1px solid var(--border-subtle, #EFE9E2);
   padding: 0.85rem 1.5rem;
   display: flex;
   flex-wrap: wrap;
@@ -24,8 +39,8 @@
   gap: 1rem;
   position: sticky;
   top: 0;
-  z-index: 50;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 40;
+  box-shadow: 0 1px 3px rgba(24, 21, 19, 0.04);
 }
 
 .kds-brand {
@@ -35,182 +50,357 @@
 }
 
 .kds-brand-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #1F3327;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #F2F5F3;
+  border: 1px solid #E2E8F0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #A3B899;
+  color: #213827;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .kds-brand-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #FAF7F0;
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #181513;
   margin: 0;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .kds-brand-subtitle {
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #8E9F8E;
+  letter-spacing: 0.06em;
+  color: #7A7269;
+  font-weight: 600;
   margin: 0;
 }
 
-/* CONTROLS */
+/* Yuqori boshqaruv tugmalari */
 .kds-top-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
-.kds-sound-btn, .kds-refresh-btn {
-  background: #1B2B21;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #FAF7F0;
+.kds-clock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.45rem 0.85rem;
-  border-radius: 8px;
+  border-radius: 10px;
+  background: #F5EFEA;
+  border: 1px solid #E8E2D2;
+  color: #181513;
+  font-size: 0.84rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kds-sound-btn,
+.kds-refresh-btn,
+.kds-fullscreen-btn {
+  background: #FFFFFF;
+  border: 1px solid #EFE9E2;
+  color: #4A443E;
+  padding: 0.48rem 0.85rem;
+  border-radius: 10px;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.kds-sound-btn:hover, .kds-refresh-btn:hover {
-  background: #25392D;
-  border-color: rgba(255, 255, 255, 0.2);
+.kds-sound-btn:hover,
+.kds-refresh-btn:hover,
+.kds-fullscreen-btn:hover {
+  background: #FAF8F5;
+  color: #181513;
+  border-color: #DDD4C8;
+  transform: translateY(-1px);
+}
+
+.kds-sound-btn:active,
+.kds-refresh-btn:active,
+.kds-fullscreen-btn:active {
+  transform: translateY(0);
 }
 
 .kds-sound-btn.active {
-  background: rgba(33, 56, 39, 0.5);
-  border-color: #2F4836;
-  color: #A3D9A5;
+  background: #F0FDF4;
+  border-color: #BBF7D0;
+  color: #15803D;
+  font-weight: 700;
 }
 
-/* FILTER TABS */
+.kds-fullscreen-btn.active {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1D4ED8;
+  font-weight: 700;
+}
+
+.kds-spin {
+  animation: kdsSpin 0.75s linear infinite;
+}
+
+@keyframes kdsSpin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── FILTR TABS & QIDIRUV ─── */
 .kds-nav-tabs {
-  background: #111D16;
-  padding: 0.65rem 1.5rem;
+  background: #FFFFFF;
+  padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-subtle, #EFE9E2);
   overflow-x: auto;
 }
 
 .kds-tab-btn {
   background: transparent;
   border: 1px solid transparent;
-  color: #8E9F8E;
-  padding: 0.45rem 0.95rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  color: #7A7269;
+  padding: 0.5rem 0.95rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .kds-tab-btn:hover {
-  color: #FAF7F0;
-  background: rgba(255, 255, 255, 0.04);
+  color: #181513;
+  background: #FAF8F5;
 }
 
 .kds-tab-btn.active {
   background: #213827;
   color: #FFFFFF;
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: #213827;
+  box-shadow: 0 2px 6px rgba(33, 56, 39, 0.15);
 }
 
 .kds-tab-count {
-  font-size: 0.72rem;
-  padding: 0.12rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.35);
+  background: #F5EFEA;
+  color: #4A443E;
+  font-variant-numeric: tabular-nums;
 }
 
 .kds-tab-btn.active .kds-tab-count {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.22);
   color: #FFFFFF;
+}
+
+/* Maxsus filtr tab ranglari */
+.kds-tab-btn.tab-pending:not(.active) .kds-tab-count {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.kds-tab-btn.tab-preparing:not(.active) .kds-tab-count {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.kds-tab-btn.tab-ready:not(.active) .kds-tab-count {
+  background: #DCFCE7;
+  color: #15803D;
 }
 
 .kds-search-box {
   margin-left: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.kds-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #A8A29E;
+  pointer-events: none;
 }
 
 .kds-search-input {
-  background: #1B2B21;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  color: #FAF7F0;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.82rem;
+  background: #FAF8F5;
+  border: 1px solid #EFE9E2;
+  border-radius: 10px;
+  color: #181513;
+  padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+  font-size: 0.84rem;
+  font-family: inherit;
   outline: none;
-  width: 160px;
-  transition: border-color 0.15s;
+  width: 200px;
+  transition: all 0.2s ease;
 }
 
 .kds-search-input:focus {
-  border-color: #2F4836;
+  border-color: #213827;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(33, 56, 39, 0.08);
 }
 
-/* MAIN CONTENT GRID */
+/* ─── BULK OSHXONA MAHSULOTLARI SVODKASI ─── */
+.kds-summary-bar {
+  margin: 1.25rem 1.5rem 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #FFFBF5 0%, #FFF7ED 100%);
+  border: 1px solid #FED7AA;
+  border-radius: 14px;
+  padding: 0.9rem 1.2rem;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.04);
+}
+
+.summary-bar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.summary-icon {
+  font-size: 1.15rem;
+}
+
+.summary-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #9A3412;
+}
+
+.summary-total-badge {
+  background: #FFEDD5;
+  color: #C2410C;
+  font-weight: 800;
+  font-size: 0.76rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid #FDBA74;
+}
+
+.summary-chips-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.summary-dish-chip {
+  background: #FFFFFF;
+  border: 1px solid #FED7AA;
+  border-radius: 9px;
+  padding: 0.35rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.summary-dish-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #181513;
+}
+
+.summary-dish-count {
+  background: #FEF3C7;
+  color: #B45309;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+}
+
+/* ─── ASOSIY MAZMUN (TICKETS GRID) ─── */
 .kds-main {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem 2.5rem 1.5rem;
 }
 
 .kds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.25rem;
+  align-items: start;
 }
 
-/* TICKET CARD */
+/* ─── BUYURTMA CHIPTASI (TICKET CARD) ─── */
 .kds-ticket {
-  background: #16241D;
-  border: 1.5px solid #23372B;
-  border-radius: 14px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-subtle, #EFE9E2);
+  border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition: border-color 0.15s ease;
+  box-shadow: 0 2px 10px rgba(24, 21, 19, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
+.kds-ticket:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(24, 21, 19, 0.08);
+  border-color: var(--border-strong, #DDD4C8);
+}
+
+/* Yuqori chegara aktsentlari */
 .kds-ticket.status-pending {
-  border-color: #B45309;
+  border-top: 4px solid #EA580C;
 }
 
 .kds-ticket.status-preparing {
-  border-color: #2563EB;
+  border-top: 4px solid #2563EB;
 }
 
 .kds-ticket.status-ready {
-  border-color: #15803D;
+  border-top: 4px solid #16A34A;
 }
 
+/* Kechikish (Overdue >20 min) ogohlantirish miltillashi */
 .kds-ticket.border-late {
-  border-color: #DC2626 !important;
+  border: 2px solid #DC2626 !important;
+  animation: kdsLatePulse 2s infinite ease-in-out;
 }
 
-/* TICKET HEADER */
+@keyframes kdsLatePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.08);
+  }
+}
+
+/* ─── CHIPTA HEADER ─── */
 .kds-ticket-header {
-  padding: 0.95rem 1.15rem;
-  background: #1B2D24;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1rem 1.2rem;
+  background: #FAF9F5;
+  border-bottom: 1px solid #EFE9E2;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -220,567 +410,364 @@
 .kds-order-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
+}
+
+.kds-order-num-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .kds-order-num {
-  font-size: 1.15rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: #FAF7F0;
-}
-
-.kds-table-badge {
-  display: inline-flex;
-  align-items: center;
-  background: #23372B;
-  color: #C8D8CC;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  border-radius: 6px;
-  margin-top: 0.2rem;
-  width: fit-content;
-}
-
-.kds-customer-name {
-  font-size: 0.78rem;
-  color: #8E9F8E;
-  margin-top: 2px;
-}
-
-.kds-ticket-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.35rem;
-}
-
-.kds-elapsed-timer {
-  font-size: 0.9rem;
-  font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.kds-elapsed-timer.timer-fresh {
-  background: rgba(21, 128, 61, 0.2);
-  color: #4ADE80;
-  border: 1px solid rgba(74, 222, 128, 0.25);
-}
-
-.kds-elapsed-timer.timer-warning {
-  background: rgba(180, 83, 9, 0.2);
-  color: #FBBF24;
-  border: 1px solid rgba(251, 191, 36, 0.25);
-}
-
-.kds-elapsed-timer.timer-late {
-  background: rgba(220, 38, 38, 0.25);
-  color: #F87171;
-  border: 1px solid rgba(248, 113, 113, 0.35);
-}
-
-.kds-late-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #EF4444;
+  color: #181513;
+  line-height: 1;
 }
 
 .kds-status-badge {
   font-size: 0.72rem;
   font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
 }
 
-.badge-pending, .badge-confirmed {
-  background: rgba(180, 83, 9, 0.25);
-  color: #FBBF24;
+.kds-status-badge.badge-pending {
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
 }
 
-.badge-preparing {
-  background: rgba(37, 99, 235, 0.25);
-  color: #60A5FA;
+.kds-status-badge.badge-preparing {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
 }
 
-.badge-ready {
-  background: rgba(21, 128, 61, 0.25);
-  color: #4ADE80;
+.kds-status-badge.badge-ready {
+  background: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
 }
 
-/* TICKET BODY */
-.kds-ticket-body {
-  padding: 1rem 1.15rem;
-  flex: 1;
+.kds-table-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #F2F5F3;
+  color: #213827;
+  border: 1px solid #E2E8F0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 7px;
+  width: fit-content;
+}
+
+.kds-customer-name {
+  font-size: 0.8rem;
+  color: #6C757D;
+  font-weight: 500;
+}
+
+/* Taymer belgisi */
+.kds-ticket-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  align-items: flex-end;
+  gap: 0.4rem;
 }
 
-.kds-ticket-notes {
-  background: rgba(180, 83, 9, 0.15);
-  border-left: 3px solid #B45309;
-  padding: 0.5rem 0.75rem;
-  border-radius: 4px;
+.kds-elapsed-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 8px;
   font-size: 0.82rem;
-  color: #FDE68A;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.kds-elapsed-timer.timer-fresh {
+  background: #F0FDF4;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.kds-elapsed-timer.timer-warning {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.kds-elapsed-timer.timer-late {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.kds-timer-icon {
+  font-size: 0.85rem;
+}
+
+/* ─── CHIPTA TARKIBI (BODY) ─── */
+.kds-ticket-body {
+  padding: 0.85rem 1.2rem;
+  background: #FFFFFF;
+  flex: 1;
+}
+
+/* Izohlar / Oshpaz ogohlantirishlari */
+.kds-ticket-notes {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 9px;
+  padding: 0.55rem 0.75rem;
+  color: #92400E;
+  font-size: 0.82rem;
+  font-weight: 600;
   display: flex;
   align-items: flex-start;
   gap: 0.45rem;
-  line-height: 1.35;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
 }
 
+.notes-icon {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+/* Taomlar ro'yxati */
 .kds-items-list {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.4rem;
 }
 
 .kds-item-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.55rem 0.65rem;
-  background: #1B2B21;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  background: #FAF9F5;
+  border: 1px solid #F0ECE1;
+  border-radius: 10px;
   cursor: pointer;
-  user-select: none;
   transition: all 0.15s ease;
+  user-select: none;
 }
 
 .kds-item-row:hover {
-  background: #23372B;
-}
-
-.kds-item-row.done {
-  opacity: 0.45;
-  text-decoration: line-through;
-  background: #142018;
+  background: #F5EFEA;
+  border-color: #E8E2D2;
 }
 
 .kds-item-left {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .kds-item-qty {
-  font-size: 1.05rem;
+  font-family: 'Outfit', sans-serif;
   font-weight: 800;
-  color: #FAF7F0;
-  min-width: 24px;
+  font-size: 1.05rem;
+  color: #EA580C;
+  min-width: 28px;
 }
 
 .kds-item-name {
   font-size: 0.92rem;
   font-weight: 600;
-  color: #E2E8F0;
+  color: #181513;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
+.kds-course-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  border-radius: 5px;
+  background: #FFFFFF;
+  color: #57534E;
+  border: 1px solid #E7E5E4;
+  white-space: nowrap;
+}
+
+/* Bajarilgan (Done) holati */
+.kds-item-row.done {
+  background: #F5F5F4;
+  opacity: 0.65;
+  border-color: #E7E5E4;
+}
+
+.kds-item-row.done .kds-item-name {
+  text-decoration: line-through;
+  color: #78716C;
+}
+
+.kds-item-row.done .kds-item-qty {
+  color: #A8A29E;
+}
+
+/* Checkbox */
 .kds-check-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #D6D3D1;
+  background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4ADE80;
-  background: rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
+  margin-left: 0.75rem;
+  transition: all 0.15s ease;
 }
 
-.kds-item-row.done .kds-check-box {
-  background: #15803D;
-  border-color: #15803D;
+.kds-check-box.checked {
+  background: #16A34A;
+  border-color: #16A34A;
   color: #FFFFFF;
 }
 
-/* TICKET FOOTER ACTIONS (Min 48px touch-target) */
+/* ─── CHIPTA FOOTER (AMAL TUGMASI) ─── */
 .kds-ticket-footer {
-  padding: 0.85rem 1.15rem;
-  background: #14221A;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.85rem 1.2rem;
+  background: #FAF9F5;
+  border-top: 1px solid #EFE9E2;
 }
 
 .kds-action-btn {
   width: 100%;
-  min-height: 48px;
+  min-height: 46px;
   border: none;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 0.95rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
   font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.btn-start {
-  background: #B45309;
+.kds-action-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.kds-action-btn:active {
+  transform: translateY(0);
+}
+
+.kds-action-btn.btn-start {
+  background: #EA580C;
   color: #FFFFFF;
-}
-.btn-start:hover {
-  background: #92400E;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.28);
 }
 
-.btn-ready {
-  background: #15803D;
+.kds-action-btn.btn-ready {
+  background: #16A34A;
   color: #FFFFFF;
-}
-.btn-ready:hover {
-  background: #166534;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
 }
 
-.btn-deliver {
-  background: #1E3A8A;
+.kds-action-btn.btn-deliver {
+  background: #213827;
   color: #FFFFFF;
-}
-.btn-deliver:hover {
-  background: #1E40AF;
+  box-shadow: 0 4px 14px rgba(33, 56, 39, 0.28);
 }
 
-/* EMPTY STATE */
+/* ─── BO'SH HOLAT (EMPTY STATE) ─── */
 .kds-empty {
+  min-height: 380px;
+  background: #FFFFFF;
+  border: 1px dashed #DDD4C8;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
   text-align: center;
-  padding: 60px 20px;
-  background: #16241D;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  max-width: 480px;
-  margin: 40px auto;
+  max-width: 560px;
+  margin: 2rem auto;
 }
 
 .kds-empty-icon-circle {
-  width: 54px;
-  height: 54px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: rgba(21, 128, 61, 0.2);
-  color: #4ADE80;
-  display: inline-flex;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #16A34A;
+  display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 1.25rem;
 }
 
 .kds-empty-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #FAF7F0;
-  margin: 0 0 6px 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #181513;
+  margin: 0 0 0.5rem 0;
 }
 
 .kds-empty-desc {
-  font-size: 0.88rem;
-  color: #8E9F8E;
+  color: #7A7269;
+  font-size: 0.92rem;
+  line-height: 1.5;
   margin: 0;
+  max-width: 420px;
 }
 
-/* ─── OSHXONA JAMI MAHSULOTLAR SVODKASI (BULK SUMMARY) ─── */
-.kds-summary-bar {
-  background: #14221A;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.75rem 1.25rem;
-}
+/* ─── RESPONSIVLIK (MOBILE & TABLET) ─── */
+@media (max-width: 768px) {
+  .kds-header {
+    padding: 0.75rem 1rem;
+  }
 
-.summary-bar-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
+  .kds-nav-tabs {
+    padding: 0.65rem 1rem;
+  }
 
-.summary-icon {
-  font-size: 1.1rem;
-}
+  .kds-summary-bar {
+    margin: 1rem 1rem 0.25rem 1rem;
+  }
 
-.summary-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #E2E8F0;
-}
+  .kds-main {
+    padding: 1rem 1rem 2rem 1rem;
+  }
 
-.summary-total-badge {
-  background: rgba(234, 88, 12, 0.2);
-  color: #FB923C;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(234, 88, 12, 0.3);
-}
+  .kds-grid {
+    grid-template-columns: 1fr;
+  }
 
-.summary-chips-scroll {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-}
+  .kds-search-box {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
 
-.summary-dish-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #1E3125;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.65rem;
-  white-space: nowrap;
+  .kds-search-input {
+    width: 100%;
+  }
 }
-
-.summary-dish-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #FAF7F0;
-}
-
-.summary-dish-count {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #4ADE80;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.3rem;
-}
-
-/* COURSE TAGS */
-.kds-course-tag {
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  margin-left: 6px;
-  text-transform: uppercase;
-}
-
-.course-1-taom {
-  background: rgba(217, 119, 6, 0.25);
-  color: #FBBF24;
-  border: 1px solid rgba(217, 119, 6, 0.35);
-}
-
-.course-2-taom {
-  background: rgba(234, 88, 12, 0.25);
-  color: #FB923C;
-  border: 1px solid rgba(234, 88, 12, 0.35);
-}
-
-.course-salat {
-  background: rgba(22, 163, 74, 0.25);
-  color: #4ADE80;
-  border: 1px solid rgba(22, 163, 74, 0.35);
-}
-
-.course-ichimlik {
-  background: rgba(59, 130, 246, 0.25);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-}
-
-.course-shirinlik {
-  background: rgba(236, 72, 153, 0.25);
-  color: #F472B6;
-  border: 1px solid rgba(236, 72, 153, 0.35);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ADMIN PORTAL EMBEDDED KDS THEME (WARM IVORY & FOREST GREEN)
-   Harmonizes with Admin Dashboard
-   ═══════════════════════════════════════════════════════════════ */
-.kds-root.kds-embedded {
-  min-height: auto;
-  background-color: transparent;
-  color: var(--text-primary, #212529);
-  padding: 0;
-}
-
-.kds-root.kds-embedded .kds-header {
-  background: var(--bg-surface, #FFFFFF);
-  border: 1px solid var(--border-subtle, #E8E2D2);
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.25rem;
-  position: static;
-}
-
-.kds-root.kds-embedded .kds-brand-title {
-  color: var(--text-primary, #212529);
-}
-
-.kds-root.kds-embedded .kds-brand-subtitle {
-  color: var(--text-secondary, #6C757D);
-}
-
-.kds-root.kds-embedded .kds-brand-logo {
-  background: #F2F5F3;
-  color: var(--brand-primary, #213827);
-  border: 1px solid var(--border-subtle, #E8E2D2);
-}
-
-.kds-root.kds-embedded .kds-sound-btn,
-.kds-root.kds-embedded .kds-refresh-btn {
-  background: #F8F5EE;
-  color: #212529;
-  border: 1px solid #E8E2D2;
-}
-
-.kds-root.kds-embedded .kds-sound-btn:hover,
-.kds-root.kds-embedded .kds-refresh-btn:hover {
-  background: #ECE6D8;
-}
-
-.kds-root.kds-embedded .kds-sound-btn.active {
-  background: #E8F5E9;
-  color: #2E7D32;
-  border-color: #A5D6A7;
-}
-
-.kds-root.kds-embedded .kds-nav-tabs {
-  background: transparent;
-  border-bottom: none;
-  padding: 0;
-  margin-bottom: 1.25rem;
-}
-
-.kds-root.kds-embedded .kds-tab-btn {
-  background: #FFFFFF;
-  color: #6C757D;
-  border: 1px solid #E8E2D2;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.kds-root.kds-embedded .kds-tab-btn:hover {
-  background: #F8F5EE;
-  color: #213827;
-}
-
-.kds-root.kds-embedded .kds-tab-btn.active {
-  background: #213827;
-  color: #FFFFFF;
-  border-color: #213827;
-}
-
-.kds-root.kds-embedded .kds-tab-btn.active .kds-tab-count {
-  background: rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
-}
-
-.kds-root.kds-embedded .kds-tab-count {
-  background: #F2F5F3;
-  color: #6C757D;
-}
-
-.kds-root.kds-embedded .kds-search-box {
-  background: #FFFFFF;
-  border: 1px solid #E8E2D2;
-  border-radius: 10px;
-}
-
-.kds-root.kds-embedded .kds-search-input {
-  color: #212529;
-}
-
-.kds-root.kds-embedded .kds-summary-bar {
-  background: #FFFFFF;
-  border: 1px solid #E8E2D2;
-  border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.5rem;
-}
-
-.kds-root.kds-embedded .summary-title {
-  color: #212529;
-}
-
-.kds-root.kds-embedded .summary-dish-chip {
-  background: #F8F5EE;
-  border: 1px solid #E8E2D2;
-}
-
-.kds-root.kds-embedded .summary-dish-name {
-  color: #212529;
-}
-
-.kds-root.kds-embedded .summary-dish-count {
-  background: #E8F5E9;
-  color: #2E7D32;
-}
-
-.kds-root.kds-embedded .kds-ticket {
-  background: #FFFFFF;
-  border: 1px solid #E8E2D2;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.kds-root.kds-embedded .kds-ticket-header {
-  background: #FAF9F5;
-  border-bottom: 1px solid #E8E2D2;
-}
-
-.kds-root.kds-embedded .kds-order-num {
-  color: #212529;
-  font-weight: 800;
-}
-
-.kds-root.kds-embedded .kds-table-badge {
-  background: #F2F5F3;
-  color: #213827;
-  border: 1px solid #E8E2D2;
-}
-
-.kds-root.kds-embedded .kds-customer-name {
-  color: #6C757D;
-}
-
-.kds-root.kds-embedded .kds-item-row {
-  border-bottom: 1px solid #F0ECE1;
-}
-
-.kds-root.kds-embedded .item-name {
-  color: #212529;
-}
-
-.kds-root.kds-embedded .item-qty {
-  color: #212529;
-  font-weight: 700;
-}
-
-.kds-root.kds-embedded .course-tag {
-  background: #F2F5F3;
-  color: #4B5563;
-  border: 1px solid #E5E7EB;
-}
-
-.kds-root.kds-embedded .kds-ticket-notes {
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
-  color: #92400E;
-}
-
-.kds-root.kds-embedded .item-checkbox {
-  border: 1px solid #D1D5DB;
-  background: #FFFFFF;
-}
-
-.kds-root.kds-embedded .item-checkbox.checked {
-  background: #15803D;
-  border-color: #15803D;
-}
-
