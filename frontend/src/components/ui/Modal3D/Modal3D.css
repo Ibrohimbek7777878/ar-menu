@@ -20,6 +20,9 @@
   border-radius: 20px;
   max-width: 460px;
   width: 100%;
+  max-height: min(92dvh, 760px);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   position: relative;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
@@ -56,9 +59,10 @@
 
 .modal-3d-viewport {
   width: 100%;
-  height: 300px;
+  height: clamp(200px, 34vh, 290px);
   background: #F8F5EE;
   position: relative;
+  flex-shrink: 0;
 }
 
 .modal-3d-viewport model-viewer {
@@ -81,19 +85,25 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  backdrop-filter: blur(4px);
 }
 
 .modal-3d-info {
-  padding: 18px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-info-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .modal-dish-name {
@@ -102,12 +112,14 @@
   font-weight: 700;
   color: var(--text-primary, #181513);
   margin: 0;
+  line-height: 1.25;
 }
 
 .modal-dish-price {
   font-size: 18px;
   font-weight: 800;
   color: var(--brand-primary, #EA580C);
+  white-space: nowrap;
 }
 
 .modal-dish-desc {
@@ -120,16 +132,22 @@
 .modal-3d-buttons {
   display: flex;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  position: sticky;
+  bottom: 0;
+  background: #FFFFFF;
+  z-index: 5;
 }
 
 .btn-modal-ar {
   flex: 1;
+  min-height: var(--tap-target-min, 44px);
   background: var(--brand-primary-light, #FFF7ED);
   color: var(--brand-primary, #EA580C);
   border: 1px solid var(--brand-primary-subtle, #FED7AA);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 14px;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 700;
@@ -148,11 +166,12 @@
 
 .btn-modal-cart {
   flex: 1.2;
+  min-height: var(--tap-target-min, 44px);
   background: var(--brand-primary, #EA580C);
   color: #FFFFFF;
   border: none;
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 14px;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 700;
@@ -188,4 +207,53 @@
   border-color: #A7F3D0;
   color: #065F46;
   font-weight: 700;
+}
+
+/* ─── TABLET & DESKTOP ENHANCEMENTS (>= 768px) ─── */
+@media (min-width: 768px) {
+  .react-modal-dialog {
+    max-width: 580px;
+  }
+
+  .modal-3d-viewport {
+    height: 350px;
+  }
+
+  .modal-dish-name {
+    font-size: 22px;
+  }
+
+  .modal-dish-price {
+    font-size: 20px;
+  }
+}
+
+/* ─── COMPACT MOBILE (<= 380px: iPhone SE, Galaxy Mini) ─── */
+@media (max-width: 380px) {
+  .react-modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-3d-viewport {
+    height: 210px;
+  }
+
+  .modal-3d-info {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .modal-dish-name {
+    font-size: 17px;
+  }
+
+  .modal-dish-price {
+    font-size: 16px;
+  }
+
+  .btn-modal-ar,
+  .btn-modal-cart {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
 }

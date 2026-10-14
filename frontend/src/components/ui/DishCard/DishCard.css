@@ -321,3 +321,35 @@
     height: 38px;
   }
 }
+
+/* ─── NARROW PHONES (<= 380px: iPhone SE, Galaxy Mini) ─── */
+@media (max-width: 380px) {
+  .dish-card-body {
+    padding: 10px 10px 12px;
+  }
+
+  .dish-card-title {
+    font-size: 14.5px;
+  }
+
+  .price-val {
+    font-size: 16px;
+  }
+
+  .btn-add-to-cart {
+    height: 38px;
+    font-size: 12.5px;
+    padding: 0 8px;
+  }
+
+  .stepper-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .stepper-val {
+    font-size: 13px;
+    padding: 0 6px;
+  }
+}

@@ -69,6 +69,16 @@
   }
 }
 
+@media (max-width: 380px) {
+  .menu-main-content {
+    padding: 12px 10px 36px;
+  }
+
+  .menu-dishes-grid {
+    gap: 8px;
+  }
+}
+
 .menu-empty-state {
   grid-column: 1 / -1;
   text-align: center;

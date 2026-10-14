@@ -739,35 +739,138 @@
   max-width: 420px;
 }
 
-/* ─── RESPONSIVLIK (MOBILE & TABLET) ─── */
-@media (max-width: 768px) {
+/* ─── RESPONSIVLIK (MOBILE, TABLET, WALL DISPLAYS) ─── */
+
+/* ─── TABLET PORTRAIT (601px - 900px: iPad Mini, iPad 10", Galaxy Tab) ─── */
+@media (min-width: 601px) and (max-width: 900px) {
   .kds-header {
-    padding: 0.75rem 1rem;
-  }
-
-  .kds-nav-tabs {
-    padding: 0.65rem 1rem;
-  }
-
-  .kds-summary-bar {
-    margin: 1rem 1rem 0.25rem 1rem;
+    padding: 0.75rem 1.25rem;
   }
 
   .kds-main {
-    padding: 1rem 1rem 2rem 1rem;
+    padding: 1rem 1.25rem 2rem 1.25rem;
+  }
+
+  .kds-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* ─── COMPACT MOBILE (<= 600px: iPhone, Android) ─── */
+@media (max-width: 600px) {
+  .kds-header {
+    padding: 0.65rem 0.85rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .kds-brand {
+    justify-content: space-between;
+  }
+
+  .kds-brand-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .kds-brand-title {
+    font-size: 1.05rem;
+  }
+
+  .kds-top-actions {
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.45rem;
+  }
+
+  .kds-clock-badge {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+  }
+
+  .kds-sound-btn,
+  .kds-refresh-btn,
+  .kds-fullscreen-btn {
+    padding: 0.38rem 0.65rem;
+    font-size: 0.76rem;
+    gap: 0.35rem;
+  }
+
+  .kds-nav-tabs {
+    padding: 0.5rem 0.85rem;
+    gap: 0.35rem;
+  }
+
+  .kds-tab-btn {
+    padding: 0.42rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .kds-summary-bar {
+    margin: 0.75rem 0.85rem 0.25rem 0.85rem;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .kds-main {
+    padding: 0.75rem 0.85rem 2rem 0.85rem;
   }
 
   .kds-grid {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
 
   .kds-search-box {
     width: 100%;
     margin-left: 0;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
   }
 
   .kds-search-input {
     width: 100%;
+  }
+
+  .kds-ticket-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .kds-order-num {
+    font-size: 1.2rem;
+  }
+
+  .kds-ticket-body {
+    padding: 0.75rem 1rem;
+  }
+
+  .kds-ticket-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .kds-action-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+}
+
+/* ─── LARGE WALL DISPLAYS & KITCHEN TVS (>= 1440px) ─── */
+@media (min-width: 1440px) {
+  .kds-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .kds-order-num {
+    font-size: 1.5rem;
+  }
+
+  .kds-item-name {
+    font-size: 1.05rem;
+  }
+
+  .kds-item-qty {
+    font-size: 1.2rem;
   }
 }
