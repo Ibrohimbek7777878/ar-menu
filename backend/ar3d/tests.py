@@ -230,28 +230,46 @@ class Air3DMenuIntegrationTests(TestCase):
         self.assertEqual(res_st.json()['status'], 'waiting')
 
     def test_v1_staff_calls_and_actions(self):
-        """Test staff calls list, accept, and done."""
+        """Xodim chaqiruvlari: faqat login qilgan, shu restoran xodimi (TZ: R-SEC-04)."""
         self.table.status = 'bill'
         self.table.save()
 
+        # 1. Anonim -> 401; avval istalgan X-Staff-Token qiymati ruxsat berardi
+        self.assertEqual(self.client.get('/v1/staff/calls/').status_code, 401)
+        res_fake = self.client.post(f'/v1/staff/calls/{self.table.id}/accept/', HTTP_X_STAFF_TOKEN='staff123')
+        self.assertEqual(res_fake.status_code, 401)
+
+        # 2. Shu restoran ofitsianti
+        waiter = AdminUser.objects.create_user(
+            username="waiter_ar", password="testpassword123", role="waiter", shop=self.shop,
+        )
+        self.client.force_login(waiter)
         res_list = self.client.get('/v1/staff/calls/')
         self.assertEqual(res_list.status_code, 200)
         calls = res_list.json()['calls']
         self.assertTrue(any(str(c['table_id']) == str(self.table.number) for c in calls))
 
-        # 1. Begona foydalanuvchi (unauthorized) -> 403 Forbidden
-        res_unauth = self.client.post(f'/v1/staff/calls/{self.table.id}/accept/')
-        self.assertEqual(res_unauth.status_code, 403)
-
-        # 2. Xodim tokeni bilan qabul qilish -> 200 OK
-        res_acc = self.client.post(f'/v1/staff/calls/{self.table.id}/accept/', HTTP_X_STAFF_TOKEN='staff123')
+        res_acc = self.client.post(f'/v1/staff/calls/{self.table.id}/accept/')
         self.assertEqual(res_acc.status_code, 200)
         self.assertEqual(res_acc.json()['status'], 'accepted')
 
-        # 3. Xodim tokeni bilan chaqiruvni yakunlash -> 200 OK
-        res_done = self.client.post(f'/v1/staff/calls/{self.table.id}/done/', HTTP_X_STAFF_TOKEN='staff123')
+        res_done = self.client.post(f'/v1/staff/calls/{self.table.id}/done/')
         self.assertEqual(res_done.status_code, 200)
         self.assertEqual(res_done.json()['status'], 'done')
+
+        # 3. Boshqa restoran ofitsianti bu stolni ko'rmaydi va boshqara olmaydi
+        other_owner = AdminUser.objects.create_user(username="owner_other", password="x-pass-123", role="shop_owner")
+        other_shop = Shop.objects.create(
+            name="Boshqa Restoran", slug="boshqa-restoran", owner=other_owner, address="Toshkent",
+            latitude=41.3, longitude=69.2, is_open=True, phone="+998900000001",
+        )
+        other_waiter = AdminUser.objects.create_user(
+            username="waiter_other", password="testpassword123", role="waiter", shop=other_shop,
+        )
+        self.client.force_login(other_waiter)
+        calls_other = self.client.get('/v1/staff/calls/').json()['calls']
+        self.assertFalse(any(int(c['id']) == self.table.id for c in calls_other))
+        self.assertEqual(self.client.post(f'/v1/staff/calls/{self.table.id}/accept/').status_code, 404)
 
     def test_v1_order_status_api(self):
         """Test GET /v1/orders/status/<id>/ returns order progress."""

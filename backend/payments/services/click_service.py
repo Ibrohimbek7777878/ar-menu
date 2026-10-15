@@ -3,6 +3,7 @@ Click to'lov integratsiyasi (Rasmiy Shop API).
 API Dokumentatsiya: https://docs.click.uz/
 """
 import hashlib
+import hmac
 import json
 import logging
 from datetime import datetime
@@ -65,10 +66,13 @@ def create_payment(order, return_url: str) -> dict:
 def verify_click_signature(data: dict) -> bool:
     """
     Click rasmiy MD5 imzosini tekshirish (Sign Check).
-    Agar CLICK_SECRET_KEY kiritilmagan bo'lsa (demo muhit), o'tkazib yuboriladi.
+    Kalit sozlanmagan bo'lsa — RAD etiladi (fail-closed). Avval True qaytarardi va
+    istalgan kishi bitta POST bilan buyurtmani "to'langan" qila olardi (TZ: R-SEC-06).
     """
-    if not CLICK_SECRET_KEY:
-        return True
+    secret = getattr(settings, 'CLICK_SECRET_KEY', '') or ''
+    if not secret:
+        logger.warning("Click callback rad etildi: CLICK_SECRET_KEY sozlanmagan")
+        return False
 
     click_trans_id = str(data.get('click_trans_id', ''))
     service_id = str(data.get('service_id', ''))
@@ -80,13 +84,15 @@ def verify_click_signature(data: dict) -> bool:
     sign_string = str(data.get('sign_string', '')).lower()
 
     # Action 0: Prepare; Action 1: Complete
+    if not sign_string:
+        return False
     if action == '0':
-        raw = f"{click_trans_id}{service_id}{CLICK_SECRET_KEY}{merchant_trans_id}{amount}{action}{sign_time}"
+        raw = f"{click_trans_id}{service_id}{secret}{merchant_trans_id}{amount}{action}{sign_time}"
     else:
-        raw = f"{click_trans_id}{service_id}{CLICK_SECRET_KEY}{merchant_trans_id}{merchant_prepare_id}{amount}{action}{sign_time}"
+        raw = f"{click_trans_id}{service_id}{secret}{merchant_trans_id}{merchant_prepare_id}{amount}{action}{sign_time}"
 
     expected_sign = hashlib.md5(raw.encode()).hexdigest().lower()
-    return sign_string == expected_sign
+    return hmac.compare_digest(sign_string, expected_sign)
 
 
 def process_click_webhook(data: dict) -> dict:

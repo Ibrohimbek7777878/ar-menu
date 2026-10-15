@@ -75,7 +75,8 @@ def is_admin(chat_id, username=''):
         return AdminUser.objects.filter(
             is_active=True
         ).filter(
-            Q(telegram_username__icontains=uname) | Q(username__iexact=uname)
+            # Aniq moslik: avval icontains edi — "ad" nomli foydalanuvchi "admin"ga o'tib ketardi
+            Q(telegram_username__iexact=uname) | Q(telegram_username__iexact=f'@{uname}') | Q(username__iexact=uname)
         ).exists()
     return False
 

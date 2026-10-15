@@ -9,9 +9,12 @@ Comprehensive testing of key production readiness criteria:
 6. Products Catalog API & shop_id Serialization
 7. AR 3D & Restaurant Table QR Resolution
 """
+import base64
+import hashlib
 import uuid
 from decimal import Decimal
-from django.test import TestCase
+from unittest import mock
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -473,8 +476,18 @@ class ProductionVerificationTests(TestCase):
         self.assertEqual(res_menu_ar.status_code, 200)
         self.assertContains(res_menu_ar, 'AR Menyu')
 
+    @override_settings(CLICK_SECRET_KEY='test-click-secret', PAYME_SECRET_KEY='test-payme-secret')
+    @mock.patch('payments.services.payme_service.PAYME_MERCHANT_ID', 'test-payme-merchant')
+    @mock.patch('payments.services.click_service.CLICK_SERVICE_ID', '1')
+    @mock.patch('payments.services.click_service.CLICK_MERCHANT_ID', 'test-click-merchant')
     def test_click_and_payme_production_payment_flows(self):
-        """Click va Payme rasmiy webhook va to'lov oqimlari tekshiruvi."""
+        """Click va Payme rasmiy webhook va to'lov oqimlari: imzo/Basic Auth bilan o'tadi, soxtasi rad etiladi."""
+        def click_sign(trans_id, service_id, merchant_trans_id, amount, action, sign_time):
+            raw = f"{trans_id}{service_id}test-click-secret{merchant_trans_id}{amount}{action}{sign_time}"
+            return hashlib.md5(raw.encode()).hexdigest()
+
+        payme_auth = 'Basic ' + base64.b64encode(b'Paycom:test-payme-secret').decode()
+
         order = Order.objects.create(
             order_number=f"PAY-{uuid.uuid4().hex[:6].upper()}",
             customer_name="Test Xaridor",
@@ -494,6 +507,17 @@ class ProductionVerificationTests(TestCase):
         self.assertIsNotNone(payment)
         self.assertEqual(payment.status, 'pending')
 
+        # Soxta (imzosiz) Complete — rad etilishi va to'lov o'zgarmasligi shart (TZ: R-SEC-06)
+        res_forged = self.client.post('/api/payments/click/', {
+            'click_trans_id': '666',
+            'service_id': '1',
+            'merchant_trans_id': payment.merchant_transaction_id,
+            'action': '1',
+        }, format='json')
+        self.assertEqual(res_forged.json().get('error'), -1)
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, 'pending')
+
         # Click Prepare
         res_prepare = self.client.post('/api/payments/click/', {
             'click_trans_id': '1001',
@@ -502,6 +526,7 @@ class ProductionVerificationTests(TestCase):
             'amount': '55000',
             'action': '0',
             'sign_time': '2026-09-16 10:00:00',
+            'sign_string': click_sign('1001', '1', payment.merchant_transaction_id, '55000', '0', '2026-09-16 10:00:00'),
         }, format='json')
         self.assertEqual(res_prepare.status_code, 200)
         self.assertEqual(res_prepare.json().get('error'), 0)
@@ -515,6 +540,7 @@ class ProductionVerificationTests(TestCase):
             'amount': '55000',
             'action': '1',
             'sign_time': '2026-09-16 10:00:00',
+            'sign_string': click_sign('1001', '1', payment.merchant_transaction_id, '55000', '1', '2026-09-16 10:00:00'),
         }, format='json')
         self.assertEqual(res_complete.status_code, 200)
         self.assertEqual(res_complete.json().get('error'), 0)
@@ -542,12 +568,22 @@ class ProductionVerificationTests(TestCase):
         self.assertTrue(payme_init['success'])
         p2 = Payment.objects.filter(order=order2, provider='payme').first()
 
+        # Auth'siz PerformTransaction — rad etilishi shart
+        res_forged_payme = self.client.post('/api/payments/payme/', {
+            'method': 'PerformTransaction',
+            'params': {'id': p2.merchant_transaction_id, 'amount': 3000000},
+            'id': 100,
+        }, format='json')
+        self.assertEqual(res_forged_payme.status_code, 401)
+        p2.refresh_from_db()
+        self.assertEqual(p2.status, 'pending')
+
         # Payme CheckPerformTransaction
         res_check = self.client.post('/api/payments/payme/', {
             'method': 'CheckPerformTransaction',
             'params': {'account': {'order_id': p2.merchant_transaction_id}},
             'id': 101,
-        }, format='json')
+        }, format='json', HTTP_AUTHORIZATION=payme_auth)
         self.assertEqual(res_check.status_code, 200)
         self.assertTrue(res_check.json().get('result', {}).get('allow'))
 
@@ -556,7 +592,7 @@ class ProductionVerificationTests(TestCase):
             'method': 'PerformTransaction',
             'params': {'id': p2.merchant_transaction_id, 'amount': 3000000},
             'id': 102,
-        }, format='json')
+        }, format='json', HTTP_AUTHORIZATION=payme_auth)
         self.assertEqual(res_perform.status_code, 200)
         self.assertEqual(res_perform.json().get('result', {}).get('state'), 2)
         p2.refresh_from_db()
@@ -564,15 +600,26 @@ class ProductionVerificationTests(TestCase):
         self.assertEqual(p2.status, 'paid')
         self.assertEqual(order2.payment_status, 'paid')
 
+    @override_settings(TELEGRAM_BOT_TOKEN='123456:test-token')
     def test_telegram_mini_app_and_bot_integration(self):
         """Telegram Mini App (TMA) va Bot /start buyruqlari tekshiruvi."""
-        # 1. Telegram bot webhook /start
-        res_bot = self.client.post('/telegram/webhook/', {
+        from django.conf import settings as dj_settings
+        from notifications.webhook_security import webhook_secret_for
+        update = {
             'message': {
                 'chat': {'id': 99887766, 'first_name': 'Ali', 'username': 'alitest'},
                 'text': '/start'
             }
-        }, format='json')
+        }
+        # 0. Secret token'siz (soxta) update rad etiladi (TZ: R-SEC-12)
+        res_forged = self.client.post('/telegram/webhook/', update, format='json')
+        self.assertEqual(res_forged.status_code, 403)
+
+        # 1. Telegram bot webhook /start (Telegram yuboradigan secret header bilan)
+        res_bot = self.client.post(
+            '/telegram/webhook/', update, format='json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN=webhook_secret_for(dj_settings.TELEGRAM_BOT_TOKEN),
+        )
         self.assertEqual(res_bot.status_code, 200)
         self.assertTrue(res_bot.json().get('ok'))
 

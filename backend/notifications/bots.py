@@ -141,8 +141,10 @@ def set_bot_webhook(bot_key, base_url):
     if not cfg:
         return False, 'Noma\'lum bot'
     webhook_url = f"{base_url.rstrip('/')}{cfg['webhook_path']}"
+    from notifications.webhook_security import webhook_secret_for
     data = bot_api(bot_key, 'setWebhook', {
         'url': webhook_url,
+        'secret_token': webhook_secret_for(get_bot_token(bot_key)),
         'allowed_updates': ['message', 'callback_query', 'channel_post'],
         'drop_pending_updates': False,
     }, timeout=15)

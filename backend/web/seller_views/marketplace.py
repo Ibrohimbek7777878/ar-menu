@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from web.seller_decorators import seller_required
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.decorators.http import require_POST
 from shops.models import Shop, ShopPage, SHOP_SECTION_TYPES
 from products.models import Product
 from orders.models import Order, OrderItem
@@ -15,6 +16,7 @@ from accounts.models import Customer, AdminUser
 from notifications.models import TelegramSubscriber
 from categories.models import Category
 from django.contrib.auth import authenticate, login
+@seller_required
 def seller_dashboard(request):
     shop = request.tenant_shop
     now = timezone.now()
@@ -1143,6 +1145,7 @@ def seller_products_seed_starter(request):
 
 
 @seller_required
+@require_POST
 def seller_product_delete(request, pk):
     from products.models import Product
     from django.utils import timezone
@@ -1162,6 +1165,7 @@ def seller_product_delete(request, pk):
 
 
 
+@seller_required
 def seller_product_ai3d(request, pk):
     """Mahsulot rasmidan 3D model yaratish."""
     from products.models import Product
@@ -1188,6 +1192,7 @@ def seller_product_ai3d(request, pk):
 
 
 
+@seller_required
 def seller_order_create(request):
     """Seller panelidan yangi buyurtma qo'shish."""
     shop = request.tenant_shop

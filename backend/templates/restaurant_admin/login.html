@@ -176,6 +176,7 @@
 
         <form method="POST" action="{% url 'restaurant_admin_login' %}" class="login-form">
             {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div>
                 <label class="form-label">Foydalanuvchi nomi / Login</label>
                 <input type="text" name="username" placeholder="Masalan: admin" class="form-field" required autocomplete="username">

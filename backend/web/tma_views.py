@@ -19,6 +19,11 @@ from accounts.models import Customer
 from payments.payment_service import create_order_payment
 from notifications.services.telegram_service import send_order_created
 from notifications.admin_bot import get_restaurant_shop
+from web.restaurant_auth import (
+    RESTAURANT_MANAGER_ROLES, can_view_order, guest_order_ids, is_restaurant_staff, remember_guest_order,
+    restaurant_staff_required, staff_shop, user_role,
+)
+from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
 
 
 def _calculate_cart_count(cart) -> int:
@@ -550,6 +555,7 @@ def tma_checkout(request):
         # Savatni tozalash
         request.session['cart'] = {}
         request.session.modified = True
+        remember_guest_order(request, order)
 
         # To'lov yaratish: Naqd / Stolda to'lash to'lov shlyuzisiz to'g'ridan-to'g'ri qabul qilinadi
         if payment_method == 'cash' or service_type == 'table':
@@ -764,12 +770,12 @@ def tma_orders(request):
     table, table_token = _get_tma_table(request)
     shop = get_restaurant_shop()
 
-    # Agar stol biriktirilgan bo'lsa, stol buyurtmalari; aks holda so'nggi buyurtmalar
-    orders_qs = []
-    if table:
-        orders_qs = list(Order.objects.filter(table=table).prefetch_related('items').order_by('-created_at')[:30])
-    if not orders_qs:
-        orders_qs = list(Order.objects.all().prefetch_related('items').order_by('-created_at')[:20])
+    # Faqat shu mehmonning o'zi bergan buyurtmalari (sessiya bo'yicha).
+    # Avval bu yerda boshqa mehmonlar va boshqa restoranlarning buyurtmalari ham chiqardi.
+    orders_qs = list(
+        Order.objects.filter(pk__in=guest_order_ids(request))
+        .prefetch_related('items').order_by('-created_at')[:30]
+    )
 
     react_orders = []
     for o in orders_qs:
@@ -824,6 +830,9 @@ def tma_orders(request):
 def tma_order_detail(request, pk):
     """TMA Buyurtma tafsilotlari va status kuzatish."""
     order = get_object_or_404(Order, pk=pk)
+    if not can_view_order(request, order):
+        from django.http import Http404
+        raise Http404("Buyurtma topilmadi")
     table, table_token = _get_tma_table(request)
     shop = get_restaurant_shop()
 
@@ -868,17 +877,12 @@ def tma_order_detail(request, pk):
 # RESTORAN ADMIN VA BOSHQARUV MARKAZI (ADMIN HUB & LOGIN)
 # ==============================================================================
 
+@restaurant_staff_required(roles=RESTAURANT_MANAGER_ROLES)
 def restaurant_admin_dashboard(request):
     """
     Restoran Boshqaruv Markazi (Dashboard).
     Stollar, Oshxona (KDS), Ofitsiant (POS), Menyu, Kassa va Telegram nazorati.
     """
-    if not request.user.is_authenticated:
-        return redirect('restaurant_admin_login')
-
-    role = getattr(request.user, 'role', 'shop_manager')
-    if role == 'waiter':
-        return redirect('waiter_panel_web')
 
     from tables_restaurant.models import Table, Hall
     from shops.models import Shop
@@ -887,17 +891,17 @@ def restaurant_admin_dashboard(request):
     from django.db.models import Sum
     from django.utils import timezone
 
-    shop = getattr(request, 'tenant_shop', None) or get_restaurant_shop()
+    shop = staff_shop(request)
 
     now = timezone.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    tables_qs = Table.objects.filter(shop=shop, is_active=True) if shop else Table.objects.filter(is_active=True)
+    tables_qs = Table.objects.filter(shop=shop, is_active=True)
     tables_count = tables_qs.count()
     free_tables_count = tables_qs.filter(status='free').count()
     occupied_tables_count = tables_qs.filter(status='occupied').count()
 
-    orders_qs = Order.objects.filter(shop=shop) if shop else Order.objects.all()
+    orders_qs = Order.objects.filter(shop=shop)
     today_orders = orders_qs.filter(created_at__gte=today_start)
     today_orders_count = today_orders.count()
     today_rev = today_orders.exclude(status__in=['cancelled', 'failed']).aggregate(s=Sum('final_amount'))['s'] or 0
@@ -905,7 +909,7 @@ def restaurant_admin_dashboard(request):
     kds_orders = orders_qs.filter(status__in=['pending', 'confirmed', 'preparing']).order_by('-created_at')
     pending_kds_count = kds_orders.count()
 
-    products_qs = Product.objects.filter(shop=shop) if shop else Product.objects.all()
+    products_qs = Product.objects.filter(shop=shop)
     products_count = products_qs.count()
     ar_dishes_count = products_qs.filter(has_3d=True).count()
 
@@ -974,25 +978,49 @@ def restaurant_admin_login(request):
     """
     from django.contrib.auth import authenticate, login
     from django.contrib import messages
+    from django.core.cache import cache
+    from django.utils.http import url_has_allowed_host_and_scheme
 
-    if request.user.is_authenticated:
-        role = getattr(request.user, 'role', '')
-        if role == 'waiter':
+    # Login'dan keyin xodim qaytadigan sahifa (masalan devordagi KDS ekrani) — faqat o'z saytimiz ichida
+    next_url = request.POST.get('next') or request.GET.get('next') or ''
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        next_url = ''
+
+    def _after_login_redirect(user):
+        if next_url:
+            return redirect(next_url)
+        if user_role(user) == 'waiter':
             return redirect('waiter_panel_web')
         return redirect('restaurant_admin_dashboard')
 
+    if request.user.is_authenticated:
+        if is_restaurant_staff(request.user):
+            return _after_login_redirect(request.user)
+        # Xodim bo'lmagan akkaunt bilan kirilgan — redirect aylanmasi bo'lmasligi uchun login sahifasini ko'rsatamiz
+        messages.warning(request, "Bu akkaunt restoran xodimi emas. Xodim akkaunti bilan qayta kiring.")
+        return render(request, 'restaurant_admin/login.html', {'next': next_url})
+
     if request.method == 'POST':
+        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        cache_key = f"restaurant_login_attempts_{ip}"
+        attempts = cache.get(cache_key, 0)
+        if attempts >= 7:
+            messages.error(request, "Ko'p marotaba xato urinish bo'ldi. 5 daqiqadan so'ng qayta urinib ko'ring.")
+            return render(request, 'restaurant_admin/login.html', {'next': next_url})
+
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
-        if user and user.is_approved and getattr(user, 'role', '') in ('shop_owner', 'shop_manager', 'super_admin', 'waiter'):
+        # Ofitsiant akkauntini admin yaratadi — u "sotuvchi tasdig'i" (is_approved) talab qilmaydi
+        approved = bool(user) and (getattr(user, 'is_approved', False) or user_role(user) == 'waiter')
+        if user and approved and is_restaurant_staff(user):
+            cache.delete(cache_key)
             login(request, user)
-            if getattr(user, 'role', '') == 'waiter':
-                return redirect('waiter_panel_web')
-            return redirect('restaurant_admin_dashboard')
+            return _after_login_redirect(user)
+        cache.set(cache_key, attempts + 1, timeout=300)
         messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
 
-    return render(request, 'restaurant_admin/login.html')
+    return render(request, 'restaurant_admin/login.html', {'next': next_url})
 
 
 def restaurant_admin_logout(request):
@@ -1045,8 +1073,8 @@ def tma_arrival_confirm(request):
     from tables_restaurant.models import TableReservation, Table
 
     shop = get_restaurant_shop()
-    code = request.GET.get('code') or request.POST.get('code') or 'GS-2841'
-    table_num = request.GET.get('table') or request.POST.get('table') or '08'
+    code = request.GET.get('code') or request.POST.get('code') or ('GS-2841' if settings.DEMO_MODE else '')
+    table_num = request.GET.get('table') or request.POST.get('table') or ('08' if settings.DEMO_MODE else '')
 
     if request.method == 'POST':
         # Kelishni tasdiqlash: stolni sessiyaga yozib Dasturxon Menyusiga yo'naltirish
@@ -1054,20 +1082,27 @@ def tma_arrival_confirm(request):
         request.session.modified = True
         return redirect(f"/menu/?table={table_num}&arrived=1")
 
-    # DB dan izlash yoki demo obyekt tayyorlash
-    res_obj = None
-    if shop:
-        res_qs = TableReservation.objects.filter(shop=shop)
-        if res_qs.exists():
-            res_obj = res_qs.first()
+    # Bron faqat kiritilgan kod bo'yicha qidiriladi (avval istalgan kodga birinchi bron ko'rsatilardi)
+    res_obj = find_reservation_by_code_or_phone(TableReservation.objects.filter(shop=shop), code) if shop else None
 
-    reservation = {
-        'customer_name': res_obj.customer_name if res_obj else 'Muhayyo Karimova',
-        'code': code,
-        'reservation_time': res_obj.reservation_time if res_obj else '19:30',
-        'guests_count': res_obj.guests_count if res_obj else 4,
-        'table_number': table_num,
-    }
+    if res_obj:
+        reservation = {
+            'customer_name': mask_name(res_obj.customer_name),
+            'code': code,
+            'reservation_time': str(res_obj.reservation_time),
+            'guests_count': res_obj.guests_count,
+            'table_number': str(res_obj.table.number) if getattr(res_obj, 'table', None) else table_num,
+        }
+    elif settings.DEMO_MODE:
+        reservation = {
+            'customer_name': 'Muhayyo Karimova',
+            'code': code,
+            'reservation_time': '19:30',
+            'guests_count': 4,
+            'table_number': table_num,
+        }
+    else:
+        reservation = None
 
     react_reservation_data = {
         'shop': {'name': shop.name if shop else 'Guliston'},
@@ -1093,30 +1128,18 @@ def tma_find_reservation(request):
     shop = get_restaurant_shop()
     query = (request.GET.get('q') or request.GET.get('code') or request.GET.get('phone') or '').strip()
     found_res = None
-    if query:
-        res_qs = TableReservation.objects.filter(shop=shop) if shop else TableReservation.objects.all()
-        # 1. Telefon raqami yoki ism bo'yicha
-        found_res = (
-            res_qs.filter(customer_phone__icontains=query).first() or
-            res_qs.filter(customer_name__icontains=query).first()
-        )
-        # 2. Kod orqali qidirish (GS-XXXX yoki son)
-        if not found_res:
-            import re
-            digits = re.findall(r'\d+', query)
-            if digits:
-                num = int(digits[0])
-                target_id = num - 2840 if num > 2840 else num
-                found_res = res_qs.filter(id=target_id).first()
+    if query and shop:
+        # Faqat aniq kod yoki to'liq telefon (avval "9" kabi bitta raqam bilan begona bron chiqardi)
+        found_res = find_reservation_by_code_or_phone(TableReservation.objects.filter(shop=shop), query)
 
     res_data = None
     if found_res:
         res_data = {
             'id': found_res.id,
             'code': f"GS-{2840 + found_res.id}",
-            'customer_name': found_res.customer_name,
-            'customer_phone': found_res.customer_phone,
-            'table_number': found_res.table.number if getattr(found_res, 'table', None) else '08',
+            'customer_name': mask_name(found_res.customer_name),
+            'customer_phone': mask_phone(found_res.customer_phone),
+            'table_number': found_res.table.number if getattr(found_res, 'table', None) else '',
             'reservation_time': str(found_res.reservation_time),
             'guests_count': found_res.guests_count,
             'hall': found_res.hall.name if getattr(found_res, 'hall', None) else 'Registon Zali',
@@ -1140,6 +1163,7 @@ def tma_find_reservation(request):
     return render(request, 'tma/find_reservation.html', context)
 
 
+@restaurant_staff_required
 def arrival_desk(request):
     """
     Ekran 5: GulistonArrivalDesk.png
@@ -1147,8 +1171,8 @@ def arrival_desk(request):
     """
     from tables_restaurant.models import TableReservation
 
-    shop = get_restaurant_shop()
-    reservations_qs = TableReservation.objects.filter(shop=shop) if shop else TableReservation.objects.all()
+    shop = staff_shop(request)
+    reservations_qs = TableReservation.objects.filter(shop=shop)
 
     react_guests = []
     for r in reservations_qs[:15]:
@@ -1180,6 +1204,7 @@ def arrival_desk(request):
     return render(request, 'seller/arrival_desk.html', context)
 
 
+@restaurant_staff_required
 def arrival_timeline(request):
     """
     Ekran 6: Explore-different-approaches.png
@@ -1188,6 +1213,7 @@ def arrival_timeline(request):
     return arrival_desk(request)
 
 
+@restaurant_staff_required
 def arrival_checklist(request):
     """
     Ekran 7: Coordinate-large-party-arrivals.png
@@ -1196,14 +1222,15 @@ def arrival_checklist(request):
     return arrival_desk(request)
 
 
+@restaurant_staff_required
 def waiter_mobile_panel(request):
     """
     Ekran 8: Guliston-Ofitsiant-Paneli.png (Rahbar / Ofitsiant uchun ixcham mobil boshqaruv).
     Stollar holati, chaqiruvlar, buyurtma qo'shish va kassa/hisob boshqaruvi.
     """
     from tables_restaurant.models import Table
-    shop = get_restaurant_shop()
-    tables_qs = Table.objects.filter(shop=shop, is_active=True).select_related('hall') if shop else Table.objects.filter(is_active=True).select_related('hall')
+    shop = staff_shop(request)
+    tables_qs = Table.objects.filter(shop=shop, is_active=True).select_related('hall')
 
     react_tables = []
     for t in tables_qs:
@@ -1369,19 +1396,17 @@ def _serialize_kds_orders(orders_qs):
     return res
 
 
+@restaurant_staff_required
 def kds_screen(request):
     """
     KDS Oshxona Ekrani (Kitchen Display System):
     Oshpazlar uchun buyurtmalar kartochkalari, tayyorlash vaqti va taomlar ro'yxati.
     """
     from orders.models import Order
-    shop = get_restaurant_shop()
+    shop = staff_shop(request)
     active_orders = Order.objects.filter(
-        status__in=['pending', 'confirmed', 'preparing', 'ready']
+        shop=shop, status__in=['pending', 'confirmed', 'preparing', 'ready']
     ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')
-
-    if shop:
-        active_orders = active_orders.filter(shop=shop)
 
     serialized_orders = _serialize_kds_orders(active_orders)
 
@@ -1404,22 +1429,21 @@ def kds_screen(request):
     })
 
 
+@restaurant_staff_required(api=True)
 def kds_orders_api(request):
     """KDS uchun polling JSON API: har 10 soniyada yangi buyurtmalarni oladi."""
     from orders.models import Order
     from django.http import JsonResponse
-    shop = get_restaurant_shop()
+    shop = staff_shop(request)
     active_orders = Order.objects.filter(
-        status__in=['pending', 'confirmed', 'preparing', 'ready']
+        shop=shop, status__in=['pending', 'confirmed', 'preparing', 'ready']
     ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')
-
-    if shop:
-        active_orders = active_orders.filter(shop=shop)
 
     serialized_orders = _serialize_kds_orders(active_orders)
     return JsonResponse({'orders': serialized_orders, 'status': 'ok'})
 
 
+@restaurant_staff_required(api=True)
 def kds_status_update_api(request):
     """KDS kartochkasidagi statusni o'zgartirish (state machine yoki xavfsiz o'tish)."""
     import json
@@ -1442,19 +1466,16 @@ def kds_status_update_api(request):
         return JsonResponse({'error': 'order_id va new_status talab qilinadi'}, status=400)
 
     try:
-        order = Order.objects.get(pk=order_id)
-        # State machine transition
+        # Faqat o'z restoranining buyurtmasi; status faqat state machine orqali o'zgaradi
+        order = Order.objects.get(pk=order_id, shop=staff_shop(request))
         ok, msg = transition_order(
             order, new_status,
-            actor=request.user if request.user.is_authenticated else None,
+            actor=request.user,
             reason='KDS oshxona ekrani orqali yangilandi',
             request=request
         )
         if not ok:
-            # Fallback agar to'g'ridan to'g'ri o'tishga ruxsat zarur bo'lsa
-            order.status = new_status
-            order.save(update_fields=['status'])
-            msg = f"Status {new_status} ga yangilandi"
+            return JsonResponse({'ok': False, 'error': msg, 'status': order.status}, status=409)
 
         return JsonResponse({'ok': True, 'message': msg, 'status': order.status})
     except Order.DoesNotExist:

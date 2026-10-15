@@ -28,7 +28,9 @@ class Command(BaseCommand):
             )
 
         webhook = f"{base.rstrip('/')}/telegram/webhook/"
-        webhook_payload = {'url': webhook}
+        from notifications.webhook_security import webhook_secret_for
+        # Telegram har update bilan shu secret'ni yuboradi; webhook view uni tekshiradi
+        webhook_payload = {'url': webhook, 'secret_token': webhook_secret_for(token)}
         if 'trycloudflare.com' in base:
             import socket
             try:

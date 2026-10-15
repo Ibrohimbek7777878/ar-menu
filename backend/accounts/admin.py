@@ -3,6 +3,21 @@ from django.contrib.auth.admin import UserAdmin
 from .models import AdminUser, Customer
 
 
+def _platform_admin_only(request):
+    """
+    /djangoadmin/ faqat platforma administratoriga (TZ: R-SEC-10).
+    Avval is_staff=True bo'lgan har qanday akkaunt (masalan ofitsiant) Django admin'ga kira olardi.
+    """
+    user = request.user
+    return bool(
+        user.is_active and user.is_staff
+        and (user.is_superuser or getattr(user, 'role', '') == 'super_admin')
+    )
+
+
+admin.site.has_permission = _platform_admin_only
+
+
 @admin.register(AdminUser)
 class AdminUserAdmin(UserAdmin):
     list_display = ['username', 'email', 'role', 'is_approved', 'is_active']

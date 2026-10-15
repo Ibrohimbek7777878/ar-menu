@@ -1,9 +1,12 @@
 """
 Order State Machine — buyurtma holatlarini boshqarish.
 """
+import logging
 from decimal import Decimal
 from django.utils import timezone
 from django.contrib import messages
+
+logger = logging.getLogger(__name__)
 
 
 # Order holatlari va o'tish qoidalari

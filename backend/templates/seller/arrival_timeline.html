@@ -1,10 +1,11 @@
 {% extends "tma/base_tma.html" %}
+{% load json_tags %}
 
 {% block title %}Vaqt Shkalasi & Kutib Olish — {{ shop.name|default:"Guliston" }}{% endblock %}
 
 {% block extra_head %}
 <!-- React Component System CSS -->
-<link rel="stylesheet" href="/static/react/assets/index.css?v=12">
+<link rel="stylesheet" href="/static/react/assets/index.css?v=17">
 {% endblock %}
 
 {% block desktop_nav %}
@@ -16,11 +17,11 @@
 <div id="root"></div>
 
 <script>
-    window.__GULISTON_HOSTESS_DATA__ = {{ react_hostess_data_json|safe }};
+    window.__GULISTON_HOSTESS_DATA__ = {{ react_hostess_data_json|script_json }};
 </script>
 
 <!-- React Application Bundle -->
-<script type="module" src="/static/react/assets/index.js?v=12"></script>
+<script type="module" src="/static/react/assets/index.js?v=17"></script>
 {% endblock %}
 
 {% block tabbar %}

@@ -15,6 +15,7 @@ from accounts.models import Customer, AdminUser
 from notifications.models import TelegramSubscriber
 from categories.models import Category
 from django.contrib.auth import authenticate, login
+@seller_required
 def seller_tables(request):
     """Stollar boshqaruvi: zallar, stollar CRUD + QR ko'rish/chop etish."""
     from tables_restaurant.models import Hall, Table
@@ -342,6 +343,7 @@ def seller_kds_update(request, pk):
 
 
 
+@seller_required
 def waiter_panel(request):
     """Ofitsiant: haqiqiy mobil/planshet POS tizimi — stollar, taomlar 3D/AR bilan, yangi buyurtma olish."""
     shop = request.tenant_shop
@@ -553,6 +555,7 @@ def seller_tables_plan_save(request):
 
 
 
+@seller_required
 def seller_ar(request):
     """AR/3D mahsulot boshqaruvi — 3D modellarni boshqarish, AI yaratish, kutubxona."""
     shop = request.tenant_shop

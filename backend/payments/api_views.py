@@ -2,7 +2,9 @@
 Payment API — Click / Payme / Mock.
 Barcha endpointlar test rejimida (kalitsiz) ham ishlaydi.
 """
+import base64
 import hashlib
+import hmac
 import json
 from datetime import datetime
 
@@ -20,6 +22,7 @@ from backend.ratelimit import rate_limit
 from orders.models import Order
 from .models import Payment
 from .payment_service import (
+    mock_payments_allowed,
     create_order_payment, mark_payment_paid, mark_payment_failed,
     get_payment_status,
 )
@@ -121,22 +124,32 @@ def payment_callback_click(request):
             'merchant_trans_id': merchant_trans_id,
         }, status=200)
 
-    # Click MD5 imzo tekshiruvi (agar CLICK_SECRET_KEY sozlangan bo'lsa)
-    secret = getattr(settings, 'CLICK_SECRET_KEY', '')
-    if secret and sign_string:
-        merchant_id = getattr(settings, 'CLICK_MERCHANT_ID', '')
-        raw = f"{click_trans_id}{service_id}{secret}{merchant_trans_id}{amount}{action}{sign_time}"
-        expected = hashlib.md5(raw.encode()).hexdigest()
-        # Click alternative order format:
-        raw_alt = f"{click_trans_id}{service_id}{merchant_id}{amount}{action}{sign_time}{secret}"
-        expected_alt = hashlib.md5(raw_alt.encode()).hexdigest()
-        if sign_string.lower() not in (expected.lower(), expected_alt.lower()):
-            return JsonResponse({
-                'error': -1,
-                'error_note': "Imzo xatosi (SIGN_CHECK_FAILED)",
-                'click_trans_id': click_trans_id,
-                'merchant_trans_id': merchant_trans_id,
-            }, status=200)
+    # Click MD5 imzo tekshiruvi MAJBURIY (TZ: R-SEC-06). Avval kalit yoki imzo bo'lmasa tekshiruv
+    # butunlay o'tkazib yuborilardi va soxta "Complete" so'rovi buyurtmani to'langan qilardi.
+    secret = getattr(settings, 'CLICK_SECRET_KEY', '') or ''
+    if not secret:
+        return JsonResponse({
+            'error': -1,
+            'error_note': "Click to'lovi sozlanmagan (SIGN_CHECK_FAILED)",
+            'click_trans_id': click_trans_id,
+            'merchant_trans_id': merchant_trans_id,
+        }, status=200)
+    merchant_id = getattr(settings, 'CLICK_MERCHANT_ID', '')
+    raw = f"{click_trans_id}{service_id}{secret}{merchant_trans_id}{amount}{action}{sign_time}"
+    expected = hashlib.md5(raw.encode()).hexdigest()
+    # Click alternative order format:
+    raw_alt = f"{click_trans_id}{service_id}{merchant_id}{amount}{action}{sign_time}{secret}"
+    expected_alt = hashlib.md5(raw_alt.encode()).hexdigest()
+    sign_ok = bool(sign_string) and any(
+        hmac.compare_digest(sign_string.lower(), exp.lower()) for exp in (expected, expected_alt)
+    )
+    if not sign_ok:
+        return JsonResponse({
+            'error': -1,
+            'error_note': "Imzo xatosi (SIGN_CHECK_FAILED)",
+            'click_trans_id': click_trans_id,
+            'merchant_trans_id': merchant_trans_id,
+        }, status=200)
 
     # Action 0 = Prepare (Tekshiruv bosqichi)
     if action == '0':
@@ -183,23 +196,9 @@ def payment_callback_payme(request):
     method = data.get('method', '')
     params = data.get('params', {})
 
-    # Basic Auth tekshiruvi (agar PAYME_SECRET_KEY sozlangan bo'lsa)
-    secret = getattr(settings, 'PAYME_SECRET_KEY', '')
-    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-    if secret:
-        if not auth_header:
-            return JsonResponse({'error': {'code': -32504, 'message': 'Insufficient privileges'}, 'id': req_id}, status=401)
-        import base64
-        try:
-            auth_decoded = base64.b64decode(auth_header.replace('Basic ', '')).decode('utf-8')
-            if not auth_decoded.endswith(f":{secret}"):
-                return JsonResponse({'error': {'code': -32504, 'message': 'Insufficient privileges'}, 'id': req_id}, status=401)
-        except Exception:
-            return JsonResponse({'error': {'code': -32504, 'message': 'Auth parse error'}, 'id': req_id}, status=401)
-
-    # Oddiy webhook JSON (faqat DEBUG yoki xodimlar uchun test)
+    # Oddiy webhook JSON — faqat demo rejimda (avval DEBUG yoki is_staff=True bo'lgan ofitsiant ham tasdiqlay olardi)
     if not method and ('merchant_transaction_id' in data or 'payment_id' in data):
-        if not settings.DEBUG and not request.user.is_staff:
+        if not mock_payments_allowed():
             return JsonResponse({'error': 'Direct webhook confirmation disallowed in production'}, status=403)
         merchant_id = data.get('merchant_transaction_id') or data.get('payment_id')
         try:
@@ -208,6 +207,20 @@ def payment_callback_payme(request):
             return JsonResponse({'success': True, 'status': paid.status})
         except Payment.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Payment not found'}, status=404)
+
+    # Payme Basic Auth MAJBURIY (TZ: R-SEC-06). Avval kalit sozlanmagan bo'lsa tekshiruv o'tkazib
+    # yuborilardi va soxta PerformTransaction buyurtmani "to'langan" qilardi.
+    secret = getattr(settings, 'PAYME_SECRET_KEY', '') or ''
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if not secret or not auth_header.startswith('Basic '):
+        return JsonResponse({'error': {'code': -32504, 'message': 'Insufficient privileges'}, 'id': req_id}, status=401)
+    try:
+        auth_decoded = base64.b64decode(auth_header.split(' ', 1)[1].strip()).decode('utf-8')
+        password = auth_decoded.split(':', 1)[1] if ':' in auth_decoded else ''
+    except Exception:
+        return JsonResponse({'error': {'code': -32504, 'message': 'Auth parse error'}, 'id': req_id}, status=401)
+    if not hmac.compare_digest(password, secret):
+        return JsonResponse({'error': {'code': -32504, 'message': 'Insufficient privileges'}, 'id': req_id}, status=401)
 
     # JSON-RPC 2.0 metodlari
     order_id = params.get('account', {}).get('order_id') or params.get('account', {}).get('order') or params.get('id')
@@ -290,7 +303,7 @@ def payment_callback_payme(request):
 @require_POST
 def mock_payment_success(request, payment_id):
     """POST /api/payments/mock/{id}/success/"""
-    if not settings.DEBUG and not getattr(settings, 'ALLOW_MOCK_PAYMENTS', False):
+    if not mock_payments_allowed():
         return JsonResponse({'success': False, 'error': 'Mock to\'lovlar faqat test rejimida ruxsat etiladi'}, status=403)
     try:
         payment = Payment.objects.get(merchant_transaction_id=payment_id)
@@ -304,7 +317,7 @@ def mock_payment_success(request, payment_id):
 @require_POST
 def mock_payment_fail(request, payment_id):
     """POST /api/payments/mock/{id}/fail/"""
-    if not settings.DEBUG and not getattr(settings, 'ALLOW_MOCK_PAYMENTS', False):
+    if not mock_payments_allowed():
         return JsonResponse({'success': False, 'error': 'Mock to\'lovlar faqat test rejimida ruxsat etiladi'}, status=403)
     try:
         payment = Payment.objects.get(merchant_transaction_id=payment_id)
@@ -317,7 +330,7 @@ def mock_payment_fail(request, payment_id):
 @require_GET
 def mock_payment_page(request, payment_id):
     """GET /api/payments/mock/{id}/ — test to'lov sahifasi."""
-    if not settings.DEBUG and not getattr(settings, 'ALLOW_MOCK_PAYMENTS', False):
+    if not mock_payments_allowed():
         return HttpResponseNotFound('Mock to\'lov sahifasi faqat test rejimida mavjud')
     try:
         payment = Payment.objects.get(merchant_transaction_id=payment_id)

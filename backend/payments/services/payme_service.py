@@ -4,6 +4,7 @@ API Dokumentatsiya: https://developer.payme.uz/
 """
 import base64
 import hashlib
+import hmac
 import json
 import logging
 import time
@@ -30,10 +31,12 @@ def _get_auth_header() -> str:
 def verify_payme_auth(auth_header: str) -> bool:
     """
     Payme rasmiy HTTP Basic Auth tekshiruvi.
-    Agar PAYME_SECRET_KEY kiritilmagan bo'lsa (demo rejim), ruxsat beriladi.
+    Kalit sozlanmagan bo'lsa — RAD etiladi (fail-closed, TZ: R-SEC-06).
     """
-    if not PAYME_SECRET_KEY:
-        return True
+    secret = getattr(settings, 'PAYME_SECRET_KEY', '') or ''
+    if not secret:
+        logger.warning("Payme callback rad etildi: PAYME_SECRET_KEY sozlanmagan")
+        return False
     if not auth_header or not auth_header.startswith('Basic '):
         return False
 
@@ -43,7 +46,7 @@ def verify_payme_auth(auth_header: str) -> bool:
         parts = decoded.split(':', 1)
         if len(parts) == 2:
             password = parts[1]
-            return password == PAYME_SECRET_KEY
+            return hmac.compare_digest(password, secret)
     except Exception as e:
         logger.warning(f"Payme auth header parsing error: {e}")
     return False

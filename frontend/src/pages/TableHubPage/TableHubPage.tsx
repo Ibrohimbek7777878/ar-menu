@@ -31,7 +31,9 @@ export interface TableHubPageProps {
 }
 
 export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) => {
-  const { navigate, cartCount: navCartCount, setIsQrModalOpen } = useNavigation();
+  const { navigate, cartCount: navCartCount, setIsQrModalOpen, userRole } = useNavigation();
+  // QR chop etish — xodim vositasi, mehmonga ko'rsatilmaydi (TZ: R-SEC-08)
+  const isStaff = userRole !== 'guest';
   const initialData: InitialTableData = (window as any).__GULISTON_TABLE_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -225,6 +227,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                 Stoldan chiqish ↩
               </button>
             )}
+            {isStaff && (
             <button
               type="button"
               className="btn-leave-table"
@@ -234,6 +237,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
               <span style={{ marginRight: '6px' }}>🖨️</span>
               QR Kodlarni chop etish
             </button>
+            )}
           </div>
         </section>
 

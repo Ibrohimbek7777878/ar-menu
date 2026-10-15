@@ -1,4 +1,5 @@
 {% extends "base_map.html" %}
+{% load json_tags %}
 {% load i18n_tags %}
 {% block title %}{{ t.map_title }} — {{ t.site_name }}{% endblock %}
 
@@ -618,7 +619,7 @@ const T = {
     min: '{{ t.map_minutes }}', allStores: '{{ t.map_all_stores }}',
 };
 
-const shops = {{ shops_json|safe }};
+const shops = {{ shops_json|script_json }};
 const defaultLat = {{ default_lat|stringformat:".6f" }};
 const defaultLng = {{ default_lng|stringformat:".6f" }};
 let userLat = null, userLng = null, userAccuracy = null;

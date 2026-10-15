@@ -25,7 +25,9 @@ interface InitialARData {
 const DEFAULT_AR_PRODUCTS: Product[] = INITIAL_PRODUCTS.filter((p) => p.has_3d);
 
 export const ARMenuPage: React.FC = () => {
-  const { tableNumber, cart, addToCart, updateQuantity, cartCount, navigate, setIsStudioModalOpen } = useNavigation();
+  const { tableNumber, cart, addToCart, updateQuantity, cartCount, navigate, setIsStudioModalOpen, userRole } = useNavigation();
+  // Taom yaratish — faqat xodim uchun (server ham faqat rahbariyatga ruxsat beradi, TZ: R-SEC-08)
+  const isStaff = userRole !== 'guest';
 
   // Read initial injected data or use fallback
   const initialData: InitialARData =
@@ -160,14 +162,16 @@ export const ARMenuPage: React.FC = () => {
               >
                 Klassik menyu
               </button>
-              <button 
-                type="button" 
-                onClick={() => setIsStudioModalOpen(true)} 
-                className="btn-ar-action btn-ar-action-secondary"
-                style={{ background: '#EA580C', color: '#FFFFFF', borderColor: '#EA580C' }}
-              >
-                📸 Yangi 3D/360 Taom Yaratish
-              </button>
+              {isStaff && (
+                <button
+                  type="button"
+                  onClick={() => setIsStudioModalOpen(true)}
+                  className="btn-ar-action btn-ar-action-secondary"
+                  style={{ background: '#EA580C', color: '#FFFFFF', borderColor: '#EA580C' }}
+                >
+                  📸 Yangi 3D/360 Taom Yaratish
+                </button>
+              )}
             </div>
           </div>
         </section>

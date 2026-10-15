@@ -1,4 +1,5 @@
 {% extends "seller/base_seller.html" %}
+{% load json_tags %}
 {% block title %}{{ tpl.name }} — moslash{% endblock %}
 {% block page_title %}Shablonni moslash{% endblock %}
 
@@ -130,8 +131,8 @@
 
 <script>
 // ─── Holat ─────────────────────────────────────────────────────────
-let layout = {{ layout_json|safe }};
-let colors = {{ colors_json|safe }};
+let layout = {{ layout_json|script_json }};
+let colors = {{ colors_json|script_json }};
 let isMobile = true;
 let previewPage = 'home';
 let sortableInstance = null;
@@ -143,7 +144,7 @@ const TYPE_LABELS = Object.assign({
     hero: 'Hero banner', product_grid: 'Mahsulotlar', category_strip: 'Kategoriyalar',
     banner: 'Promo banner', map: 'Xarita / Manzil', reviews: 'Mijozlar sharhlari', cta: 'Chaqiriq (CTA)', richtext: 'Matn bloki',
     features: 'Afzalliklar', info_strip: 'Aloqa chizig\'i', menu: 'Menyu', custom: 'Maxsus bo\'lim'
-}, {{ type_labels_json|safe }});
+}, {{ type_labels_json|script_json }});
 
 const SECTION_ICONS = {
     hero: '🏝️', product_grid: '🛍️', category_strip: '🏷️', banner: '🖼️',

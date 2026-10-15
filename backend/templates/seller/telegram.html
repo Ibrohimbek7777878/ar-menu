@@ -261,7 +261,7 @@
                         <a href="https://t.me/BotFather" target="_blank" class="text-xs text-[#2AABEE] hover:underline font-normal">@BotFather orqali olish ↗</a>
                     </label>
                     <div class="relative">
-                        <input type="password" id="botTokenInput" name="bot_token" value="{{ bot_token|default:'' }}" placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ" class="font-mono text-xs pr-10">
+                        <input type="password" id="botTokenInput" name="bot_token" value="" autocomplete="off" placeholder="{% if bot_token %}Saqlangan: {{ bot_token }} — o'zgartirish uchun yangisini kiriting{% else %}1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ{% endif %}" class="font-mono text-xs pr-10">
                         <button type="button" onclick="togglePassword('botTokenInput', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
                             👁️
                         </button>

@@ -5,6 +5,18 @@
 
 const API_BASE = '/api/v1/restaurant';
 
+// Django CSRF token (cookie'dan). Xodim sessiyasi bilan yuboriladigan POST/PATCH so'rovlari
+// server tomonida CSRF bilan tekshiriladi — tokensiz 403 qaytadi (TZ: R-SEC-02).
+function getCsrfToken(): string {
+  if (typeof document === 'undefined') return '';
+  const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function jsonHeaders(): Record<string, string> {
+  return { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() };
+}
+
 export const RestaurantAPI = {
   // 1. Yangi buyurtma yaratish (Guest & Waiter) -> Bitta so'rov
   async createOrder(payload: {
@@ -25,7 +37,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/orders/create/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Server order create failed');
@@ -53,7 +65,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/kitchen/items/${itemId}/toggle/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
       });
       if (!res.ok) throw new Error('Toggle kitchen item failed');
       return await res.json();
@@ -80,7 +92,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/tables/${tableNumber}/settle/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify({ payment_method: paymentMethod }),
       });
       if (!res.ok) throw new Error('Settle table bill failed');
@@ -96,7 +108,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/calls/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify({ table_number: tableNumber, type, title }),
       });
       if (!res.ok) throw new Error('Create service call failed');
@@ -112,7 +124,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/calls/${callId}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error('Update service call failed');
@@ -140,7 +152,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/tables/${tableNumber}/add-item/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify(dish),
       });
       if (!res.ok) throw new Error('Add item to table failed');
@@ -182,7 +194,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/reservations/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Create reservation failed');
@@ -198,7 +210,7 @@ export const RestaurantAPI = {
     try {
       const res = await fetch(`${API_BASE}/reservations/${reservationId}/status/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error('Update reservation status failed');
@@ -238,7 +250,7 @@ export const RestaurantAPI = {
         : `${API_BASE}/products/3d-scan/`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Save 3D scan failed');

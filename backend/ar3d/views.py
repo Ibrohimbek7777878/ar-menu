@@ -7,6 +7,7 @@ import os
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.middleware.csrf import get_token
 from django.core.cache import cache
 from django.conf import settings
@@ -18,6 +19,7 @@ from categories.models import Category
 from orders.models import Order, OrderItem
 from ar3d.models import Product3DModel, ProductLibrary
 from notifications.services.telegram_service import send_table_service_call, send_order_created
+from web.restaurant_auth import remember_guest_order, restaurant_staff_required, staff_shop
 
 logger = logging.getLogger(__name__)
 
@@ -571,30 +573,34 @@ def v1_orders_api(request):
         except (ValueError, TypeError):
             qty = 1
 
-        if qty <= 0:
+        if qty <= 0 or qty > 100:
             return JsonResponse({'error': 'Noto\'g\'ri mahsulot miqdori'}, status=400)
 
-        item_note = item.get('note', '')
+        item_note = str(item.get('note', ''))[:255]
 
         product = None
         price = 0
         prod_name = "AR 3D Taom"
 
+        # Narx faqat shu restoranning mavjud mahsulotidan (TZ: R-SEC-07).
+        # Avval boshqa do'kon mahsuloti ham qabul qilinar, noma'lum taom esa 35 000 so'm deb narxlanardi.
         if isinstance(dish_id, int) or (isinstance(dish_id, str) and dish_id.isdigit()):
-            product = Product.objects.filter(id=int(dish_id)).first()
+            product = Product.objects.filter(
+                id=int(dish_id), shop=shop, is_available=True, is_deleted=False
+            ).first()
 
         if product:
             price = int(product.price)
             prod_name = product.name
-        else:
-            # Demo dishlardan qidirish
+        elif settings.DEMO_MODE:
+            # Demo taomlar faqat DEMO_MODE da (AGENTS.md 4-qoida: o'chirilmaydi, flag ortida)
             for d in DEMO_DISHES:
                 if str(d['id']) == str(dish_id):
                     price = int(d['price'])
                     prod_name = d['name']
                     break
-            if price == 0:
-                price = 35000
+        if not price:
+            return JsonResponse({'error': 'Taom menyuda topilmadi yoki hozir mavjud emas'}, status=400)
 
         line_total = price * qty
         total_amount += line_total
@@ -646,6 +652,8 @@ def v1_orders_api(request):
             reserve_stock(order, timeout_minutes=15)
         except Exception as e:
             logger.warning(f"Stock reservation xatosi (davom etiladi): {e}")
+
+    remember_guest_order(request, order)
 
     # Telegram xabar yuborish
     try:
@@ -823,14 +831,15 @@ def v1_call_status_api(request):
     })
 
 
+@restaurant_staff_required(api=True)
 def v1_staff_calls_api(request):
     """
     GET /v1/staff/calls/
-    Ofitsiantlar ekrani (WaiterView) uchun barcha ochiq chaqiruvlar ro'yxati.
+    Ofitsiantlar ekrani (WaiterView) uchun o'z restoranidagi ochiq chaqiruvlar ro'yxati.
     """
     from tables_restaurant.models import Table
     calls = []
-    active_tables = Table.objects.filter(is_active=True).select_related('hall', 'shop')
+    active_tables = Table.objects.filter(shop=staff_shop(request), is_active=True).select_related('hall', 'shop')
 
     for t in active_tables:
         call_cache = safe_cache_get(f"table_call_status_{t.number}")
@@ -851,35 +860,29 @@ def v1_staff_calls_api(request):
     })
 
 
-@csrf_exempt
+@restaurant_staff_required(api=True)
+@require_POST
 def v1_staff_call_accept_api(request, pk):
-    """POST /v1/staff/calls/<id>/accept/"""
-    staff_token = request.headers.get('X-Staff-Token') or request.GET.get('staff_token') or request.POST.get('staff_token')
-    is_staff = request.user.is_authenticated or request.session.get('is_staff') or bool(staff_token)
-    if not is_staff and not settings.DEBUG and not getattr(settings, 'STAFF_AUTH_OPTIONAL', False):
-        return JsonResponse({'error': 'Xodim autentifikatsiyasi talab qilinadi'}, status=403)
-
+    """POST /v1/staff/calls/<id>/accept/ — faqat login qilgan xodim, faqat o'z restorani stoli."""
     from tables_restaurant.models import Table
-    tbl = Table.objects.filter(id=pk).first()
-    if tbl:
-        safe_cache_set(f"table_call_status_{tbl.number}", {'status': 'accepted', 'reason': 'waiter'}, 300)
+    tbl = Table.objects.filter(id=pk, shop=staff_shop(request)).first()
+    if not tbl:
+        return JsonResponse({'success': False, 'error': 'Stol topilmadi'}, status=404)
+    safe_cache_set(f"table_call_status_{tbl.number}", {'status': 'accepted', 'reason': 'waiter'}, 300)
     return JsonResponse({'success': True, 'call_id': pk, 'status': 'accepted'})
 
 
-@csrf_exempt
+@restaurant_staff_required(api=True)
+@require_POST
 def v1_staff_call_done_api(request, pk):
-    """POST /v1/staff/calls/<id>/done/"""
-    staff_token = request.headers.get('X-Staff-Token') or request.GET.get('staff_token') or request.POST.get('staff_token')
-    is_staff = request.user.is_authenticated or request.session.get('is_staff') or bool(staff_token)
-    if not is_staff and not settings.DEBUG and not getattr(settings, 'STAFF_AUTH_OPTIONAL', False):
-        return JsonResponse({'error': 'Xodim autentifikatsiyasi talab qilinadi'}, status=403)
-
+    """POST /v1/staff/calls/<id>/done/ — faqat login qilgan xodim, faqat o'z restorani stoli."""
     from tables_restaurant.models import Table
-    tbl = Table.objects.filter(id=pk).first()
-    if tbl:
-        safe_cache_delete(f"table_call_status_{tbl.number}")
-        tbl.status = 'occupied'
-        tbl.save(update_fields=['status'])
+    tbl = Table.objects.filter(id=pk, shop=staff_shop(request)).first()
+    if not tbl:
+        return JsonResponse({'success': False, 'error': 'Stol topilmadi'}, status=404)
+    safe_cache_delete(f"table_call_status_{tbl.number}")
+    tbl.status = 'occupied'
+    tbl.save(update_fields=['status'])
     return JsonResponse({'success': True, 'call_id': pk, 'status': 'done'})
 
 

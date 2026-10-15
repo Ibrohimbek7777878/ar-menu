@@ -14,6 +14,20 @@ from orders.state_machine import transition_order
 from orders.audit import log_audit
 
 
+def mock_payments_allowed() -> bool:
+    """
+    Demo/mock to'lovlar faqat aniq yoqilgan flag bilan (TZ: R-SEC-06).
+    Avval DEBUG=True bo'lsa ochiq edi — .env da DEBUG=True turgani uchun production'da ham ishlardi.
+    """
+    return bool(getattr(settings, 'DEMO_MODE', False) or getattr(settings, 'ALLOW_MOCK_PAYMENTS', False))
+
+
+_PROVIDER_NOT_CONNECTED = {
+    'success': False,
+    'error': "Bu to'lov usuli hozircha ulanmagan. Iltimos, stolda yoki naqd to'lang.",
+}
+
+
 def _generate_payment_id(order):
     return f"GLS-{order.order_number}-{int(datetime.now().timestamp())}{random.randint(100,999)}"
 
@@ -27,6 +41,8 @@ def create_order_payment(order, method, return_url):
         return {'success': True, 'payment_url': None, 'message': 'Naqd pul — to\'lov yetkazishda amalga oshiriladi'}
 
     if method == 'mock':
+        if not mock_payments_allowed():
+            return dict(_PROVIDER_NOT_CONNECTED)
         from .providers import MockPaymentProvider
         result = MockPaymentProvider().create_payment(order, return_url, return_url)
     else:
@@ -39,6 +55,10 @@ def create_order_payment(order, method, return_url):
             result = uzcard_service.create_payment(order, return_url)
         else:
             return {'success': False, 'error': 'Noto\'g\'ri to\'lov uslubi'}
+        # Provayder kaliti yo'q bo'lsa servis demo-simulyator URL qaytaradi — u faqat demo rejimda ruxsat etiladi
+        is_demo_url = str(result.get('payment_url') or '').startswith('/payment/demo/')
+        if (not result.get('success') or is_demo_url) and not mock_payments_allowed():
+            return dict(_PROVIDER_NOT_CONNECTED)
         # Test rejimi: provayder kaliti yo'q bo'lsa mock ga o'tamiz
         if not result.get('success'):
             from .providers import MockPaymentProvider

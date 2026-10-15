@@ -211,23 +211,29 @@ class RestaurantStaffRBACMiddleware(MiddlewareMixin):
     - Oddiy mijozlar (/api/finance/, /api/admin/) ma'lumotlarini so'ray olmaydi.
     - Xodimlar uchun o'z sohalariga doir kirishni kafolatlaydi.
     """
+    # Avval faqat '/api/restaurant/...' tekshirilardi, real marshrut esa '/api/v1/restaurant/...' — himoya ishlamas edi.
+    # Asosiy tekshiruv DRF permission'larida (orders/interfaces/api/permissions.py); bu — qo'shimcha qatlam.
+    PROTECTED_PREFIXES = (
+        '/api/v1/restaurant/finance/',
+        '/api/restaurant/finance/',
+        '/api/restaurant/admin/',
+    )
+
     def process_request(self, request):
-        path = request.path
+        if not request.path.startswith(self.PROTECTED_PREFIXES):
+            return None
+        # JWT (Authorization header) bilan kelgan so'rovni DRF permission o'zi tekshiradi
+        if request.META.get('HTTP_AUTHORIZATION'):
+            return None
 
-        # Faqat restoran moliya va boshqaruv xavfsiz URL-larini tekshirish
-        if path.startswith(('/api/restaurant/finance/', '/api/restaurant/admin/')):
-            user = getattr(request, 'user', None)
-            is_auth = user and user.is_authenticated
-            user_role = getattr(user, 'role', 'guest') if is_auth else 'guest'
+        from web.restaurant_auth import RESTAURANT_MANAGER_ROLES, is_restaurant_staff
+        if is_restaurant_staff(getattr(request, 'user', None), RESTAURANT_MANAGER_ROLES):
+            return None
 
-            # Agar xodim yoki admin bo'lmasa:
-            if not is_auth and user_role not in ('admin', 'manager', 'shop_owner', 'shop_manager', 'waiter'):
-                from django.http import JsonResponse
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Kirish taqiqlangan: Ushbu amal faqat vakolatli restoran xodimlari uchun.',
-                    'code': 'FORBIDDEN_STAFF_ONLY'
-                }, status=403)
-
-        return None
+        from django.http import JsonResponse
+        return JsonResponse({
+            'success': False,
+            'error': 'Kirish taqiqlangan: Ushbu amal faqat vakolatli restoran xodimlari uchun.',
+            'code': 'FORBIDDEN_STAFF_ONLY'
+        }, status=403)
 

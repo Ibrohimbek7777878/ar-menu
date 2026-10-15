@@ -1,4 +1,5 @@
 {% extends "tma/base_tma.html" %}
+{% load json_tags %}
 
 {% block title %}Dasturxon Menyusi — {{ shop.name|default:"Guliston" }}{% endblock %}
 
@@ -7,7 +8,7 @@
 <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 
 <!-- React Component System CSS -->
-<link rel="stylesheet" href="/static/react/assets/index.css?v=12">
+<link rel="stylesheet" href="/static/react/assets/index.css?v=17">
 {% endblock %}
 
 {% block desktop_nav %}
@@ -21,11 +22,11 @@
 
 <script>
     // Server tomonidan uzatilgan real restoran ma'lumotlari
-    window.__GULISTON_DATA__ = {{ react_initial_data_json|safe }};
+    window.__GULISTON_DATA__ = {{ react_initial_data_json|script_json }};
 </script>
 
 <!-- React Application Bundle -->
-<script type="module" src="/static/react/assets/index.js?v=12"></script>
+<script type="module" src="/static/react/assets/index.js?v=17"></script>
 {% endblock %}
 
 {% block tabbar %}

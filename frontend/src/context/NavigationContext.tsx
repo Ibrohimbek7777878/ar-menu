@@ -599,6 +599,12 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Server data sync on mount (Offline-first fallback)
   useEffect(() => {
     let isMounted = true;
+    // Buyurtmalar, stollar va moliya — xodim ma'lumotlari; mehmon uchun so'ralmaydi (server ham 401/403 qaytaradi)
+    if (roleService.getCurrentRole() === 'guest') {
+      return () => {
+        isMounted = false;
+      };
+    }
     (async () => {
       try {
         const [serverOrders, serverTables, serverCalls] = await Promise.all([

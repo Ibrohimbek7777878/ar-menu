@@ -15,6 +15,7 @@ from accounts.models import Customer, AdminUser
 from notifications.models import TelegramSubscriber
 from categories.models import Category
 from django.contrib.auth import authenticate, login
+@seller_required
 def seller_3d_studio(request):
     """
     Mahsulot #3: 3D Studio & Chop Etish Navbati (Print Queue).

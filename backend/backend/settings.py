@@ -114,6 +114,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+# Demo rejim: mock ma'lumotlar, demo to'lov, "Muhayyo Karimova" kabi namuna bronlar.
+# Production'da DOIM False. Hech narsa o'chirilmaydi — faqat shu flag ortiga yashiriladi (AGENTS.md 4-qoida).
+DEMO_MODE = os.environ.get('DEMO_MODE', 'False').lower() == 'true'
+# Faqat mock to'lov sahifalari (DEMO_MODE'siz). Production'da False.
+ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 'true'
+
+# Restoran xizmat haqi foizi (TZ qarori Q2: xizmat haqi olinmaydi → 0). Kerak bo'lsa .env orqali yoqiladi.
+RESTAURANT_SERVICE_FEE_PERCENT = os.environ.get('RESTAURANT_SERVICE_FEE_PERCENT', '0')
+
+# Testlar tashqi tarmoqqa (Telegram, AI, to'lovlar) chiqmasligi uchun
+TEST_RUNNER = 'backend.test_runner.NoNetworkDiscoverRunner'
+
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -276,6 +288,8 @@ MAP_DEFAULT_ZOOM = 13
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 TELEGRAM_ADMIN_CHAT_IDS = os.environ.get('TELEGRAM_ADMIN_CHAT_IDS', '')
+# Webhook secret (bo'sh bo'lsa bot tokeni + SECRET_KEY dan hosil qilinadi — notifications/webhook_security.py)
+TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '')
 ADMIN_PANEL_PASSWORD = os.environ.get('ADMIN_PANEL_PASSWORD', '')
 
 # Mahsulot #1: Restoran 3D Menyu & Stollar boti

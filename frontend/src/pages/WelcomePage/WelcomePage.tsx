@@ -14,7 +14,9 @@ interface InitialWelcomeData {
 }
 
 export const WelcomePage: React.FC = () => {
-  const { navigate, setTableNumber, cartCount: navCartCount, setIsQrModalOpen, setIsNfcModalOpen } = useNavigation();
+  const { navigate, setTableNumber, cartCount: navCartCount, setIsQrModalOpen, setIsNfcModalOpen, userRole } = useNavigation();
+  // QR generator — xodim vositasi; mehmon stol ustidagi QR ni telefon kamerasi bilan skanerlaydi (TZ: R-SEC-08)
+  const isStaff = userRole !== 'guest';
   const initialData: InitialWelcomeData = (window as any).__GULISTON_WELCOME_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
@@ -121,16 +123,18 @@ export const WelcomePage: React.FC = () => {
                 <p>Stol ustidagi QR kodga telefon kamerangizni qarating.</p>
               </div>
             </div>
-            <button
-              type="button"
-              className="btn-card-action-outline"
-              onClick={() => setIsQrModalOpen(true)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v2M16 20h2a2 2 0 0 0 2-2v-2" />
-              </svg>
-              <span>QR kod generatori &amp; chop etish</span>
-            </button>
+            {isStaff && (
+              <button
+                type="button"
+                className="btn-card-action-outline"
+                onClick={() => setIsQrModalOpen(true)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v2M16 20h2a2 2 0 0 0 2-2v-2" />
+                </svg>
+                <span>QR kod generatori &amp; chop etish</span>
+              </button>
+            )}
           </div>
 
           {/* 2. Manual Table Input */}

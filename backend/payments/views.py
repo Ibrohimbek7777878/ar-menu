@@ -6,14 +6,14 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
 from orders.models import Order
 from .models import Payment
-from .payment_service import create_order_payment, get_payment_status, mark_payment_paid
+from .payment_service import create_order_payment, get_payment_status, mark_payment_paid, mock_payments_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,10 @@ def payment_demo_view(request, order_pk):
     Real API kalitlar bo'lmaganda yoki sinov rejimida
     Professional Payme / Click / UzCard to'lov simulyatori.
     Mijozga to'lov, kassa, oshxona va telegram xabarlar qanday ishlashini 100% real ko'rsatib beradi.
+    Faqat DEMO_MODE / ALLOW_MOCK_PAYMENTS yoqilganda (TZ: R-SEC-06).
     """
+    if not mock_payments_allowed():
+        raise Http404("Demo to'lov o'chirilgan")
     order = get_object_or_404(Order, pk=order_pk)
     method = request.GET.get('method', 'click').lower()
 
@@ -163,7 +166,10 @@ def payment_demo_confirm(request, order_pk):
     Demo to'lovni tasdiqlash:
     Haqiqiy to'lov quvurini (mark_payment_paid) to'liq chaqiradi,
     moliyaga kirim yozadi, stolni yopadi va Telegramga xabar beradi.
+    Avval hech qanday tekshiruvsiz ochiq edi: istalgan kishi istalgan buyurtmani "to'langan" qila olardi.
     """
+    if not mock_payments_allowed():
+        raise Http404("Demo to'lov o'chirilgan")
     order = get_object_or_404(Order, pk=order_pk)
     method = request.POST.get('method', 'click')
     

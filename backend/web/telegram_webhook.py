@@ -11,6 +11,8 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 
 from notifications.models import TelegramSubscriber, BotMessage
+from notifications.webhook_security import is_valid_telegram_webhook
+from web.restaurant_auth import restaurant_staff_required
 from notifications.telegram_bot import send_message, edit_message_text, answer_callback_query
 from notifications.admin_bot import (
     handle_admin_command,
@@ -92,9 +94,21 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None)
     return {"inline_keyboard": keyboard}
 
 
+def _forbidden_webhook():
+    return JsonResponse({'ok': False, 'error': 'invalid secret token'}, status=403)
+
+
 @csrf_exempt
 @require_POST
 def telegram_webhook(request):
+    """Eski umumiy webhook (/telegram/webhook/) — set_telegram_webhook TELEGRAM_BOT_TOKEN bilan o'rnatadi."""
+    if not is_valid_telegram_webhook(request, getattr(settings, 'TELEGRAM_BOT_TOKEN', '')):
+        return _forbidden_webhook()
+    return _handle_telegram_update(request)
+
+
+def _handle_telegram_update(request):
+    """Restoran boti update'ini qayta ishlash (faqat secret tekshirilgandan keyin chaqiriladi)."""
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -268,6 +282,13 @@ def telegram_webhook(request):
 
     elif text_clean.startswith('/order'):
         parts = text_clean.split()
+        if not is_user_admin:
+            # Avval istalgan foydalanuvchi buyurtma raqami bilan mijoz ismi va summasini olardi
+            err_txt = "⛔️ Buyurtma ma'lumotlari faqat biznes egasi va adminlar uchun."
+            send_message(chat_id, err_txt)
+            bot_msg.response = err_txt
+            bot_msg.save(update_fields=['response'])
+            return JsonResponse({'ok': True})
         if len(parts) > 1:
             order_number = parts[1]
             from orders.models import Order
@@ -366,15 +387,16 @@ def telegram_webhook(request):
     return JsonResponse({'ok': True})
 
 
+@restaurant_staff_required(roles=('super_admin',), api=True)
 def telegram_set_chat_id(request):
-    """GET: Barcha obunachilarni ko'rish."""
+    """GET: Barcha obunachilarni ko'rish (faqat platforma admini — bu shaxsiy ma'lumot)."""
     subs = TelegramSubscriber.objects.filter(is_active=True).values('chat_id', 'username', 'first_name')
     return JsonResponse({'subscribers': list(subs)})
 
 
-@csrf_exempt
+@restaurant_staff_required(roles=('super_admin',), api=True)
 def telegram_send_test(request):
-    """POST: {chat_id, text} — test xabar."""
+    """POST: {chat_id, text} — test xabar (faqat platforma admini; avval istalgan kishi bot nomidan yozardi)."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST kerak'}, status=400)
     try:
@@ -393,14 +415,19 @@ def telegram_send_test(request):
 @require_POST
 def restaurant_webhook(request):
     """Mahsulot #1: Restoran 3D Menyu Boti webhooki."""
-    return telegram_webhook(request)
+    from notifications.bots import get_bot_token
+    if not is_valid_telegram_webhook(request, get_bot_token('restaurant')):
+        return _forbidden_webhook()
+    return _handle_telegram_update(request)
 
 
 @csrf_exempt
 @require_POST
 def market_webhook(request):
     """Mahsulot #2: Online Store Guliston (Marketplace) Boti webhooki."""
-    from notifications.bots import send_bot_message
+    from notifications.bots import get_bot_token, send_bot_message
+    if not is_valid_telegram_webhook(request, get_bot_token('market')):
+        return _forbidden_webhook()
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -447,7 +474,9 @@ def market_webhook(request):
 @require_POST
 def studio_webhook(request):
     """Mahsulot #3: 3D Studio & Print Assistant Boti webhooki."""
-    from notifications.bots import send_bot_message
+    from notifications.bots import get_bot_token, send_bot_message
+    if not is_valid_telegram_webhook(request, get_bot_token('studio')):
+        return _forbidden_webhook()
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:

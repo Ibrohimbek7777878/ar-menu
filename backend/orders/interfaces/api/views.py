@@ -2,24 +2,51 @@
 REST API Views for Restaurant Operations.
 Single-request handlers for Guest, Waiter, KDS, and Finance.
 """
+import logging
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from django.utils import timezone
 from orders.models import Order, OrderItem
-from tables_restaurant.models import Table, ServiceCall, Hall
+from tables_restaurant.models import Table, ServiceCall, Hall, TableReservation
+from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
 from finance.models import FinanceTransaction, DebtRecord
 from orders.application.services import RestaurantOrderService
+from orders.interfaces.api.permissions import (
+    RESTAURANT_API_AUTHENTICATION, IsRestaurantManager, IsRestaurantStaff,
+)
+from web.restaurant_auth import is_restaurant_staff, remember_guest_order, staff_shop
+
+logger = logging.getLogger(__name__)
 
 
-class RestaurantOrderCreateView(APIView):
+class RestaurantAPIView(APIView):
+    """
+    Restoran API bazasi: xodim — Django sessiyasi (CSRF bilan) yoki JWT.
+    Standart: faqat xodim. Mehmon endpoint'lari AllowAny ni aniq ko'rsatadi.
+    """
+    authentication_classes = RESTAURANT_API_AUTHENTICATION
+    permission_classes = [IsRestaurantStaff]
+
+    def staff_shop(self):
+        return staff_shop(self.request)
+
+
+class RestaurantOrderCreateView(RestaurantAPIView):
     """
     POST /api/v1/restaurant/orders/
     Bitta so'rov: Buyurtma qabul qilinadi, oshxonaga uzatiladi va stol band qilinadi.
+    Mehmon uchun ochiq; narx va taomlar faqat serverdagi menyudan olinadi.
     """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         try:
-            order = RestaurantOrderService.create_order(request.data)
+            shop = self.staff_shop() if is_restaurant_staff(request.user) else None
+            order = RestaurantOrderService.create_order(request.data, shop=shop)
+            remember_guest_order(request._request, order)
             return Response({
                 'id': order.id,
                 'order_number': order.order_number,
@@ -30,17 +57,20 @@ class RestaurantOrderCreateView(APIView):
                 'status': order.status,
                 'created_at': order.created_at.isoformat(),
             }, status=status.HTTP_201_CREATED)
-        except Exception as e:
+        except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception("Restoran buyurtmasini yaratishda xato")
+            return Response({'error': "Buyurtmani qabul qilib bo'lmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RestaurantOrderListView(APIView):
+class RestaurantOrderListView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/orders/
     Barcha faol va bugungi restoran buyurtmalari (KDS, Waiter va Admin uchun).
     """
     def get(self, request):
-        qs = Order.objects.filter(is_pickup=True).prefetch_related('items', 'table').order_by('-created_at')[:50]
+        qs = Order.objects.filter(shop=self.staff_shop(), is_pickup=True).prefetch_related('items', 'table').order_by('-created_at')[:50]
         data = []
         for o in qs:
             items_list = [{
@@ -72,14 +102,14 @@ class RestaurantOrderListView(APIView):
         return Response(data)
 
 
-class KitchenItemToggleView(APIView):
+class KitchenItemToggleView(RestaurantAPIView):
     """
     POST /api/v1/restaurant/kitchen/items/<int:item_id>/toggle/
     Oshpaz bir taomni tayyor bo'lganini belgilaydi.
     """
     def post(self, request, item_id):
         try:
-            it = OrderItem.objects.get(pk=item_id)
+            it = OrderItem.objects.select_related('order').get(pk=item_id, order__shop=self.staff_shop())
             it.is_done = not it.is_done
             it.save(update_fields=['is_done'])
 
@@ -103,24 +133,26 @@ class KitchenItemToggleView(APIView):
             return Response({'error': "Taom topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
 
-class TableSettleBillView(APIView):
+class TableSettleBillView(RestaurantAPIView):
     """
     POST /api/v1/restaurant/tables/<str:table_number>/settle/
     Bitta so'rov: Stol hisobi yopiladi va Moliya kassasiga avtomatik pul kirim qilinadi!
     """
     def post(self, request, table_number):
         payment_method = request.data.get('payment_method', 'cash')
-        res = RestaurantOrderService.settle_table_bill(table_number, payment_method)
+        res = RestaurantOrderService.settle_table_bill(table_number, payment_method, shop=self.staff_shop())
+        if res.get('status') == 'not_found':
+            return Response(res, status=status.HTTP_404_NOT_FOUND)
         return Response(res)
 
 
-class RestaurantTablesStateView(APIView):
+class RestaurantTablesStateView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/tables/
     Hamma stollarning joriy holati va jonli hisob summasi.
     """
     def get(self, request):
-        tables = Table.objects.select_related('hall').filter(is_active=True).order_by('hall__order', 'id')
+        tables = Table.objects.select_related('hall').filter(shop=self.staff_shop(), is_active=True).order_by('hall__order', 'id')
         data = []
         for t in tables:
             # Stolning ochiq hisobini hisoblash
@@ -141,14 +173,21 @@ class RestaurantTablesStateView(APIView):
         return Response(data)
 
 
-class ServiceCallActionView(APIView):
+class ServiceCallActionView(RestaurantAPIView):
     """
-    GET /api/v1/restaurant/calls/ - Ro'yxat
-    POST /api/v1/restaurant/calls/ - Yangi chaqiruv yaratish
-    PATCH /api/v1/restaurant/calls/<int:call_id>/ - Holatini o'zgartirish (accepted/done)
+    GET /api/v1/restaurant/calls/ - Ro'yxat (xodim)
+    POST /api/v1/restaurant/calls/ - Yangi chaqiruv yaratish (mehmon)
+    PATCH /api/v1/restaurant/calls/<int:call_id>/ - Holatini o'zgartirish (xodim: accepted/done)
     """
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return super().get_permissions()
+
     def get(self, request):
-        calls = ServiceCall.objects.select_related('table', 'table__hall').exclude(status='done').order_by('-created_at')[:30]
+        calls = ServiceCall.objects.select_related('table', 'table__hall').filter(
+            shop=self.staff_shop()
+        ).exclude(status='done').order_by('-created_at')[:30]
         data = [{
             'id': c.id,
             'table_number': c.table.number,
@@ -163,10 +202,12 @@ class ServiceCallActionView(APIView):
     def post(self, request):
         table_num = str(request.data.get('table_number', '01'))
         call_type = request.data.get('type', 'waiter')
-        title = request.data.get('title', 'Ofitsiant chaqiruvi')
+        if call_type not in dict(ServiceCall.TYPE_CHOICES) or call_type == 'dish_ready':
+            call_type = 'waiter'
+        title = str(request.data.get('title') or 'Ofitsiant chaqiruvi')[:255]
 
         shop = RestaurantOrderService.get_or_default_shop()
-        table_obj = Table.objects.filter(number=table_num).first()
+        table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
         if not table_obj:
             return Response({'error': 'Stol topilmadi'}, status=404)
 
@@ -187,7 +228,9 @@ class ServiceCallActionView(APIView):
     def patch(self, request, call_id=None):
         call_id = call_id or request.data.get('call_id')
         new_status = request.data.get('status', 'done')
-        call = ServiceCall.objects.filter(pk=call_id).first()
+        if new_status not in dict(ServiceCall.STATUS_CHOICES):
+            return Response({'error': "Noto'g'ri holat"}, status=400)
+        call = ServiceCall.objects.filter(pk=call_id, shop=self.staff_shop()).first()
         if not call:
             return Response({'error': 'Chaqiruv topilmadi'}, status=404)
         call.status = new_status
@@ -195,14 +238,16 @@ class ServiceCallActionView(APIView):
         return Response({'status': 'updated'})
 
 
-class RestaurantFinanceSyncView(APIView):
+class RestaurantFinanceSyncView(RestaurantAPIView):
     """
-    GET /api/v1/restaurant/finance/ - Kassa va Qarzlar
-    POST /api/v1/restaurant/finance/tx/ - Yangi Kirim/Chiqim
+    GET /api/v1/restaurant/finance/ - Kassa va Qarzlar (faqat restoran rahbariyati)
     """
+    permission_classes = [IsRestaurantManager]
+
     def get(self, request):
-        txs = FinanceTransaction.objects.select_related('category').order_by('-created_at')[:40]
-        debts = DebtRecord.objects.order_by('-created_at')[:30]
+        shop = self.staff_shop()
+        txs = FinanceTransaction.objects.filter(shop=shop).select_related('category').order_by('-created_at')[:40]
+        debts = DebtRecord.objects.filter(shop=shop).order_by('-created_at')[:30]
 
         tx_list = [{
             'id': t.id,
@@ -238,89 +283,131 @@ class RestaurantFinanceSyncView(APIView):
         })
 
 
-class TableAddItemView(APIView):
+class TableAddItemView(RestaurantAPIView):
     """
     POST /api/v1/restaurant/tables/<str:table_number>/add-item/
     Ofitsiant ochiq stolga yangi taom qo'shishi (Atomic).
     """
     def post(self, request, table_number):
         try:
-            res = RestaurantOrderService.add_item_to_table(table_number, request.data)
+            res = RestaurantOrderService.add_item_to_table(table_number, request.data, shop=self.staff_shop())
             return Response(res, status=status.HTTP_201_CREATED)
-        except Exception as e:
+        except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception("Stolga taom qo'shishda xato")
+            return Response({'error': "Taomni qo'shib bo'lmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RestaurantReservationListView(APIView):
+class RestaurantReservationListView(RestaurantAPIView):
     """
-    GET /api/v1/restaurant/reservations/ - Ro'yxat
-    POST /api/v1/restaurant/reservations/ - Yangi bron yaratish
+    GET /api/v1/restaurant/reservations/ - Ro'yxat (xodim)
+    POST /api/v1/restaurant/reservations/ - Yangi bron yaratish (mehmon ham)
     """
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return super().get_permissions()
+
     def get(self, request):
         filters = {
             'date': request.GET.get('date'),
             'status': request.GET.get('status'),
             'q': request.GET.get('q'),
         }
-        res_list = RestaurantOrderService.get_reservations(filters)
+        res_list = RestaurantOrderService.get_reservations(filters, shop=self.staff_shop())
         return Response({'status': 'success', 'reservations': res_list})
 
     def post(self, request):
         try:
-            created = RestaurantOrderService.create_reservation(request.data)
+            by_staff = is_restaurant_staff(request.user)
+            created = RestaurantOrderService.create_reservation(
+                request.data, shop=self.staff_shop() if by_staff else None, by_staff=by_staff,
+            )
             return Response({'status': 'success', 'reservation': created}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RestaurantReservationStatusView(APIView):
+class RestaurantReservationStatusView(RestaurantAPIView):
     """
     PATCH /api/v1/restaurant/reservations/<int:reservation_id>/status/
     Holatni o'zgartirish (arrived, seated, confirmed, cancelled).
     """
     def patch(self, request, reservation_id):
         new_status = request.data.get('status', 'arrived')
-        res = RestaurantOrderService.update_reservation_status(reservation_id, new_status)
+        if new_status == 'arrived':
+            new_status = 'seated'  # frontend 'arrived' yuboradi, modelda 'seated'
+        if new_status not in dict(TableReservation.STATUS_CHOICES):
+            return Response({'error': "Noto'g'ri holat"}, status=status.HTTP_400_BAD_REQUEST)
+        res = RestaurantOrderService.update_reservation_status(reservation_id, new_status, shop=self.staff_shop())
         if res.get('error'):
             return Response(res, status=status.HTTP_404_NOT_FOUND)
         return Response(res)
 
 
-class RestaurantReservationFindView(APIView):
+class RestaurantReservationFindView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/reservations/find/?q=...
-    Bronni kod yoki telefon raqam bo'yicha qidirish.
+    Mehmon o'z bronini aniq kod (GS-XXXX) yoki to'liq telefon bo'yicha topadi.
+    Avval qisman moslik (icontains) bilan begona bronlarning ismi va telefoni chiqardi.
     """
+    permission_classes = [AllowAny]
+
     def get(self, request):
         q = request.GET.get('q', '').strip()
         if not q:
             return Response({'error': "Qidiruv so'zi kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
-        res_list = RestaurantOrderService.get_reservations({'q': q})
-        if res_list:
-            return Response({'status': 'success', 'reservation': res_list[0], 'all_matches': res_list})
-        return Response({'status': 'not_found', 'reservation': None}, status=status.HTTP_404_NOT_FOUND)
+        shop = RestaurantOrderService.get_or_default_shop()
+        res = find_reservation_by_code_or_phone(
+            TableReservation.objects.filter(shop=shop, is_deleted=False).select_related('table', 'hall'), q
+        )
+        if not res:
+            return Response({'status': 'not_found', 'reservation': None}, status=status.HTTP_404_NOT_FOUND)
+        data = {
+            'id': res.id,
+            'code': res.code,
+            'name': mask_name(res.customer_name),
+            'customer_name': mask_name(res.customer_name),
+            'phone': mask_phone(res.customer_phone),
+            'customer_phone': mask_phone(res.customer_phone),
+            'table_number': res.table_number,
+            'hall': res.hall.name if res.hall else (res.table.hall.name if res.table and res.table.hall else 'Asosiy Zal'),
+            'date': str(res.reservation_date),
+            'time': res.reservation_time.strftime('%H:%M') if res.reservation_time else '',
+            'reservation_time': res.reservation_time.strftime('%H:%M') if res.reservation_time else '',
+            'guests_count': res.guests_count,
+            'status': res.status,
+        }
+        return Response({'status': 'success', 'reservation': data, 'all_matches': [data]})
 
 
-class RestaurantProduct3DScanView(APIView):
+class RestaurantProduct3DScanView(RestaurantAPIView):
     """
     POST /api/v1/restaurant/products/3d-scan/ (yangi taom yaratish)
     POST /api/v1/restaurant/products/<int:product_id>/3d-scan/ (mavjud taomga biriktirish)
+    Faqat restoran rahbariyati (avval mehmon ham real mahsulot yarata olardi).
     """
+    permission_classes = [IsRestaurantManager]
+
     def post(self, request, product_id=None):
         try:
-            res = RestaurantOrderService.save_product_3d_scan(request.data, product_id=product_id)
+            res = RestaurantOrderService.save_product_3d_scan(request.data, product_id=product_id, shop=self.staff_shop())
             if res.get('error'):
                 return Response(res, status=status.HTTP_404_NOT_FOUND)
             return Response(res, status=status.HTTP_201_CREATED if not product_id else status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception("3D skanerni saqlashda xato")
+            return Response({'error': "3D ma'lumotni saqlab bo'lmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RestaurantMenuView(APIView):
+class RestaurantMenuView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/menu/
-    Dinamik Menyu va Katalog REST API (Pure SPA fallback).
+    Dinamik Menyu va Katalog REST API (Pure SPA fallback). Mehmon uchun ochiq.
     """
+    permission_classes = [AllowAny]
+
     def get(self, request):
         data = RestaurantOrderService.get_restaurant_menu()
         return Response(data)

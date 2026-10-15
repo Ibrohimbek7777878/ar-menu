@@ -5,6 +5,7 @@ Handles orchestration, atomic transactions, and single-request logic.
 from decimal import Decimal
 from typing import Dict, Any, List
 import datetime
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from orders.models import Order, OrderItem
@@ -25,9 +26,60 @@ class RestaurantOrderService:
             shop = Shop.objects.first()
         return shop
 
+    @staticmethod
+    def service_fee_percent() -> Decimal:
+        """Xizmat haqi foizi sozlamadan (TZ qarori Q2: default 0)."""
+        try:
+            return Decimal(str(getattr(settings, 'RESTAURANT_SERVICE_FEE_PERCENT', '0') or '0'))
+        except Exception:
+            return Decimal('0')
+
+    @classmethod
+    def service_fee_for(cls, subtotal: Decimal) -> Decimal:
+        return (subtotal * cls.service_fee_percent()) / Decimal('100')
+
+    @staticmethod
+    def _parse_quantity(raw) -> int:
+        try:
+            qty = int(raw)
+        except (TypeError, ValueError):
+            raise ValueError("Taom miqdori noto'g'ri")
+        if qty < 1 or qty > 100:
+            raise ValueError("Taom miqdori 1 dan 100 gacha bo'lishi kerak")
+        return qty
+
+    @classmethod
+    def resolve_menu_item(cls, shop: Shop, item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Narx va nom FAQAT serverdagi mahsulotdan olinadi (TZ: R-SEC-07).
+        Mijoz yuborgan 'price' e'tiborsiz qoldiriladi; boshqa do'kon yoki o'chirilgan mahsulot rad etiladi.
+        """
+        if not isinstance(item, dict):
+            raise ValueError("Noto'g'ri taom ma'lumoti")
+        product_id = item.get('product_id') or item.get('id')
+        try:
+            product_id = int(product_id)
+        except (TypeError, ValueError):
+            raise ValueError("Taom menyuda topilmadi")
+        product = Product.objects.filter(
+            pk=product_id, shop=shop, is_available=True, is_deleted=False
+        ).first()
+        if not product:
+            raise ValueError("Taom menyuda topilmadi yoki hozir mavjud emas")
+        qty = cls._parse_quantity(item.get('quantity', 1))
+        return {
+            'product': product,
+            'name': product.name,
+            'price': product.price,
+            'quantity': qty,
+            'unit': product.unit or 'dona',
+            'course': str(item.get('course') or '2-taom')[:20],
+            'notes': str(item.get('notes') or '')[:255],
+        }
+
     @classmethod
     @transaction.atomic
-    def create_order(cls, payload: Dict[str, Any]) -> Order:
+    def create_order(cls, payload: Dict[str, Any], shop: Shop = None) -> Order:
         """
         Bitta so'rov bilan buyurtma yaratish:
         1. Buyurtmani bazaga yozadi.
@@ -35,31 +87,27 @@ class RestaurantOrderService:
         3. Stol statusini 'occupied' (band) ga o'tkazadi.
         """
         table_num = str(payload.get('table_number', '01'))
-        customer_name = payload.get('customer_name', 'Mehmon')
-        customer_phone = payload.get('phone', '')
-        notes = payload.get('notes', '')
+        customer_name = str(payload.get('customer_name') or 'Mehmon')[:120]
+        customer_phone = str(payload.get('phone') or '')[:20]
+        notes = str(payload.get('notes') or '')[:1000]
         items_data = payload.get('items', [])
-        
-        shop = cls.get_or_default_shop()
 
-        # Stolni topish va band qilish
-        table_obj = Table.objects.filter(shop=shop, number=table_num).first()
-        if not table_obj:
-            table_obj = Table.objects.filter(number=table_num).first()
+        shop = shop or cls.get_or_default_shop()
+
+        # Narxlar serverdan; bo'sh yoki noma'lum taomli buyurtma qabul qilinmaydi
+        if not isinstance(items_data, list) or not items_data:
+            raise ValueError("Buyurtmada taom yo'q")
+        resolved_items = [cls.resolve_menu_item(shop, it) for it in items_data]
+
+        # Stol faqat shu restoranning o'zidan (boshqa restoranning shu raqamli stoli emas)
+        table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
 
         # Buyurtma raqamini generatsiya qilish
         order_count = Order.objects.count() + 101
         order_number = f"#{order_count}"
 
-        # Summalarni hisoblash
-        subtotal = Decimal('0')
-        for it in items_data:
-            p = Decimal(str(it.get('price', 0)))
-            q = int(it.get('quantity', 1))
-            subtotal += (p * q)
-
-        # 10% xizmat haqi
-        service_fee = (subtotal * Decimal('10')) / Decimal('100')
+        subtotal = sum((it['price'] * it['quantity'] for it in resolved_items), Decimal('0'))
+        service_fee = cls.service_fee_for(subtotal)
         final_amount = subtotal + service_fee
 
         order = Order.objects.create(
@@ -78,19 +126,17 @@ class RestaurantOrderService:
             is_pickup=True,
         )
 
-        for it in items_data:
-            price = Decimal(str(it.get('price', 0)))
-            qty = int(it.get('quantity', 1))
+        for it in resolved_items:
             OrderItem.objects.create(
                 order=order,
-                product_id=it.get('product_id') or None,
-                product_name=it.get('name', 'Nomsiz taom'),
-                price=price,
-                quantity=qty,
-                unit=it.get('unit', 'dona'),
-                total=price * qty,
-                course=it.get('course', '2-taom'),
-                notes=it.get('notes', ''),
+                product=it['product'],
+                product_name=it['name'],
+                price=it['price'],
+                quantity=it['quantity'],
+                unit=it['unit'],
+                total=it['price'] * it['quantity'],
+                course=it['course'],
+                notes=it['notes'],
                 is_done=False
             )
 
@@ -103,22 +149,34 @@ class RestaurantOrderService:
 
     @classmethod
     @transaction.atomic
-    def settle_table_bill(cls, table_number: str, payment_method: str = 'cash') -> Dict[str, Any]:
+    def settle_table_bill(cls, table_number: str, payment_method: str = 'cash', shop: Shop = None) -> Dict[str, Any]:
         """
         Bitta so'rov bilan stol hisobini yopish (Atomic Single-Request):
         1. Stolga tegishli barcha ochiq buyurtmalarni 'paid' qiladi.
         2. Stolni 'free' holatga qaytaradi.
         3. Stoldan tushgan summani Moliya (FinanceTransaction) kassasiga avtomatik KIRIM qiladi!
         4. Ochiq chaqiruvlarni yopadi.
-        """
-        shop = cls.get_or_default_shop()
-        table_obj = Table.objects.filter(number=table_number).first()
 
-        # Ochiq buyurtmalarni topish
-        unpaid_orders = Order.objects.filter(
-            table__number=table_number,
-            payment_status__in=['unpaid', 'pending']
-        )
+        TZ R-WTR-04: avval buyurtmalar faqat stol RAQAMI bo'yicha tanlanardi — "5-stol" yopilsa
+        platformadagi BARCHA restoranlarning 5-stollari (bekor qilinganlari ham) "to'landi" bo'lardi.
+        Endi: faqat shu restoran, faqat shu stol, bekor qilinmagan buyurtmalar, qator qulfi bilan.
+        """
+        shop = shop or cls.get_or_default_shop()
+        if payment_method not in dict(FinanceTransaction.PAYMENT_CHOICES):
+            payment_method = 'cash'
+        table_obj = Table.objects.filter(shop=shop, number=str(table_number), is_active=True).first()
+        if not table_obj:
+            return {
+                'table_number': table_number, 'total_settled': 0.0, 'payment_method': payment_method,
+                'orders_closed': [], 'status': 'not_found', 'error': 'Stol topilmadi',
+            }
+
+        # Ochiq buyurtmalarni topish (parallel yopishda ikki marta hisoblanmasligi uchun qulf)
+        unpaid_orders = Order.objects.select_for_update().filter(
+            shop=shop,
+            table=table_obj,
+            payment_status__in=['unpaid', 'pending'],
+        ).exclude(status__in=['cancelled', 'failed'])
 
         total_settled = Decimal('0')
         order_numbers = []
@@ -129,10 +187,6 @@ class RestaurantOrderService:
             ord_obj.payment_status = 'paid'
             ord_obj.status = 'delivered'
             ord_obj.save(update_fields=['payment_status', 'status'])
-
-        # Agar buyurtma topilmasa lekin stol belgilangan bo'lsa
-        if total_settled == 0 and unpaid_orders.exists():
-            total_settled = sum((o.total_amount for o in unpaid_orders), Decimal('0'))
 
         # Moliya (FinanceTransaction) kassasiga avtomatik kirim yozish
         if total_settled > 0:
@@ -154,12 +208,11 @@ class RestaurantOrderService:
             )
 
         # Stolni bo'shatish
-        if table_obj:
-            table_obj.status = 'free'
-            table_obj.save(update_fields=['status'])
+        table_obj.status = 'free'
+        table_obj.save(update_fields=['status'])
 
-        # Chaqiruvlarni yopish
-        ServiceCall.objects.filter(table__number=table_number, status__in=['pending', 'accepted']).update(status='done')
+        # Chaqiruvlarni yopish (faqat shu stol)
+        ServiceCall.objects.filter(table=table_obj, status__in=['pending', 'accepted']).update(status='done')
 
         return {
             'table_number': table_number,
@@ -171,7 +224,7 @@ class RestaurantOrderService:
 
     @classmethod
     @transaction.atomic
-    def add_item_to_table(cls, table_number: str, item_data: Dict[str, Any]) -> Dict[str, Any]:
+    def add_item_to_table(cls, table_number: str, item_data: Dict[str, Any], shop: Shop = None) -> Dict[str, Any]:
         """
         4-Modul: Ofitsiant ochiq stolga yangi taom qo'shishi:
         1. Mavjud ochiq to'lanmagan buyurtmani topadi yoki yangi buyurtma ochadi.
@@ -179,29 +232,32 @@ class RestaurantOrderService:
         3. Stol statusini 'occupied' qilib yangilaydi.
         """
         table_num = str(table_number)
-        shop = cls.get_or_default_shop()
+        shop = shop or cls.get_or_default_shop()
 
-        table_obj = Table.objects.filter(shop=shop, number=table_num).first()
+        table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
         if not table_obj:
-            table_obj = Table.objects.filter(number=table_num).first()
+            raise ValueError("Stol topilmadi")
 
-        active_order = Order.objects.filter(
-            table__number=table_num,
-            payment_status__in=['unpaid', 'pending']
-        ).order_by('-created_at').first()
+        active_order = Order.objects.select_for_update().filter(
+            shop=shop,
+            table=table_obj,
+            payment_status__in=['unpaid', 'pending'],
+        ).exclude(status__in=['cancelled', 'failed']).order_by('-created_at').first()
 
-        item_name = item_data.get('name', 'Taom')
-        price = Decimal(str(item_data.get('price', 0)))
-        qty = int(item_data.get('quantity', 1))
-        course = item_data.get('course', '2-taom')
-        notes = item_data.get('notes', '')
-        product_id = item_data.get('product_id') or None
+        # Narx va nom serverdagi mahsulotdan (TZ: R-SEC-07)
+        item = cls.resolve_menu_item(shop, item_data)
+        item_name = item['name']
+        price = item['price']
+        qty = item['quantity']
+        course = item['course']
+        notes = item['notes']
+        product_id = item['product'].pk
 
         if not active_order:
             order_count = Order.objects.count() + 101
             order_number = f"#{order_count}"
             subtotal = price * qty
-            service_fee = (subtotal * Decimal('10')) / Decimal('100')
+            service_fee = cls.service_fee_for(subtotal)
             active_order = Order.objects.create(
                 order_number=order_number,
                 customer_name='Ofitsiant buyurtmasi',
@@ -217,7 +273,7 @@ class RestaurantOrderService:
         else:
             subtotal_add = price * qty
             active_order.total_amount += subtotal_add
-            service_fee_add = (subtotal_add * Decimal('10')) / Decimal('100')
+            service_fee_add = cls.service_fee_for(subtotal_add)
             active_order.final_amount += (subtotal_add + service_fee_add)
             active_order.save(update_fields=['total_amount', 'final_amount', 'updated_at'])
 
@@ -259,12 +315,13 @@ class RestaurantOrderService:
         }
 
     @classmethod
-    def get_reservations(cls, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    def get_reservations(cls, filters: Dict[str, Any] = None, shop: Shop = None) -> List[Dict[str, Any]]:
         """
-        1-Modul: Hostess va Mehmon uchun stol band qilish ro'yxati.
+        1-Modul: Hostess uchun stol band qilish ro'yxati (faqat o'z restorani).
         """
         filters = filters or {}
-        qs = TableReservation.objects.select_related('table', 'hall', 'shop').filter(is_deleted=False)
+        shop = shop or cls.get_or_default_shop()
+        qs = TableReservation.objects.select_related('table', 'hall', 'shop').filter(shop=shop, is_deleted=False)
 
         date_val = filters.get('date')
         if date_val == 'today':
@@ -308,17 +365,16 @@ class RestaurantOrderService:
 
     @classmethod
     @transaction.atomic
-    def create_reservation(cls, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def create_reservation(cls, payload: Dict[str, Any], shop: Shop = None, by_staff: bool = False) -> Dict[str, Any]:
         """
-        1-Modul: Yangi stol band qilish (Reservation)
+        1-Modul: Yangi stol band qilish (Reservation).
+        Mehmon yaratgan bron doim 'pending' — statusni faqat xodim belgilaydi.
         """
-        shop = cls.get_or_default_shop()
+        shop = shop or cls.get_or_default_shop()
         table_num = str(payload.get('table_number', '')).strip()
         table_obj = None
         if table_num:
             table_obj = Table.objects.filter(shop=shop, number=table_num).first()
-            if not table_obj:
-                table_obj = Table.objects.filter(number=table_num).first()
 
         hall_name = payload.get('hall_name') or payload.get('hall')
         hall_obj = None
@@ -354,7 +410,11 @@ class RestaurantOrderService:
             reservation_date=parsed_date,
             reservation_time=parsed_time,
             notes=payload.get('notes', ''),
-            status=payload.get('status', 'pending')
+            status=(
+                payload.get('status')
+                if by_staff and payload.get('status') in dict(TableReservation.STATUS_CHOICES)
+                else 'pending'
+            )
         )
 
         OutboxService.log_event(
@@ -386,11 +446,12 @@ class RestaurantOrderService:
 
     @classmethod
     @transaction.atomic
-    def update_reservation_status(cls, reservation_id: int, new_status: str) -> Dict[str, Any]:
+    def update_reservation_status(cls, reservation_id: int, new_status: str, shop: Shop = None) -> Dict[str, Any]:
         """
         1-Modul: Bron holatini o'zgartirish (arrived, seated, confirmed, cancelled).
         """
-        res = TableReservation.objects.filter(pk=reservation_id).first()
+        shop = shop or cls.get_or_default_shop()
+        res = TableReservation.objects.filter(pk=reservation_id, shop=shop).first()
         if not res:
             return {'error': 'Bron topilmadi', 'status': 'failed'}
 
@@ -416,16 +477,16 @@ class RestaurantOrderService:
 
     @classmethod
     @transaction.atomic
-    def save_product_3d_scan(cls, payload: Dict[str, Any], product_id: int = None) -> Dict[str, Any]:
+    def save_product_3d_scan(cls, payload: Dict[str, Any], product_id: int = None, shop: Shop = None) -> Dict[str, Any]:
         """
-        2-Modul: 3D Fotogrammetriya va 360 Spin Frame ma'lumotlarini saqlash.
+        2-Modul: 3D Fotogrammetriya va 360 Spin Frame ma'lumotlarini saqlash (faqat o'z restorani mahsuloti).
         """
-        shop = cls.get_or_default_shop()
+        shop = shop or cls.get_or_default_shop()
         spin_frames = payload.get('spin_frames') or []
         ar_model = payload.get('ar_model') or '/models/plov.glb'
 
         if product_id:
-            product = Product.objects.filter(pk=product_id).first()
+            product = Product.objects.filter(pk=product_id, shop=shop).first()
             if not product:
                 return {'error': 'Mahsulot topilmadi', 'status': 'failed'}
         else:
