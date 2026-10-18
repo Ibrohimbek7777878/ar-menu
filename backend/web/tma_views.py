@@ -110,20 +110,32 @@ def _get_tma_table(request):
     return table, table_token
 
 
+def _model_status(product):
+    """Taom rasmidan 3D holati: none | queued | processing | ready | failed."""
+    from django.core.exceptions import ObjectDoesNotExist
+    try:
+        return product.model3d.status or 'none'
+    except ObjectDoesNotExist:
+        return 'none'
+
+
 def tma_home(request):
     """Telegram Mini App Bosh Sahifasi — faqat restoran 3D menyusi."""
     table, table_token = _get_tma_table(request)
     from notifications.admin_bot import get_restaurant_shop
     active_shop = table.shop if (table and table.shop) else get_restaurant_shop()
 
-    prod_qs = Product.objects.filter(is_available=True)
+    # Faqat shu restoranning arxivlanmagan taomlari (avval o'chirilganlar ham chiqar, menyu 35 taomda kesilardi)
+    prod_qs = Product.objects.filter(is_available=True, is_deleted=False)
     if active_shop:
         prod_qs = prod_qs.filter(shop=active_shop)
-        categories = Category.objects.filter(products__shop=active_shop, is_active=True).distinct().order_by('sort_order', 'name')
+        categories = Category.objects.filter(
+            products__shop=active_shop, products__is_deleted=False, is_active=True,
+        ).distinct().order_by('sort_order', 'name')
     else:
         categories = Category.objects.filter(is_active=True).order_by('sort_order')[:12]
 
-    featured_products = list(prod_qs.select_related('shop', 'category').order_by('id')[:35])
+    featured_products = list(prod_qs.select_related('shop', 'category', 'model3d').order_by('id')[:300])
     ar_products = [p for p in featured_products if p.has_3d][:12]
 
     # Menyu toifalari bo'yicha guruhlash (menyuuu uslubidagi klassik ro'yxat uchun)
@@ -152,20 +164,24 @@ def tma_home(request):
             'image': p.image.url if p.image else '',
             'category_id': p.category_id,
             'category_name': p.category.name if p.category else '',
-            'has_3d': bool(p.has_3d),
+            'has_3d': bool(p.has_3d and p.ar_model),
             'ar_model': p.ar_model or '',
+            'model_status': _model_status(p),
             'unit': p.unit or 'dona',
             'is_halal': bool(p.is_halal),
             'is_popular': bool(p.is_featured),
         })
 
+    # Kategoriya sonlari — faqat shu menyudagi taomlar bo'yicha (avval barcha do'konlar bo'yicha, har biri alohida so'rov)
+    from collections import Counter
+    cat_counts = Counter(p.category_id for p in featured_products)
     react_categories = []
     for c in categories:
         react_categories.append({
             'id': c.id,
             'name': c.name,
             'icon': getattr(c, 'icon', '') or '🍽️',
-            'count': c.products.filter(is_available=True).count() if hasattr(c, 'products') else None,
+            'count': cat_counts.get(c.id, 0),
         })
 
     flat_cart = {}

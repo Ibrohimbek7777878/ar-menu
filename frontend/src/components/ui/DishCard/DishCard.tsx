@@ -87,6 +87,9 @@ export const DishCard: React.FC<DishCardProps> = ({
               <span>360°</span>
             </span>
           )}
+          {!product.has_3d && (product.model_status === 'queued' || product.model_status === 'processing') && (
+            <span className="badge-tag-clean" title="Taom rasmidan 3D ko'rinish tayyorlanmoqda">3D tayyorlanmoqda…</span>
+          )}
           {product.is_popular && (
             <span className="badge-tag-clean tag-popular">Tavsiya</span>
           )}

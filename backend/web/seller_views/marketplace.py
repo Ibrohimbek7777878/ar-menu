@@ -710,6 +710,10 @@ def seller_product_edit(request, pk):
             if uploaded:
                 setattr(product, field, uploaded)
         product.save()
+        if request.FILES.get('image'):
+            from ar3d.pipeline import on_product_image_saved
+            if on_product_image_saved(product):
+                messages.info(request, "🧊 Yangi rasm bo'yicha 3D model qayta tayyorlanmoqda.")
         messages.success(request, f"'{product.name}' saqlandi.")
         return redirect('seller_products_web')
     from products.models import PRODUCT_DESIGN_TEMPLATES
@@ -800,11 +804,16 @@ def seller_product_create(request):
             if uploaded:
                 setattr(product, field, uploaded)
         product.save()
-        # 3D model kutubxonadan avtomatik qidirish
-        from ar3d.services import auto_attach_library_3d
-        ok, matched = auto_attach_library_3d(product)
-        if ok and matched:
-            messages.info(request, f"⚡ '{product.name}' uchun 3D model kutubxonadan avtomatik biriktirildi ({matched.name_uz}).")
+        # 3D: taomning o'z rasmidan, fon navbatida (TZ_LOKAL_RASMDAN_3D_MENYU). Kutubxonadan nom bo'yicha
+        # umumiy model qo'yish — faqat RESTAURANT_3D_LIBRARY_AUTO yoqilganda.
+        from ar3d.pipeline import on_product_image_saved
+        if product.image and on_product_image_saved(product):
+            messages.info(request, f"🧊 '{product.name}' uchun 3D model tayyorlanmoqda — odatda bir daqiqa ichida menyuda paydo bo'ladi.")
+        elif getattr(settings, 'RESTAURANT_3D_LIBRARY_AUTO', False):
+            from ar3d.services import auto_attach_library_3d
+            ok, matched = auto_attach_library_3d(product, fallback_to_image=False)
+            if ok and matched:
+                messages.info(request, f"⚡ '{product.name}' uchun 3D model kutubxonadan avtomatik biriktirildi ({matched.name_uz}).")
         messages.success(request, f"'{product.name}' qo'shildi.")
         return redirect('seller_products_web')
     return render(request, 'seller/product_form.html', {'product': None, 'categories': categories, 'design_templates': PRODUCT_DESIGN_TEMPLATES})
@@ -931,11 +940,12 @@ def seller_products_import_csv(request):
                 unit=unit or 'dona',
                 is_available=True
             )
-            # Avtomatik 3D kutubxonadan qidirish
-            try:
-                auto_attach_library_3d(product)
-            except Exception:
-                pass
+            # Kutubxonadan nom bo'yicha umumiy model — faqat flag yoqilganda (rasm yo'q, taxmin noto'g'ri bo'lishi mumkin)
+            if getattr(settings, 'RESTAURANT_3D_LIBRARY_AUTO', False):
+                try:
+                    auto_attach_library_3d(product, fallback_to_image=False)
+                except Exception:
+                    pass
 
             imported_count += 1
 
@@ -1166,28 +1176,42 @@ def seller_product_delete(request, pk):
 
 
 @seller_required
-def seller_product_ai3d(request, pk):
-    """Mahsulot rasmidan 3D model yaratish."""
+def seller_product_3d_status(request, pk):
+    """Taom 3D holati (forma sahifasi navbatdagi modelni kuzatishi uchun)."""
+    from django.http import JsonResponse
     from products.models import Product
-    from ar3d.services import auto_attach_library_3d
+    from ar3d.models import Product3DModel
+    product = get_object_or_404(Product, pk=pk, shop=request.tenant_shop)
+    job = Product3DModel.objects.filter(product=product).first()
+    return JsonResponse({
+        'status': job.status if job else 'none',
+        'error': job.error_msg if job else '',
+        'ar_model': product.ar_model or '',
+    })
+
+
+@seller_required
+@require_POST
+def seller_product_ai3d(request, pk):
+    """Taom rasmidan 3D model yaratish — fon navbatiga qo'yiladi (sahifa kutib qotmaydi)."""
+    from products.models import Product
     product = get_object_or_404(Product, pk=pk, shop=request.tenant_shop)
 
-    # 1. Avval tayyor 3D kutubxonadan qidirish
-    ok, matched = auto_attach_library_3d(product, force=True)
-    if ok and matched:
-        messages.success(request, f"⚡ 3D model kutubxonadan topildi: {matched.name_uz}")
-        return redirect('seller_product_edit_web', pk=pk)
+    # Kutubxonadan umumiy model — faqat flag yoqilganda (avval doim birinchi navbatda qo'yilardi)
+    if getattr(settings, 'RESTAURANT_3D_LIBRARY_AUTO', False):
+        from ar3d.services import auto_attach_library_3d
+        ok, matched = auto_attach_library_3d(product, force=True, fallback_to_image=False)
+        if ok and matched:
+            messages.success(request, f"⚡ 3D model kutubxonadan topildi: {matched.name_uz}")
+            return redirect('seller_product_edit_web', pk=pk)
 
     if not product.image:
-        messages.error(request, "Avval mahsulotga rasm yuklang — 3D model shu rasmdan yaratiladi.")
+        messages.error(request, "Avval taomga rasm yuklang — 3D model shu rasmdan yaratiladi.")
         return redirect('seller_product_edit_web', pk=pk)
 
-    from ar3d.generator import create_3d_for_product
-    success, result = create_3d_for_product(product)
-    if success:
-        messages.success(request, f"✅ 3D model yaratildi!")
-    else:
-        messages.error(request, f"❌ 3D model yaratilmadi: {result}")
+    from ar3d.pipeline import queue_3d_generation
+    queue_3d_generation(product, force=True)
+    messages.success(request, "🧊 3D model navbatga qo'yildi — odatda bir daqiqa ichida tayyor bo'ladi.")
     return redirect('seller_product_edit_web', pk=pk)
 
 

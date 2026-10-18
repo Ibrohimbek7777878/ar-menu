@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Product } from '../../../types/dish';
 import './Modal3D.css';
 
@@ -25,11 +25,24 @@ export const Modal3D: React.FC<Modal3DProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // GLB yuklanmasa (fayl yo'q / buzilgan) — 3D o'rniga rasm ko'rsatiladi (TZ R-3D-03)
+  const viewerRef = useRef<HTMLElement | null>(null);
+  const [failedModelUrl, setFailedModelUrl] = useState<string | null>(null);
+  const currentModelUrl = product?.ar_model || '';
+  useEffect(() => {
+    const el = viewerRef.current;
+    if (!el || !currentModelUrl) return;
+    const onError = () => setFailedModelUrl(currentModelUrl);
+    el.addEventListener('error', onError);
+    return () => el.removeEventListener('error', onError);
+  }, [isOpen, currentModelUrl]);
+
   if (!isOpen || !product) return null;
 
   const formattedPrice = new Intl.NumberFormat('uz-UZ').format(product.price);
-  const hasValid3D = Boolean(product.has_3d && product.ar_model);
   const modelUrl = product.ar_model || '';
+  const modelFailed = Boolean(modelUrl) && failedModelUrl === modelUrl;
+  const hasValid3D = Boolean(product.has_3d && modelUrl) && !modelFailed;
 
   const handleARClick = () => {
     const viewer = document.getElementById('reactModelViewer') as any;
@@ -61,9 +74,11 @@ export const Modal3D: React.FC<Modal3DProps> = ({
               {/* @ts-ignore */}
               <model-viewer
                 id="reactModelViewer"
+                ref={viewerRef}
                 src={modelUrl}
                 poster={product.image || ''}
                 alt={product.name}
+                camera-orbit="0deg 55deg auto"
                 auto-rotate
                 rotation-per-second="25deg"
                 camera-controls
@@ -83,13 +98,23 @@ export const Modal3D: React.FC<Modal3DProps> = ({
             </>
           ) : (
             <div className="modal-2d-fallback" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9F8F6', position: 'relative' }}>
-              <img
-                src={product.image || '/media/dish/plov.jpg'}
-                alt={product.name}
-                style={{ maxWidth: '90%', maxHeight: '85%', objectFit: 'contain', borderRadius: '16px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.08))' }}
-              />
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  style={{ maxWidth: '90%', maxHeight: '85%', objectFit: 'contain', borderRadius: '16px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.08))' }}
+                />
+              ) : (
+                <span style={{ color: '#9CA3AF', fontSize: '15px' }}>Rasm hali qo'yilmagan</span>
+              )}
               <span className="modal-3d-tip" style={{ background: 'rgba(255,255,255,0.92)', color: '#374151' }}>
-                <span>📸 Real Fotosurat ko'rinishi</span>
+                <span>
+                  {modelFailed
+                    ? "3D model yuklanmadi — rasm ko'rsatilmoqda"
+                    : product.model_status === 'queued' || product.model_status === 'processing'
+                      ? '3D ko\'rinish tayyorlanmoqda…'
+                      : "📸 Real Fotosurat ko'rinishi"}
+                </span>
               </span>
             </div>
           )}

@@ -409,12 +409,51 @@
                         </div>
 
                         {% if product %}
+                        <div class="mt-3 pt-3 border-t border-purple-200/60 text-xs">
+                            <div id="model3dStatus" data-url="{% url 'seller_product_3d_status_web' product.pk %}" data-status="{{ product.model3d.status }}">
+                                <span class="font-semibold text-gray-700">3D holati:</span>
+                                <span id="model3dStatusText">
+                                {% with st=product.model3d.status %}
+                                {% if st == 'ready' %}✓ Tayyor
+                                {% elif st == 'queued' %}⏳ Navbatda
+                                {% elif st == 'processing' %}⚙️ Tayyorlanmoqda…
+                                {% elif st == 'failed' %}✗ Xato: {{ product.model3d.error_msg }}
+                                {% else %}Hali yaratilmagan{% endif %}
+                                {% endwith %}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mt-1">Eng yaxshi natija: taomni <b>ustidan</b>, yorug' joyda, toza fonda suratga oling.</p>
+                        </div>
                         <div class="mt-3 pt-2">
                             <button type="submit" formaction="{% url 'seller_product_ai3d_web' product.pk %}" formmethod="post" class="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white border-none rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                AI bilan 3D yaratish
+                                Rasmdan 3D yaratish
                             </button>
                         </div>
+                        <script>
+                        (function () {
+                            // Navbatdagi 3D tayyor bo'lguncha holatni har 4 soniyada yangilash (forma qayta yuklanmaydi)
+                            var box = document.getElementById('model3dStatus');
+                            if (!box) return;
+                            var labels = {ready: '✓ Tayyor', queued: '⏳ Navbatda', processing: '⚙️ Tayyorlanmoqda…', failed: '✗ Xato', none: 'Hali yaratilmagan'};
+                            function poll() {
+                                var st = box.getAttribute('data-status');
+                                if (st !== 'queued' && st !== 'processing') return;
+                                fetch(box.getAttribute('data-url'), {credentials: 'same-origin'})
+                                    .then(function (r) { return r.ok ? r.json() : null; })
+                                    .then(function (d) {
+                                        if (!d) return;
+                                        box.setAttribute('data-status', d.status);
+                                        var text = labels[d.status] || d.status;
+                                        if (d.status === 'failed' && d.error) text += ': ' + d.error;
+                                        document.getElementById('model3dStatusText').textContent = text;
+                                        setTimeout(poll, 4000);
+                                    })
+                                    .catch(function () { setTimeout(poll, 8000); });
+                            }
+                            setTimeout(poll, 4000);
+                        })();
+                        </script>
                         {% endif %}
                     </div>
                 </div>

@@ -122,6 +122,17 @@ ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 
 
 # Restoran xizmat haqi foizi (TZ qarori Q2: xizmat haqi olinmaydi → 0). Kerak bo'lsa .env orqali yoqiladi.
 RESTAURANT_SERVICE_FEE_PERCENT = os.environ.get('RESTAURANT_SERVICE_FEE_PERCENT', '0')
+# Mehmon menyusi ko'rsatadigan asosiy restoran slug'i (admin paneldagi AppSetting 'restaurant_default_shop' ustun turadi)
+RESTAURANT_DEFAULT_SHOP = os.environ.get('RESTAURANT_DEFAULT_SHOP', '')
+
+# Taom rasmidan 3D (TZ_LOKAL_RASMDAN_3D_MENYU). 'relief' — AI'siz, lokal, bepul (standart).
+RESTAURANT_3D_PROVIDER = os.environ.get('RESTAURANT_3D_PROVIDER', 'relief')
+# Rasm yuklanganda 3D avtomatik navbatga qo'yilsin (fon ishchisi: python manage.py run_3d_worker)
+RESTAURANT_3D_AUTO_GENERATE = os.environ.get('RESTAURANT_3D_AUTO_GENERATE', 'True').lower() == 'true'
+# Eski xatti-harakatlar (o'chirilmagan, flag ortida): kutubxonadan nom bo'yicha umumiy model va
+# mos model bo'lmasa ham "zaxira" model qo'yish. Mijozni chalg'itmasligi uchun standart — o'chiq.
+RESTAURANT_3D_LIBRARY_AUTO = os.environ.get('RESTAURANT_3D_LIBRARY_AUTO', 'False').lower() == 'true'
+RESTAURANT_3D_GENERIC_FALLBACK = os.environ.get('RESTAURANT_3D_GENERIC_FALLBACK', 'False').lower() == 'true'
 
 # Testlar tashqi tarmoqqa (Telegram, AI, to'lovlar) chiqmasligi uchun
 TEST_RUNNER = 'backend.test_runner.NoNetworkDiscoverRunner'

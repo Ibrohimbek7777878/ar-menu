@@ -81,6 +81,14 @@ def is_admin(chat_id, username=''):
     return False
 
 
+def default_restaurant_slug():
+    """Mehmon menyusi ko'rsatadigan asosiy restoran (bo'sh bo'lsa — eski xatti-harakat)."""
+    from django.conf import settings as dj_settings
+    from notifications.models import AppSetting
+    row = AppSetting.objects.filter(key='restaurant_default_shop').first()
+    return ((row.value if row else '') or getattr(dj_settings, 'RESTAURANT_DEFAULT_SHOP', '') or '').strip()
+
+
 def get_restaurant_shop(shop_id=None, order=None, table=None):
     """
     Restoran stollariga ega bo'lgan aniq do'konni topish.
@@ -92,6 +100,13 @@ def get_restaurant_shop(shop_id=None, order=None, table=None):
         return table.shop
     if shop_id:
         s = Shop.objects.filter(id=shop_id).first()
+        if s:
+            return s
+    # Admin tanlagan asosiy restoran (AppSetting 'restaurant_default_shop' = slug, admin paneldan o'zgaradi;
+    # yoki .env RESTAURANT_DEFAULT_SHOP). Avval doim "stollari bor birinchi do'kon" olinardi.
+    default_slug = default_restaurant_slug()
+    if default_slug:
+        s = Shop.objects.filter(slug=default_slug).first()
         if s:
             return s
     # Stollari bor do'konni qidirish

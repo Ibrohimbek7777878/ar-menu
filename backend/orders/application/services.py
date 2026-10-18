@@ -21,9 +21,11 @@ from notifications.outbox import OutboxService
 class RestaurantOrderService:
     @staticmethod
     def get_or_default_shop() -> Shop:
-        shop = Shop.objects.filter(is_open=True).first()
+        """Mehmon menyusi bilan bir xil restoran (avval "birinchi ochiq do'kon" — boshqa restoran bo'lishi mumkin edi)."""
+        from notifications.admin_bot import get_restaurant_shop
+        shop = get_restaurant_shop()
         if not shop:
-            shop = Shop.objects.first()
+            shop = Shop.objects.filter(is_open=True).first() or Shop.objects.first()
         return shop
 
     @staticmethod
@@ -557,15 +559,18 @@ class RestaurantOrderService:
         3-Modul: Dinamik Menyu va Katalog REST API (Pure SPA fallback).
         """
         shop = cls.get_or_default_shop()
-        categories = Category.objects.filter(is_active=True).order_by('sort_order', 'id')
+        # Faqat shu restoranning taomlari (avval barcha do'konlar mahsulotlari aralashardi — TZ R-GST-07)
         products = Product.objects.filter(
-            is_available=True,
-            is_deleted=False
-        ).select_related('category', 'shop').order_by('category__sort_order', '-is_featured', 'name')
+            shop=shop, is_available=True, is_deleted=False,
+        ).select_related('category', 'shop', 'model3d').order_by('category__sort_order', '-is_featured', 'name')
+        products = list(products)
+        from collections import Counter
+        cat_counts = Counter(p.category_id for p in products)
+        categories = Category.objects.filter(id__in=cat_counts.keys(), is_active=True).order_by('sort_order', 'id')
 
         cat_data = []
         for c in categories:
-            count = products.filter(category=c).count()
+            count = cat_counts.get(c.id, 0)
             cat_data.append({
                 'id': c.id,
                 'name': c.name,
@@ -584,9 +589,11 @@ class RestaurantOrderService:
                 'old_price': float(p.old_price) if p.old_price else None,
                 'category_id': p.category_id,
                 'category_name': p.category.name if p.category else 'Boshqa',
-                'image': p.image.url if p.image else '/media/dish/plov.jpg',
-                'has_3d': p.has_3d,
-                'ar_model': p.ar_model or '/models/plov.glb',
+                # Rasm yoki 3D yo'q bo'lsa — bo'sh (avval osh rasmi va plov.glb qo'yilardi: boshqa taom ko'rsatilardi)
+                'image': p.image.url if p.image else '',
+                'has_3d': bool(p.has_3d and p.ar_model),
+                'ar_model': p.ar_model or '',
+                'model_status': getattr(getattr(p, 'model3d', None), 'status', None) or 'none',
                 'spin_frames': spin_frames,
                 'description': p.description,
                 'unit': p.unit,

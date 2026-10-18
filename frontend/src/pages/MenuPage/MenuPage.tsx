@@ -32,17 +32,22 @@ export const MenuPage: React.FC = () => {
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
-  const categoriesList =
-    initialData.categories && initialData.categories.length > 0
+  // Django menyu sahifasi ma'lumot yuborgan bo'lsa — faqat o'sha ishlatiladi (bo'sh bo'lsa ham).
+  // Demo taomlar va boshqa do'konlar mahsulotlari restoran menyusiga aralashmaydi (TZ R-GST-08).
+  const isServerMenu = Boolean(initialData.shop);
+  const categoriesList = isServerMenu
+    ? initialData.categories || []
+    : initialData.categories && initialData.categories.length > 0
       ? initialData.categories
       : INITIAL_CATEGORIES;
-  const productsList =
-    initialData.products && initialData.products.length > 0
-      ? initialData.products
-      : INITIAL_PRODUCTS;
+  const productsList = isServerMenu ? initialData.products || [] : INITIAL_PRODUCTS;
 
-  // Function to load and enrich all dishes (including custom dishes from Studio)
+  // Server taomlari o'z 3D holati bilan keladi — nom bo'yicha boshqa taomning modelini "taxmin qilish"
+  // (Smart3DMatcher) va brauzerdagi lokal taomlar faqat demo (mock) menyuda ishlatiladi (TZ R-3D-04).
   const getMergedProducts = () => {
+    if (isServerMenu) {
+      return productsList;
+    }
     try {
       const raw = localStorage.getItem('guliston_custom_products');
       const customList = raw ? JSON.parse(raw) : [];
@@ -63,17 +68,10 @@ export const MenuPage: React.FC = () => {
     };
     window.addEventListener('guliston_menu_updated', handleUpdate);
 
-    if (!initialData.products || initialData.products.length === 0) {
+    if (!isServerMenu) {
       RestaurantAPI.getMenu().then((res) => {
         if (res?.products && res.products.length > 0) {
-          const enriched = res.products.map(enrichDishWith3D);
-          try {
-            const raw = localStorage.getItem('guliston_custom_products');
-            const customList = raw ? JSON.parse(raw) : [];
-            setProducts([...customList, ...enriched]);
-          } catch {
-            setProducts(enriched);
-          }
+          setProducts(res.products);
           if (res.categories && res.categories.length > 0) {
             setCategories(res.categories);
           }
@@ -124,7 +122,7 @@ export const MenuPage: React.FC = () => {
 
   // If products were not preloaded, fetch them from backend API if available
   useEffect(() => {
-    if (productsList.length === 0) {
+    if (!isServerMenu && productsList.length === 0) {
       fetch('/api/v1/products/?is_available=true')
         .then((res) => res.json())
         .then((data) => {
@@ -137,7 +135,7 @@ export const MenuPage: React.FC = () => {
         .catch(() => {});
     }
 
-    if (categoriesList.length === 0) {
+    if (!isServerMenu && categoriesList.length === 0) {
       fetch('/api/v1/categories/')
         .then((res) => res.json())
         .then((data) => {
@@ -146,7 +144,7 @@ export const MenuPage: React.FC = () => {
         })
         .catch(() => {});
     }
-  }, [productsList.length, categoriesList.length]);
+  }, [isServerMenu, productsList.length, categoriesList.length]);
 
   const handleAddToCart = (product: Product) => {
     addToCart(product.id, 1);
@@ -279,8 +277,12 @@ export const MenuPage: React.FC = () => {
                   <path d="M8 11h6" />
                 </svg>
               </div>
-              <h3 className="empty-title">Mos taom topilmadi</h3>
-              <p className="empty-text">Qidiruv so'zini tekshiring yoki barcha toifalarni ko'ring.</p>
+              <h3 className="empty-title">{products.length === 0 ? 'Menyu tez orada' : 'Mos taom topilmadi'}</h3>
+              <p className="empty-text">
+                {products.length === 0
+                  ? "Restoran taomlarni qo'shmoqda. Birozdan keyin qayta oching."
+                  : "Qidiruv so'zini tekshiring yoki barcha toifalarni ko'ring."}
+              </p>
               <button
                 type="button"
                 className="btn-clear-filters"

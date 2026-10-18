@@ -9,6 +9,8 @@ export interface Product {
   category_name?: string;
   has_3d?: boolean;
   ar_model?: string;
+  /** Server: taom rasmidan 3D holati (TZ_LOKAL_RASMDAN_3D_MENYU) */
+  model_status?: 'none' | 'queued' | 'processing' | 'ready' | 'failed';
   spin_frames?: string[];
   spin_video?: string;
   unit?: string;

@@ -45,6 +45,7 @@ urlpatterns = [
     path('products/<int:pk>/edit/', seller_views.seller_product_edit, name='seller_product_edit_web'),
     path('products/<int:pk>/delete/', seller_views.seller_product_delete, name='seller_product_delete_web'),
     path('products/<int:pk>/ai3d/', seller_views.seller_product_ai3d, name='seller_product_ai3d_web'),
+    path('products/<int:pk>/3d-status/', seller_views.seller_product_3d_status, name='seller_product_3d_status_web'),
     path('telegram/', seller_views.seller_telegram, name='seller_telegram_web'),
     path('ar/', seller_views.seller_ar, name='seller_ar_web'),
     path('studio/', seller_views.seller_3d_studio, name='seller_3d_studio_web'),

@@ -24,6 +24,7 @@ from .marketplace import (
     seller_products_seed_starter,
     seller_product_delete,
     seller_product_ai3d,
+    seller_product_3d_status,
     seller_order_create,
 )
 from .restaurant import (
@@ -57,7 +58,7 @@ __all__ = ['seller_required',
     'seller_template_preview', 'seller_product_edit',
     'seller_product_create', 'seller_products_sample_csv',
     'seller_products_import_csv', 'seller_products_seed_starter',
-    'seller_product_delete', 'seller_product_ai3d', 'seller_order_create',
+    'seller_product_delete', 'seller_product_ai3d', 'seller_product_3d_status', 'seller_order_create',
     'seller_tables', 'seller_tables_print_stands',
     'seller_nfc_dashboard', 'seller_nfc_create', 'seller_nfc_edit',
     'seller_nfc_toggle', 'seller_nfc_delete', 'seller_nfc_print_stands',

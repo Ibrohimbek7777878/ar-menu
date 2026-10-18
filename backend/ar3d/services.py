@@ -420,17 +420,18 @@ def auto_attach_library_3d(product, force=False, fallback_to_image=True):
         )
         return True, matched
 
-    # 2. Rasmdan 3D generatsiya qilish
+    # 2. Rasmdan 3D — fon navbati orqali (ar3d/pipeline.py). Avval bu yerda create_3d_for_product
+    # chaqirilar edi, u esa yana shu funksiyani chaqirardi: ~1000 marta rekursiya va so'rov sekinlashuvi.
     if fallback_to_image and product.image:
-        try:
-            from .generator import create_3d_for_product
-            ok, model_url = create_3d_for_product(product)
-            if ok:
-                return True, None
-        except Exception as e:
-            logger.warning(f"Rasmdan 3D yaratishda xato ({product.name}): {e}")
+        from .pipeline import queue_3d_generation
+        queue_3d_generation(product)
+        return False, None
 
-    # 3. Zaxira (Fallback) umumiy 3D model
+    # 3. Zaxira umumiy 3D model — faqat aniq yoqilgan bo'lsa (TZ R-3D-04): mos model bo'lmagan taomga
+    # boshqa taomning modelini "sizning taomingiz" deb ko'rsatish mijozni chalg'itadi.
+    from django.conf import settings as dj_settings
+    if not getattr(dj_settings, 'RESTAURANT_3D_GENERIC_FALLBACK', False):
+        return False, None
     fallback_lib = (
         ProductLibrary.objects.filter(is_active=True, key='oziq-ovqat').first()
         or ProductLibrary.objects.filter(is_active=True).first()
