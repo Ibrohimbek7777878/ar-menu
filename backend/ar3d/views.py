@@ -553,7 +553,8 @@ def v1_orders_api(request):
     if not shop:
         return JsonResponse({'error': 'Do\'kon yoki stol ma\'lumotlari aniqlanmadi'}, status=400)
 
-    order_num = f"AR-{int(time.time())}-{random.randint(100, 999)}"
+    from orders.numbering import next_order_number
+    order_num = next_order_number()
     customer_phone = data.get('phone') or data.get('customer_phone') or "+998900000000"
     raw_customer_name = data.get('customer_name')
     if raw_customer_name:

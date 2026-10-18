@@ -19,11 +19,12 @@ interface InitialCheckoutData {
 }
 
 export const CheckoutPage: React.FC = () => {
-  const { navigate, createOrder, tableNumber: ctxTable } = useNavigation();
+  const { navigate, clearCart } = useNavigation();
   const initialData: InitialCheckoutData = (window as any).__GULISTON_CHECKOUT_DATA__ || {};
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
+  const items = initialData.items || [];
   const subtotal = initialData.subtotal || 0;
   const cartCount = initialData.cartCount || 0;
   const savedNote = sessionStorage.getItem('order_note') || '';
@@ -32,7 +33,7 @@ export const CheckoutPage: React.FC = () => {
   const [serviceType, setServiceType] = useState<'table' | 'pickup' | 'delivery'>(
     table?.number ? 'table' : 'table'
   );
-  const [tableNumber, setTableNumber] = useState(table?.number ? String(table.number) : '1');
+  const [tableNumber, setTableNumber] = useState(table?.number ? String(table.number) : '');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('+998 ');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -61,6 +62,11 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
+    if (items.length === 0) {
+      showToast("Savatingiz bo'sh. Avval menyudan taom tanlang.");
+      return;
+    }
+
     setIsSubmitting(true);
     showToast("Buyurtma yuborilmoqda...");
 
@@ -69,60 +75,37 @@ export const CheckoutPage: React.FC = () => {
     formData.append('service_type', serviceType);
     formData.append('table_number_manual', tableNumber);
     formData.append('name', guestName);
-    formData.append('phone', guestPhone);
+    formData.append('phone', guestPhone.trim() === '+998' ? '' : guestPhone);
     formData.append('address', deliveryAddress);
     formData.append('payment_method', paymentMethod);
     formData.append('notes', notes);
 
-    const orderItems = (initialData.items && initialData.items.length > 0)
-      ? initialData.items.map((it, idx) => ({
-          id: idx + 1,
-          name: it.name,
-          quantity: it.quantity,
-          price: it.price,
-          unit: 'porsiya',
-          course: it.name.toLowerCase().includes('sho\'rva') || it.name.toLowerCase().includes('mastava')
-            ? ('1-taom' as const)
-            : it.name.toLowerCase().includes('choy')
-            ? ('ichimlik' as const)
-            : it.name.toLowerCase().includes('salat')
-            ? ('salat' as const)
-            : ('2-taom' as const),
-        }))
-      : [
-          { id: 1, name: "To'y Oshi (Devzira)", quantity: 2, price: 48000, unit: 'porsiya', course: '2-taom' as const },
-          { id: 2, name: "Tandir Somsa Go'shtli", quantity: 4, price: 15000, unit: 'dona', course: '2-taom' as const },
-        ];
-
-    createOrder({
-      tableNumber: tableNumber || ctxTable || '05',
-      customerName: guestName || 'Hurmatli Mehmon',
-      phone: guestPhone,
-      notes: notes,
-      items: orderItems,
-      totalAmount: subtotal || 156000,
-    });
-
+    // Bitta so'rov: buyurtmani server yaratadi (narx va taomlar serverdagi savatdan). Avval buyurtma
+    // ikki marta (lokal createOrder + form POST) yaratilardi va xatoda ham "qabul qilindi" deyilardi.
     try {
-      await fetch('/checkout/', {
+      const res = await fetch('/checkout/', {
         method: 'POST',
-        headers: {
-          'X-CSRFToken': csrfToken,
-        },
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
         body: formData,
       });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) {
+        showToast(data?.error || "Buyurtmani yuborib bo'lmadi. Qayta urinib ko'ring.");
+        setIsSubmitting(false);
+        return;
+      }
 
       sessionStorage.removeItem('order_note');
+      clearCart();
       showToast("Buyurtmangiz qabul qilindi!");
       setTimeout(() => {
-        navigate('/orders');
-      }, 700);
+        window.location.assign(data.redirect || '/orders/');
+      }, 600);
     } catch {
-      sessionStorage.removeItem('order_note');
-      showToast("Buyurtma qabul qilindi!");
-      setTimeout(() => {
-        navigate('/orders');
-      }, 700);
+      showToast("Internet bilan aloqa yo'q. Buyurtma yuborilmadi, qayta urinib ko'ring.");
+      setIsSubmitting(false);
     }
   };
 
@@ -342,14 +325,14 @@ export const CheckoutPage: React.FC = () => {
           {/* 4. Order Summary & Submit */}
           <OrderSummary
             subtotal={subtotal}
-            servicePercent={serviceType === 'table' ? 10 : 0}
+            servicePercent={0}  // xizmat haqi olinmaydi (TZ qarori Q2); server ham 0% hisoblaydi
             showButton={false}
           />
 
           <button
             type="submit"
             className="btn-submit-order"
-            disabled={isSubmitting}
+            disabled={isSubmitting || items.length === 0}
           >
             <span>{isSubmitting ? 'Yuborilmoqda...' : 'Buyurtmani tasdiqlash'}</span>
             {!isSubmitting && (

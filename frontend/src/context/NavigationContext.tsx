@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { RestaurantAPI } from '../services/RestaurantAPI';
+import { CartSync } from '../services/CartSync';
 import { RouteGuard } from '../core/guards/RouteGuard';
 import { roleService } from '../core/auth/RoleService';
 import { SubdomainService } from '../core/routing/SubdomainService';
@@ -399,6 +400,25 @@ const DEFAULT_FINANCE_DEBTS: FinanceDebt[] = [
   },
 ];
 
+const SERVER_RENDERED_GUEST_PATHS = ['/cart', '/checkout', '/orders'];
+
+/** Django sahifa bilan kelgan savat (sessiya) — mehmon savatining asosiy manbasi. null — sahifa savat yubormagan. */
+function serverCartFromWindow(): Record<number, number> | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as Record<string, any>;
+  const flat = w.__GULISTON_DATA__?.cart ?? w.__GULISTON_AR_DATA__?.cart;
+  if (flat && typeof flat === 'object' && !Array.isArray(flat)) return flat as Record<number, number>;
+  const items = w.__GULISTON_CART_DATA__?.items;
+  if (Array.isArray(items)) {
+    const map: Record<number, number> = {};
+    items.forEach((it: { product_id?: number; quantity?: number }) => {
+      if (it.product_id) map[it.product_id] = Number(it.quantity) || 1;
+    });
+    return map;
+  }
+  return null;
+}
+
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const rawPath = window.location.pathname || '/';
@@ -448,19 +468,22 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const tableFromUrl = urlParams.get('table');
     if (tableFromUrl) return tableFromUrl;
     try {
-      return localStorage.getItem('guliston_table_num') || '05';
+      return localStorage.getItem('guliston_table_num') || '';
     } catch {
-      return '05';
+      return '';
     }
   });
 
   // Persistent cart in localStorage
   const [cart, setCart] = useState<Record<number, number>>(() => {
+    // Server (sessiya) savati ustun: brauzerdagi eski savat serverdagidan farq qilmasin (TZ R-GST-04)
+    const fromServer = serverCartFromWindow();
+    if (fromServer) return fromServer;
     try {
       const saved = localStorage.getItem('guliston_cart_items');
       if (saved) return JSON.parse(saved);
     } catch {}
-    return { 101: 2, 104: 4 };
+    return {};   // yangi mehmon savati bo'sh (avval "Plov×2, Somsa×4" bilan to'ldirilardi)
   });
 
   // Real-time Orders
@@ -662,6 +685,15 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     if (path === currentPath) return;
+
+    // Savat, checkout va buyurtmalar sahifalari ma'lumotni Django (sessiya) dan oladi: SPA ichida emas,
+    // to'liq yuklanadi — aks holda serverdagi haqiqiy savat o'rniga demo ma'lumot ko'rinardi.
+    const bare = path.split('?')[0].replace(/\/+$/, '');
+    if (SERVER_RENDERED_GUEST_PATHS.includes(bare) && roleService.getCurrentRole() === 'guest') {
+      window.location.assign(bare + '/');
+      return;
+    }
+
     window.history.pushState({}, '', path);
     setCurrentPath(path);
     setUserRole(roleService.getCurrentRole());
@@ -669,35 +701,38 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [currentPath]);
 
   // Cart operations
-  const addToCart = useCallback((productId: number, qty = 1) => {
-    setCart((prev) => {
-      const current = prev[productId] || 0;
-      return { ...prev, [productId]: current + qty };
-    });
+  // Joriy savat (updater ichida side-effect qilmaslik uchun ref orqali o'qiladi)
+  const cartRef = useRef(cart);
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
+  const applyQuantity = useCallback((productId: number, qty: number) => {
+    const next = { ...cartRef.current };
+    if (qty <= 0) delete next[productId];
+    else next[productId] = qty;
+    cartRef.current = next;
+    setCart(next);
+    void CartSync.setQuantity(productId, qty);   // serverdagi sessiya savati bilan bir xil bo'lsin
   }, []);
+
+  const addToCart = useCallback((productId: number, qty = 1) => {
+    applyQuantity(productId, (cartRef.current[productId] || 0) + qty);
+  }, [applyQuantity]);
 
   const removeFromCart = useCallback((productId: number) => {
-    setCart((prev) => {
-      const next = { ...prev };
-      delete next[productId];
-      return next;
-    });
-  }, []);
+    applyQuantity(productId, 0);
+  }, [applyQuantity]);
 
   const updateQuantity = useCallback((productId: number, delta: number) => {
-    setCart((prev) => {
-      const current = prev[productId] || 0;
-      const nextQty = current + delta;
-      if (nextQty <= 0) {
-        const next = { ...prev };
-        delete next[productId];
-        return next;
-      }
-      return { ...prev, [productId]: nextQty };
-    });
-  }, []);
+    applyQuantity(productId, (cartRef.current[productId] || 0) + delta);
+  }, [applyQuantity]);
 
-  const clearCart = useCallback(() => setCart({}), []);
+  const clearCart = useCallback(() => {
+    cartRef.current = {};
+    setCart({});
+    void CartSync.clear();
+  }, []);
 
   const cartCount = useMemo(() => {
     return Object.values(cart).reduce((sum, qty) => sum + qty, 0);

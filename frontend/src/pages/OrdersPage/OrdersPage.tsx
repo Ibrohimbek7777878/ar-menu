@@ -52,6 +52,11 @@ export const OrdersPage: React.FC = () => {
   const table = initialData.table;
 
   const orders: OrderData[] = useMemo(() => {
+    // Django sahifasi ma'lumot bilan kelgan bo'lsa — FAQAT shu mehmonning o'z buyurtmalari (sessiya bo'yicha).
+    // Avval brauzerdagi demo buyurtmalar ("№101", "664,000 so'm") serverdagi haqiqiy buyurtma ustidan chiqib ketardi.
+    if (Array.isArray(initialData.orders)) {
+      return initialData.orders;
+    }
     if (sharedOrders && sharedOrders.length > 0) {
       return sharedOrders.map((o) => ({
         id: typeof o.id === 'number' ? o.id : 1,
@@ -94,7 +99,7 @@ export const OrdersPage: React.FC = () => {
         ],
       },
     ];
-  }, [sharedOrders, ctxTableNumber]);
+  }, [initialData.orders, sharedOrders, ctxTableNumber]);
 
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed'>('all');
   

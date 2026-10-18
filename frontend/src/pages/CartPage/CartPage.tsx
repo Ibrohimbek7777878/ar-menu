@@ -8,6 +8,7 @@ import {
   Toast,
 } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { CartSync } from '../../services/CartSync';
 import './CartPage.css';
 
 interface CartItem {
@@ -26,6 +27,8 @@ interface InitialCartData {
   items?: CartItem[];
   cartCount?: number;
   totalAmount?: number;
+  /** Server DEMO_MODE: namuna taomlar faqat shu rejimda ko'rsatiladi */
+  demo?: boolean;
 }
 
 const DEFAULT_CART_ITEMS: CartItem[] = [
@@ -55,10 +58,14 @@ export const CartPage: React.FC = () => {
 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
+  // Haqiqiy savat serverdan keladi. Namuna taomlar ("Plov×2, Somsa×4") faqat demo rejimda;
+  // avval savat bo'sh bo'lsa ham mehmonga shular ko'rsatilib, buyurtmaga ketardi (TZ R-GST-04).
   const initialItems =
     initialData.items && initialData.items.length > 0
       ? initialData.items
-      : DEFAULT_CART_ITEMS;
+      : initialData.demo
+        ? DEFAULT_CART_ITEMS
+        : [];
 
   const [items, setItems] = useState<CartItem[]>(initialItems);
   const [customerNote, setCustomerNote] = useState('');
@@ -75,57 +82,25 @@ export const CartPage: React.FC = () => {
     setTimeout(() => setToastVisible(false), 2400);
   };
 
-  // Sync with Django /api/cart/ backend
-  const syncCartWithBackend = async (productId: number, action: 'add' | 'remove' | 'delete', qty = 1) => {
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-    try {
-      await fetch('/api/cart/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        body: JSON.stringify({
-          action,
-          product_id: productId,
-          quantity: qty,
-        }),
-      });
-    } catch (e) {
-      console.warn("Cart backend sync failed:", e);
-    }
-  };
-
+  // Savatning har bir o'zgarishi serverdagi sessiya savatiga yoziladi (checkout shuni o'qiydi)
   const handleUpdateQuantity = (productId: number, newQty: number) => {
-    setItems((prev) => {
-      if (newQty <= 0) {
-        syncCartWithBackend(productId, 'delete');
-        showToast("Taom savatdan olib tashlandi");
-        return prev.filter((item) => item.product_id !== productId);
-      }
-
-      const existing = prev.find((item) => item.product_id === productId);
-      const delta = existing ? newQty - existing.quantity : 1;
-
-      if (delta > 0) syncCartWithBackend(productId, 'add', delta);
-      else if (delta < 0) syncCartWithBackend(productId, 'remove', Math.abs(delta));
-
-      return prev.map((item) => {
-        if (item.product_id === productId) {
-          return {
-            ...item,
-            quantity: newQty,
-            subtotal: item.price * newQty,
-          };
-        }
-        return item;
-      });
-    });
+    if (newQty <= 0) {
+      void CartSync.setQuantity(productId, 0);
+      showToast("Taom savatdan olib tashlandi");
+      setItems((prev) => prev.filter((item) => item.product_id !== productId));
+      return;
+    }
+    void CartSync.setQuantity(productId, newQty);
+    setItems((prev) =>
+      prev.map((item) =>
+        item.product_id === productId ? { ...item, quantity: newQty, subtotal: item.price * newQty } : item
+      )
+    );
   };
 
   const handleRemoveItem = (productId: number, name: string) => {
     setItems((prev) => prev.filter((item) => item.product_id !== productId));
-    syncCartWithBackend(productId, 'delete');
+    void CartSync.setQuantity(productId, 0);
     showToast(`${name} savatdan olib tashlandi`);
   };
 
@@ -259,7 +234,7 @@ export const CartPage: React.FC = () => {
             {/* Order Summary & Checkout Button */}
             <OrderSummary
               subtotal={subtotal}
-              servicePercent={10}
+              servicePercent={0}
               onCheckout={() => {
                 if (customerNote) {
                   sessionStorage.setItem('order_note', customerNote);

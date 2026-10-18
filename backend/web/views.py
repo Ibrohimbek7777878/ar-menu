@@ -2100,9 +2100,14 @@ def table_menu_redirect(request, token):
     try:
         table = resolve_table_by_token(_uuid.UUID(str(token)))
     except Exception:
-        from django.shortcuts import render as _render
-        return _render(request, 'customer/base_customer.html', {'error': 'QR yaroqsiz'}, status=404)
-    return redirect(f'/shop/{table.shop.slug}/?table={table.qr_token}')
+        from django.http import HttpResponse
+        return HttpResponse(
+            "<h2>QR kod yaroqsiz</h2><p>Iltimos, ofitsiantga murojaat qiling.</p>",
+            status=404, content_type='text/html; charset=utf-8',
+        )
+    # Restoran menyusiga (/menu/). Avval marketplace do'kon sahifasiga (/shop/<slug>/) yuborilardi —
+    # restoran konfiguratsiyasida u sahifa 500 xato berardi (NoReverseMatch). QR token doimiy: muddati tugamaydi.
+    return redirect(f'/menu/?table={table.qr_token}')
 
 
 def ar_menu_page(request, slug):

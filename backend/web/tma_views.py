@@ -319,6 +319,7 @@ def tma_cart(request):
         'items': react_cart_items,
         'cartCount': total_cart_qty,
         'totalAmount': float(total_amount),
+        'demo': bool(settings.DEMO_MODE),
     }
 
     context = {
@@ -345,15 +346,22 @@ def tma_cart_api(request):
         data = request.POST.dict()
 
     action = data.get('action', 'add')
+
+    # Savatni butunlay bo'shatish (React savati serverdagi sessiya savati bilan bir xil bo'lishi uchun)
+    if action == 'clear':
+        request.session['cart'] = {}
+        request.session.modified = True
+        return JsonResponse({'success': True, 'cart_count': 0, 'item_qty': 0, 'total_sum': '0'})
+
     product_id = str(data.get('product_id'))
     try:
-        qty_param = int(data.get('quantity', 1))
+        raw_qty = int(data.get('quantity', 1))
     except (ValueError, TypeError):
-        qty_param = 1
-    if qty_param < 1:
-        qty_param = 1
+        raw_qty = 1
+    raw_qty = max(0, min(raw_qty, 100))
+    qty_param = max(raw_qty, 1)
 
-    product = Product.objects.filter(id=product_id, is_available=True).first()
+    product = Product.objects.filter(id=product_id, is_available=True, is_deleted=False).first()
     if not product:
         return JsonResponse({'success': False, 'error': 'Mahsulot topilmadi'}, status=404)
 
@@ -377,6 +385,23 @@ def tma_cart_api(request):
             'unit': product.unit or 'dona',
             'quantity': new_qty,
         }
+    elif action == 'set':
+        # Aniq miqdorni o'rnatish (0 — savatdan olib tashlash)
+        if raw_qty <= 0:
+            if shop_key in cart and product_id in cart[shop_key]:
+                del cart[shop_key][product_id]
+                if not cart[shop_key]:
+                    del cart[shop_key]
+        else:
+            if cart and shop_key not in cart:
+                cart.clear()
+            cart.setdefault(shop_key, {})[product_id] = {
+                'name': product.name,
+                'price': str(product.price),
+                'image': product.image.url if product.image else '',
+                'unit': product.unit or 'dona',
+                'quantity': raw_qty,
+            }
     elif action == 'decrease':
         if shop_key in cart and product_id in cart[shop_key]:
             cart[shop_key][product_id]['quantity'] -= 1
@@ -406,8 +431,18 @@ def tma_cart_api(request):
 
 def tma_checkout(request):
     """TMA Buyurtma berish va To'lov usulini tanlash: Stolda, Yetkazib berish yoki Olib ketish."""
+    # React checkout sahifasi fetch() bilan yuboradi (X-Requested-With) — unga HTML emas, JSON qaytariladi
+    wants_json = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    # React forma {% csrf_token %} ishlatmaydi — CSRF cookie'sini sahifa ochilganda o'rnatamiz, aks holda
+    # POST /checkout/ 403 qaytaradi (avval bu xato jim yutilib, "buyurtma qabul qilindi" deb ko'rsatilardi)
+    from django.middleware.csrf import get_token
+    get_token(request)
+
     cart = request.session.get('cart', {})
     if not cart:
+        if wants_json and request.method == 'POST':
+            return JsonResponse({'ok': False, 'error': "Savat bo'sh yoki buyurtma allaqachon yuborilgan"}, status=400)
         return redirect('restaurant_home')
 
     first_shop_id = list(cart.keys())[0]
@@ -418,7 +453,8 @@ def tma_checkout(request):
 
     for s_id, products in cart.items():
         for p_id, item in products.items():
-            p = Product.objects.filter(id=p_id).first()
+            # Faqat mavjud, arxivlanmagan taom (avval o'chirilgan taom ham buyurtmaga tushardi)
+            p = Product.objects.filter(id=p_id, is_available=True, is_deleted=False).first()
             if p:
                 price = p.effective_price if getattr(p, 'flash_active', False) else p.price
                 qty = int(item.get('quantity', 1))
@@ -434,6 +470,14 @@ def tma_checkout(request):
     from tables_restaurant.models import Table
     table, table_token = _get_tma_table(request)
     all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number')
+
+    if request.method == 'POST' and not items_to_create:
+        # Savatdagi barcha taomlar menyudan olib tashlangan
+        request.session['cart'] = {}
+        request.session.modified = True
+        if wants_json:
+            return JsonResponse({'ok': False, 'error': "Savatdagi taomlar endi menyuda yo'q"}, status=400)
+        return redirect('restaurant_home')
 
     # Boshlang'ich yetkazib berish haqi
     delivery_fee = Decimal('0') if table else (shop.delivery_fee if total_amount < shop.free_delivery_from else Decimal('0'))
@@ -456,14 +500,21 @@ def tma_checkout(request):
             delivery_fee = Decimal('0')
             final_amount = total_amount
 
+            # Stol faqat shu restoranning mavjud stoli bo'lishi mumkin. Avval mavjud bo'lmagan raqam kiritilsa
+            # zalsiz stol yaratilardi (IntegrityError → 500), stol topilmasa esa tasodifiy "birinchi stol" olinardi.
             if not table and selected_table_id:
-                table = Table.objects.filter(id=selected_table_id, is_active=True).first()
+                table = Table.objects.filter(id=selected_table_id, shop=shop, is_active=True).first()
             if not table and table_num_manual:
                 table = Table.objects.filter(shop=shop, number=table_num_manual, is_active=True).first()
-                if not table:
-                    table = Table.objects.create(shop=shop, number=table_num_manual, status='ordering', is_active=True)
             if not table:
-                table = all_tables.first()
+                msg = "Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling."
+                if wants_json:
+                    return JsonResponse({'ok': False, 'error': msg}, status=400)
+                return render(request, 'tma/checkout.html', {
+                    'shop': shop, 'items': items_to_create, 'total_amount': total_amount,
+                    'delivery_fee': delivery_fee, 'final_amount': final_amount, 'table': None,
+                    'all_tables': all_tables, 'table_token': table_token, 'error': msg,
+                })
 
             table_num_str = str(table.number) if table else (table_num_manual or '1')
             hall_name = table.hall.name if (table and table.hall) else 'Registon Restorani'
@@ -526,9 +577,9 @@ def tma_checkout(request):
             customer.save(update_fields=['telegram_chat_id'])
 
         # Buyurtma raqami
-        from web.views import _order_number
+        from orders.numbering import next_order_number
         order = Order.objects.create(
-            order_number=_order_number(),
+            order_number=next_order_number(),
             customer=customer,
             customer_name=name,
             customer_phone_1=phone,
@@ -574,16 +625,18 @@ def tma_checkout(request):
         remember_guest_order(request, order)
 
         # To'lov yaratish: Naqd / Stolda to'lash to'lov shlyuzisiz to'g'ridan-to'g'ri qabul qilinadi
-        if payment_method == 'cash' or service_type == 'table':
-            return redirect('tma_order_detail', pk=order.id)
+        from django.urls import reverse
+        target = reverse('tma_order_detail', kwargs={'pk': order.id})
+        if not (payment_method == 'cash' or service_type == 'table'):
+            return_url = request.build_absolute_uri(target)
+            pay_result = create_order_payment(order, payment_method, return_url)
+            if pay_result.get('success') and pay_result.get('payment_url'):
+                target = pay_result['payment_url']
 
-        return_url = request.build_absolute_uri(f'/tma/order/{order.id}/')
-        pay_result = create_order_payment(order, payment_method, return_url)
-
-        if pay_result.get('success') and pay_result.get('payment_url'):
-            return redirect(pay_result['payment_url'])
-
-        return redirect('tma_order_detail', pk=order.id)
+        if wants_json:
+            return JsonResponse({'ok': True, 'order_id': order.id, 'order_number': order.order_number,
+                                 'redirect': target})
+        return redirect(target)
 
     react_checkout_items = []
     for it in items_to_create:
