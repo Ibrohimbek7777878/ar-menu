@@ -81,7 +81,8 @@ def seller_tables(request):
     # R5: admin nazorat statistikasi
     from orders.models import Order
     import datetime as _dt
-    _today = _dt.datetime.combine(_dt.date.today(), _dt.time.min, tzinfo=_dt.timezone.utc)
+    from orders.timeutils import local_day_start
+    _today = local_day_start()
     t_total = shop.restaurant_tables.count() if shop else 0
     t_busy = shop.restaurant_tables.exclude(status='free').count() if shop else 0
     stats = {

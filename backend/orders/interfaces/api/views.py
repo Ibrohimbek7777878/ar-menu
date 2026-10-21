@@ -144,7 +144,9 @@ class TableSettleBillView(RestaurantAPIView):
     """
     def post(self, request, table_number):
         payment_method = request.data.get('payment_method', 'cash')
-        res = RestaurantOrderService.settle_table_bill(table_number, payment_method, shop=self.staff_shop())
+        res = RestaurantOrderService.settle_table_bill(
+            table_number, payment_method, shop=self.staff_shop(), actor=request.user,
+        )
         if res.get('status') == 'not_found':
             return Response(res, status=status.HTTP_404_NOT_FOUND)
         return Response(res)

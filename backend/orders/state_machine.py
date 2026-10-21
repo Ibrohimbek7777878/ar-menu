@@ -81,10 +81,15 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
         # Mahsulot omborini kamaytirish
         _reduce_stock(order)
 
-        # Avtomatik Moliya & Kassa kirimini yozish
+        # Avtomatik Moliya & Kassa kirimini yozish.
+        # Yetkazib berish/olib ketish (stolsiz) buyurtmasi topshirilganda pul olinadi. Stol buyurtmasi esa
+        # "yetkazildi" (ya'ni stolga olib chiqildi) bo'lganda hali to'lanmagan — kirim stol yopilganda yoziladi
+        # (avval bu yerda ham yozilib, keyin stol yopilganda yana yozilib, daromad ikki baravar chiqardi).
+        if not order.table_id and order.payment_status in ('unpaid', 'pending'):
+            order.payment_status = 'paid'
         try:
             from finance.services.order_integration import record_order_payment_income
-            record_order_payment_income(order)
+            record_order_payment_income(order, actor=actor)
         except Exception as e:
             logger.warning(f"Finance auto-record error for order {order.pk}: {e}")
 

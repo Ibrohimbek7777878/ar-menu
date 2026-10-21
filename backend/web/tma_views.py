@@ -813,7 +813,7 @@ def tma_table_hub(request):
     }
 
     orders = Order.objects.all().order_by('-created_at')[:10]
-    today_str = datetime.date.today().isoformat()
+    today_str = timezone.localdate().isoformat()
 
     context = {
         'shop': active_shop,
@@ -963,7 +963,8 @@ def restaurant_admin_dashboard(request):
     shop = staff_shop(request)
 
     now = timezone.now()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    from orders.timeutils import local_day_start
+    today_start = local_day_start()   # Toshkent kuni (avval UTC: kun soat 05:00 da almashardi)
 
     tables_qs = Table.objects.filter(shop=shop, is_active=True)
     tables_count = tables_qs.count()

@@ -71,6 +71,14 @@ class FinanceTransaction(models.Model):
         verbose_name = 'Moliya operatsiyasi'
         verbose_name_plural = 'Moliya operatsiyalari'
         ordering = ['-tx_date', '-created_at']
+        constraints = [
+            # Bitta buyurtma uchun bitta faol kirim — daromad ikki marta hisoblanmasligi uchun (TZ R-FIN-02)
+            models.UniqueConstraint(
+                fields=['order'],
+                condition=models.Q(order__isnull=False, tx_type='income', is_cancelled=False),
+                name='uniq_active_income_per_order',
+            ),
+        ]
 
     @property
     def is_moved(self):

@@ -122,8 +122,8 @@ export interface NavigationContextType {
   // Real-time Tables (Shared between Waiter, Admin, Hostess)
   tables: LiveTable[];
   updateTableStatus: (tableNumber: string | number, status: LiveTable['status'], guestsCount?: number) => void;
-  addDishToTable: (tableNumber: string | number, dish: { name: string; price: number }) => void;
-  settleTableBill: (tableNumber: string | number, paymentMethod?: 'cash' | 'card') => void;
+  addDishToTable: (tableNumber: string | number, dish: { name: string; price: number; product_id?: number | null }) => Promise<boolean>;
+  settleTableBill: (tableNumber: string | number, paymentMethod?: 'cash' | 'card') => Promise<boolean>;
 
   // Service Calls (Guest -> Waiter & KDS -> Waiter)
   serviceCalls: LiveServiceCall[];
@@ -701,11 +701,13 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const inflightWrites = useRef(0);
   const syncNowRef = useRef<() => void>(() => {});
 
-  const writeThrough = useCallback((request: Promise<unknown>) => {
+  const financeNowRef = useRef<() => void>(() => {});
+  const writeThrough = useCallback(<T,>(request: Promise<T>): Promise<T> => {
     inflightWrites.current += 1;
     return request.finally(() => {
       inflightWrites.current -= 1;
       syncNowRef.current();     // server holatini qayta o'qish: xato bo'lsa lokal taxmin to'g'rilanadi
+      financeNowRef.current();  // kassa (stol yopilganda kirim) ham serverdan qayta o'qiladi
     });
   }, []);
   useEffect(() => {
@@ -760,12 +762,29 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
     document.addEventListener('visibilitychange', onVisible);
 
-    // Moliya (faqat rahbariyat uchun; boshqa rolda server 403 beradi) — bir marta
-    void RestaurantAPI.getFinanceData().then((fin) => {
-      if (stopped) return;
-      if (fin?.transactions && Array.isArray(fin.transactions)) setFinanceTransactions(fin.transactions);
-      if (fin?.debts && Array.isArray(fin.debts)) setFinanceDebts(fin.debts);
-    });
+    // Moliya (faqat rahbariyat uchun; boshqa rolda server 403 beradi): ochilganda va har yozuvdan keyin
+    const loadFinance = async () => {
+      const fin = await RestaurantAPI.getFinanceData();
+      if (stopped || !fin) return;
+      if (Array.isArray(fin.transactions)) {
+        setFinanceTransactions(fin.transactions);
+        // Bugungi tushum — serverdagi haqiqiy kirimlardan, Toshkent kuni bo'yicha
+        // (avval 3 480 000 so'm deb to'qib qo'yilgan hisoblagich edi)
+        const dayKey = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Tashkent' });
+        const today = dayKey(new Date());
+        setTodayRevenue(
+          fin.transactions
+            .filter((t: FinanceTransaction & { is_cancelled?: boolean }) =>
+              t.type === 'income' && !t.is_cancelled && dayKey(new Date(t.created_at)) === today)
+            .reduce((sum: number, t: FinanceTransaction) => sum + Number(t.amount || 0), 0)
+        );
+      }
+      if (Array.isArray(fin.debts)) setFinanceDebts(fin.debts);
+    };
+    financeNowRef.current = () => {
+      void loadFinance();
+    };
+    void loadFinance();
 
     return () => {
       stopped = true;
@@ -991,69 +1010,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Table Operations
   const addDishToTable = useCallback(
-    (tableNum: string | number, dish: { name: string; price: number }) => {
-      setTables((prev) =>
-        prev.map((t) =>
-          String(t.number) === String(tableNum)
-            ? {
-                ...t,
-                status: 'occupied',
-                total_bill: t.total_bill + dish.price,
-                active_orders_count: Math.max(1, t.active_orders_count),
-              }
-            : t
-        )
+    async (
+      tableNum: string | number,
+      dish: { name: string; price: number; product_id?: number | null }
+    ): Promise<boolean> => {
+      // Faqat menyudagi taom (product_id) qo'shiladi; narxni server o'zi menyudan oladi (R-SEC-07)
+      if (!dish.product_id) return false;
+      const res = await writeThrough(
+        RestaurantAPI.addDishToTable(tableNum, {
+          name: dish.name, price: dish.price, quantity: 1, product_id: dish.product_id,
+        })
       );
-
-      // Also create/append into live orders for KDS
-      setOrders((prev) => {
-        const existing = prev.find((o) => String(o.table_number) === String(tableNum) && o.status !== 'paid');
-        if (existing) {
-          const updatedItems = [
-            ...existing.items,
-            {
-              id: Date.now(),
-              name: dish.name,
-              quantity: 1,
-              price: dish.price,
-              unit: 'porsiya',
-              course: '2-taom' as const,
-            },
-          ];
-          return prev.map((o) =>
-            o.id === existing.id
-              ? { ...o, items: updatedItems, total_amount: o.total_amount + dish.price }
-              : o
-          );
-        } else {
-          const newOrder: LiveOrder = {
-            id: Date.now(),
-            order_number: `#${Math.floor(100 + Math.random() * 900)}`,
-            table_number: tableNum,
-            table_name: `Stol ${tableNum}`,
-            customer_name: 'Ofitsiant buyurtmasi',
-            status: 'preparing',
-            created_at: new Date().toISOString(),
-            total_amount: dish.price,
-            items: [
-              {
-                id: Date.now(),
-                name: dish.name,
-                quantity: 1,
-                price: dish.price,
-                unit: 'porsiya',
-                course: '2-taom' as const,
-              },
-            ],
-          };
-          return [newOrder, ...prev];
-        }
-      });
-
-      // Backend server bazasiga darhol atomik yozish (PostgreSQL/SQLite)
-      RestaurantAPI.addDishToTable(tableNum, dish);
+      return res?.status === 'success';
     },
-    []
+    [writeThrough]
   );
 
   const updateTableStatus = useCallback((tableNum: string | number, status: LiveTable['status'], guestsCount?: number) => {
@@ -1166,71 +1136,15 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     []
   );
 
-  const settleTableBill = useCallback((tableNum: string | number, paymentMethod: 'cash' | 'card' = 'cash') => {
-    let billSum = 0;
-    let tableHall = 'Asosiy Zal';
-
-    setTables((prev) =>
-      prev.map((t) => {
-        if (String(t.number) === String(tableNum)) {
-          billSum = t.total_bill;
-          tableHall = t.hall;
-          return {
-            ...t,
-            status: 'free',
-            total_bill: 0,
-            guests_count: 0,
-            active_orders_count: 0,
-          };
-        }
-        return t;
-      })
-    );
-
-    // Mark orders as paid
-    let customerName = 'Mijoz';
-    let orderNum = '#Chek';
-
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (String(o.table_number) === String(tableNum) && o.status !== 'paid') {
-          customerName = o.customer_name || customerName;
-          orderNum = o.order_number || orderNum;
-          return { ...o, status: 'paid' };
-        }
-        return o;
-      })
-    );
-
-    // Remove pending service calls for this table
-    setServiceCalls((prev) => prev.filter((c) => String(c.table_number) !== String(tableNum)));
-
-    // Increase today's revenue and auto-create Finance Transaction
-    if (billSum > 0) {
-      setTodayRevenue((prev) => prev + billSum);
-
-      const autoReceiptTx: FinanceTransaction = {
-        id: `tx-rcpt-${Date.now()}`,
-        type: 'income',
-        category: 'Restoran Tushumi (Chek)',
-        amount: billSum,
-        payment_method: paymentMethod,
-        source_type: 'receipt',
-        table_number: tableNum,
-        order_number: orderNum,
-        customer_name: customerName,
-        description: `Stol ${tableNum} (${tableHall}) hisobi yopildi. Chek ${orderNum}`,
-        created_at: new Date().toISOString(),
-      };
-
-      setFinanceTransactions((prev) => [autoReceiptTx, ...prev]);
-    }
-
-    // Single-Request: Serverda bitta so'rov orqali stolni bo'shatish va Moliya kassasiga kirim qilish
-    RestaurantAPI.settleTableBill(tableNum, paymentMethod).catch((e) =>
-      console.warn('Settle table sync fallback', e)
-    );
-  }, []);
+  const settleTableBill = useCallback(
+    async (tableNum: string | number, paymentMethod: 'cash' | 'card' = 'cash'): Promise<boolean> => {
+      // Server haqiqat manbai: hisobni server yopadi, kassaga kirimni ham server yozadi (to'lov turi bilan).
+      // Avval hisob lokal yopilib, kassa yozuvi brauzerda yaratilardi va server xatosi jim qolardi (R-FIN-04).
+      const res = await writeThrough(RestaurantAPI.settleTableBill(tableNum, paymentMethod));
+      return res?.status === 'success';
+    },
+    [writeThrough]
+  );
 
   // Service Call Operations
   const createServiceCall = useCallback(

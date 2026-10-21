@@ -127,7 +127,7 @@ def mark_payment_paid(payment, provider_payload=None, request=None, actor=None):
     # Avtomatik Moliya & Kassa kirimini yozish (Payme / Click / Uzum)
     try:
         from finance.services.order_integration import record_order_payment_income
-        record_order_payment_income(order)
+        record_order_payment_income(order, actor=actor)   # to'lov turi Payment provayderidan olinadi
     except Exception as e:
         logger.warning(f"Finance auto-record error on payment for order {order.pk}: {e}")
 

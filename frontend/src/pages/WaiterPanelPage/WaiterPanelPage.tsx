@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { StaffNavHeader, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import './WaiterPanelPage.css';
@@ -44,36 +45,6 @@ declare global {
   }
 }
 
-const DEFAULT_TABLE_ITEMS: Record<string | number, WaiterTableItem[]> = {
-  '01': [
-    { id: 1, name: 'To\'y Oshi', quantity: 2, price: 45000 },
-    { id: 2, name: 'Achchiq-chuchuk', quantity: 1, price: 15000 },
-    { id: 3, name: 'Tandir Non', quantity: 2, price: 5000 },
-    { id: 4, name: 'Ko\'k Choy', quantity: 1, price: 10000 },
-  ],
-  '05': [
-    { id: 5, name: 'Qozon Kabob', quantity: 3, price: 65000 },
-    { id: 6, name: 'Mastava Sho\'rva', quantity: 2, price: 35000 },
-    { id: 7, name: 'Tandir Non', quantity: 4, price: 5000 },
-    { id: 8, name: 'Limon Choy', quantity: 2, price: 15000 },
-  ],
-  'VIP-1': [
-    { id: 9, name: 'Qo\'y Go\'shti Shashlik', quantity: 6, price: 28000 },
-    { id: 10, name: 'Maxsus Devzira Osh', quantity: 4, price: 52000 },
-    { id: 11, name: 'Assorti Salati', quantity: 2, price: 38000 },
-    { id: 12, name: 'Somsa Go\'shtli', quantity: 6, price: 12000 },
-    { id: 13, name: 'Ko\'k Choy Zafaronli', quantity: 2, price: 25000 },
-  ],
-};
-
-const POPULAR_ADD_DISHES = [
-  { name: 'Tandir Non', price: 5000 },
-  { name: 'Ko\'k Choy', price: 10000 },
-  { name: 'Achchiq-chuchuk', price: 15000 },
-  { name: 'Shashlik (1 six)', price: 28000 },
-  { name: 'Osh (1 pors)', price: 45000 },
-];
-
 export interface WaiterPanelPageProps {
   embedded?: boolean;
 }
@@ -92,6 +63,7 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
     completeServiceCall,
     settleTableBill,
     addDishToTable,
+    orders: sharedOrders,
   } = useNavigation();
 
   const calls = sharedCalls as ServiceCall[];
@@ -100,7 +72,23 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
 
   // Modal & Active Table State
   const [activeModalTable, setActiveModalTable] = useState<WaiterTable | null>(null);
-  const [tableItemsMap, setTableItemsMap] = useState<Record<string | number, WaiterTableItem[]>>(DEFAULT_TABLE_ITEMS);
+  // Tezkor qo'shish tugmalari — restoranning haqiqiy menyusidan (avval 5 ta qattiq yozilgan taom, narxlari menyuga mos emas,
+  // serverga product_id'siz ketib rad etilardi). Hisob qatorlari — serverdagi shu stolning to'lanmagan buyurtmalaridan.
+  const [menuDishes, setMenuDishes] = useState<Array<{ product_id: number; name: string; price: number }>>([]);
+  useEffect(() => {
+    let alive = true;
+    void RestaurantAPI.getMenu().then((res) => {
+      if (!alive || !res?.products) return;
+      setMenuDishes(
+        res.products
+          .slice(0, 12)
+          .map((p: { id: number; name: string; price: number }) => ({ product_id: p.id, name: p.name, price: Number(p.price) }))
+      );
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [selectedPayMethod, setSelectedPayMethod] = useState<'cash' | 'card' | 'payme'>('cash');
   const [receiptTime, setReceiptTime] = useState('');
 
@@ -132,28 +120,11 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
     setReceiptTime(new Date().toLocaleString('uz-UZ'));
   }, []);
 
-  // Stolga tezkor taom qo'shish
-  const handleQuickAddDish = (dish: { name: string; price: number }) => {
+  // Stolga tezkor taom qo'shish (server qabul qilgandan keyingina "qo'shildi" deyiladi)
+  const handleQuickAddDish = async (dish: { product_id: number; name: string; price: number }) => {
     if (!activeModalTable) return;
-    const tblNum = activeModalTable.number;
-    addDishToTable(tblNum, dish);
-
-    const currentItems = tableItemsMap[tblNum] || [];
-    const existingIdx = currentItems.findIndex((it) => it.name === dish.name);
-    let updated: WaiterTableItem[];
-    if (existingIdx >= 0) {
-      updated = currentItems.map((it, idx) =>
-        idx === existingIdx ? { ...it, quantity: it.quantity + 1 } : it
-      );
-    } else {
-      updated = [
-        ...currentItems,
-        { id: currentItems.length + 1, name: dish.name, quantity: 1, price: dish.price },
-      ];
-    }
-
-    setTableItemsMap((prev) => ({ ...prev, [tblNum]: updated }));
-    showToast(`${dish.name} stolga qo'shildi`);
+    const ok = await addDishToTable(activeModalTable.number, dish);
+    showToast(ok ? `${dish.name} stolga qo'shildi` : "Taomni qo'shib bo'lmadi. Qayta urinib ko'ring.");
   };
 
   // Chekni chop etish
@@ -162,10 +133,16 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
   };
 
   // To'lovni qabul qilish va hisobni yopish
-  const handleAcceptPayment = () => {
+  const handleAcceptPayment = async () => {
     if (!activeModalTable) return;
     const tblNum = activeModalTable.number;
-    settleTableBill(tblNum);
+    // Ofitsiant tanlagan to'lov turi kassaga yetib borishi kerak (avval doim naqd yozilardi); Click/Payme — karta
+    const method: 'cash' | 'card' = selectedPayMethod === 'cash' ? 'cash' : 'card';
+    const ok = await settleTableBill(tblNum, method);
+    if (!ok) {
+      showToast("Hisobni yopib bo'lmadi. Qayta urinib ko'ring.");
+      return;
+    }
     showToast(`Stol #${tblNum} hisobi yopildi`);
     setActiveModalTable(null);
   };
@@ -174,9 +151,17 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
   const occupiedTablesCount = tables.filter((t) => t.status !== 'free').length;
   const totalRevenue = tables.reduce((sum, t) => sum + t.total_bill, 0);
 
-  const activeItems = activeModalTable ? tableItemsMap[activeModalTable.number] || [] : [];
+  // Hisob serverdagi shu stolning to'lanmagan buyurtmalaridan (mehmon QR orqali bergan buyurtmalar ham shu yerda)
+  const activeItems: WaiterTableItem[] = useMemo(() => {
+    if (!activeModalTable) return [];
+    return sharedOrders
+      .filter((o) => String(o.table_number) === String(activeModalTable.number) && o.status !== 'paid')
+      .flatMap((o) =>
+        o.items.map((it) => ({ id: Number(it.id), name: it.name, quantity: it.quantity, price: it.price }))
+      );
+  }, [sharedOrders, activeModalTable]);
   const subtotal = activeItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
-  const serviceFee = Math.round(subtotal * 0.1);
+  const serviceFee = 0;   // xizmat haqi olinmaydi (TZ qarori Q2); server ham 0% hisoblaydi
   const finalTotal = subtotal + serviceFee;
 
   return (
@@ -399,9 +384,9 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
               <div>
                 <span className="pos-section-label">Tezkor taom qo'shish:</span>
                 <div className="pos-quick-add">
-                  {POPULAR_ADD_DISHES.map((dish, idx) => (
+                  {menuDishes.map((dish) => (
                     <button
-                      key={idx}
+                      key={dish.product_id}
                       type="button"
                       className="btn-quick-dish"
                       onClick={() => handleQuickAddDish(dish)}
@@ -440,10 +425,12 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
                     <span>Taomlar summasi:</span>
                     <span className="tabular-nums">{new Intl.NumberFormat('uz-UZ').format(subtotal)} so'm</span>
                   </div>
-                  <div className="pos-sum-line">
-                    <span>Xizmat haqi (10%):</span>
-                    <span className="tabular-nums">+{new Intl.NumberFormat('uz-UZ').format(serviceFee)} so'm</span>
-                  </div>
+                  {serviceFee > 0 && (
+                    <div className="pos-sum-line">
+                      <span>Xizmat haqi:</span>
+                      <span className="tabular-nums">+{new Intl.NumberFormat('uz-UZ').format(serviceFee)} so'm</span>
+                    </div>
+                  )}
                   <div className="pos-sum-total">
                     <span>Jami to'lov:</span>
                     <span className="tabular-nums">{new Intl.NumberFormat('uz-UZ').format(finalTotal)} so'm</span>
@@ -530,10 +517,12 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
               <span>Summa:</span>
               <span>{subtotal} so'm</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Xizmat (10%):</span>
-              <span>{serviceFee} so'm</span>
-            </div>
+            {serviceFee > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Xizmat:</span>
+                <span>{serviceFee} so'm</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
               <span>JAMI:</span>
               <span>{finalTotal} SO'M</span>

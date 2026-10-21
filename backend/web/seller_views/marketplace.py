@@ -20,7 +20,8 @@ from django.contrib.auth import authenticate, login
 def seller_dashboard(request):
     shop = request.tenant_shop
     now = timezone.now()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    from orders.timeutils import local_day_start
+    today_start = local_day_start()
     week_start = now - timedelta(days=7)
 
     products_qs = Product.objects.filter(shop=shop)

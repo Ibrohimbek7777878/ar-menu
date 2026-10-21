@@ -1,65 +1,96 @@
+"""
+Buyurtma to'lovini moliya kirimiga aylantirish (TZ: R-FIN-01, R-FIN-02, R-FIN-06).
+
+Qoidalar:
+  1. Kirim FAQAT buyurtma haqiqatan to'langanda (payment_status='paid') yoziladi.
+     Avval "yetkazildi" bo'lishi bilan, hali pul olinmagan bo'lsa ham yozilardi — keyin stol yopilganda
+     yana yozilib, daromad ikki marta hisoblanardi.
+  2. Bitta buyurtma uchun bitta faol kirim (bazada noyoblik cheklovi bilan kafolatlanadi).
+  3. To'lov turi aniq beriladi yoki Payment yozuvidan olinadi. Avval Order'da bunday maydon yo'q edi va
+     `getattr(order, 'payment_method', '')` har doim bo'sh bo'lib, karta to'lovlari ham naqd yozilardi.
+  4. Sana — Toshkent sanasi.
+"""
 import logging
 from decimal import Decimal
-from finance.models import FinanceTransaction, FinanceCategory
+
+from django.db import IntegrityError, transaction
+
+from finance.models import FinanceCategory, FinanceTransaction
 from finance.services.defaults import seed_default_categories_for_shop
+from orders.timeutils import local_today
 
 logger = logging.getLogger(__name__)
 
-def record_order_payment_income(order):
+_CARD_PROVIDERS = {'click', 'payme', 'uzcard', 'uzum', 'card', 'karta', 'mock'}
+_VALID_METHODS = {code for code, _ in FinanceTransaction.PAYMENT_CHOICES}
+
+
+def payment_method_for(order, explicit=None) -> str:
+    """Kassaga yoziladigan to'lov turi: aniq berilgan → to'langan Payment provayderi → naqd."""
+    if explicit in _VALID_METHODS:
+        return explicit
+    try:
+        from payments.models import Payment
+        paid = Payment.objects.filter(order=order, status='paid').order_by('-id').first()
+        if paid:
+            return 'card' if str(paid.provider).lower() in _CARD_PROVIDERS else 'cash'
+    except Exception:  # pragma: no cover — Payment jadvali bo'lmasa naqd deb olinadi
+        logger.exception("Payment provayderini aniqlab bo'lmadi")
+    return 'cash'
+
+
+def _income_category(shop, has_table):
+    target = "Zaldagi Taom Savdosi" if has_table else "Yetkazib berish"
+    cat = FinanceCategory.objects.filter(shop=shop, category_type='income', name__icontains=target[:6]).first()
+    if not cat:
+        cat = FinanceCategory.objects.filter(shop=shop, category_type='income').first()
+    if not cat:
+        seed_default_categories_for_shop(shop)
+        cat = FinanceCategory.objects.filter(shop=shop, category_type='income').first()
+    return cat
+
+
+def record_order_payment_income(order, payment_method=None, actor=None):
     """
-    Buyurtma to'langanda yoki yetkazib berilganda (delivered) avtomatik ravishda
-    sellerning Kassa & Moliya tushumiga FinanceTransaction qo'shish.
+    To'langan buyurtma uchun kassa kirimini yozadi. Idempotent: qayta chaqirilsa yangi yozuv qo'shilmaydi.
+    To'lanmagan buyurtma uchun hech narsa yozilmaydi. Yaratilgan yozuv yoki None qaytaradi.
     """
     try:
         if not order or not getattr(order, 'shop', None):
             return None
-
-        # Agar ushbu buyurtma uchun allaqachon kirim yozilgan bo'lsa, qayta yozilmaydi
-        if FinanceTransaction.objects.filter(order=order, tx_type='income').exists():
+        if getattr(order, 'payment_status', '') != 'paid':
+            return None
+        if FinanceTransaction.objects.filter(order=order, tx_type='income', is_cancelled=False).exists():
             return None
 
         amount = getattr(order, 'final_amount', None) or getattr(order, 'total_amount', Decimal('0'))
         if not amount or amount <= 0:
             return None
 
-        # Stol buyurtmasi yoki yetkazib berish kategoriyasini moslashtirish
-        has_table = getattr(order, 'table', None) or getattr(order, 'table_number', None)
-        target_name = "Zaldagi Taom Savdosi" if has_table else "Yetkazib berish"
+        table = getattr(order, 'table', None)
+        source_info = f"Stol #{table.number}" if table else f"Buyurtma #{order.order_number}"
+        customer_name = getattr(order, 'customer_name', '') or 'Mijoz'
 
-        cat = FinanceCategory.objects.filter(
-            shop=order.shop, category_type='income', name__icontains=target_name[:6]
-        ).first()
-        if not cat:
-            cat = FinanceCategory.objects.filter(shop=order.shop, category_type='income').first()
-        if not cat:
-            seed_default_categories_for_shop(order.shop)
-            cat = FinanceCategory.objects.filter(shop=order.shop, category_type='income').first()
-
-        # To'lov usulini aniqlash
-        pm_str = str(getattr(order, 'payment_method', '') or '').lower()
-        if any(w in pm_str for w in ['payme', 'click', 'uzum', 'card', 'karta']):
-            payment_method = 'card'
-        elif any(w in pm_str for w in ['bank', 'transfer', 'hisob']):
-            payment_method = 'bank'
-        else:
-            payment_method = 'cash'
-
-        source_info = f"Stol #{order.table.number}" if getattr(order, 'table', None) else f"Buyurtma #{order.pk}"
-        cust = getattr(order, 'customer', None)
-        customer_name = getattr(cust, 'full_name', '') or getattr(order, 'contact_name', '') or 'Mijoz'
-
-        tx = FinanceTransaction.objects.create(
-            shop=order.shop,
-            order=order,
-            category=cat,
-            tx_type='income',
-            amount=amount,
-            payment_method=payment_method,
-            title=f"Savdo: {source_info}",
-            notes=f"Avtomatik kassa tushumi: Buyurtma #{order.pk} ({customer_name})"
-        )
-        logger.info(f"Order #{order.pk} recorded as finance income {amount} UZS for shop {order.shop.name}")
+        try:
+            with transaction.atomic():
+                tx = FinanceTransaction.objects.create(
+                    shop=order.shop,
+                    order=order,
+                    category=_income_category(order.shop, bool(table)),
+                    tx_type='income',
+                    stage='income',
+                    amount=amount,
+                    payment_method=payment_method_for(order, payment_method),
+                    title=f"Savdo: {source_info}",
+                    notes=f"Avtomatik kassa tushumi: {order.order_number} ({customer_name})",
+                    tx_date=local_today(),
+                    created_by=actor if getattr(actor, 'pk', None) else None,
+                )
+        except IntegrityError:
+            # Parallel jarayon xuddi shu buyurtma kirimini allaqachon yozgan (noyoblik cheklovi ushladi)
+            return None
+        logger.info("Buyurtma %s kassaga %s so'm kirim (%s)", order.order_number, amount, tx.payment_method)
         return tx
-    except Exception as e:
-        logger.warning(f"Failed to record order #{getattr(order, 'pk', '?')} in finance: {e}")
+    except Exception:
+        logger.exception("Buyurtma %s kirimini yozib bo'lmadi", getattr(order, 'order_number', '?'))
         return None

@@ -17,6 +17,7 @@ from categories.models import Category
 from ar3d.models import Product3DModel
 from notifications.outbox import OutboxService
 from orders.numbering import next_order_number
+from orders.timeutils import local_today
 
 
 class RestaurantOrderService:
@@ -151,7 +152,7 @@ class RestaurantOrderService:
 
     @classmethod
     @transaction.atomic
-    def settle_table_bill(cls, table_number: str, payment_method: str = 'cash', shop: Shop = None) -> Dict[str, Any]:
+    def settle_table_bill(cls, table_number: str, payment_method: str = 'cash', shop: Shop = None, actor=None) -> Dict[str, Any]:
         """
         Bitta so'rov bilan stol hisobini yopish (Atomic Single-Request):
         1. Stolga tegishli barcha ochiq buyurtmalarni 'paid' qiladi.
@@ -180,6 +181,8 @@ class RestaurantOrderService:
             payment_status__in=['unpaid', 'pending'],
         ).exclude(status__in=['cancelled', 'failed'])
 
+        from finance.services.order_integration import record_order_payment_income
+
         total_settled = Decimal('0')
         order_numbers = []
 
@@ -188,26 +191,11 @@ class RestaurantOrderService:
             order_numbers.append(ord_obj.order_number)
             ord_obj.payment_status = 'paid'
             ord_obj.status = 'delivered'
-            ord_obj.save(update_fields=['payment_status', 'status'])
-
-        # Moliya (FinanceTransaction) kassasiga avtomatik kirim yozish
-        if total_settled > 0:
-            category, _ = FinanceCategory.objects.get_or_create(
-                shop=shop,
-                name="Restoran Tushumi (Chek)",
-                defaults={'category_type': 'income', 'icon': '🧾'}
-            )
-            FinanceTransaction.objects.create(
-                shop=shop,
-                category=category,
-                tx_type='income',
-                stage='income',
-                amount=total_settled,
-                payment_method=payment_method,
-                title=f"Stol #{table_number} yopildi ({', '.join(order_numbers) or '#Chek'})",
-                notes=f"To'lov turi: {payment_method.upper()}. Avtomatik chek hisobidan.",
-                tx_date=timezone.now().date()
-            )
+            ord_obj.delivered_at = ord_obj.delivered_at or timezone.now()
+            ord_obj.save(update_fields=['payment_status', 'status', 'delivered_at'])
+            # Har bir buyurtma o'ziga bog'langan BITTA kirim bo'ladi, to'lov turi (naqd/karta) to'g'ri yoziladi.
+            # Avval stol bo'yicha bitta bog'lanmagan yozuv yozilardi va "yetkazildi" hooki yana kirim qo'shardi.
+            record_order_payment_income(ord_obj, payment_method=payment_method, actor=actor)
 
         # Stolni bo'shatish
         table_obj.status = 'free'
@@ -326,7 +314,7 @@ class RestaurantOrderService:
 
         date_val = filters.get('date')
         if date_val == 'today':
-            qs = qs.filter(reservation_date=timezone.now().date())
+            qs = qs.filter(reservation_date=local_today())
         elif date_val:
             qs = qs.filter(reservation_date=date_val)
 
@@ -384,16 +372,16 @@ class RestaurantOrderService:
 
         date_val = payload.get('reservation_date') or payload.get('date')
         if not date_val or str(date_val).lower() == 'hozir':
-            parsed_date = timezone.now().date()
+            parsed_date = local_today()
         else:
             try:
                 parsed_date = datetime.date.fromisoformat(str(date_val))
             except ValueError:
-                parsed_date = timezone.now().date()
+                parsed_date = local_today()
 
         time_val = payload.get('reservation_time') or payload.get('time')
         if not time_val or str(time_val).lower() == 'hozir':
-            parsed_time = timezone.now().time()
+            parsed_time = timezone.localtime().time()
         else:
             try:
                 parts = str(time_val).split(':')
