@@ -13,8 +13,14 @@ class SellerTenantMiddleware(MiddlewareMixin):
     super_admin uchun ?shop=ID orqali ixtiyoriy tanlash.
     shop_owner /admin/* ga kirsa → /seller/ ga yo'naltiriladi.
     """
+    # Media/fayl so'rovlari uchun foydalanuvchi va sessiya bazadan o'qilmaydi: har rasm va 3D model so'rovi
+    # avval 2 ta qo'shimcha so'rov qilardi va javobga `Vary: Cookie` qo'shib, keshlanishiga to'sqinlik qilardi
+    SKIP_PREFIXES = ('/media/', '/assets/', '/static/', '/health/', '/favicon.ico')
+
     def process_request(self, request):
         request.tenant_shop = None
+        if request.path.startswith(self.SKIP_PREFIXES):
+            return None
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated:
             return None
@@ -74,7 +80,14 @@ class SellerTenantMiddleware(MiddlewareMixin):
 
 
 class LanguageMiddleware(MiddlewareMixin):
+    # Til tanlash kerak bo'lmagan so'rovlar: media/fayl so'rovlari sessiyaga umuman tegmaydi
+    SKIP_PREFIXES = ('/media/', '/assets/', '/static/', '/health/', '/favicon.ico')
+
     def process_request(self, request):
+        if request.path.startswith(self.SKIP_PREFIXES):
+            request.language = 'uz'
+            request._skip_language = True
+            return None
         lang = None
 
         # 1. URL parameter'dan olish: ?lang=uz
@@ -104,7 +117,11 @@ class LanguageMiddleware(MiddlewareMixin):
         # Saqlash + Django translation activate
         request.language = lang
         request.LANGUAGE_CODE = lang
-        request.session['language'] = lang
+        # Sessiyaga FAQAT foydalanuvchi tilni aniq o'zgartirganda (?lang=) yoziladi. Avval har so'rovda yozilardi:
+        # har sahifa va har rasm uchun bazaga UPDATE (1869 ta sessiya qatori 80 ta buyurtmaga qarshi), SQLite
+        # yozuvlari navbatga tushardi va javobga `Vary: Cookie` qo'shilib keshlab bo'lmasdi (TZ R1-4). Til cookie'da.
+        if 'lang' in request.GET and request.session.get('language') != lang:
+            request.session['language'] = lang
         try:
             from django.utils import translation
             translation.activate(lang)
@@ -114,8 +131,11 @@ class LanguageMiddleware(MiddlewareMixin):
         return None
 
     def process_response(self, request, response):
+        if getattr(request, '_skip_language', False):
+            return response
         lang = getattr(request, 'language', 'uz')
-        response.set_cookie('language', lang, max_age=365 * 24 * 60 * 60)
+        if request.COOKIES.get('language') != lang:
+            response.set_cookie('language', lang, max_age=365 * 24 * 60 * 60)
         # To'g'ri Content-Language header
         response['Content-Language'] = lang
         try:

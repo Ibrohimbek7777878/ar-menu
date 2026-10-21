@@ -3,6 +3,16 @@ import { SubdomainService } from '../routing/SubdomainService';
 
 const STORAGE_KEY = 'restaurant_device_grant';
 
+/** Yo'l qaysi panel rolini talab qiladi (null — mehmon sahifasi). */
+export function roleRequiredForPath(path: string): UserRole | null {
+  const clean = path.split('?')[0].split('#')[0];
+  if (clean.includes('/admin') || clean.includes('/finance')) return 'admin';
+  if (clean.includes('/waiter') || clean.includes('/ofitsiant')) return 'waiter';
+  if (clean.includes('/kds') || clean.includes('/kitchen')) return 'kitchen';
+  if (clean.includes('/hostess') || clean.includes('/arrival')) return 'hostess';
+  return null;
+}
+
 class RoleService {
   private defaultSession: UserSession = {
     role: 'guest',
@@ -12,6 +22,24 @@ class RoleService {
 
   constructor() {
     this.checkUrlForStaffGrant();
+  }
+
+  /**
+   * Demo rejim: qurilma-ruxsatnomasi (?staff_grant=), subdomen va yo'l bo'yicha avtomatik rol — faqat shu rejimda.
+   * Production'da rol faqat Django sessiyasidan keladi (window.__GULISTON_SESSION__). Vite dev server'da
+   * (Django yo'q) lokal sinov uchun demo.
+   */
+  public isDemo(): boolean {
+    if (typeof window === 'undefined') return false;
+    const server = window.__GULISTON_SESSION__;
+    if (server) return server.demo === true;
+    return import.meta.env.DEV;
+  }
+
+  /** Server tasdiqlagan xodim sessiyasi bormi (login + parol bilan kirgan). */
+  public hasServerSession(): boolean {
+    const server = typeof window !== 'undefined' ? window.__GULISTON_SESSION__ : undefined;
+    return !!server && server.role !== 'guest';
   }
 
   /**
@@ -29,6 +57,7 @@ class RoleService {
       const validRoles: UserRole[] = ['waiter', 'kitchen', 'hostess', 'admin'];
 
       if (staffGrant && validRoles.includes(staffGrant)) {
+        // grantRole production'da hech narsa bermaydi — havola orqali rol olib bo'lmaydi
         this.grantRole(staffGrant, staffName || `${staffGrant.toUpperCase()} Qurilmasi`);
 
         // URL manzilidan ?staff_grant parametrini tozalash
@@ -49,7 +78,19 @@ class RoleService {
   public getSession(): UserSession {
     if (typeof window === 'undefined') return this.defaultSession;
 
-    // 1. Agar subdomen xodimlar subdomeni bo'lsa (masalan: admin.domain.uz)
+    // 0. Server tasdiqlagan sessiya (login + parol) — har doim ustun
+    const server = window.__GULISTON_SESSION__;
+    if (server && server.role !== 'guest') {
+      return {
+        role: server.role,
+        roles: server.roles,
+        name: server.name || server.role,
+        isAuthenticatedStaff: true,
+      };
+    }
+    if (!this.isDemo()) return this.defaultSession;
+
+    // 1. (Demo) Agar subdomen xodimlar subdomeni bo'lsa (masalan: admin.domain.uz)
     const subInfo = SubdomainService.getSubdomainInfo();
     if (subInfo.detectedRole) {
       return {
@@ -71,16 +112,23 @@ class RoleService {
   }
 
   /**
-   * Joriy rolni olish (Default: 'guest' yoki subdomen roli)
+   * Joriy rolni olish (Default: 'guest'). Bir nechta panelni qoplaydigan server roli (ofitsiant) uchun —
+   * ochilayotgan yo'lga mos panel roli (masalan /kds da 'kitchen').
    */
-  public getCurrentRole(): UserRole {
-    return this.getSession().role;
+  public getCurrentRole(path?: string): UserRole {
+    const session = this.getSession();
+    if (session.roles && session.roles.length > 1 && typeof window !== 'undefined') {
+      const needed = roleRequiredForPath(path ?? window.location.pathname);
+      if (needed && session.roles.includes(needed)) return needed;
+    }
+    return session.role;
   }
 
   /**
    * Admin yoki xodim qurilmasiga ruxsat berish (Parolsiz, PIN-kodsiz)
    */
   public grantRole(role: UserRole, name = 'Xodim'): void {
+    if (!this.isDemo()) return;   // production: rol faqat server sessiyasidan
     const session: UserSession = {
       role,
       name,

@@ -155,11 +155,29 @@ class RestaurantFlowTests(TestCase):
         self.assertEqual(Table.objects.count(), tables_before)    # zalsiz stol yaratilmaydi
         self.assertEqual(Order.objects.count(), 0)
 
-    def test_existing_manual_table_number_works_without_qr(self):
+    @override_settings(RESTAURANT_ALLOW_TABLE_NUMBER_URL=True)
+    def test_existing_manual_table_number_works_without_qr_when_flag_enabled(self):
         self.cart(action='set', product_id=self.osh.pk, quantity=1)
         res = self.checkout(table_number_manual='3')
         self.assertTrue(res.json()['ok'])
         self.assertEqual(Order.objects.get().table.number, '3')
+
+    def test_guessable_table_number_is_refused_by_default(self):
+        """Production standarti: stol raqamini yozib (yoki ?table=3 bilan) begona stolga buyurtma berib bo'lmaydi."""
+        self.cart(action='set', product_id=self.osh.pk, quantity=1)
+        for extra in ({'table_number_manual': '3'}, {'table_id': str(self.table.pk)}):
+            res = self.checkout(**extra)
+            self.assertEqual(res.status_code, 400, extra)
+            self.assertIn('Stol aniqlanmadi', res.json()['error'])
+        self.client.get('/menu/?table=3')                      # raqam bilan "kirish" ham stol bermaydi
+        res = self.checkout()
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(Order.objects.count(), 0)
+
+    def test_qr_token_still_identifies_the_table_in_production(self):
+        self.scan_qr()
+        self.cart(action='set', product_id=self.osh.pk, quantity=1)
+        self.assertEqual(Order.objects.get(pk=self.checkout().json()['order_id']).table, self.table)
 
     def test_archived_dish_in_cart_is_not_ordered(self):
         self.scan_qr()

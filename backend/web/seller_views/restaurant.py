@@ -97,7 +97,9 @@ def seller_tables(request):
         stats['ai_cost_today'] = float(sum(AIUsage.objects.filter(created_at__gte=_today).values_list('cost_usd', flat=True) or [0]))
     except Exception:
         stats['ai_cost_today'] = 0
-    return render(request, 'seller/tables.html', {'halls': halls, 'shop': shop, 'general_menu_url': general_menu_url, 'stats': stats})
+    from tables_restaurant.qr import qr_base_url
+    return render(request, 'seller/tables.html', {'halls': halls, 'shop': shop, 'general_menu_url': general_menu_url,
+                                                  'stats': stats, 'qr_base': qr_base_url(request)})
 
 
 @seller_required
@@ -106,9 +108,11 @@ def seller_tables_print_stands(request):
     from tables_restaurant.models import Table
     shop = request.tenant_shop
     tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('hall__order', 'number') if shop else []
+    from tables_restaurant.qr import qr_base_url
     return render(request, 'seller/table_stands_print.html', {
         'shop': shop,
         'tables': tables,
+        'qr_base': qr_base_url(request),
     })
 
 
@@ -534,8 +538,9 @@ def seller_tables_plan(request):
     elif halls:
         hall = halls[0]
     tables = hall.tables.all() if hall else []
+    from tables_restaurant.qr import qr_base_url
     return render(request, 'seller/tables_plan.html', {
-        'halls': halls, 'hall': hall, 'tables': tables, 'shop': shop,
+        'halls': halls, 'hall': hall, 'tables': tables, 'shop': shop, 'qr_base': qr_base_url(request),
     })
 
 

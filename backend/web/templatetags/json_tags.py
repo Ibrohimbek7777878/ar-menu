@@ -28,6 +28,16 @@ _JSON_SCRIPT_ESCAPES = {
 }
 
 
+@register.simple_tag(takes_context=True)
+def gulistan_session(context):
+    """<script>window.__GULISTON_SESSION__ = {role, roles, name, demo};</script> — rol faqat serverdan (R1-9)."""
+    from web.restaurant_auth import spa_session
+    request = context.get('request')
+    payload = spa_session(request) if request is not None else {'role': 'guest', 'roles': [], 'demo': False}
+    text = json.dumps(payload, ensure_ascii=False).translate(_JSON_SCRIPT_ESCAPES)
+    return mark_safe(f'<script>window.__GULISTON_SESSION__ = {text};</script>')
+
+
 @register.filter(is_safe=True)
 def script_json(value):
     """

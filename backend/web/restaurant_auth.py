@@ -98,6 +98,43 @@ def remember_guest_order(request, order):
     session.modified = True
 
 
+# React paneli rollari. Server roli → panel roli; ofitsiant hozircha oshxona va hostess ekranlarini ham qoplaydi
+# (RESTAURANT_STAFF_ROLES izohiga qarang) — R2 da alohida kitchen/hostess rollari qo'shilgach shu yerda bo'linadi.
+_SPA_ROLE = {'super_admin': 'admin', 'shop_owner': 'admin', 'shop_manager': 'admin', 'waiter': 'waiter'}
+_SPA_ROLES = {'admin': ['admin'], 'waiter': ['waiter', 'kitchen', 'hostess']}
+
+
+def spa_session(request):
+    """React uchun HAQIQIY (server tasdiqlagan) sessiya: {role, roles, name, demo}.
+
+    Avval panel roli brauzerning localStorage'iga yoki ?staff_grant= havolasiga qarab berilardi: istalgan mehmon
+    `/?staff_grant=admin` ochib admin interfeysini ko'ra olardi. Endi rol faqat Django sessiyasidan keladi; eski
+    qurilma-ruxsatnomasi mexanizmi faqat DEMO_MODE'da ishlaydi (o'chirilmagan, flag ortiga yashirilgan).
+    """
+    from django.conf import settings
+    user = getattr(request, 'user', None)
+    role = _SPA_ROLE.get(user_role(user), '') if is_restaurant_staff(user) else ''
+    payload = {'role': role or 'guest', 'roles': _SPA_ROLES.get(role, []), 'demo': bool(getattr(settings, 'DEMO_MODE', False))}
+    if role:
+        payload['name'] = (user.get_full_name() or user.get_username()).strip()
+    return payload
+
+
+def guest_session_table(request):
+    """Mehmon QR skanerlaganda sessiyada eslab qolingan stol (tasodifiy token orqali), aks holda None."""
+    import uuid
+    session = getattr(request, 'session', None)
+    raw = session.get('tma_table_token') if session is not None else None
+    if not raw:
+        return None
+    try:
+        token = uuid.UUID(str(raw).strip())
+    except (ValueError, TypeError, AttributeError):
+        return None
+    from tables_restaurant.models import Table
+    return Table.objects.filter(qr_token=token, is_active=True).select_related('shop', 'hall').first()
+
+
 def guest_order_ids(request):
     session = getattr(request, 'session', None)
     if session is None:

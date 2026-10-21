@@ -7,7 +7,9 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, SAFE_METHODS
+from rest_framework.throttling import ScopedRateThrottle
+from django.conf import settings
 from django.utils import timezone
 from orders.models import Order, OrderItem
 from tables_restaurant.models import Table, ServiceCall, Hall, TableReservation
@@ -17,7 +19,7 @@ from orders.application.services import RestaurantOrderService
 from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION, IsRestaurantManager, IsRestaurantStaff,
 )
-from web.restaurant_auth import is_restaurant_staff, remember_guest_order, staff_shop
+from web.restaurant_auth import guest_session_table, is_restaurant_staff, remember_guest_order, staff_shop
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,14 @@ class RestaurantAPIView(APIView):
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
     permission_classes = [IsRestaurantStaff]
+    throttle_scope = 'guest_write'
+
+    def get_throttles(self):
+        # Mehmon yozuvlari (buyurtma, chaqiruv, bron) suiiste'moldan cheklanadi; xodim ekranlari (5 soniyalik
+        # yangilanish) va o'qish so'rovlari cheklanmaydi (TZ R1-5)
+        if self.request.method in SAFE_METHODS or is_restaurant_staff(self.request.user):
+            return []
+        return [ScopedRateThrottle()]
 
     def staff_shop(self):
         return staff_shop(self.request)
@@ -175,6 +185,10 @@ class RestaurantTablesStateView(RestaurantAPIView):
                 'guests_count': 0,
                 'total_bill': float(bill_sum),
                 'active_orders_count': active_count,
+                # Bosma QR uchun doimiy havola (faqat xodim ko'radi): /t/<uuid>/, domen — RESTAURANT_PUBLIC_URL
+                'qr_token': str(t.qr_token),
+                'qr_path': t.qr_path,
+                'public_url': getattr(settings, 'RESTAURANT_PUBLIC_URL', ''),
             })
         return Response(data)
 
@@ -213,7 +227,9 @@ class ServiceCallActionView(RestaurantAPIView):
         title = str(request.data.get('title') or 'Ofitsiant chaqiruvi')[:255]
 
         shop = RestaurantOrderService.get_or_default_shop()
-        table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
+        table_obj = None
+        if is_restaurant_staff(request.user) or getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+            table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
         if not table_obj:
             # QR token (UUID) bilan ham qabul qilinadi: QR dan kirgan mehmonning brauzerida stol raqami o'rniga token turishi mumkin
             import uuid as _uuid
@@ -221,8 +237,13 @@ class ServiceCallActionView(RestaurantAPIView):
                 table_obj = Table.objects.filter(shop=shop, qr_token=_uuid.UUID(table_num), is_active=True).first()
             except (ValueError, AttributeError):
                 table_obj = None
+        if not table_obj and not is_restaurant_staff(request.user):
+            # Mehmon: stol raqamini o'zi yozishi mumkin emas — QR skanerlaganda sessiyaga yozilgan stol olinadi
+            session_table = guest_session_table(request)
+            if session_table and session_table.shop_id == getattr(shop, 'id', None):
+                table_obj = session_table
         if not table_obj:
-            return Response({'error': 'Stol topilmadi'}, status=404)
+            return Response({'error': 'Stol topilmadi. Stol ustidagi QR kodni qayta skanerlang.'}, status=404)
 
         # Spamdan himoya: shu stol va shu tur bo'yicha javobsiz chaqiruv bo'lsa — yangisi yaratilmaydi
         existing = ServiceCall.objects.filter(table=table_obj, call_type=call_type, status='pending').first()

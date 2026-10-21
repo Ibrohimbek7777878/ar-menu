@@ -4,38 +4,67 @@ Online Store Guliston — Local Commerce OS
 """
 
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
+
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 try:
     from dotenv import load_dotenv
-    # backend/.env yoki asosiy papkadagi .env ni yuklash
-    load_dotenv(BASE_DIR / '.env', override=True)
-    load_dotenv(BASE_DIR.parent / '.env', override=False)
+    # backend/.env yoki asosiy papkadagi .env ni yuklash. DJANGO_SKIP_DOTENV=1 — faqat jarayon muhitidan o'qish
+    # (CI, konteyner va production sozlamalarini tekshiruvchi testlar uchun).
+    if os.environ.get('DJANGO_SKIP_DOTENV') != '1':
+        load_dotenv(BASE_DIR / '.env', override=True)
+        load_dotenv(BASE_DIR.parent / '.env', override=False)
 except Exception:
     pass
 
-# Security
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
-STATIC_SECRET_KEY = 'django-insecure-MVZfwO0RUY8EaznN3m4r2Wxnh7bPLOFlqIWX4i5NWC53dvtXtkAPpF0DcFLW83io2Mw'
-SECRET_KEY = (
-    os.environ.get('DJANGO_SECRET_KEY', '').strip()
-    or os.environ.get('SECRET_KEY', '').strip()
-    or STATIC_SECRET_KEY
-)
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',') if h.strip()]
+def _env_bool(name, default=False):
+    raw = os.environ.get(name)
+    return default if raw is None else raw.strip().lower() in ('1', 'true', 'yes', 'on')
 
-# CSRF Trusted Origins (Production web va admin panel uchun)
-CSRF_TRUSTED_ORIGINS = [
-    orig.strip()
-    for orig in os.environ.get(
-        'CSRF_TRUSTED_ORIGINS',
-        'http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000'
-    ).split(',')
-    if orig.strip()
-]
+
+def _env_list(name, default=''):
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
+# `manage.py test` ishlayaptimi (testlar production qoidalariga emas, test muhitiga bo'ysunadi)
+RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+# ─── Xavfsizlik (TZ R1-1…R1-3) ─────────────────────────────────────────────────────────────────────
+# DEBUG standarti FALSE: .env bo'lmasa yoki unutilsa server xavfsiz holatda ishga tushadi
+# (avval standart True edi — xato sahifalarida kod va sozlamalar ochilib ketardi).
+DEBUG = _env_bool('DEBUG', False)
+
+# Faqat lokal ishlash uchun belgilangan kalit. Avval kodda git tarixiga tushgan HAQIQIY kalit turardi.
+DEV_ONLY_SECRET_KEY = 'dev-only-insecure-key-never-use-this-on-a-public-server-0123456789'
+_env_secret = os.environ.get('DJANGO_SECRET_KEY', '').strip() or os.environ.get('SECRET_KEY', '').strip()
+if _env_secret:
+    SECRET_KEY = _env_secret
+elif DEBUG or RUNNING_TESTS:
+    SECRET_KEY = DEV_ONLY_SECRET_KEY
+else:
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY o'rnatilmagan. Production'da kalit majburiy. Yaratish: "
+        "python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+    )
+if not DEBUG and not RUNNING_TESTS and (
+    len(SECRET_KEY) < 50 or SECRET_KEY.startswith('django-insecure-') or SECRET_KEY == DEV_ONLY_SECRET_KEY
+):
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY zaif yoki ochiq: kamida 50 belgi, 'django-insecure-' bilan boshlanmasin.")
+
+ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver')
+if not DEBUG and not RUNNING_TESTS and ('*' in ALLOWED_HOSTS or not ALLOWED_HOSTS):
+    raise ImproperlyConfigured("Production'da ALLOWED_HOSTS aniq domen bo'lishi kerak ('*' mumkin emas).")
+
+# CSRF Trusted Origins: lokal rejimda localhost, production'da faqat .env dagi aniq manzillar
+CSRF_TRUSTED_ORIGINS = _env_list(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000' if (DEBUG or RUNNING_TESTS) else '',
+)
 
 # Application definition
 INSTALLED_APPS = [
@@ -80,6 +109,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'backend.upload_validation.UploadValidationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'backend.middleware.SellerTenantMiddleware',
     'backend.middleware.LanguageMiddleware',
@@ -96,6 +126,24 @@ PORT_STUDIO = int(os.environ.get('PORT_STUDIO', 8003))
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+if not DEBUG and not RUNNING_TESTS:
+    # HTTPS orqali ishlayotgan server uchun (TZ R1-3). TLS'ni nginx/Cloudflare tugatsa SECURE_BEHIND_PROXY=True bering.
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', True)
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 31536000))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+    SECURE_HSTS_PRELOAD = False
+    # Ataylab yoqilmagan ikki tavsiya: preload brauzer ro'yxatiga QAYTARIB BO'LMAYDIGAN qo'shadi; subdomenlarni
+    # qamrash esa hamma subdomen HTTPS ekanini bilgandagina xavfsiz. Egasi domen tayyor bo'lgach yoqadi (R9).
+    SILENCED_SYSTEM_CHECKS = ['security.W005', 'security.W021']
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    if _env_bool('SECURE_BEHIND_PROXY', False):
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Ishonchli proxy'lar soni (nginx/Cloudflare = 1). 0 bo'lsa X-Forwarded-For e'tiborga olinmaydi (soxtalashtirish mumkin).
+TRUSTED_PROXY_COUNT = int(os.environ.get('TRUSTED_PROXY_COUNT', 0))
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -123,6 +171,13 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DEMO_MODE = os.environ.get('DEMO_MODE', 'False').lower() == 'true'
 # Faqat mock to'lov sahifalari (DEMO_MODE'siz). Production'da False.
 ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 'true'
+
+# Stolni oddiy raqam (?table=5, qo'lda kiritish, stol ID) bilan tanlash taxmin qilinadi: begona stolga buyurtma/chaqiruv
+# yuborish mumkin. Production'da stol faqat QR'dagi tasodifiy token (/t/<uuid>/) orqali aniqlanadi. Raqam bilan kirish
+# faqat DEMO_MODE'da yoki shu flag aniq yoqilganda ishlaydi (TZ R1-10; funksiya o'chirilmagan — flag ortiga yashirilgan).
+RESTAURANT_ALLOW_TABLE_NUMBER_URL = _env_bool('RESTAURANT_ALLOW_TABLE_NUMBER_URL', DEMO_MODE)
+# Bosma QR kodlar ko'rsatadigan domen (masalan https://menu.example.uz). Bo'sh bo'lsa — xodim ochgan sayt domeni.
+RESTAURANT_PUBLIC_URL = os.environ.get('RESTAURANT_PUBLIC_URL', '').strip().rstrip('/')
 
 # Restoran xizmat haqi foizi (TZ qarori Q2: xizmat haqi olinmaydi → 0). Kerak bo'lsa .env orqali yoqiladi.
 RESTAURANT_SERVICE_FEE_PERCENT = os.environ.get('RESTAURANT_SERVICE_FEE_PERCENT', '0')
@@ -169,12 +224,20 @@ else:
         }
     }
 
-# Cache — Redis when REDIS_URL is set, otherwise in-process memory
+# Cache — Redis bo'lsa Redis; production'da Redis'siz bo'lsa fayl keshi (bitta serverdagi barcha gunicorn
+# jarayonlari uchun UMUMIY: rate limit hisoblagichlari jarayonlar orasida bo'lingan bo'lmaydi); lokal/testda xotira.
 if os.environ.get('REDIS_URL'):
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
             'LOCATION': os.environ['REDIS_URL'],
+        }
+    }
+elif not DEBUG and not RUNNING_TESTS:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': os.environ.get('CACHE_DIR', str(BASE_DIR / 'cache')),
         }
     }
 else:
@@ -231,6 +294,13 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    # Mehmon yozuv endpoint'lari uchun (ScopedRateThrottle). Restoran Wi-Fi'sidagi hamma mehmon bitta IP'dan
+    # chiqadi, shuning uchun chegaralar faqat suiiste'molni to'xtatadigan darajada keng.
+    'NUM_PROXIES': TRUSTED_PROXY_COUNT,
+    'DEFAULT_THROTTLE_RATES': {
+        'guest_write': os.environ.get('THROTTLE_GUEST_WRITE', '240/min'),
+        'login': os.environ.get('THROTTLE_LOGIN', '20/min'),
+    },
 }
 
 # JWT
@@ -246,11 +316,8 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = [
-        o.strip()
-        for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'https://guliston.uz,https://www.guliston.uz').split(',')
-        if o.strip()
-    ]
+    # Production'da faqat .env dagi aniq domenlar (avval kodga yozilgan guliston.uz standart edi)
+    CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS', '')
     CORS_ALLOW_CREDENTIALS = True
 
 # Internationalization
@@ -272,12 +339,59 @@ LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
 
+# ─── Yuklash limitlari (TZ R1-6) ───────────────────────────────────────────────────────────────────
+# Fayl bo'lmagan so'rov tanasi (JSON, forma) cheklanadi; fayl hajmlari yuklash joyida tekshiriladi (core/uploads.py).
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('DATA_UPLOAD_MAX_MB', 10)) * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
+UPLOAD_MAX_IMAGE_MB = int(os.environ.get('UPLOAD_MAX_IMAGE_MB', 5))
+UPLOAD_MAX_MODEL_MB = int(os.environ.get('UPLOAD_MAX_MODEL_MB', 15))
+UPLOAD_MAX_VIDEO_MB = int(os.environ.get('UPLOAD_MAX_VIDEO_MB', 50))
+
+# ─── Loglar (TZ R1-8) ──────────────────────────────────────────────────────────────────────────────
+# Aylanuvchi fayllar (hajmi cheklangan) — disk to'lib ketmaydi. Maxfiy qiymatlar logga ataylab yozilmaydi.
+LOG_DIR = Path(os.environ.get('LOG_DIR', str(BASE_DIR / 'logs')))
+_log_handlers = ['console']
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'standard'},
+    },
+    'root': {'handlers': _log_handlers, 'level': os.environ.get('LOG_LEVEL', 'INFO')},
+    'loggers': {
+        'django.request': {'handlers': _log_handlers, 'level': 'WARNING', 'propagate': False},
+        'django.security': {'handlers': _log_handlers, 'level': 'WARNING', 'propagate': False},
+    },
+}
+if RUNNING_TESTS:
+    LOGGING['handlers']['console'] = {'class': 'logging.NullHandler'}
+else:
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        LOGGING['handlers']['app_file'] = {
+            'class': 'logging.handlers.RotatingFileHandler', 'formatter': 'standard',
+            'filename': str(LOG_DIR / 'app.log'), 'maxBytes': 10 * 1024 * 1024, 'backupCount': 5,
+            'encoding': 'utf-8',
+        }
+        LOGGING['handlers']['error_file'] = {
+            'class': 'logging.handlers.RotatingFileHandler', 'formatter': 'standard', 'level': 'ERROR',
+            'filename': str(LOG_DIR / 'error.log'), 'maxBytes': 10 * 1024 * 1024, 'backupCount': 5,
+            'encoding': 'utf-8',
+        }
+        _log_handlers.extend(['app_file', 'error_file'])
+    except OSError:
+        pass   # log papkasi yozilmasa ham server ishga tushadi (faqat konsol)
+
 # Static files
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-if not DEBUG:
+if not DEBUG and not RUNNING_TESTS:
     STORAGES = {
         'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
         'staticfiles': {

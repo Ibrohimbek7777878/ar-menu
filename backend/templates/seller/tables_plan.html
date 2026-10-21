@@ -25,7 +25,7 @@
          data-id="{{ t.pk }}" style="left: {{ t.x }}px; top: {{ t.y }}px; width: {{ t.w }}px; height: {{ t.h }}px;">
         <p class="font-display font-bold text-lg">{{ t.number }}</p>
         <p class="text-[10px] text-gray-400">{{ t.capacity }} kishi</p>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ t.qr_url|urlencode }}"
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data={{ qr_base|urlencode }}{{ t.qr_path|urlencode }}"
              class="mt-1 rounded" width="34" height="34" alt="QR">
     </div>
     {% empty %}

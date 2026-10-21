@@ -339,7 +339,7 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
                     Hisob / Chek
                   </button>
                   <a
-                    href={`/menu/?table=${tbl.number}`}
+                    href={tbl.qr_path || `/menu/?table=${tbl.number}`}
                     className="btn-w-open-menu"
                   >
                     Menyu →

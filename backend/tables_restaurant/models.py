@@ -59,6 +59,11 @@ class Table(models.Model):
         sig = TimestampSigner().sign(str(self.qr_token))
         return f"{scheme}://{domain}/m/{self.shop.slug}/?t={sig}"
 
+    @property
+    def qr_path(self):
+        """Bosma QR uchun doimiy yo'l: muddati tugamaydi, tasodifiy UUID (stol raqami taxmin qilinmaydi)."""
+        return f"/t/{self.qr_token}/"
+
     def rotate_qr(self):
         from django.utils import timezone
         self.qr_token_old = self.qr_token

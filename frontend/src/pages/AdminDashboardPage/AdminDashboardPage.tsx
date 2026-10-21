@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigation } from '../../context/NavigationContext';
 import { StaffDeviceManagerModal } from '../../core/auth/StaffDeviceManagerModal';
+import { roleService } from '../../core/auth/RoleService';
 import { KDSPage } from '../KDSPage/KDSPage';
 import { WaiterPanelPage } from '../WaiterPanelPage/WaiterPanelPage';
 import { FinancePage } from '../FinancePage/FinancePage';
@@ -330,21 +331,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
                     </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsStaffModalOpen(true)}
-                    className="admin-btn admin-btn-secondary"
-                    style={{ background: '#1e3a8a', color: '#ffffff', border: 'none' }}
-                    title="Xodimlar qurilmalariga parolsiz ruxsat berish"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    <span>👥 Xodimlar Ruxsati</span>
-                  </button>
+                  {/* Parolsiz qurilma ruxsati faqat DEMO rejimda; production'da xodimlar login + parol bilan kiradi */}
+                  {roleService.isDemo() && (
+                    <button
+                      type="button"
+                      onClick={() => setIsStaffModalOpen(true)}
+                      className="admin-btn admin-btn-secondary"
+                      style={{ background: '#1e3a8a', color: '#ffffff', border: 'none' }}
+                      title="Xodimlar qurilmalariga parolsiz ruxsat berish"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                      <span>👥 Xodimlar Ruxsati</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"

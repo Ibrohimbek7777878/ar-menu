@@ -27,7 +27,8 @@ def seller_login(request):
             return redirect('admin_dashboard')
     if request.method == 'POST':
         from django.core.cache import cache
-        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        from backend.ratelimit import client_ip
+        ip = client_ip(request)
         cache_key = f"seller_login_attempts_{ip}"
         attempts = cache.get(cache_key, 0)
         if attempts >= 7:

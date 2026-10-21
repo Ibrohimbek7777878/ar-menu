@@ -79,6 +79,9 @@ export const CheckoutPage: React.FC = () => {
     formData.append('address', deliveryAddress);
     formData.append('payment_method', paymentMethod);
     formData.append('notes', notes);
+    // Telegram imzolagan initData (faqat Mini App ichida bo'ladi); server uni tekshiradi, oddiy telegram_id'ga ishonmaydi
+    const tgInitData = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp?.initData;
+    if (tgInitData) formData.append('init_data', tgInitData);
 
     // Bitta so'rov: buyurtmani server yaratadi (narx va taomlar serverdagi savatdan). Avval buyurtma
     // ikki marta (lokal createOrder + form POST) yaratilardi va xatoda ham "qabul qilindi" deyilardi.

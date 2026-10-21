@@ -40,6 +40,9 @@ export interface LiveTable {
   guests_count: number;
   total_bill: number;
   active_orders_count: number;
+  /** Bosma QR uchun doimiy yo'l (/t/<uuid>/) va domen; faqat serverdan kelgan stollarda bor. */
+  qr_path?: string;
+  public_url?: string;
 }
 
 export interface LiveServiceCall {
@@ -449,6 +452,8 @@ function normalizeServerTable(t: any): LiveTable {
     guests_count: t.guests_count ?? 0,
     total_bill: Number(t.total_bill || 0),
     active_orders_count: t.active_orders_count ?? 0,
+    qr_path: t.qr_path || undefined,
+    public_url: t.public_url || undefined,
   };
 }
 
@@ -518,8 +523,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
 
   const [userRole, setUserRole] = useState<UserRole>(() => {
+    // Subdomen orqali avtomatik rol faqat demo rejimda; production'da rol server sessiyasidan (R1-9)
     const subInfo = SubdomainService.getSubdomainInfo();
-    if (subInfo.detectedRole) {
+    if (roleService.isDemo() && subInfo.detectedRole) {
       roleService.grantRole(subInfo.detectedRole, `${subInfo.detectedRole.toUpperCase()} Subdomeni`);
       return subInfo.detectedRole;
     }
@@ -532,6 +538,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const logoutStaff = useCallback(() => {
+    // Haqiqiy (server) sessiya bo'lsa — serverdan ham chiqiladi, aks holda sahifani yangilash qayta kiritib yuborardi
+    if (roleService.hasServerSession()) {
+      window.location.assign('/admin/logout/');
+      return;
+    }
     roleService.revokeRole();
     setUserRole('guest');
     window.history.pushState({}, '', '/menu');
@@ -765,6 +776,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     // Moliya (faqat rahbariyat uchun; boshqa rolda server 403 beradi): ochilganda va har yozuvdan keyin
     const loadFinance = async () => {
+      // Moliya serverda faqat rahbariyatga ochiq: boshqa rolda so'rov yuborilmaydi (har sahifada keraksiz 403 bo'lardi)
+      if (roleService.getCurrentRole() !== 'admin') return;
       const fin = await RestaurantAPI.getFinanceData();
       if (stopped || !fin) return;
       if (Array.isArray(fin.transactions)) {

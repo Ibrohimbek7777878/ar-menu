@@ -921,7 +921,8 @@ def api_payment_create(request):
 
     if result.get('success'):
         payment.status = 'processing'
-        payment.raw_response = result
+        from payments.masking import mask_sensitive
+        payment.raw_response = mask_sensitive(result)
         payment.payment_url = result.get('payment_url', '')
         payment.save()
         return Response({

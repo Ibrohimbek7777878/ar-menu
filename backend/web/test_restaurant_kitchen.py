@@ -99,7 +99,10 @@ class KitchenWaiterFlowTests(TestCase):
         self.assertEqual(self.kds(order, 'preparing', client).status_code, 404)
 
     # ---- ofitsiant chaqiruvi ----
-    def call(self, table_number, call_type='waiter'):
+    def call(self, table_number, call_type='waiter', scanned=True):
+        """Mehmon stol QR kodini skanerlab (sessiyada stol eslab qolinadi), keyin chaqiradi."""
+        if scanned:
+            self.guest.get(f'/t/{self.table.qr_token}/', follow=True)
         return self.guest.post(f'{self.API}/calls/', json.dumps(
             {'table_number': table_number, 'type': call_type, 'title': 'Ofitsiantni chaqirish'}),
             content_type='application/json')
@@ -118,9 +121,23 @@ class KitchenWaiterFlowTests(TestCase):
         self.assertEqual(self.call(str(self.table.qr_token)).status_code, 201)
 
     def test_unknown_table_call_is_rejected_and_foreign_table_not_used(self):
-        self.assertEqual(self.call('99').status_code, 404)
-        self.assertEqual(self.call('').status_code, 404)
+        self.assertEqual(self.call('99', scanned=False).status_code, 404)
+        self.assertEqual(self.call('', scanned=False).status_code, 404)
         self.assertFalse(ServiceCall.objects.exists())
+
+    def test_guest_without_qr_cannot_call_a_table_by_guessing_its_number(self):
+        res = self.call('3', scanned=False)
+        self.assertEqual(res.status_code, 404)
+        self.assertFalse(ServiceCall.objects.exists())
+
+    def test_guest_cannot_call_another_table_than_the_one_scanned(self):
+        other = Table.objects.get(shop=self.shop, number='1')
+        self.assertEqual(self.call(other.number).status_code, 201)
+        self.assertEqual(ServiceCall.objects.get().table, self.table)     # o'z stoliga ketadi, "1"-stolga emas
+
+    @override_settings(RESTAURANT_ALLOW_TABLE_NUMBER_URL=True)
+    def test_number_calls_still_work_when_the_flag_is_enabled(self):
+        self.assertEqual(self.call('3', scanned=False).status_code, 201)
 
     def test_repeated_call_does_not_spam_the_waiter(self):
         first = self.call('3')

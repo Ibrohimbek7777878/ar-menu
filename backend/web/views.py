@@ -889,7 +889,8 @@ def customer_login(request):
         return redirect('customer_profile')
     if request.method == 'POST':
         from django.core.cache import cache
-        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        from backend.ratelimit import client_ip
+        ip = client_ip(request)
         cache_key = f"cust_login_attempts_{ip}"
         attempts = cache.get(cache_key, 0)
         if attempts >= 7:
@@ -941,7 +942,8 @@ def web_login(request):
 
     if request.method == 'POST':
         from django.core.cache import cache
-        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        from backend.ratelimit import client_ip
+        ip = client_ip(request)
         cache_key = f"login_attempts_{ip}"
         attempts = cache.get(cache_key, 0)
         if attempts >= 7:

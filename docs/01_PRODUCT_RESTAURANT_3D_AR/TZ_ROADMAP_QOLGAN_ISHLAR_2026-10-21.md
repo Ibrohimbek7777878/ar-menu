@@ -127,6 +127,26 @@ R9 va R12 egasining resurslariga (VPS, domen, haqiqiy menyu) bog'liq. Shuning uc
 | R1-11 | Telegram Mini App `initData` HMAC tekshiruvi; checkout'da `telegram_id` POST maydonidan olinmaydi | `web/tma_views.py` | Soxta `initData` rad etiladi |
 | R1-12 | Mehmon buyurtmasini kuzatish: `/tma/order/<pk>/` allaqachon sessiyaga bog'langan; qo'shimcha — imzolangan kuzatish havolasi (boshqa qurilmada ham ko'rish uchun) | `tma_views.py` | Boshqa mijozning buyurtmasi 404 |
 
+**R1 holati (2026-10-21): R1-1…R1-11 bajarildi, R1-12 keyinga qoldirildi.** 237 ta test yashil (`.env` bilan ham, `.env`siz ham), `tsc` 0 xato, `oxlint` 9 ogohlantirish (o'zgarmagan), `manage.py check --deploy` production muhitida 0 muammo (2 tasi ongli ravishda o'chirilgan: `W005`, `W021`). CSS o'zgarmadi (`index.css` bundle'i bir xil). Brauzer e2e (haqiqiy brauzer, baza nusxasida, `DEMO_MODE=False`): QR → savat → buyurtma → ofitsiant chaqiruvi → ofitsiant paneli → KDS; mehmon `?staff_grant=admin` yoki `/menu/admin` orqali rol ololmaydi; ofitsiant admin panelga o'ta olmaydi; "Chiqish" serverdagi sessiyani tugatadi.
+
+Qaror va ta'sirlar (egasi bilishi shart):
+- Stolni oddiy raqam (`?table=5`, checkout'da qo'lda kiritish, stol ID) bilan tanlash endi **faqat `DEMO_MODE`** da. Production'da stol faqat QR'dagi tasodifiy token (`/t/<uuid>/`) bilan aniqlanadi. Mehmon QR skanerlamasdan buyurtma bermoqchi bo'lsa: "Stol aniqlanmadi, QR ni qayta skanerlang". Kerak bo'lsa `RESTAURANT_ALLOW_TABLE_NUMBER_URL=True` bilan qaytariladi (xavfsizroq emas).
+- Mehmonning ofitsiant chaqiruvi stol raqami bilan emas, QR orqali sessiyaga yozilgan stolga ketadi.
+- Xodim paneli roli faqat serverdan (`window.__GULISTON_SESSION__`). Parolsiz qurilma ruxsati (`?staff_grant=`, subdomen, "Xodimlar Ruxsati" tugmasi) faqat `DEMO_MODE` da — o'chirilmagan.
+- Ofitsiant akkaunti hozircha oshxona (KDS) va hostess ekranlarini ham ochadi (R2 da alohida rollar bo'ladi).
+- Bosma QR kodlar `RESTAURANT_PUBLIC_URL` domenida (bo'sh bo'lsa — xodim ochgan sayt domeni) va doimiy token bilan chiqadi. **Avval chop etilgan, eski `?t=<imzo>` yoki `?table=NN` QR'lar o'rniga yangilarini chop etish kerak.**
+
+R1 davomida topilgan, hali tuzatilmagan kamchiliklar (yo'qolib ketmasligi uchun shu yerda; tegishli bosqichga biriktirildi):
+| # | Topilma | Bosqich |
+|---|---|---|
+| F1 | `App.tsx`: `currentPath.includes('/ar')` tekshiruvi `/arrival/...` dan oldin turadi — hostess ekrani (`/arrival/desk/`) o'rniga AR menyu ochiladi | R4 |
+| F2 | `MenuPage.tsx:220`: stol noma'lum bo'lsa mehmonga "Stol #5" ko'rsatiladi (`|| 5` zaxirasi) | R5 |
+| F3 | Ofitsiant `/kds/` yoki `/menu/waiter` da admin sahifasining ramkasini ("Moliya & Kassa", "A Menejer Boshqaruvchi") ko'radi; ma'lumot serverda yopiq, lekin ko'rinish noto'g'ri | R2 |
+| F4 | Xodim ekranlaridagi demo taomlar rasmlari (`/media/dish/shorva.jpg` …) 404 beradi — demo ma'lumotlar `DEMO_MODE` ortiga to'liq olinmagan | R5 / R8 |
+| F5 | `seller/tables.html`, `tables_plan.html`, `table_stands_print.html` QR rasmini tashqi `api.qrserver.com` xizmatidan oladi: stol havolasi uchinchi tomonga ketadi va internet bo'lmasa QR chiqmaydi. Yechim — serverda QR yaratish (`segno`); PyPI hozir erishib bo'lmagani uchun o'rnatilmadi | R9 / R10 |
+| F6 | `ar3d/views.py:1314` (3D bosma buyurtmasi, Studio mahsuloti) POST'dagi `telegram_chat_id` ga ishonadi — R1-11 bilan bir xil turdagi xavf, boshqa mahsulotda | R10 |
+| F7 | `/admin/logout/` GET so'rov bilan chiqaradi (CSRF orqali majburiy chiqarish mumkin, xavfi past) | R2 |
+
 ### R2 — Xodim rollari (server) 🟢 + 🎨 (S–M)
 
 Hozir backend `AdminUser.role`da faqat `waiter` bor; oshpaz va hostess rollari yo'q, ularning ishini ofitsiant akkaunti qoplaydi.

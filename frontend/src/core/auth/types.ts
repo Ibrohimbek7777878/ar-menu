@@ -15,4 +15,20 @@ export interface UserSession {
   name: string;
   tableNumber?: string | number;
   isAuthenticatedStaff: boolean;
+  /** Server bergan panel rollari (ofitsiant hozircha oshxona va hostess ekranlarini ham qoplaydi). */
+  roles?: UserRole[];
+}
+
+/** Django sahifaga yozadigan HAQIQIY sessiya (web/restaurant_auth.py: spa_session). */
+export interface ServerSession {
+  role: UserRole;
+  roles: UserRole[];
+  name?: string;
+  demo: boolean;
+}
+
+declare global {
+  interface Window {
+    __GULISTON_SESSION__?: ServerSession;
+  }
 }

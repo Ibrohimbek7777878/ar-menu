@@ -190,7 +190,7 @@
 
                 <!-- QR Kod Miniaturasi -->
                 <div class="my-3 p-2 rounded-xl bg-sand/60 flex items-center justify-center">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ t.qr_url|urlencode }}"
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ qr_base|urlencode }}{{ t.qr_path|urlencode }}"
                          alt="QR Stol {{ t.number }}"
                          class="w-24 h-24 rounded-lg bg-white p-1 shadow-xs"
                          loading="lazy">
@@ -203,7 +203,7 @@
                     </span>
 
                     <div class="flex items-center gap-1.5">
-                        <a href="{{ t.qr_url }}" target="_blank" class="p-1 text-muted hover:text-primary transition" title="Menyuni ochish">
+                        <a href="{{ qr_base }}{{ t.qr_path }}" target="_blank" class="p-1 text-muted hover:text-primary transition" title="Menyuni ochish">
                             ↗
                         </a>
                         <form method="post" onsubmit="return confirm('Stol #{{ t.number }} o\'chirilsinmi?');" class="inline">

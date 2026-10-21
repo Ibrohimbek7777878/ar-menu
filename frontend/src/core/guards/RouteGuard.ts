@@ -1,4 +1,4 @@
-import { roleService } from '../auth/RoleService';
+import { roleService, roleRequiredForPath } from '../auth/RoleService';
 import { SubdomainService } from '../routing/SubdomainService';
 import type { UserRole } from '../auth/types';
 
@@ -17,8 +17,19 @@ export class RouteGuard {
   public static canActivate(targetPath: string): GuardCheckResult {
     const cleanPath = targetPath.split('?')[0].split('#')[0] || '/';
     const subInfo = SubdomainService.getSubdomainInfo();
-    const currentRole: UserRole = roleService.getCurrentRole();
+    const currentRole: UserRole = roleService.getCurrentRole(cleanPath);
 
+    // ─── 0. PRODUCTION: rol faqat server sessiyasidan (login + parol). Havola/subdomen/yo'l rol bermaydi ───
+    if (!roleService.isDemo()) {
+      const needed = roleRequiredForPath(cleanPath);
+      if (!needed || currentRole === 'admin' || currentRole === needed) return { allowed: true };
+      if (currentRole === 'guest') {
+        return { allowed: false, redirectTo: '/menu', reason: "Bu bo'lim faqat xodimlar uchun. Login va parol bilan kiring." };
+      }
+      return { allowed: false, redirectTo: this.homeFor(currentRole), reason: "Bu bo'limga sizning rolingizda ruxsat yo'q." };
+    }
+
+    // ─── Quyidagi qurilma-ruxsatnomasi/subdomen mantig'i faqat DEMO rejimda ishlaydi (o'chirilmagan) ───
     // ─── 1. SUBDOMEN ASOSIDA AVTOMATIK RUXSAT VA HIMOYALASH ───
     if (subInfo.isStaffDomain && subInfo.detectedRole) {
       // Agar subdomen roli maqsadli sahifaga mos bo'lsa
@@ -111,6 +122,14 @@ export class RouteGuard {
 
     // Mijoz sahifalari barcha uchun ochiq
     return { allowed: true };
+  }
+
+  private static homeFor(role: UserRole): string {
+    if (role === 'kitchen') return '/menu/kitchen';
+    if (role === 'hostess') return '/menu/hostess';
+    if (role === 'admin') return '/menu/admin';
+    if (role === 'waiter') return '/menu/waiter';
+    return '/menu';
   }
 
   private static isCustomerRoute(cleanPath: string): boolean {

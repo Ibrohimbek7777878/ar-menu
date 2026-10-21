@@ -19,6 +19,7 @@ from accounts.models import Customer
 from payments.payment_service import create_order_payment
 from notifications.services.telegram_service import send_order_created
 from notifications.admin_bot import get_restaurant_shop
+from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
     RESTAURANT_MANAGER_ROLES, can_view_order, guest_order_ids, is_restaurant_staff, remember_guest_order,
     restaurant_staff_required, staff_shop, user_role,
@@ -96,7 +97,9 @@ def _get_tma_table(request):
     except (ValueError, TypeError, AttributeError):
         pass
 
-    # 2. Agar stol raqami berilgan bo'lsa (masalan: table=1, stol_2, 3)
+    # 2. Agar stol raqami berilgan bo'lsa (masalan: table=1, stol_2, 3) — taxmin qilinadi, faqat DEMO/aniq flag bilan
+    if not getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+        return None, table_token
     num_str = str(raw_t).lower().replace('table_', '').replace('stol_', '').replace('t_', '').strip()
     shop = get_restaurant_shop()
     query = Table.objects.filter(is_active=True)
@@ -345,6 +348,12 @@ def tma_cart_api(request):
     except Exception:
         data = request.POST.dict()
 
+    # Suiiste'moldan himoya: restoran Wi-Fi'sidagi hamma mehmon bitta IP'dan chiqadi, shuning uchun chegara keng
+    from backend.ratelimit import rate_limited
+    blocked = rate_limited(request, 'tma_cart', limit=1500, seconds=60)
+    if blocked is not None:
+        return blocked
+
     action = data.get('action', 'add')
 
     # Savatni butunlay bo'shatish (React savati serverdagi sessiya savati bilan bir xil bo'lishi uchun)
@@ -471,6 +480,12 @@ def tma_checkout(request):
     table, table_token = _get_tma_table(request)
     all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number')
 
+    if request.method == 'POST':
+        from backend.ratelimit import rate_limited
+        blocked = rate_limited(request, 'tma_checkout', limit=90, seconds=60)
+        if blocked is not None:
+            return blocked
+
     if request.method == 'POST' and not items_to_create:
         # Savatdagi barcha taomlar menyudan olib tashlangan
         request.session['cart'] = {}
@@ -493,7 +508,7 @@ def tma_checkout(request):
         address = request.POST.get('address', '').strip()
         payment_method = request.POST.get('payment_method', 'cash')
         notes = request.POST.get('notes', '').strip()
-        telegram_id = request.POST.get('telegram_id', '')
+        telegram_id = telegram_id_from_request(request)
 
         # 1. Stolda xizmat ko'rsatish
         if service_type == 'table':
@@ -502,10 +517,12 @@ def tma_checkout(request):
 
             # Stol faqat shu restoranning mavjud stoli bo'lishi mumkin. Avval mavjud bo'lmagan raqam kiritilsa
             # zalsiz stol yaratilardi (IntegrityError → 500), stol topilmasa esa tasodifiy "birinchi stol" olinardi.
-            if not table and selected_table_id:
-                table = Table.objects.filter(id=selected_table_id, shop=shop, is_active=True).first()
-            if not table and table_num_manual:
-                table = Table.objects.filter(shop=shop, number=table_num_manual, is_active=True).first()
+            # Raqam/ID bilan tanlash taxmin qilinadi: faqat DEMO_MODE yoki RESTAURANT_ALLOW_TABLE_NUMBER_URL bilan
+            if getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+                if not table and selected_table_id:
+                    table = Table.objects.filter(id=selected_table_id, shop=shop, is_active=True).first()
+                if not table and table_num_manual:
+                    table = Table.objects.filter(shop=shop, number=table_num_manual, is_active=True).first()
             if not table:
                 msg = "Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling."
                 if wants_json:
@@ -1071,7 +1088,8 @@ def restaurant_admin_login(request):
         return render(request, 'restaurant_admin/login.html', {'next': next_url})
 
     if request.method == 'POST':
-        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        from backend.ratelimit import client_ip
+        ip = client_ip(request)
         cache_key = f"restaurant_login_attempts_{ip}"
         attempts = cache.get(cache_key, 0)
         if attempts >= 7:

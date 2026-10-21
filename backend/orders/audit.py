@@ -80,7 +80,5 @@ def log_audit(action_type, request=None, actor=None, target_type='',
 
 def _get_client_ip(request):
     """Client IP manzilini olish."""
-    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded:
-        return x_forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
+    from backend.ratelimit import client_ip
+    return client_ip(request)   # soxta X-Forwarded-For auditga yozilmaydi

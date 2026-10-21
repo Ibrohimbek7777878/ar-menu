@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { useNavigation, type LiveTable } from '../../../context/NavigationContext';
 import './QRGeneratorModal.css';
@@ -43,20 +43,24 @@ export const QRGeneratorModal: React.FC<QRGeneratorModalProps> = ({
 
   const printAreaRef = useRef<HTMLDivElement>(null);
 
-  // Helper to get real target URL for a table
-  const getTableMenuUrl = (tableNum: string | number) => {
+  // Helper to get real target URL for a table.
+  // Haqiqiy stollar uchun server bergan doimiy tasodifiy havola (/t/<uuid>/) bosiladi: stol raqami taxmin qilinadi,
+  // token esa yo'q. Faqat demo (serversiz) stollar eski ?table=NN havolaga tushadi.
+  const getTableMenuUrl = useCallback((tableNum: string | number) => {
     const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://guliston-restaurant.uz';
+    const table = tables.find((t: LiveTable) => String(t.number) === String(tableNum));
+    if (table?.qr_path) return `${table.public_url || origin}${table.qr_path}`;
     return `${origin}/menu/?table=${encodeURIComponent(String(tableNum))}`;
-  };
+  }, [tables]);
+  const singleTableUrl = getTableMenuUrl(selectedTableNumber);
 
   // Generate Single QR Code
   useEffect(() => {
     if (!isOpen) return;
 
     let isMounted = true;
-    const url = getTableMenuUrl(selectedTableNumber);
 
-    QRCode.toDataURL(url, {
+    QRCode.toDataURL(singleTableUrl, {
       width: 480,
       margin: 1,
       color: {
@@ -75,7 +79,7 @@ export const QRGeneratorModal: React.FC<QRGeneratorModalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, selectedTableNumber, qrColor]);
+  }, [isOpen, singleTableUrl, qrColor]);
 
   // Generate Bulk QR codes when in bulk mode
   useEffect(() => {
@@ -106,7 +110,7 @@ export const QRGeneratorModal: React.FC<QRGeneratorModalProps> = ({
       .catch((err: unknown) => {
         console.error('Bulk QR generation error:', err);
       });
-  }, [isOpen, isBulkMode, selectedHallFilter, tables, qrColor]);
+  }, [isOpen, isBulkMode, selectedHallFilter, tables, qrColor, getTableMenuUrl]);
 
   if (!isOpen) return null;
 

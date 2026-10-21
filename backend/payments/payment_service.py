@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from .masking import mask_sensitive
 from .models import Payment
 from orders.state_machine import transition_order
 from orders.audit import log_audit
@@ -74,7 +75,7 @@ def create_order_payment(order, method, return_url):
             amount=order.final_amount,
             status='pending',
             payment_url=result.get('payment_url', ''),
-            raw_request=result,
+            raw_request=mask_sensitive(result),
         )
 
     return result
@@ -113,7 +114,7 @@ def mark_payment_paid(payment, provider_payload=None, request=None, actor=None):
         provider_payload.get('provider_transaction_id', payment.provider_transaction_id)
         if provider_payload else payment.provider_transaction_id
     )
-    payment.raw_response = provider_payload or {}
+    payment.raw_response = mask_sensitive(provider_payload or {})
     payment.paid_at = timezone.now()
     payment.save(update_fields=['status', 'provider_transaction_id', 'raw_response', 'paid_at'])
 

@@ -99,4 +99,6 @@ class Command(BaseCommand):
         ))
         self.stdout.write(f"  Egasi: {owner.username} — kirish: /seller/login/")
         self.stdout.write(f"  Stollar: {Table.objects.filter(shop=shop).count()} ta ({len(new_tables)} ta yangi), zal: {hall.name}")
-        self.stdout.write(f"  Mehmon menyusi: /menu/?table=1" + ("" if not opts['no_default'] else "  (asosiy qilinmadi)"))
+        first_table = Table.objects.filter(shop=shop).order_by('id').first()
+        qr_hint = first_table.qr_path if first_table else '/menu/'
+        self.stdout.write(f"  Mehmon menyusi (1-stol QR havolasi): {qr_hint}" + ("" if not opts['no_default'] else "  (asosiy qilinmadi)"))
