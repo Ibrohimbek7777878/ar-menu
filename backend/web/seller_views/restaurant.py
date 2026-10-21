@@ -370,8 +370,8 @@ def waiter_panel(request):
                 items_data = []
                 
             if items_data:
-                now = datetime.datetime.now()
-                order_num = f"GLS-{now.strftime('%Y%m%d')}-{Order.objects.filter(shop=shop).count() + 1001}"
+                from orders.numbering import next_order_number
+                order_num = next_order_number()
                 total_amount = 0
                 
                 order = Order.objects.create(
@@ -385,9 +385,9 @@ def waiter_panel(request):
                     final_amount=0,
                     status='confirmed', # Ofitsiant tasdiqlab oshxonaga uzatadi
                     payment_status='pending',
-                    note=note,
+                    notes=note,   # avval Order(note=...) — modelda maydon "notes", shuning uchun POS har safar yiqilardi
                 )
-                
+
                 for it in items_data:
                     p_id = it.get('product_id')
                     qty = max(int(it.get('qty', 1)), 1)
@@ -397,7 +397,7 @@ def waiter_panel(request):
                         OrderItem.objects.create(
                             order=order, product=p,
                             product_name=p.name, quantity=qty,
-                            unit_price=p.price, total=line_total,
+                            price=p.price, unit=p.unit or 'dona', total=line_total,
                         )
                         total_amount += line_total
                     except Product.DoesNotExist:
@@ -433,8 +433,9 @@ def waiter_panel(request):
             new_status = request.POST.get('status')
             if order_id and new_status:
                 o = get_object_or_404(Order, pk=order_id, shop=shop)
-                o.status = new_status
-                o.save(update_fields=['status'])
+                # Faqat state machine orqali (avval to'g'ridan-to'g'ri status yozilardi: bekor qilingan buyurtmani ham "tayyor" qilish mumkin edi)
+                from orders.state_machine import transition_order
+                transition_order(o, new_status, actor=request.user, reason="Ofitsiant paneli", request=request)
             return redirect('waiter_panel_web')
 
         elif action == 'quick_create_tables':

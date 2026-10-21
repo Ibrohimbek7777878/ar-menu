@@ -119,6 +119,34 @@ export const RestaurantAPI = {
     }
   },
 
+  // 6b. Ochiq chaqiruvlar ro'yxati (ofitsiant paneli)
+  async getServiceCalls() {
+    try {
+      const res = await fetch(`${API_BASE}/calls/`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Fetch service calls failed');
+      return await res.json();
+    } catch (err) {
+      console.warn('[RestaurantAPI] getServiceCalls failed:', err);
+      return null;
+    }
+  },
+
+  // 6c. Oshxona buyurtma holatini o'zgartiradi (state machine serverda; pending -> preparing avval confirmed)
+  async updateOrderStatus(orderId: number | string, status: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/kds/status/', {
+        method: 'POST',
+        headers: jsonHeaders(),
+        credentials: 'same-origin',
+        body: JSON.stringify({ order_id: orderId, new_status: status }),
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('[RestaurantAPI] updateOrderStatus failed:', err);
+      return false;
+    }
+  },
+
   // 7. Chaqiruvni qabul qilish yoki yakunlash
   async updateServiceCallStatus(callId: number | string, status: 'accepted' | 'done') {
     try {

@@ -1241,15 +1241,13 @@ def seller_order_create(request):
             messages.error(request, 'Kamida bitta mahsulot tanlang.')
             return redirect('seller_order_create_web')
 
-        # Order number
-        import datetime
-        now = datetime.datetime.now()
-        order_number = f"GLS-{now.strftime('%Y%m%d')}-{now.timestamp()[:0]}"
+        # Buyurtma raqami: noyob (avval float'ni kesishga urinib TypeError berardi va count() bilan to'qnashardi)
+        from orders.numbering import next_order_number
 
         total = 0
         order = Order.objects.create(
             shop=shop,
-            order_number=f"GLS-{now.strftime('%Y%m%d')}-{Order.objects.filter(shop=shop).count() + 1001}",
+            order_number=next_order_number(),
             customer_name=customer_name,
             customer_phone_1=customer_phone,
             delivery_address=address,
@@ -1257,7 +1255,7 @@ def seller_order_create(request):
             final_amount=0,
             status='pending',
             payment_status='pending',
-            note=note,
+            notes=note,
         )
 
         for pid, qty in zip(product_ids, quantities):
@@ -1268,7 +1266,7 @@ def seller_order_create(request):
                 OrderItem.objects.create(
                     order=order, product=p,
                     product_name=p.name, quantity=q,
-                    unit_price=p.price, total=line_total,
+                    price=p.price, unit=p.unit or 'dona', total=line_total,
                 )
                 total += line_total
             except Product.DoesNotExist:
@@ -1285,7 +1283,7 @@ def seller_order_create(request):
         except Exception:
             pass
 
-        messages.success(request, f'Buyurtma #{order.order_number} yaratildi! ({total|uznum} so\'m)')
+        messages.success(request, f"Buyurtma #{order.order_number} yaratildi! ({int(total):,} so'm)".replace(',', ' '))
         return redirect('seller_order_detail_web', pk=order.pk)
 
     return render(request, 'seller/order_form.html', {

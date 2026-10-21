@@ -70,7 +70,11 @@ class RestaurantOrderListView(RestaurantAPIView):
     Barcha faol va bugungi restoran buyurtmalari (KDS, Waiter va Admin uchun).
     """
     def get(self, request):
-        qs = Order.objects.filter(shop=self.staff_shop(), is_pickup=True).prefetch_related('items', 'table').order_by('-created_at')[:50]
+        # Avval faqat is_pickup=True buyurtmalar chiqardi — mehmonning checkout buyurtmasi (is_pickup=False)
+        # oshxonaga umuman ko'rinmasdi. Endi shu restoranning barcha bekor qilinmagan buyurtmalari.
+        qs = (Order.objects.filter(shop=self.staff_shop())
+              .exclude(status__in=['cancelled', 'failed'])
+              .select_related('table').prefetch_related('items').order_by('-created_at')[:100])
         data = []
         for o in qs:
             items_list = [{
@@ -156,7 +160,7 @@ class RestaurantTablesStateView(RestaurantAPIView):
         data = []
         for t in tables:
             # Stolning ochiq hisobini hisoblash
-            unpaid_orders = Order.objects.filter(table=t, payment_status='unpaid')
+            unpaid_orders = Order.objects.filter(table=t, payment_status='unpaid').exclude(status__in=['cancelled', 'failed'])
             bill_sum = sum((o.final_amount for o in unpaid_orders), 0)
             active_count = unpaid_orders.count()
 
@@ -194,13 +198,13 @@ class ServiceCallActionView(RestaurantAPIView):
             'hall_name': c.table.hall.name if c.table.hall else 'Asosiy Zal',
             'type': c.call_type,
             'title': c.title,
-            'time': c.created_at.strftime('%H:%M'),
+            'time': timezone.localtime(c.created_at).strftime('%H:%M'),   # Toshkent vaqti (avval UTC: 5 soat farq)
             'status': c.status,
         } for c in calls]
         return Response(data)
 
     def post(self, request):
-        table_num = str(request.data.get('table_number', '01'))
+        table_num = str(request.data.get('table_number', ''))
         call_type = request.data.get('type', 'waiter')
         if call_type not in dict(ServiceCall.TYPE_CHOICES) or call_type == 'dish_ready':
             call_type = 'waiter'
@@ -209,7 +213,19 @@ class ServiceCallActionView(RestaurantAPIView):
         shop = RestaurantOrderService.get_or_default_shop()
         table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
         if not table_obj:
+            # QR token (UUID) bilan ham qabul qilinadi: QR dan kirgan mehmonning brauzerida stol raqami o'rniga token turishi mumkin
+            import uuid as _uuid
+            try:
+                table_obj = Table.objects.filter(shop=shop, qr_token=_uuid.UUID(table_num), is_active=True).first()
+            except (ValueError, AttributeError):
+                table_obj = None
+        if not table_obj:
             return Response({'error': 'Stol topilmadi'}, status=404)
+
+        # Spamdan himoya: shu stol va shu tur bo'yicha javobsiz chaqiruv bo'lsa — yangisi yaratilmaydi
+        existing = ServiceCall.objects.filter(table=table_obj, call_type=call_type, status='pending').first()
+        if existing:
+            return Response({'id': existing.id, 'status': 'already_pending'}, status=200)
 
         call = ServiceCall.objects.create(
             shop=shop,

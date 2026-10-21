@@ -1537,6 +1537,11 @@ def kds_status_update_api(request):
     try:
         # Faqat o'z restoranining buyurtmasi; status faqat state machine orqali o'zgaradi
         order = Order.objects.get(pk=order_id, shop=staff_shop(request))
+        # Oshxona "tayyorlashni boshlash"ni bosganda buyurtma hali 'pending' bo'lishi mumkin: state machine
+        # to'g'ridan-to'g'ri o'tishga ruxsat bermaydi, shuning uchun avval 'confirmed' qilinadi.
+        if order.status == 'pending' and new_status in ('preparing', 'ready'):
+            transition_order(order, 'confirmed', actor=request.user, reason='KDS: oshxona qabul qildi', request=request)
+            order.refresh_from_db()
         ok, msg = transition_order(
             order, new_status,
             actor=request.user,
@@ -1545,6 +1550,16 @@ def kds_status_update_api(request):
         )
         if not ok:
             return JsonResponse({'ok': False, 'error': msg, 'status': order.status}, status=409)
+
+        if new_status == 'ready' and order.table_id:
+            # Ofitsiant paneliga "Oshxonadan taom tayyor" chaqiruvi (ofitsiant boshqa qurilmada bo'lishi mumkin)
+            from tables_restaurant.models import ServiceCall
+            if not ServiceCall.objects.filter(table=order.table, call_type='dish_ready', status='pending').exists():
+                dishes = ', '.join(f"{it.quantity}x {it.product_name}" for it in order.items.all()[:2])
+                ServiceCall.objects.create(
+                    shop=order.shop, table=order.table, call_type='dish_ready',
+                    title=f"Oshxonadan taom tayyor: {dishes}", status='pending',
+                )
 
         return JsonResponse({'ok': True, 'message': msg, 'status': order.status})
     except Order.DoesNotExist:

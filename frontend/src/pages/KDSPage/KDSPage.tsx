@@ -107,7 +107,15 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const orders = sharedOrders;
+  // Oshxona taxtasida faqat faol buyurtmalar, eng eskisi birinchi (kechikkan buyurtma pastga tushib ketmasin).
+  // Avval yetkazilgan/to'langan buyurtmalar ham turardi va ularni bosish holatni orqaga qaytarardi (TZ R-KDS-02/03).
+  const orders = useMemo(
+    () =>
+      sharedOrders
+        .filter((o) => o.status === 'pending' || o.status === 'preparing' || o.status === 'ready')
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+    [sharedOrders]
+  );
 
   const kitchenItemSummary = useMemo(() => {
     const summary: Record<string, { count: number; unit: string }> = {};

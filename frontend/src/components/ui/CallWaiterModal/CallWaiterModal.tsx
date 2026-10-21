@@ -46,18 +46,33 @@ export const CallWaiterModal: React.FC = () => {
   const [selectedType, setSelectedType] = useState<LiveServiceCall['type']>('waiter');
   const [customNote, setCustomNote] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   if (!isCallWaiterOpen) return null;
 
-  const handleSendCall = () => {
+  const handleSendCall = async () => {
+    if (isSending) return;
+    if (!tableNumber) {
+      setErrorMsg("Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.");
+      return;
+    }
     const opt = CALL_OPTIONS.find((o) => o.type === selectedType) || CALL_OPTIONS[3];
-    const fullTitle = customNote.trim() ? `${opt.title}: ${customNote.trim()}` : opt.title;
+    const fullTitle = customNote.trim() ? `${opt.title}: ${customNote.trim().slice(0, 120)}` : opt.title;
 
-    createServiceCall({
-      table_number: tableNumber || '05',
+    setIsSending(true);
+    setErrorMsg('');
+    // "Yuborildi" faqat server qabul qilganda ko'rsatiladi (avval so'rov muvaffaqiyatsiz bo'lsa ham shunday deyilardi)
+    const ok = await createServiceCall({
+      table_number: tableNumber,
       type: selectedType,
       title: fullTitle,
     });
+    setIsSending(false);
+    if (!ok) {
+      setErrorMsg("Chaqiruv yuborilmadi. Internetni tekshirib, qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring.");
+      return;
+    }
 
     setIsSuccess(true);
     setTimeout(() => {
@@ -135,8 +150,12 @@ export const CallWaiterModal: React.FC = () => {
               />
             </div>
 
-            <button type="button" className="btn-send-call" onClick={handleSendCall}>
-              <span>Chaqiruvni yuborish</span>
+            {errorMsg && (
+              <p role="alert" style={{ color: '#B91C1C', fontSize: '13px', margin: '0 0 10px' }}>{errorMsg}</p>
+            )}
+
+            <button type="button" className="btn-send-call" onClick={handleSendCall} disabled={isSending}>
+              <span>{isSending ? 'Yuborilmoqda...' : 'Chaqiruvni yuborish'}</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />

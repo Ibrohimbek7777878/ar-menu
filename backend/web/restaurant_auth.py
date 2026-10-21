@@ -34,7 +34,10 @@ def staff_shop(request):
     """
     user = request.user
     if user_role(user) == 'super_admin':
-        return getattr(request, 'tenant_shop', None)
+        if request.GET.get('shop'):
+            return getattr(request, 'tenant_shop', None)
+        from notifications.admin_bot import get_restaurant_shop
+        return get_restaurant_shop()
     shop = getattr(user, 'shop', None)
     if shop:
         return shop

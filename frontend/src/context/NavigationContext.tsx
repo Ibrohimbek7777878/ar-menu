@@ -132,7 +132,7 @@ export interface NavigationContextType {
     hall_name?: string;
     type: LiveServiceCall['type'];
     title: string;
-  }) => void;
+  }) => Promise<boolean>;
   acceptServiceCall: (callId: number) => void;
   completeServiceCall: (callId: number) => void;
 
@@ -402,6 +402,80 @@ const DEFAULT_FINANCE_DEBTS: FinanceDebt[] = [
 
 const SERVER_RENDERED_GUEST_PATHS = ['/cart', '/checkout', '/orders'];
 
+/** Xodim ekranlari serverni shuncha vaqtda bir so'raydi (KDS yangi buyurtmani ≤ 5 soniyada ko'rishi uchun). */
+const STAFF_POLL_MS = 5000;
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function normalizeServerOrder(o: any): LiveOrder {
+  // Server 'confirmed' (qabul qilingan) KDS uchun hali "yangi"; to'langan yetkazilgan buyurtma — 'paid'
+  let status: LiveOrder['status'] = o.status;
+  if (o.status === 'confirmed') status = 'pending';
+  else if (o.status === 'out_for_delivery') status = 'ready';
+  else if (o.status === 'delivered' && o.payment_status === 'paid') status = 'paid';
+  return {
+    id: o.id,
+    order_number: String(o.order_number ?? ''),
+    table_number: o.table_number ?? '',
+    table_name: o.table_name || (o.table_number ? `Stol ${o.table_number}` : 'Stol belgilanmagan'),
+    customer_name: o.customer_name || 'Mehmon',
+    customer_phone: o.customer_phone,
+    status,
+    created_at: o.created_at,
+    notes: o.notes || '',
+    total_amount: Number(o.final_amount ?? o.total_amount ?? 0),
+    items: (o.items || []).map((it: any) => ({
+      id: it.id,
+      name: it.name,
+      quantity: it.quantity,
+      price: Number(it.price || 0),
+      unit: it.unit,
+      course: it.course,
+      notes: it.notes,
+      done: !!it.done,
+    })),
+  };
+}
+
+function normalizeServerTable(t: any): LiveTable {
+  const status: LiveTable['status'] =
+    t.status === 'bill' ? 'bill_requested' : t.status === 'free' ? 'free' : t.status === 'reserved' ? 'reserved' : 'occupied';
+  return {
+    id: t.id,
+    number: t.number,
+    hall: t.hall || 'Asosiy Zal',
+    status,
+    capacity: t.capacity ?? 4,
+    guests_count: t.guests_count ?? 0,
+    total_bill: Number(t.total_bill || 0),
+    active_orders_count: t.active_orders_count ?? 0,
+  };
+}
+
+function normalizeServerCall(c: any): LiveServiceCall {
+  return {
+    id: c.id,
+    table_number: c.table_number,
+    hall_name: c.hall_name || 'Asosiy Zal',
+    type: c.type,
+    title: c.title,
+    time: c.time || 'Hozir',
+    status: c.status === 'accepted' ? 'accepted' : 'pending',
+  };
+}
+
+/** Django sahifasi bergan haqiqiy stol raqami (QR dan kirganda URL'da raqam emas, UUID token bo'ladi). */
+function serverTableFromWindow(): string {
+  if (typeof window === 'undefined') return '';
+  const w = window as unknown as Record<string, any>;
+  for (const key of ['__GULISTON_DATA__', '__GULISTON_CART_DATA__', '__GULISTON_ORDERS_DATA__', '__GULISTON_CHECKOUT_DATA__', '__GULISTON_TABLE_DATA__', '__GULISTON_AR_DATA__']) {
+    const n = w[key]?.table?.number;
+    if (n !== undefined && n !== null && String(n).trim() !== '') return String(n);
+  }
+  return '';
+}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 /** Django sahifa bilan kelgan savat (sessiya) — mehmon savatining asosiy manbasi. null — sahifa savat yubormagan. */
 function serverCartFromWindow(): Record<number, number> | null {
   if (typeof window === 'undefined') return null;
@@ -464,9 +538,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const [tableNumber, setTableNumber] = useState<string | number>(() => {
+    const fromServer = serverTableFromWindow();
+    if (fromServer) return fromServer;
     const urlParams = new URLSearchParams(window.location.search);
     const tableFromUrl = urlParams.get('table');
-    if (tableFromUrl) return tableFromUrl;
+    if (tableFromUrl && !UUID_RE.test(tableFromUrl)) return tableFromUrl;
     try {
       return localStorage.getItem('guliston_table_num') || '';
     } catch {
@@ -619,43 +695,82 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Server data sync on mount (Offline-first fallback)
+  // Xodim ekranlari (KDS, ofitsiant, hostess, admin) serverdan davriy yangilanadi: buyurtmalar, stollar, chaqiruvlar.
+  // Avval faqat sahifa ochilganda bir marta so'ralar edi, KDS yangi buyurtmani qayta yuklamaguncha ko'rmasdi (R-KDS-01).
+  // Yozuvlar (holat o'zgartirish) bajarilayotganda yangilanish o'tkazib yuboriladi — optimistik holat orqaga qaytmasin.
+  const inflightWrites = useRef(0);
+  const syncNowRef = useRef<() => void>(() => {});
+
+  const writeThrough = useCallback((request: Promise<unknown>) => {
+    inflightWrites.current += 1;
+    return request.finally(() => {
+      inflightWrites.current -= 1;
+      syncNowRef.current();     // server holatini qayta o'qish: xato bo'lsa lokal taxmin to'g'rilanadi
+    });
+  }, []);
   useEffect(() => {
-    let isMounted = true;
-    // Buyurtmalar, stollar va moliya — xodim ma'lumotlari; mehmon uchun so'ralmaydi (server ham 401/403 qaytaradi)
-    if (roleService.getCurrentRole() === 'guest') {
-      return () => {
-        isMounted = false;
-      };
-    }
-    (async () => {
+    // Mehmon uchun so'ralmaydi (server ham 401/403 qaytaradi)
+    if (roleService.getCurrentRole() === 'guest') return;
+
+    let stopped = false;
+    let baselineDone = false;
+    const knownOrderIds = new Set<string>();
+    const knownCallIds = new Set<string>();
+
+    const run = async () => {
+      if (stopped || document.hidden || inflightWrites.current > 0) return;
       try {
         const [serverOrders, serverTables, serverCalls] = await Promise.all([
           RestaurantAPI.getOrders(),
           RestaurantAPI.getTables(),
-          RestaurantAPI.getFinanceData(),
+          RestaurantAPI.getServiceCalls(),
         ]);
+        if (stopped || inflightWrites.current > 0) return;
 
-        if (isMounted) {
-          if (Array.isArray(serverOrders) && serverOrders.length > 0) {
-            setOrders(serverOrders);
-          }
-          if (Array.isArray(serverTables) && serverTables.length > 0) {
-            setTables(serverTables);
-          }
-          if (serverCalls?.transactions && Array.isArray(serverCalls.transactions)) {
-            setFinanceTransactions(serverCalls.transactions);
-          }
-          if (serverCalls?.debts && Array.isArray(serverCalls.debts)) {
-            setFinanceDebts(serverCalls.debts);
-          }
+        if (Array.isArray(serverOrders)) {
+          const list = serverOrders.map(normalizeServerOrder);
+          const fresh = list.filter((o) => o.status === 'pending' && !knownOrderIds.has(String(o.id)));
+          list.forEach((o) => knownOrderIds.add(String(o.id)));
+          if (baselineDone && fresh.length > 0) playNotificationSound('order');
+          setOrders(list);
         }
+        if (Array.isArray(serverTables)) {
+          setTables(serverTables.map(normalizeServerTable));
+        }
+        if (Array.isArray(serverCalls)) {
+          const list = serverCalls.map(normalizeServerCall);
+          const fresh = list.filter((c) => c.status === 'pending' && !knownCallIds.has(String(c.id)));
+          list.forEach((c) => knownCallIds.add(String(c.id)));
+          if (baselineDone && fresh.length > 0) playNotificationSound('call');
+          setServiceCalls(list);
+        }
+        baselineDone = true;
       } catch (e) {
-        console.warn('Initial server sync completed with local storage fallback', e);
+        console.warn('[sync] server sync failed, keeping the last known data', e);
       }
-    })();
+    };
+
+    syncNowRef.current = () => {
+      void run();
+    };
+    void run();
+    const timer = window.setInterval(run, STAFF_POLL_MS);
+    const onVisible = () => {
+      if (!document.hidden) void run();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    // Moliya (faqat rahbariyat uchun; boshqa rolda server 403 beradi) — bir marta
+    void RestaurantAPI.getFinanceData().then((fin) => {
+      if (stopped) return;
+      if (fin?.transactions && Array.isArray(fin.transactions)) setFinanceTransactions(fin.transactions);
+      if (fin?.debts && Array.isArray(fin.debts)) setFinanceDebts(fin.debts);
+    });
+
     return () => {
-      isMounted = false;
+      stopped = true;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 
@@ -843,8 +958,13 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         };
         setServiceCalls((prev) => [newCall, ...prev]);
       }
+
+      // Server haqiqat manbai: oshxona holati boshqa qurilmalarda (ofitsiant, admin) ham ko'rinadi
+      if (status === 'preparing' || status === 'ready' || status === 'delivered') {
+        void writeThrough(RestaurantAPI.updateOrderStatus(orderId, status));
+      }
     },
-    []
+    [writeThrough]
   );
 
   const toggleOrderItemDone = useCallback(
@@ -1114,14 +1234,18 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Service Call Operations
   const createServiceCall = useCallback(
-    (call: {
+    async (call: {
       table_number: string | number;
       hall_name?: string;
       type: LiveServiceCall['type'];
       title: string;
-    }) => {
+    }): Promise<boolean> => {
+      // Avval serverga: "yuborildi" faqat server qabul qilgandan keyin (avval lokal ro'yxatga qo'shib, xato bo'lsa jim qolardi)
+      const res = await RestaurantAPI.createServiceCall(call.table_number, call.type, call.title);
+      if (!res?.id) return false;
+
       const newCall: LiveServiceCall = {
-        id: Date.now(),
+        id: res.id,
         table_number: call.table_number,
         hall_name: call.hall_name || 'Asosiy Zal',
         type: call.type,
@@ -1129,10 +1253,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         time: 'Hozir',
         status: 'pending',
       };
+      setServiceCalls((prev) => (prev.some((c) => c.id === newCall.id) ? prev : [newCall, ...prev]));
 
-      setServiceCalls((prev) => [newCall, ...prev]);
-
-      // If bill requested, mark table status
       if (call.type === 'bill') {
         setTables((prev) =>
           prev.map((t) =>
@@ -1140,13 +1262,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           )
         );
       }
-
-      playNotificationSound('call');
-
-      // Single-Request: Mehmon chaqiruvini serverga yuborish
-      RestaurantAPI.createServiceCall(call.table_number, call.type, call.title).catch((e) =>
-        console.warn('ServiceCall sync fallback', e)
-      );
+      return true;
     },
     []
   );
@@ -1155,11 +1271,13 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setServiceCalls((prev) =>
       prev.map((c) => (c.id === callId ? { ...c, status: 'accepted' } : c))
     );
-  }, []);
+    void writeThrough(RestaurantAPI.updateServiceCallStatus(callId, 'accepted'));
+  }, [writeThrough]);
 
   const completeServiceCall = useCallback((callId: number) => {
     setServiceCalls((prev) => prev.filter((c) => c.id !== callId));
-  }, []);
+    void writeThrough(RestaurantAPI.updateServiceCallStatus(callId, 'done'));
+  }, [writeThrough]);
 
   const toggleStopList = useCallback((productId: number) => {
     setStopList((prev) =>
