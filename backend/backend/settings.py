@@ -20,7 +20,11 @@ except Exception:
 # Security
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 STATIC_SECRET_KEY = 'django-insecure-MVZfwO0RUY8EaznN3m4r2Wxnh7bPLOFlqIWX4i5NWC53dvtXtkAPpF0DcFLW83io2Mw'
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip() or STATIC_SECRET_KEY
+SECRET_KEY = (
+    os.environ.get('DJANGO_SECRET_KEY', '').strip()
+    or os.environ.get('SECRET_KEY', '').strip()
+    or STATIC_SECRET_KEY
+)
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',') if h.strip()]
 
 # CSRF Trusted Origins (Production web va admin panel uchun)
@@ -346,18 +350,24 @@ S3_BUCKET = os.environ.get('S3_BUCKET', '')
 SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
 
 if SENTRY_DSN:
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
 
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[
-            DjangoIntegration(),
-        ],
-        traces_sample_rate=0.1,
-        send_default_pii=True,
-        environment='production' if not DEBUG else 'development',
-    )
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[
+                DjangoIntegration(),
+            ],
+            traces_sample_rate=0.1,
+            # Mijoz telefoni, IP va cookie'lari Sentry'ga ketmasin (TZ R1-7)
+            send_default_pii=False,
+            environment='production' if not DEBUG else 'development',
+        )
+    except ImportError:
+        # Paket o'rnatilmagan bo'lsa ham server ishga tushadi (avval SENTRY_DSN berilganda yiqilardi)
+        import logging as _logging
+        _logging.getLogger(__name__).warning("SENTRY_DSN berilgan, lekin sentry-sdk o'rnatilmagan — monitoring o'chiq")
 PUBLIC_DOMAIN = os.environ.get('PUBLIC_DOMAIN', '127.0.0.1:8000')
 _default_site_url = (
     f"https://{PUBLIC_DOMAIN}"

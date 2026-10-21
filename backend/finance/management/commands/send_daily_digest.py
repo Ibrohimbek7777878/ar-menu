@@ -81,6 +81,14 @@ class Command(BaseCommand):
                 if default_chat and str(default_chat) not in target_chat_ids:
                     target_chat_ids.append(str(default_chat))
 
+                if not target_chat_ids:
+                    # Avval qabul qiluvchi bo'lmasa ham "hisobot yuborildi" deyilardi (aslida hech kimga ketmagan)
+                    self.stderr.write(
+                        f"   [{shop.name}] qabul qiluvchi chat yo'q — hisobot yuborilmadi "
+                        f"(TELEGRAM_CHAT_ID yoki egasining chat_id kerak)"
+                    )
+                    continue
+
                 for cid in target_chat_ids:
                     res = _send_message(cid, report_text, parse_mode='HTML')
                     self.stdout.write(f"   [{shop.name}] -> {cid}: ok={res.get('success')}")
@@ -90,4 +98,7 @@ class Command(BaseCommand):
                 self.stderr.write(f"   [{shop.name}] Xatolik: {e}")
                 logger.error(f"[DAILY_DIGEST_ERR] Shop #{shop.id} error: {e}", exc_info=True)
 
-        self.stdout.write(self.style.SUCCESS(f"✅ {count} ta do'kon uchun kunlik hisobot yuborildi!"))
+        if count:
+            self.stdout.write(self.style.SUCCESS(f"✅ {count} ta do'kon uchun kunlik hisobot yuborildi!"))
+        else:
+            self.stdout.write(self.style.WARNING("⚠️ Hech bir do'kon uchun hisobot yuborilmadi (qabul qiluvchi chat sozlanmagan)"))

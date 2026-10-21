@@ -436,7 +436,8 @@ class ProductionVerificationTests(TestCase):
         # Shop owner can access /seller/ar/
         res_seller_ar = self.client.get('/seller/ar/')
         self.assertEqual(res_seller_ar.status_code, 200)
-        self.assertContains(res_seller_ar, "3D modellar boshqaruvi")
+        # Sahifa qayta dizayn qilingan (2026-09-29): sarlavha endi "AR / 3D Menyu Boshqaruvi"
+        self.assertContains(res_seller_ar, "3D Menyu Boshqaruvi")
 
         # 3. Test Super Admin access to /admin/ar/
         self.client.force_login(super_admin)
@@ -665,7 +666,8 @@ class ProductionVerificationTests(TestCase):
 
         res_tma_table = self.client.get(f'/tma/?table={table.qr_token}')
         self.assertEqual(res_tma_table.status_code, 200)
-        self.assertContains(res_tma_table, 'Stol №12')
+        # React menyu stol raqamini brauzerda chizadi; server QR tokenidan stolni topib JSON ma'lumotga yozadi
+        self.assertContains(res_tma_table, '"number": "12"')
 
         # Add to cart while table is active
         self.client.post('/tma/api/cart/', {

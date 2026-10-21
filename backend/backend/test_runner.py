@@ -8,9 +8,21 @@ TZ: R-QA-03 / TEST-02.
 """
 import socket
 
+from django.conf import settings
 from django.test.runner import DiscoverRunner
 
 _LOCAL_HOSTS = frozenset({'localhost', '127.0.0.1', '::1', 'testserver', '0.0.0.0'})
+
+
+# Testlar `.env`dagi HAQIQIY kalitlarga bog'liq bo'lmasligi va ularni ishlatmasligi uchun test davomida bo'shatiladi
+# (settings.py `.env`ni override=True bilan yuklaydi, shuning uchun muhit o'zgaruvchisi bilan almashtirib bo'lmaydi).
+# Aniq qiymat kerak bo'lgan test o'zi `override_settings` bilan beradi.
+SECRET_SETTINGS = (
+    'TELEGRAM_BOT_TOKEN', 'TELEGRAM_RESTAURANT_BOT_TOKEN', 'TELEGRAM_MARKET_BOT_TOKEN', 'TELEGRAM_STUDIO_BOT_TOKEN',
+    'TELEGRAM_CHAT_ID', 'TELEGRAM_ADMIN_CHAT_IDS', 'TELEGRAM_WEBHOOK_SECRET',
+    'AI_API_KEY', 'CLICK_SECRET_KEY', 'PAYME_SECRET_KEY', 'UZCARD_SECRET_KEY',
+    'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'SENTRY_DSN', 'ADMIN_PANEL_PASSWORD',
+)
 
 
 class NetworkBlockedError(ConnectionError):
@@ -20,6 +32,11 @@ class NetworkBlockedError(ConnectionError):
 class NoNetworkDiscoverRunner(DiscoverRunner):
     def setup_test_environment(self, **kwargs):
         super().setup_test_environment(**kwargs)
+        self._saved_secrets = {}
+        for name in SECRET_SETTINGS:
+            if hasattr(settings, name):
+                self._saved_secrets[name] = getattr(settings, name)
+                setattr(settings, name, '')
         self._orig_getaddrinfo = socket.getaddrinfo
         self._orig_connect = socket.socket.connect
         orig_getaddrinfo = self._orig_getaddrinfo
@@ -42,6 +59,8 @@ class NoNetworkDiscoverRunner(DiscoverRunner):
         socket.socket.connect = guarded_connect
 
     def teardown_test_environment(self, **kwargs):
+        for name, value in self._saved_secrets.items():
+            setattr(settings, name, value)
         socket.getaddrinfo = self._orig_getaddrinfo
         socket.socket.connect = self._orig_connect
         super().teardown_test_environment(**kwargs)

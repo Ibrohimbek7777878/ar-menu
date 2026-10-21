@@ -69,10 +69,11 @@ class Air3DMenuIntegrationTests(TestCase):
         self.assertContains(res, '/assets/index.css')
 
     def test_ar_page_classic_fallback(self):
-        """Test /ar/?classic=1 falls back to the grid catalog."""
-        res = self.client.get('/ar/?classic=1')
+        """Klassik (model-viewer) sahifa /m/<slug>/?classic=1 da (avval /ar/?classic=1 edi)."""
+        res = self.client.get(f'/m/{self.shop.slug}/?classic=1')
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, '3D/AR Mahsulotlar')
+        self.assertContains(res, 'model-viewer')
+        self.assertContains(res, self.product.name)
 
     def test_restaurant_slug_m_url(self):
         """Test /m/<slug>/ loads air-3d-menu with the restaurant and table."""

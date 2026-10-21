@@ -1,5 +1,5 @@
 from decimal import Decimal
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from shops.models import Shop
@@ -110,12 +110,22 @@ class TelegramAndTableServiceTests(TestCase):
         res_start = handle_webhook(update_start)
         self.assertTrue(res_start['success'])
 
+    @override_settings(TELEGRAM_CHAT_ID='12345678')
     def test_send_daily_digest_command(self):
+        # Chat sozlamasi testning o'zida beriladi (avval .env dagi TELEGRAM_CHAT_ID ga bog'liq edi)
         out = io.StringIO()
         call_command('send_daily_digest', shop_id=self.shop.id, stdout=out)
         output = out.getvalue()
         self.assertIn('Test Choyxona', output)
         self.assertIn('kunlik hisobot yuborildi', output)
+
+    @override_settings(TELEGRAM_CHAT_ID='')
+    def test_send_daily_digest_is_honest_when_nobody_can_receive_it(self):
+        out, err = io.StringIO(), io.StringIO()
+        call_command('send_daily_digest', shop_id=self.shop.id, stdout=out, stderr=err)
+        self.assertNotIn('kunlik hisobot yuborildi', out.getvalue())
+        self.assertIn('Hech bir do', out.getvalue())
+        self.assertIn("qabul qiluvchi chat yo'q", err.getvalue())
 
     def test_set_chat_menu_button(self):
         from notifications.services.telegram_service import set_chat_menu_button

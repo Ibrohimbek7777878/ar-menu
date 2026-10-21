@@ -71,7 +71,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         if shop_name:
             from shops.models import Shop
-            import slugify
+            from django.utils.text import slugify   # avval `import slugify` (modul) chaqirilardi: do'kon nomi bilan ro'yxatdan o'tish har doim yiqilardi
             shop = Shop.objects.create(
                 name=shop_name,
                 slug=slugify(shop_name, allow_unicode=True)[:200] or f'shop-{user.id}',

@@ -18,6 +18,22 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 import django
 django.setup()
 
+# HIMOYA (TZ R0-5): bu skript buyurtma, mahsulot, 3D buyurtma va outbox yozuvlarini yaratadi va tozalamaydi,
+# signal orqali haqiqiy Telegram xabarlari ham ketishi mumkin. Avval u real bazaga yozib, 80 ta buyurtmadan 63 tasini
+# "Test Mehmon" yozuvlari bilan to'ldirgan. Real (ishlayotgan) bazada faqat aniq tasdiq bilan ishlaydi.
+from django.conf import settings as _dj_settings
+
+_db_name = str(_dj_settings.DATABASES['default'].get('NAME', ''))
+_is_real_db = _db_name.endswith('db.sqlite3') or _dj_settings.DATABASES['default']['ENGINE'].endswith('postgresql')
+if _is_real_db and os.environ.get('LOOP_TEST_ALLOW_REAL_DB') != '1':
+    print(
+        "TO'XTATILDI: bu skript real bazaga test ma'lumot yozadi.\n"
+        f"  Baza: {_db_name or _dj_settings.DATABASES['default']['ENGINE']}\n"
+        "  Xavfsiz yo'l: bazaning nusxasida yuriting yoki Django test runner'dan foydalaning (python manage.py test).\n"
+        "  Baribir real bazada kerak bo'lsa: LOOP_TEST_ALLOW_REAL_DB=1 python scripts/loop_engineering_test.py"
+    )
+    sys.exit(2)
+
 from django.test import Client
 from django.utils import timezone
 from accounts.models import AdminUser, Customer
