@@ -144,10 +144,11 @@ export interface NavigationContextType {
   // Sobir Tog'a Moliya Tizimi (Finance System)
   financeTransactions: FinanceTransaction[];
   financeDebts: FinanceDebt[];
-  addFinanceTransaction: (tx: Omit<FinanceTransaction, 'id' | 'created_at'>) => void;
-  cancelFinanceTransaction: (id: string | number, reason: string) => void;
-  addFinanceDebt: (debt: Omit<FinanceDebt, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at'>) => void;
-  payDebtPartial: (debtId: string | number, payAmount: number, paymentMethod: 'cash' | 'card', notes?: string) => void;
+  /** Moliya yozuvlari serverda saqlanadi. Qaytadi: null — muvaffaqiyat, aks holda xato matni. */
+  addFinanceTransaction: (tx: Omit<FinanceTransaction, 'id' | 'created_at' | 'amount'> & { amount: number | string }) => Promise<string | null>;
+  cancelFinanceTransaction: (id: string | number, reason: string) => Promise<string | null>;
+  addFinanceDebt: (debt: Omit<FinanceDebt, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at'>) => Promise<string | null>;
+  payDebtPartial: (debtId: string | number, payAmount: number, paymentMethod: 'cash' | 'card', notes?: string) => Promise<string | null>;
 
   // Reusable Modals
   isCallWaiterOpen: boolean;
@@ -1041,99 +1042,50 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   // Finance helpers
-  const addFinanceTransaction = useCallback((tx: Omit<FinanceTransaction, 'id' | 'created_at'>) => {
-    const newTx: FinanceTransaction = {
-      ...tx,
-      id: `tx-${Date.now()}`,
-      created_at: new Date().toISOString(),
-    };
-    setFinanceTransactions((prev) => [newTx, ...prev]);
+  // Moliya yozuvlari: server haqiqat manbai (avval faqat brauzer xotirasida edi — kesh tozalansa yo'qolardi,
+  // qarzga ortiqcha to'lov ham kassaga yozilardi). Muvaffaqiyatda kassa serverdan qayta o'qiladi.
+  const addFinanceTransaction = useCallback(
+    async (tx: Omit<FinanceTransaction, 'id' | 'created_at' | 'amount'> & { amount: number | string }): Promise<string | null> => {
+      const res = await writeThrough(
+        RestaurantAPI.financeWrite('tx/', {
+          type: tx.type, category: tx.category, amount: tx.amount, payment_method: tx.payment_method,
+          description: tx.description,
+        })
+      );
+      return res.ok ? null : res.error || "Yozuv saqlanmadi";
+    },
+    [writeThrough]
+  );
 
-    // Agar kirim bo'lsa darhol todayRevenue ga ham ta'sir qiladi
-    if (tx.type === 'income') {
-      setTodayRevenue((prev) => prev + tx.amount);
-    }
-  }, []);
-
-  const cancelFinanceTransaction = useCallback((id: string | number, reason: string) => {
-    setFinanceTransactions((prev) =>
-      prev.map((tx) => {
-        if (String(tx.id) === String(id) && !tx.is_cancelled) {
-          // Agar bekor qilinayotgan tranzaksiya kirim bo'lsa, tushumni kamaytirish
-          if (tx.type === 'income') {
-            setTodayRevenue((rev) => Math.max(0, rev - tx.amount));
-          }
-          return {
-            ...tx,
-            is_cancelled: true,
-            cancellation_reason: reason,
-            cancelled_at: new Date().toISOString(),
-          };
-        }
-        return tx;
-      })
-    );
-  }, []);
+  const cancelFinanceTransaction = useCallback(
+    async (id: string | number, reason: string): Promise<string | null> => {
+      const res = await writeThrough(RestaurantAPI.financeWrite(`tx/${id}/cancel/`, { reason }));
+      return res.ok ? null : res.error || "Bekor qilib bo'lmadi";
+    },
+    [writeThrough]
+  );
 
   const addFinanceDebt = useCallback(
-    (debt: Omit<FinanceDebt, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at'>) => {
-      const newDebt: FinanceDebt = {
-        ...debt,
-        id: `debt-${Date.now()}`,
-        paid_amount: 0,
-        remaining_amount: debt.total_amount,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      };
-      setFinanceDebts((prev) => [newDebt, ...prev]);
+    async (debt: Omit<FinanceDebt, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at'>): Promise<string | null> => {
+      const res = await writeThrough(
+        RestaurantAPI.financeWrite('debts/', {
+          type: debt.type, person_name: debt.person_name, phone: debt.phone, description: debt.description,
+          total_amount: debt.total_amount, due_date: debt.due_date,
+        })
+      );
+      return res.ok ? null : res.error || "Qarz saqlanmadi";
     },
-    []
+    [writeThrough]
   );
 
   const payDebtPartial = useCallback(
-    (debtId: string | number, payAmount: number, paymentMethod: 'cash' | 'card', notes?: string) => {
-      setFinanceDebts((prev) =>
-        prev.map((debt) => {
-          if (String(debt.id) === String(debtId)) {
-            const newPaid = Math.min(debt.total_amount, debt.paid_amount + payAmount);
-            const remaining = Math.max(0, debt.total_amount - newPaid);
-            const status: FinanceDebt['status'] = remaining === 0 ? 'settled' : 'partially_paid';
-
-            // Agar mijoz bizga qarzini to'lagan bo'lsa (receivable) -> Kassaga KIRIM tushadi!
-            // Agar biz ta'minotchiga qarzimizni to'lagan bo'lsak (payable) -> Kassadan CHIQIM bo'ladi!
-            const txType = debt.type === 'receivable' ? ('income' as const) : ('expense' as const);
-            const txCategory = debt.type === 'receivable' ? 'Nasiya Qaytarildi' : 'Qarz To\'lovi (Yetkazib beruvchi)';
-
-            const autoTx: FinanceTransaction = {
-              id: `tx-debt-${Date.now()}`,
-              type: txType,
-              category: txCategory,
-              amount: payAmount,
-              payment_method: paymentMethod,
-              source_type: 'debt_payment',
-              customer_name: debt.person_name,
-              description: `${debt.person_name} (${debt.type === 'receivable' ? 'Nasiya qaytardi' : 'Qarz to\'landi'})${notes ? ': ' + notes : ''}`,
-              created_at: new Date().toISOString(),
-            };
-
-            setFinanceTransactions((txs) => [autoTx, ...txs]);
-
-            if (txType === 'income') {
-              setTodayRevenue((rev) => rev + payAmount);
-            }
-
-            return {
-              ...debt,
-              paid_amount: newPaid,
-              remaining_amount: remaining,
-              status,
-            };
-          }
-          return debt;
-        })
+    async (debtId: string | number, payAmount: number, paymentMethod: 'cash' | 'card', notes?: string): Promise<string | null> => {
+      const res = await writeThrough(
+        RestaurantAPI.financeWrite(`debts/${debtId}/pay/`, { amount: payAmount, payment_method: paymentMethod, notes })
       );
+      return res.ok ? null : res.error || "To'lov saqlanmadi";
     },
-    []
+    [writeThrough]
   );
 
   const settleTableBill = useCallback(

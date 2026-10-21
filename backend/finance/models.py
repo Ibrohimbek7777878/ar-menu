@@ -62,6 +62,8 @@ class FinanceTransaction(models.Model):
     cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='cancelled_finance_txs')
     cancelled_at = models.DateTimeField(null=True, blank=True, verbose_name='Bekor qilingan vaqt')
     order = models.ForeignKey('orders.Order', on_delete=models.SET_NULL, null=True, blank=True, related_name='finance_txs')
+    # Qarz to'lovi shu qarzga bog'lanadi: to'lov bekor qilinsa (storno) qarz qoldig'i tiklanadi (TZ R-FIN-03/07)
+    debt = models.ForeignKey('finance.DebtRecord', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     tx_date = models.DateField(default=timezone.now, verbose_name='Sana')
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StaffNavHeader } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { parseMoney } from '../../utils/money';
 import type { FinanceTransaction, FinanceDebt, LiveOrder } from '../../context/NavigationContext';
 import './FinancePage.css';
 
@@ -146,12 +147,15 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
   }, [financeDebts, searchQuery]);
 
   // Handle Income Submit
-  const handleIncomeSubmit = (e: React.FormEvent) => {
+  const handleIncomeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = Number(formAmount.replace(/\D/g, ''));
-    if (!amount || amount <= 0) return;
+    const amount = parseMoney(formAmount);
+    if (!amount) {
+      alert("Summa noto'g'ri kiritildi");
+      return;
+    }
 
-    addFinanceTransaction({
+    const error = await addFinanceTransaction({
       type: 'income',
       category: formCategory.trim() || 'Umumiy Kirim',
       amount,
@@ -159,6 +163,10 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
       source_type: 'manual',
       description: formDesc.trim() || 'Kassaga naqd/karta orqali kirim qilindi',
     });
+    if (error) {
+      alert(error);
+      return;
+    }
 
     setIsIncomeModalOpen(false);
     setFormAmount('');
@@ -167,12 +175,15 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
   };
 
   // Handle Expense Submit
-  const handleExpenseSubmit = (e: React.FormEvent) => {
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = Number(formAmount.replace(/\D/g, ''));
-    if (!amount || amount <= 0) return;
+    const amount = parseMoney(formAmount);
+    if (!amount) {
+      alert("Summa noto'g'ri kiritildi");
+      return;
+    }
 
-    addFinanceTransaction({
+    const error = await addFinanceTransaction({
       type: 'expense',
       category: formCategory.trim() || 'Xarajat',
       amount,
@@ -180,6 +191,10 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
       source_type: 'manual',
       description: formDesc.trim() || 'Kassadan chiqim qilindi',
     });
+    if (error) {
+      alert(error);
+      return;
+    }
 
     setIsExpenseModalOpen(false);
     setFormAmount('');
@@ -188,12 +203,15 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
   };
 
   // Handle Debt Submit
-  const handleDebtSubmit = (e: React.FormEvent) => {
+  const handleDebtSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = Number(debtAmount.replace(/\D/g, ''));
-    if (!amount || amount <= 0 || !debtPerson.trim()) return;
+    const amount = parseMoney(debtAmount);
+    if (!amount || !debtPerson.trim()) {
+      alert("Ism va summani to'g'ri kiriting");
+      return;
+    }
 
-    addFinanceDebt({
+    const error = await addFinanceDebt({
       type: debtType,
       person_name: debtPerson.trim(),
       phone: debtPhone.trim() || undefined,
@@ -201,6 +219,10 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
       total_amount: amount,
       due_date: debtDueDate.trim() || undefined,
     });
+    if (error) {
+      alert(error);
+      return;
+    }
 
     setIsDebtModalOpen(false);
     setDebtPerson('');
@@ -211,13 +233,24 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
   };
 
   // Handle Partial Pay Submit
-  const handlePartialPaySubmit = (e: React.FormEvent) => {
+  const handlePartialPaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDebt) return;
-    const amount = Number(partialPayAmount.replace(/\D/g, ''));
-    if (!amount || amount <= 0) return;
+    const amount = parseMoney(partialPayAmount);
+    if (!amount) {
+      alert("Summa noto'g'ri kiritildi");
+      return;
+    }
+    if (amount > selectedDebt.remaining_amount) {
+      alert(`To'lov summasi qarz qoldig'idan (${formatUZS(selectedDebt.remaining_amount)} so'm) ko'p bo'lishi mumkin emas`);
+      return;
+    }
 
-    payDebtPartial(selectedDebt.id, amount, partialPayMethod, partialPayNotes);
+    const error = await payDebtPartial(selectedDebt.id, amount, partialPayMethod, partialPayNotes);
+    if (error) {
+      alert(error);
+      return;
+    }
     setIsPartialPayModalOpen(false);
     setSelectedDebt(null);
     setPartialPayAmount('');
@@ -225,14 +258,18 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
   };
 
   // Handle Cancel Tx Submit
-  const handleCancelTxSubmit = (e: React.FormEvent) => {
+  const handleCancelTxSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!txToCancel) return;
     if (!cancelReason.trim()) {
       alert('Iltimos, bekor qilish sababini yozing!');
       return;
     }
-    cancelFinanceTransaction(txToCancel.id, cancelReason);
+    const error = await cancelFinanceTransaction(txToCancel.id, cancelReason);
+    if (error) {
+      alert(error);
+      return;
+    }
     setIsCancelModalOpen(false);
     setTxToCancel(null);
     setCancelReason('');
@@ -754,10 +791,12 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
                             type="button"
                             className="finance-action-btn"
                             style={{ flex: 1, padding: '8px 10px', fontSize: '0.78rem', background: '#059669' }}
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              settleTableBill(table.number, 'cash');
-                              alert(`Stol #${table.number} hisobi yopildi va Kassaga ${formatUZS(table.total_bill)} so'm kirim qilindi!`);
+                              const ok = await settleTableBill(table.number, 'cash');
+                              alert(ok
+                                ? `Stol #${table.number} hisobi yopildi va Kassaga ${formatUZS(table.total_bill)} so'm kirim qilindi!`
+                                : "Hisobni yopib bo'lmadi. Qayta urinib ko'ring.");
                             }}
                           >
                             💵 Naqd Yopish
@@ -766,10 +805,12 @@ export const FinancePage: React.FC<FinancePageProps> = ({ embedded = false }) =>
                             type="button"
                             className="finance-action-btn"
                             style={{ flex: 1, padding: '8px 10px', fontSize: '0.78rem', background: '#0284c7' }}
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              settleTableBill(table.number, 'card');
-                              alert(`Stol #${table.number} hisobi (Karta) yopildi va Kassaga ${formatUZS(table.total_bill)} so'm kirim qilindi!`);
+                              const ok = await settleTableBill(table.number, 'card');
+                              alert(ok
+                                ? `Stol #${table.number} hisobi (Karta) yopildi va Kassaga ${formatUZS(table.total_bill)} so'm kirim qilindi!`
+                                : "Hisobni yopib bo'lmadi. Qayta urinib ko'ring.");
                             }}
                           >
                             💳 Karta/Click

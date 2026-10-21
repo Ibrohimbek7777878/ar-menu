@@ -258,46 +258,19 @@ class ServiceCallActionView(RestaurantAPIView):
 
 class RestaurantFinanceSyncView(RestaurantAPIView):
     """
-    GET /api/v1/restaurant/finance/ - Kassa va Qarzlar (faqat restoran rahbariyati)
+    GET /api/v1/restaurant/finance/ - Kassa va Qarzlar (faqat restoran rahbariyati).
+    Yozish: finance/api_views.py (finance/tx/, finance/tx/<id>/cancel/, finance/debts/, finance/debts/<id>/pay/).
     """
     permission_classes = [IsRestaurantManager]
 
     def get(self, request):
+        from finance.api_views import serialize_debt, serialize_tx
         shop = self.staff_shop()
-        txs = FinanceTransaction.objects.filter(shop=shop).select_related('category').order_by('-created_at')[:40]
-        debts = DebtRecord.objects.filter(shop=shop).order_by('-created_at')[:30]
-
-        tx_list = [{
-            'id': t.id,
-            'type': t.tx_type,
-            'category': t.category.name if t.category else 'Umumiy',
-            'amount': float(t.amount),
-            'payment_method': t.payment_method,
-            'source_type': 'receipt' if t.order_id else 'manual',
-            'description': t.title,
-            'created_at': t.created_at.isoformat(),
-            'is_cancelled': t.is_cancelled,
-            'cancellation_reason': t.cancel_reason,
-            'cancelled_at': t.cancelled_at.isoformat() if t.cancelled_at else None,
-        } for t in txs]
-
-        debt_list = [{
-            'id': d.id,
-            'type': 'receivable' if d.debt_type == 'customer' else 'payable',
-            'person_name': d.person_name,
-            'phone': d.phone,
-            'description': d.notes,
-            'total_amount': float(d.amount),
-            'paid_amount': float(d.paid_amount),
-            'remaining_amount': float(d.remaining_amount),
-            'status': 'settled' if d.status == 'settled' else ('partially_paid' if d.status == 'partial' else 'pending'),
-            'created_at': d.created_at.isoformat(),
-            'due_date': str(d.due_date) if d.due_date else None,
-        } for d in debts]
-
+        txs = FinanceTransaction.objects.filter(shop=shop).select_related('category').order_by('-created_at')[:300]
+        debts = DebtRecord.objects.filter(shop=shop).order_by('-created_at')[:150]
         return Response({
-            'transactions': tx_list,
-            'debts': debt_list
+            'transactions': [serialize_tx(t) for t in txs],
+            'debts': [serialize_debt(d) for d in debts],
         })
 
 

@@ -163,6 +163,23 @@ export const RestaurantAPI = {
     }
   },
 
+  // 7b. Moliya yozuvlari (serverda saqlanadi). Natija: { ok, data } yoki { ok:false, error } — sababi foydalanuvchiga ko'rsatiladi
+  async financeWrite(path: string, body: Record<string, unknown>): Promise<{ ok: boolean; data?: any; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/finance/${path}`, {
+        method: 'POST',
+        headers: jsonHeaders(),
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return { ok: false, error: data?.error || "Server xatosi. Qayta urinib ko'ring." };
+      return { ok: true, data };
+    } catch {
+      return { ok: false, error: "Internet bilan aloqa yo'q. Yozuv saqlanmadi." };
+    }
+  },
+
   // 8. Moliya va Nasiyalar sinxronizatsiyasi
   async getFinanceData() {
     try {

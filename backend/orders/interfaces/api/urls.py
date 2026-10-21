@@ -1,4 +1,7 @@
 from django.urls import path
+from finance.api_views import (
+    FinanceDebtCreateView, FinanceDebtPayView, FinanceTxCancelView, FinanceTxCreateView,
+)
 from orders.interfaces.api.views import (
     RestaurantOrderCreateView,
     RestaurantOrderListView,
@@ -46,4 +49,8 @@ urlpatterns = [
 
     # Finance (Sobir Tog'a Moliya)
     path('finance/', RestaurantFinanceSyncView.as_view(), name='restaurant_finance_sync'),
+    path('finance/tx/', FinanceTxCreateView.as_view(), name='restaurant_finance_tx_create'),
+    path('finance/tx/<int:tx_id>/cancel/', FinanceTxCancelView.as_view(), name='restaurant_finance_tx_cancel'),
+    path('finance/debts/', FinanceDebtCreateView.as_view(), name='restaurant_finance_debt_create'),
+    path('finance/debts/<int:debt_id>/pay/', FinanceDebtPayView.as_view(), name='restaurant_finance_debt_pay'),
 ]
