@@ -90,6 +90,10 @@ STAGE_NAMES = {
 def seller_finance(request):
     shop = request.tenant_shop
     seed_default_categories_for_shop(shop)
+    # Bosqich nomlari shu do'kon uchun alohida nusxada. Avval umumiy modul lug'ati har so'rovda o'zgartirilardi:
+    # bitta restoranning maxsus ustun nomlari boshqa restoran sahifasi va audit matnlariga o'tib ketardi (TZ R-FIN-09)
+    stage_names = dict(STAGE_NAMES)
+    stage_names.update({cs.stage_key: cs.name for cs in FinanceCustomStage.objects.filter(shop=shop)})
     today = timezone.localdate()
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', '')
 
@@ -225,8 +229,8 @@ def seller_finance(request):
 
                 # Audit movement history if stage or type changed
                 if old_stage != new_stage or old_type != new_tx_type:
-                    from_desc = STAGE_NAMES.get(old_stage, old_stage)
-                    to_desc = STAGE_NAMES.get(new_stage, new_stage)
+                    from_desc = stage_names.get(old_stage, old_stage)
+                    to_desc = stage_names.get(new_stage, new_stage)
                     FinanceMovementHistory.objects.create(
                         transaction=tx,
                         from_stage=from_desc,
@@ -283,8 +287,8 @@ def seller_finance(request):
                         if cs_match:
                             new_type = 'income' if cs_match.category_type == 'income' else 'expense'
 
-                    from_desc = STAGE_NAMES.get(old_stage, old_stage)
-                    to_desc = STAGE_NAMES.get(target_stage, target_stage)
+                    from_desc = stage_names.get(old_stage, old_stage)
+                    to_desc = stage_names.get(target_stage, target_stage)
 
                     FinanceMovementHistory.objects.create(
                         transaction=tx,
@@ -463,7 +467,7 @@ def seller_finance(request):
 
                 FinanceMovementHistory.objects.create(
                     transaction=tx,
-                    from_stage=STAGE_NAMES.get(tx.stage, tx.stage),
+                    from_stage=stage_names.get(tx.stage, tx.stage),
                     to_stage="Bekor qilingan (Audit)",
                     from_type=tx.tx_type,
                     to_type='cancelled',
@@ -494,7 +498,7 @@ def seller_finance(request):
                 FinanceMovementHistory.objects.create(
                     transaction=tx,
                     from_stage="Bekor qilingan",
-                    to_stage=STAGE_NAMES.get(tx.stage, tx.stage),
+                    to_stage=stage_names.get(tx.stage, tx.stage),
                     from_type='cancelled',
                     to_type=tx.tx_type,
                     moved_by=request.user,
@@ -720,7 +724,7 @@ def seller_finance(request):
     # Custom stages for this shop
     custom_stages = FinanceCustomStage.objects.filter(shop=shop).order_by('sort_order', 'id')
     for cs in custom_stages:
-        STAGE_NAMES[cs.stage_key] = cs.name
+        stage_names[cs.stage_key] = cs.name
 
     # Realized stages list: includes standard income, expense, realized AND custom stages with category_type in ['income', 'expense', 'capital']
     realized_stages = ['income', 'expense', 'realized']
