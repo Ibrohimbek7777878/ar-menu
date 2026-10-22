@@ -103,6 +103,51 @@ def seller_tables(request):
 
 
 @seller_required
+def seller_table_qr_svg(request, table_id):
+    """Stolning doimiy QR kodi (SVG): /t/<uuid>/ havolasi serverda chiziladi, tashqi xizmat ishlatilmaydi."""
+    from django.http import Http404, HttpResponse
+    from tables_restaurant.models import Table
+    from tables_restaurant.qr import qr_base_url, qr_svg
+    shop = request.tenant_shop
+    table = Table.objects.filter(pk=table_id, shop=shop, is_active=True).first() if shop else None
+    if not table:
+        raise Http404
+    response = HttpResponse(qr_svg(f'{qr_base_url(request)}{table.qr_path}'), content_type='image/svg+xml')
+    response['Cache-Control'] = 'private, max-age=300'
+    return response
+
+
+@seller_required
+def seller_menu_qr_svg(request):
+    """Umumiy menyu (kassa/vitrina) QR kodi (SVG), serverda chiziladi."""
+    from django.conf import settings as _s
+    from django.http import Http404, HttpResponse
+    from tables_restaurant.qr import qr_svg
+    shop = request.tenant_shop
+    if not shop:
+        raise Http404
+    scheme = 'http' if ('127.0.0.1' in _s.PUBLIC_DOMAIN or 'localhost' in _s.PUBLIC_DOMAIN) else 'https'
+    response = HttpResponse(qr_svg(f'{scheme}://{_s.PUBLIC_DOMAIN}/m/{shop.slug}/'), content_type='image/svg+xml')
+    response['Cache-Control'] = 'private, max-age=300'
+    return response
+
+
+@seller_required
+def seller_nfc_qr_svg(request, card_id):
+    """NFC kartaning QR kodi (SVG): kartaning bosish havolasi serverda chiziladi (tashqi xizmatga yuborilmaydi)."""
+    from django.http import Http404, HttpResponse
+    from tables_restaurant.models import NFCCard
+    from tables_restaurant.qr import qr_svg
+    shop = request.tenant_shop
+    card = NFCCard.objects.filter(pk=card_id, shop=shop, is_active=True).first() if shop else None
+    if not card:
+        raise Http404
+    response = HttpResponse(qr_svg(card.get_tap_url()), content_type='image/svg+xml')
+    response['Cache-Control'] = 'private, max-age=300'
+    return response
+
+
+@seller_required
 def seller_tables_print_stands(request):
     """Barcha stollar uchun A4/A6 formatdagi chiroyli QR stendlarini chop etish sahifasi."""
     from tables_restaurant.models import Table

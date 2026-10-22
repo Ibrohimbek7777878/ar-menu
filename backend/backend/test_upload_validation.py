@@ -109,3 +109,91 @@ class UploadMiddlewareIntegrationTests(TestCase):
     def test_requests_without_files_are_untouched(self):
         resp = Client().post(self.URL, {'customer_name': 'Ali', 'customer_phone': '+998901112233'})
         self.assertNotEqual(resp.status_code, 400, resp.content[:300])
+
+
+class ImageOptimizationTests(SimpleTestCase):
+    """Katta fotosurat WebP ga o'tkaziladi va kichrayadi (R8-4); kichik/maxsus rasmlar tegilmaydi."""
+
+    @staticmethod
+    def noisy_jpeg(width, height, name='photo.jpg', quality=95):
+        import random
+        img = Image.new('RGB', (width, height))
+        px = img.load()
+        rnd = random.Random(7)
+        for x in range(0, width, 3):
+            for y in range(0, height, 3):
+                px[x, y] = (rnd.randint(0, 255), rnd.randint(0, 255), rnd.randint(0, 255))
+        buf = io.BytesIO()
+        img.save(buf, 'JPEG', quality=quality)
+        return SimpleUploadedFile(name, buf.getvalue(), content_type='image/jpeg')
+
+    def test_large_photo_becomes_a_smaller_webp_within_the_max_side(self):
+        from backend.upload_validation import optimize_image
+        original = self.noisy_jpeg(2400, 1800)
+        result = optimize_image(original)
+        self.assertEqual(result.name, 'photo.webp')
+        self.assertEqual(result.content_type, 'image/webp')
+        self.assertLess(result.size, original.size)
+        result.seek(0)
+        with Image.open(result) as img:
+            self.assertEqual(img.format, 'WEBP')
+            self.assertLessEqual(max(img.size), 1000)
+            self.assertEqual(round(img.size[0] / img.size[1], 2), round(2400 / 1800, 2))      # nisbat saqlanadi
+
+    def test_small_images_are_left_alone(self):
+        from backend.upload_validation import optimize_image
+        small = make_image('PNG', size=(64, 64), name='icon.png')
+        self.assertIs(optimize_image(small), small)
+
+    def test_gif_and_unknown_formats_are_not_touched(self):
+        from backend.upload_validation import optimize_image
+        gif = SimpleUploadedFile('a.gif', b'GIF89a' + b'\x00' * 200, content_type='image/gif')
+        self.assertIs(optimize_image(gif), gif)
+
+    def test_transparency_survives_and_broken_input_falls_back_to_the_original(self):
+        from backend.upload_validation import optimize_image
+        buf = io.BytesIO()
+        Image.new('RGBA', (1600, 1600), (255, 0, 0, 0)).save(buf, 'PNG')
+        buf.write(b'\x00' * 0)
+        logo = SimpleUploadedFile('logo.png', buf.getvalue() + b'', content_type='image/png')
+        big_logo = optimize_image(logo)
+        with Image.open(big_logo) as img:
+            self.assertIn('A', img.getbands())
+        broken = SimpleUploadedFile('x.jpg', b'\xff\xd8\xff' + b'garbage' * 50000, content_type='image/jpeg')
+        self.assertIs(optimize_image(broken), broken)
+
+    @override_settings(UPLOAD_OPTIMIZE_IMAGES=False)
+    def test_switch_turns_it_off(self):
+        from backend.upload_validation import optimize_image
+        big = self.noisy_jpeg(2400, 1800)
+        self.assertIs(optimize_image(big), big)
+
+    def test_exif_orientation_is_applied(self):
+        from backend.upload_validation import optimize_image
+        img = Image.new('RGB', (2000, 1000), (10, 200, 30))
+        exif = Image.Exif()
+        exif[0x0112] = 6                      # 90° soat yo'nalishida aylantirish kerak
+        buf = io.BytesIO()
+        img.save(buf, 'JPEG', exif=exif, quality=100)
+        raw = buf.getvalue() + b'\x00' * (SKIP_PAD)
+        result = optimize_image(SimpleUploadedFile('rot.jpg', raw, content_type='image/jpeg'))
+        with Image.open(result) as out:
+            self.assertGreater(out.size[1], out.size[0])        # eni va bo'yi almashgan: portret
+
+
+SKIP_PAD = 130 * 1024                         # fayl SKIP_BELOW_BYTES dan katta bo'lsin (kichik rasm tegilmaydi)
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant')
+class UploadPipelineOptimizationTests(TestCase):
+    def test_middleware_hands_the_view_the_optimized_file(self):
+        from unittest import mock
+        from backend.upload_validation import UploadValidationMiddleware
+        from django.test import RequestFactory
+        factory = RequestFactory()
+        request = factory.post('/x/', {'image': ImageOptimizationTests.noisy_jpeg(2400, 1800)})
+        before = request.FILES['image'].size
+        UploadValidationMiddleware(lambda r: None).process_request(request)
+        after = request.FILES['image']
+        self.assertTrue(after.name.endswith('.webp'))
+        self.assertLess(after.size, before)

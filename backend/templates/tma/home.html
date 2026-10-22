@@ -1,14 +1,15 @@
 {% extends "tma/base_tma.html" %}
+{% load react_assets %}
 {% load json_tags %}
 
 {% block title %}Dasturxon Menyusi — {{ shop.name|default:"Guliston" }}{% endblock %}
 
 {% block extra_head %}
 <!-- Google model-viewer 3D kutubxonasi -->
-<script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<!-- <model-viewer> endi React ilovasi ichida, 3D oyna ochilganda npm paketidan yuklanadi (frontend/src/utils/modelViewer.ts); CDN'dan (SRI'siz) har sahifada yuklash olib tashlandi -->
 
 <!-- React Component System CSS -->
-<link rel="stylesheet" href="/static/react/assets/index.css?v=27">
+{% react_css %}
 {% endblock %}
 
 {% block desktop_nav %}
@@ -26,7 +27,7 @@
 </script>
 
 <!-- React Application Bundle -->
-<script type="module" src="/static/react/assets/index.js?v=27"></script>
+{% react_js %}
 {% endblock %}
 
 {% block tabbar %}

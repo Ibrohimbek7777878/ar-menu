@@ -13,5 +13,5 @@ export * from './Toast';
 export * from './StaffNavHeader';
 export * from './CallWaiterModal';
 export * from './NFCGatewayModal';
-export * from './QRGeneratorModal';
-export * from './PhotogrammetryStudioModal';
+// QRGeneratorModal va PhotogrammetryStudioModal bu yerdan eksport qilinmaydi: ular faqat xodimga kerak (qrcode kutubxonasi
+// bilan), App.tsx ularni alohida bo'lak sifatida kerak bo'lgandagina yuklaydi (TZ: R8-1).

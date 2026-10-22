@@ -2,6 +2,7 @@ import React, { useState, useId, useEffect } from 'react';
 import type { Product } from '../../../types/dish';
 import { RestaurantAPI } from '../../../services/RestaurantAPI';
 import { AVAILABLE_3D_MODELS, match3DModel, type Model3DItem } from '../../../services/Smart3DMatcher';
+import { loadModelViewer } from '../../../utils/modelViewer';
 import './PhotogrammetryStudioModal.css';
 
 export interface PhotogrammetryStudioModalProps {
@@ -27,6 +28,10 @@ export const PhotogrammetryStudioModal: React.FC<PhotogrammetryStudioModalProps>
   const [customGlbUrl, setCustomGlbUrl] = useState<string | null>(null);
   const [customGlbName, setCustomGlbName] = useState<string>('');
   const [autoMatched, setAutoMatched] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) void loadModelViewer();
+  }, [isOpen]);
 
   const fileInputId = useId();
   const glbInputId = useId();

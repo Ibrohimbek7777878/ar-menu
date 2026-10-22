@@ -9,8 +9,11 @@ Bitta middleware barcha multipart yuklashlarni (hozirgi va kelajakdagi view'lar)
   • kengaytma ruxsat ro'yxatida bo'lishi shart (SVG/HTML/JS/PHP/EXE va boshqalar rad etiladi);
   • hajm turiga qarab cheklanadi (settings.UPLOAD_MAX_IMAGE_MB / _MODEL_MB / _VIDEO_MB);
   • fayl imzosi (magic bytes) kengaytmaga mos bo'lishi shart — `evil.html` ni `x.jpg` deb nomlab bo'lmaydi;
-  • rasmlar Pillow bilan ochib ko'riladi va piksel soni cheklanadi (dekompressiya bombasi).
+  • rasmlar Pillow bilan ochib ko'riladi va piksel soni cheklanadi (dekompressiya bombasi);
+  • tekshiruvdan o'tgan katta rasm WebP ga o'tkaziladi va kichraytiriladi (TZ: R8-4): telefon kamerasidan 3–5 MB
+    fotosurat menyuda har kartochkada yuklanmasin (maqsad: taom rasmi ≤ 80 KB). EXIF aylantirishi qo'llanadi.
 """
+import io
 import os
 
 from django.conf import settings
@@ -25,6 +28,9 @@ DATA_EXTS = {'csv'}
 
 MAX_IMAGE_PIXELS = 40_000_000      # ≈ 6300×6300; undan kattasi dekompressiya bombasi deb olinadi
 MAX_DATA_MB = 5
+
+OPTIMIZABLE = {'jpg', 'jpeg', 'png', 'webp'}      # GIF (animatsiya) va AVIF tegilmaydi
+SKIP_BELOW_BYTES = 120 * 1024                     # allaqachon kichik rasm qayta siqilmaydi (sifat yo'qolmasin)
 
 
 def _ext(name: str) -> str:
@@ -109,6 +115,39 @@ def validate_uploaded_file(uploaded) -> str:
     return f"'{uploaded.name}' turidagi fayl ruxsat etilmaydi. Ruxsat etilgan: {allowed}"
 
 
+def optimize_image(uploaded):
+    """Katta rasmni kichraytirib WebP qiladi. Muvaffaqiyatsiz bo'lsa yoki natija kattaroq bo'lsa — asl fayl qaytariladi."""
+    if not getattr(settings, 'UPLOAD_OPTIMIZE_IMAGES', True) or _ext(uploaded.name) not in OPTIMIZABLE:
+        return uploaded
+    max_side = int(getattr(settings, 'UPLOAD_IMAGE_MAX_SIDE', 1000))
+    quality = int(getattr(settings, 'UPLOAD_IMAGE_WEBP_QUALITY', 78))
+    try:
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+        from PIL import Image, ImageOps
+        uploaded.seek(0)
+        with Image.open(uploaded) as img:
+            img = ImageOps.exif_transpose(img)
+            if max(img.size) <= max_side and (uploaded.size or 0) <= SKIP_BELOW_BYTES:
+                uploaded.seek(0)
+                return uploaded
+            if max(img.size) > max_side:
+                img.thumbnail((max_side, max_side), Image.LANCZOS)
+            if img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGBA' if 'A' in img.getbands() or 'transparency' in img.info else 'RGB')
+            buffer = io.BytesIO()
+            img.save(buffer, format='WEBP', quality=quality, method=4)
+        size = buffer.tell()
+        if size >= (uploaded.size or 0):
+            uploaded.seek(0)
+            return uploaded
+        buffer.seek(0)
+        stem = os.path.splitext(os.path.basename(uploaded.name))[0] or 'image'
+        return InMemoryUploadedFile(buffer, uploaded.field_name, f'{stem}.webp', 'image/webp', size, None)
+    except Exception:
+        uploaded.seek(0)
+        return uploaded
+
+
 class UploadValidationMiddleware(MiddlewareMixin):
     """Multipart (fayl yuklash) so'rovlarini view'ga yetmasdan oldin tekshiradi."""
 
@@ -117,11 +156,14 @@ class UploadValidationMiddleware(MiddlewareMixin):
             return None
         if not (request.content_type or '').startswith('multipart/'):
             return None
-        for _field, files in request.FILES.lists():
+        for field, files in list(request.FILES.lists()):
+            optimized = []
             for uploaded in files:
                 error = validate_uploaded_file(uploaded)
                 if error:
                     return self._reject(request, error)
+                optimized.append(optimize_image(uploaded) if _ext(uploaded.name) in IMAGE_EXTS else uploaded)
+            request.FILES.setlist(field, optimized)
         return None
 
     @staticmethod

@@ -110,3 +110,67 @@ class SessionConfigTests(TestCase):
         self.assertGreater(config['kds_late_minutes'], config['kds_warn_minutes'])
         AppSetting.objects.filter(key='kds_warn_minutes').update(value='xato')
         self.assertEqual(self.session_for(self.owner)['config']['kds_warn_minutes'], 10)
+
+
+class ReactAssetTagTests(TestCase):
+    """{% react_css %} / {% react_js %} manifestdan hash'li nomlarni oladi; manifest bo'lmasa eski nomlar (R8-2)."""
+
+    def render(self):
+        from django.template import Context, Template
+        return Template('{% load react_assets %}{% react_css %}|{% react_js %}').render(Context({}))
+
+    def test_tags_use_the_manifest(self):
+        import json as _json
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        from web.templatetags import react_assets
+        manifest = {
+            'src/vendor.js': {'file': 'assets/vendor-Q1.js'},
+            'index.html': {'file': 'assets/index-AbC123.js', 'isEntry': True, 'css': ['assets/index-Zz9.css'],
+                           'imports': ['src/vendor.js']},
+            'src/Page.tsx': {'file': 'assets/Page-X.js', 'isDynamicEntry': True},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'manifest.json'
+            path.write_text(_json.dumps(manifest))
+            with mock.patch.object(react_assets, '_MANIFEST_PATH', path), \
+                    mock.patch.dict(react_assets._cache, {'mtime': None, 'entry': None}):
+                html = self.render()
+        self.assertIn('href="/static/react/assets/index-Zz9.css"', html)
+        self.assertIn('src="/static/react/assets/index-AbC123.js"', html)
+        self.assertIn('rel="modulepreload" href="/static/react/assets/vendor-Q1.js"', html)
+        self.assertNotIn('Page-X', html)                      # dinamik sahifa bo'lagi oldindan yuklanmaydi
+
+    def test_single_css_file_listed_under_style_css_is_used(self):
+        import json as _json
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        from web.templatetags import react_assets
+        manifest = {'index.html': {'file': 'assets/index-A.js', 'isEntry': True},
+                    'style.css': {'file': 'assets/style-B.css'}}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'manifest.json'
+            path.write_text(_json.dumps(manifest))
+            with mock.patch.object(react_assets, '_MANIFEST_PATH', path), \
+                    mock.patch.dict(react_assets._cache, {'mtime': None, 'entry': None}):
+                html = self.render()
+        self.assertIn('href="/static/react/assets/style-B.css"', html)
+
+    def test_missing_manifest_falls_back_to_plain_names(self):
+        from pathlib import Path
+        from unittest import mock
+        from web.templatetags import react_assets
+        with mock.patch.object(react_assets, '_MANIFEST_PATH', Path('/nonexistent/manifest.json')), \
+                mock.patch.dict(react_assets._cache, {'mtime': None, 'entry': None}):
+            html = self.render()
+        self.assertIn('/static/react/assets/index.css', html)
+        self.assertIn('/static/react/assets/index.js', html)
+
+    def test_showcase_is_hidden_in_production(self):
+        from django.test import override_settings
+        with override_settings(DEBUG=False, DEMO_MODE=False, ROOT_URLCONF='backend.urls_restaurant'):
+            self.assertEqual(self.client.get('/ui-components/').status_code, 404)
+        with override_settings(DEBUG=False, DEMO_MODE=True, ROOT_URLCONF='backend.urls_restaurant'):
+            self.assertEqual(self.client.get('/ui-components/').status_code, 200)

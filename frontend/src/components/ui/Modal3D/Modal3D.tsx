@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Product } from '../../../types/dish';
+import { loadModelViewer } from '../../../utils/modelViewer';
 import './Modal3D.css';
 
 export interface Modal3DProps {
@@ -15,6 +16,11 @@ export const Modal3D: React.FC<Modal3DProps> = ({
   onClose,
   onAddToCart,
 }) => {
+  // <model-viewer> faqat 3D oynasi ochilganda yuklanadi
+  useEffect(() => {
+    if (isOpen) void loadModelViewer();
+  }, [isOpen]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {

@@ -65,8 +65,10 @@ class Air3DMenuIntegrationTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'AIR 3D MENU')
         self.assertContains(res, 'window.__INITIAL_DATA__')
-        self.assertContains(res, '/assets/index.js')
-        self.assertContains(res, '/assets/index.css')
+        # Vite endi hash'li nom beradi (index-AbC123.js); nom manifestdan olinadi (TZ: R8-2)
+        html = res.content.decode()
+        self.assertRegex(html, r'/static/react/assets/index[-\w]*\.js')
+        self.assertRegex(html, r'/static/react/assets/(index|style)[-\w]*\.css')      # CSS bitta fayl (style-*.css)
 
     def test_ar_page_classic_fallback(self):
         """Klassik (model-viewer) sahifa /m/<slug>/?classic=1 da (avval /ar/?classic=1 edi)."""

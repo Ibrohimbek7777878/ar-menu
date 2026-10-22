@@ -865,7 +865,7 @@ def tma_orders(request):
     # Avval bu yerda boshqa mehmonlar va boshqa restoranlarning buyurtmalari ham chiqardi.
     orders_qs = list(
         Order.objects.filter(pk__in=guest_order_ids(request))
-        .prefetch_related('items').order_by('-created_at')[:30]
+        .select_related('table').prefetch_related('items').order_by('-created_at')[:30]
     )
 
     react_orders = []
@@ -1451,7 +1451,11 @@ def ui_components_showcase(request):
     """
     Senior UI/UX Component Laboratory & Design System Showcase (/ui-components/).
     Barcha 12 ta reusable UI komponentni ko'rish, tanlash va test qilish sahifasi.
+    Dizayn tizimi laboratoriyasi mehmonga kerak emas: faqat DEBUG/DEMO_MODE da ochiladi (production'da 404).
     """
+    if not (settings.DEBUG or settings.DEMO_MODE):
+        from django.http import Http404
+        raise Http404
     shop = get_restaurant_shop()
     table, table_token = _get_tma_table(request)
 

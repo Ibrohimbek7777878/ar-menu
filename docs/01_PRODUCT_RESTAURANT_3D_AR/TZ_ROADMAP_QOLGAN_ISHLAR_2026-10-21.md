@@ -316,6 +316,22 @@ Dizayn o'zgarmaydi, faqat tezlik.
 | R8-7 | Media nginx/CDN orqali (Django `serve` emas) — R9 bilan | |
 | R8-8 | 3D sifati: provayder interfeysi tayyor (`RESTAURANT_3D_PROVIDER`); keyinroq bulut AI yoki lokal TripoSR (kuchliroq GPU'da) ulanadi | 👤 AI xizmat va kalit |
 
+**R8 holati (2026-10-22): R8-1…R8-6 bajarildi (R8-7 R9 bilan, R8-8 egasining AI qaroriga bog'liq).** 375 ta backend test (`.env` bilan ham, `.env`siz ham, **va faqat `requirements.txt`dan o'rnatilgan butunlay yangi venv'da ham** — R0 dagi "toza o'rnatish tekshirilmagan" cheklovi yopildi), 5 ta frontend testi, `tsc` toza, `oxlint` 7 ogohlantirish (9 edi).
+
+**Dizayn o'zgarmadi — isbotlangan:** 14 ta sahifa (mehmon: welcome, menyu, savat, checkout, buyurtmalar, AR, stol markazi, bron qidirish/kelish; xodim: KDS, hostess, ofitsiant, admin 3 bo'lim) oldin/keyin piksel-piksel solishtirildi: farq 0,000% (KDS'dan tashqari — u yerda taymer daqiqalari real vaqt bilan o'zgargan). CSS bitta faylda, eski tartibda saqlandi (`frontend/src/styles/cssOrder.ts`): yangi CSS eskisi bilan qoida-qoidasiga bir xil (faqat bitta izoh belgisi farq qiladi). Buning sababi: ayrim sinflar bir necha faylda ta'riflangan (`.pill-free`, `.table-status-dot`, `.form-input`…) va ko'rinish qaysi fayl keyin yuklanishiga bog'liq — CSS ni ham bo'lib yuborganimizda stol belgilari rangi o'zgarib ketgan edi, shuning uchun CSS bo'linmadi.
+
+Natijalar:
+- **R8-1:** har sahifa alohida JS bo'lagi; mehmon xodim kodini (admin, KDS, moliya, hostess, ofitsiant, QR generatori, UI laboratoriyasi) yuklamaydi. Boshlang'ich JS: **136 KB → ≈91 KB gzip** (kirish 86 KB + umumiy 4,5 KB; maqsad ≤ 90 KB deyarli bajarildi; undan pastga tushirish uchun `NavigationContext`dagi demo ma'lumotlarni ajratish kerak). `/ui-components/` production'da 404 (faqat DEBUG/DEMO).
+- **R8-2:** Vite hash'li fayl nomlari + manifest; shablonlarda `{% react_css %}` / `{% react_js %}` (17 ta shablonda qo'lda `?v=NN` va `sed` yo'q). Yangi build eski keshga tushmaydi.
+- **R8-3:** `model-viewer` npm paketi (3.5.0, versiya qotirilgan), 3D oyna ochilgandagina yuklanadigan alohida bo'lak (≈253 KB gzip). Brauzerda tekshirildi: menyu ochilganda yo'q, 3D bosilganda yuklanadi va model ko'rinadi. Avval u har sahifada tashqi CDN'dan (SRI'siz) yuklanardi.
+- **R8-4:** yuklangan katta rasm WebP'ga o'tkaziladi, 1000 px gacha kichraytiriladi, EXIF aylantirishi qo'llanadi (xom rasm limiti 5 → 12 MB, chunki telefon fotosi 3–10 MB). Real rasmlarda: 800 KB → 84 KB, 285 KB → 45 KB; juda batafsil rasm ≈ 130 KB (ya'ni "≤ 80 KB" ko'pchilik uchun, hammasi uchun emas). Mavjud rasmlar tegilmadi (ular allaqachon kichik, ≈ 60 KB). Sozlash: `UPLOAD_OPTIMIZE_IMAGES`, `UPLOAD_IMAGE_MAX_SIDE`, `UPLOAD_IMAGE_WEBP_QUALITY`.
+- **R8-5:** `/orders/` har buyurtma uchun alohida stol so'rovi qilardi (30 buyurtmada 36 so'rov) — tuzatildi; so'rovlar byudjeti testi (`web/test_query_budget.py`): ma'lumot ko'paysa so'rovlar ko'paymasligi tekshiriladi. Haqiqiy 489 mahsulotli bazada: mehmon sahifalari 3–6 so'rov, `/seller/tables/` 11. Boshqaruv panellari (`/seller/`, `/admin/`) ≈ 20 so'rov (N+1 emas — ko'p statistika; 12 dan ortiq).
+- **R8-6:** 16 ta kutubxona GLB modeli **77 MB → 12 MB**. Asosiy topilma: ba'zilarida 8192×8192 tekstura bor edi (GPU xotirasida ≈ 358 MB — telefonda sahifa qotishi mumkin edi); endi 1024×1024. Har model brauzerda asl nusxa bilan yonma-yon render qilib tekshirildi. Ikkitasi 1,5 MB dan katta qoldi (`salad_achichuk` 2,5 MB — yengilroq usul uning ko'rinishini buzgani uchun qo'yilmadi; `shashlik` 1,6 MB — `gltf-transform` uni bo'sh qilib yuborgani uchun tegilmadi). Asl fayllar git tarixida.
+
+Topilgan va tuzatilgan: server tomonida QR (`segno`, `requirements.txt`ga qo'shildi) — seller sahifalaridagi QR rasmlar tashqi `api.qrserver.com` xizmatiga stol havolasini yuborardi va internetsiz chiqmasdi (F5 yopildi; NFC karta QR kodi ham).
+
+Qolgan (R9/R10): media'ni nginx/CDN orqali berish va keshlash sarlavhalari (R8-7); `NavigationContext`dagi demo ma'lumotlarni alohida bo'lakka chiqarish (boshlang'ich JS ni ≤ 90 KB ga tushirish); eski `customer/*`, `seller/ar.html` shablonlaridagi tashqi QR/CDN havolalari (boshqa mahsulotlarga tegishli).
+
 ### R9 — Server va ishga tushirish 🟢 + 👤 (L)
 
 **Egasidan kerak:** VPS (tavsiya: 2 vCPU / 4 GB), doimiy domen. Ularsiz shu faza tayyor konfiguratsiya va skriptlar bilan to'xtaydi.

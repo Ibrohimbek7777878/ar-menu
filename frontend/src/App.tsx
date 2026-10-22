@@ -1,20 +1,34 @@
-import React from 'react';
-import { WelcomePage } from './pages/WelcomePage/WelcomePage';
-import { MenuPage } from './pages/MenuPage/MenuPage';
-import { CartPage } from './pages/CartPage/CartPage';
-import { CheckoutPage } from './pages/CheckoutPage/CheckoutPage';
-import { ComponentShowcase } from './showcase/ComponentShowcase';
-import { ARMenuPage } from './pages/ARMenuPage/ARMenuPage';
-import { OrdersPage } from './pages/OrdersPage/OrdersPage';
-import { TableHubPage } from './pages/TableHubPage/TableHubPage';
-import { ReservationPage } from './pages/ReservationPage/ReservationPage';
-import { WaiterPanelPage } from './pages/WaiterPanelPage/WaiterPanelPage';
-import { HostessDeskPage } from './pages/HostessDeskPage/HostessDeskPage';
-import { AdminDashboardPage, getTabFromPath } from './pages/AdminDashboardPage/AdminDashboardPage';
+import React, { Suspense, lazy } from 'react';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { RouteGuard } from './core/guards/RouteGuard';
-import { CallWaiterModal, NFCGatewayModal, QRGeneratorModal, PhotogrammetryStudioModal } from './components/ui';
+import { getTabFromPath } from './pages/AdminDashboardPage/tabs';
+import { roleService } from './core/auth/RoleService';
+import { CallWaiterModal, NFCGatewayModal } from './components/ui';
 import './App.css';
+
+// Har sahifa alohida bo'lak (TZ: R8-1): mehmon faqat o'zi ochgan sahifa kodini yuklaydi, xodim kodi (admin, KDS, moliya,
+// hostess, ofitsiant, QR generatori, UI laboratoriyasi) mehmonga umuman yuklanmaydi.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function page<M extends Record<string, any>>(loader: () => Promise<M>, name: keyof M) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return lazy(() => loader().then((m) => ({ default: m[name] as React.ComponentType<any> })));
+}
+
+const WelcomePage = page(() => import('./pages/WelcomePage/WelcomePage'), 'WelcomePage');
+const MenuPage = page(() => import('./pages/MenuPage/MenuPage'), 'MenuPage');
+const CartPage = page(() => import('./pages/CartPage/CartPage'), 'CartPage');
+const CheckoutPage = page(() => import('./pages/CheckoutPage/CheckoutPage'), 'CheckoutPage');
+const ARMenuPage = page(() => import('./pages/ARMenuPage/ARMenuPage'), 'ARMenuPage');
+const OrdersPage = page(() => import('./pages/OrdersPage/OrdersPage'), 'OrdersPage');
+const TableHubPage = page(() => import('./pages/TableHubPage/TableHubPage'), 'TableHubPage');
+const ReservationPage = page(() => import('./pages/ReservationPage/ReservationPage'), 'ReservationPage');
+const WaiterPanelPage = page(() => import('./pages/WaiterPanelPage/WaiterPanelPage'), 'WaiterPanelPage');
+const HostessDeskPage = page(() => import('./pages/HostessDeskPage/HostessDeskPage'), 'HostessDeskPage');
+const AdminDashboardPage = page(() => import('./pages/AdminDashboardPage/AdminDashboardPage'), 'AdminDashboardPage');
+const ComponentShowcase = page(() => import('./showcase/ComponentShowcase'), 'ComponentShowcase');
+const QRGeneratorModal = page(() => import('./components/ui/QRGeneratorModal/QRGeneratorModal'), 'QRGeneratorModal');
+const PhotogrammetryStudioModal = page(
+  () => import('./components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal'), 'PhotogrammetryStudioModal');
 
 const AppContent: React.FC = () => {
   const { currentPath } = useNavigation();
@@ -28,8 +42,8 @@ const AppContent: React.FC = () => {
     return <MenuPage />;
   }
 
-  // Showcase laboratoriyasi
-  if (currentPath.includes('/ui-components') || currentPath.includes('/design-system')) {
+  // Showcase laboratoriyasi — dizayn tizimi sahifasi, production'da mehmonga ochiq emas (faqat DEMO/dev)
+  if ((currentPath.includes('/ui-components') || currentPath.includes('/design-system')) && roleService.isDemo()) {
     return <ComponentShowcase />;
   }
 
@@ -116,25 +130,31 @@ const GlobalModals: React.FC = () => {
     <>
       <CallWaiterModal />
       <NFCGatewayModal />
-      <QRGeneratorModal
-        isOpen={isQrModalOpen}
-        onClose={() => setIsQrModalOpen(false)}
-      />
-      <PhotogrammetryStudioModal
-        isOpen={isStudioModalOpen}
-        onClose={() => setIsStudioModalOpen(false)}
-        onSaveProduct3D={(dish) => {
-          try {
-            const raw = localStorage.getItem('guliston_custom_products');
-            const list = raw ? JSON.parse(raw) : [];
-            const updated = [dish, ...list.filter((x: any) => x.id !== dish.id)];
-            localStorage.setItem('guliston_custom_products', JSON.stringify(updated));
-            window.dispatchEvent(new Event('guliston_menu_updated'));
-          } catch (err) {
-            console.error('Save custom product failed:', err);
-          }
-        }}
-      />
+      {/* Xodim vositalari: faqat ochilganda yuklanadi (qrcode kutubxonasi mehmonga tushmaydi) */}
+      {isQrModalOpen && (
+        <Suspense fallback={null}>
+          <QRGeneratorModal isOpen onClose={() => setIsQrModalOpen(false)} />
+        </Suspense>
+      )}
+      {isStudioModalOpen && (
+        <Suspense fallback={null}>
+          <PhotogrammetryStudioModal
+            isOpen
+            onClose={() => setIsStudioModalOpen(false)}
+            onSaveProduct3D={(dish) => {
+              try {
+                const raw = localStorage.getItem('guliston_custom_products');
+                const list = raw ? JSON.parse(raw) : [];
+                const updated = [dish, ...list.filter((x: any) => x.id !== dish.id)];
+                localStorage.setItem('guliston_custom_products', JSON.stringify(updated));
+                window.dispatchEvent(new Event('guliston_menu_updated'));
+              } catch (err) {
+                console.error('Save custom product failed:', err);
+              }
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 };
@@ -142,7 +162,9 @@ const GlobalModals: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <NavigationProvider>
-      <AppContent />
+      <Suspense fallback={null}>
+        <AppContent />
+      </Suspense>
       <GlobalModals />
     </NavigationProvider>
   );

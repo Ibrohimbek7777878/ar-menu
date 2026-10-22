@@ -1,0 +1,187 @@
+{
+  "_Smart3DMatcher-Cg3blFo0.js": {
+    "file": "assets/Smart3DMatcher-Cg3blFo0.js",
+    "name": "Smart3DMatcher"
+  },
+  "_mockDishes-Ct1bRflm.js": {
+    "file": "assets/mockDishes-Ct1bRflm.js",
+    "name": "mockDishes"
+  },
+  "_uzbekSearch-BqSgXjOo.js": {
+    "file": "assets/uzbekSearch-BqSgXjOo.js",
+    "name": "uzbekSearch"
+  },
+  "index.html": {
+    "file": "assets/index-BdYfi0VL.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/@google/model-viewer/lib/model-viewer.js",
+      "src/pages/WelcomePage/WelcomePage.tsx",
+      "src/pages/MenuPage/MenuPage.tsx",
+      "src/pages/CartPage/CartPage.tsx",
+      "src/pages/CheckoutPage/CheckoutPage.tsx",
+      "src/pages/ARMenuPage/ARMenuPage.tsx",
+      "src/pages/OrdersPage/OrdersPage.tsx",
+      "src/pages/TableHubPage/TableHubPage.tsx",
+      "src/pages/ReservationPage/ReservationPage.tsx",
+      "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
+      "src/pages/HostessDeskPage/HostessDeskPage.tsx",
+      "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
+      "src/showcase/ComponentShowcase.tsx",
+      "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
+      "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx"
+    ]
+  },
+  "node_modules/@google/model-viewer/lib/model-viewer.js": {
+    "file": "assets/model-viewer-itRrx4TA.js",
+    "name": "model-viewer",
+    "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
+    "file": "assets/PhotogrammetryStudioModal-CfjPfwFi.js",
+    "name": "PhotogrammetryStudioModal",
+    "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_Smart3DMatcher-Cg3blFo0.js"
+    ]
+  },
+  "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
+    "file": "assets/QRGeneratorModal-B-B21YhD.js",
+    "name": "QRGeneratorModal",
+    "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/ARMenuPage/ARMenuPage.tsx": {
+    "file": "assets/ARMenuPage-C15we163.js",
+    "name": "ARMenuPage",
+    "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_Smart3DMatcher-Cg3blFo0.js",
+      "_mockDishes-Ct1bRflm.js",
+      "_uzbekSearch-BqSgXjOo.js"
+    ]
+  },
+  "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
+    "file": "assets/AdminDashboardPage-B8fTZqNJ.js",
+    "name": "AdminDashboardPage",
+    "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
+      "src/pages/HostessDeskPage/HostessDeskPage.tsx",
+      "src/pages/TableHubPage/TableHubPage.tsx"
+    ]
+  },
+  "src/pages/CartPage/CartPage.tsx": {
+    "file": "assets/CartPage-CUcHb6Fx.js",
+    "name": "CartPage",
+    "src": "src/pages/CartPage/CartPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/CheckoutPage/CheckoutPage.tsx": {
+    "file": "assets/CheckoutPage-COK-2jCz.js",
+    "name": "CheckoutPage",
+    "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
+    "file": "assets/HostessDeskPage-CgjhdgZr.js",
+    "name": "HostessDeskPage",
+    "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/MenuPage/MenuPage.tsx": {
+    "file": "assets/MenuPage-BJ3TcuRF.js",
+    "name": "MenuPage",
+    "src": "src/pages/MenuPage/MenuPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_Smart3DMatcher-Cg3blFo0.js",
+      "_mockDishes-Ct1bRflm.js",
+      "_uzbekSearch-BqSgXjOo.js"
+    ]
+  },
+  "src/pages/OrdersPage/OrdersPage.tsx": {
+    "file": "assets/OrdersPage-BK1rx96L.js",
+    "name": "OrdersPage",
+    "src": "src/pages/OrdersPage/OrdersPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/ReservationPage/ReservationPage.tsx": {
+    "file": "assets/ReservationPage-DgAtj97m.js",
+    "name": "ReservationPage",
+    "src": "src/pages/ReservationPage/ReservationPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/TableHubPage/TableHubPage.tsx": {
+    "file": "assets/TableHubPage-gYaf5LA3.js",
+    "name": "TableHubPage",
+    "src": "src/pages/TableHubPage/TableHubPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
+    "file": "assets/WaiterPanelPage-BXx4XnXa.js",
+    "name": "WaiterPanelPage",
+    "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/pages/WelcomePage/WelcomePage.tsx": {
+    "file": "assets/WelcomePage-CiN8OB0L.js",
+    "name": "WelcomePage",
+    "src": "src/pages/WelcomePage/WelcomePage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/showcase/ComponentShowcase.tsx": {
+    "file": "assets/ComponentShowcase-CpeuRAtV.js",
+    "name": "ComponentShowcase",
+    "src": "src/showcase/ComponentShowcase.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_mockDishes-Ct1bRflm.js"
+    ]
+  },
+  "style.css": {
+    "file": "assets/style-DvJ2XmiM.css",
+    "src": "style.css"
+  }
+}

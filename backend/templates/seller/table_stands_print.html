@@ -189,7 +189,7 @@
             </div>
 
             <div class="qr-wrapper">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ qr_base|urlencode }}{{ t.qr_path|urlencode }}" alt="QR {{ t.number }}" class="qr-img">
+                <img src="{% url 'seller_table_qr_svg' t.id %}" alt="QR {{ t.number }}" class="qr-img">
             </div>
 
             <div class="cta-box">

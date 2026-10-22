@@ -438,7 +438,7 @@
             <!-- Dual QR Code Fallback -->
             <div>
                 <div class="qr-box">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ card.get_tap_url|urlencode }}&color=000000&bgcolor=FFFFFF&margin=0" alt="QR {{ card.code }}" class="qr-img">
+                    <img src="{% url 'seller_nfc_qr_svg' card.id %}" alt="QR {{ card.code }}" class="qr-img">
                 </div>
                 <div class="features-pill">
                     🍽️ 3D Taomlar &bull; Tezkor Menyu &bull; Ofitsiant

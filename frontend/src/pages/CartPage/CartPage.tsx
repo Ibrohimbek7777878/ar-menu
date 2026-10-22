@@ -164,6 +164,8 @@ export const CartPage: React.FC = () => {
                         src={item.image}
                         alt={item.name}
                         className="cart-item-img"
+                        loading="lazy"
+                        decoding="async"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = 'none';
                         }}

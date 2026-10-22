@@ -1,4 +1,4 @@
-{% load json_tags %}<!doctype html>
+{% load react_assets %}{% load json_tags %}<!doctype html>
 <html lang="uz">
   <head>
     <meta charset="UTF-8" />
@@ -20,9 +20,9 @@
     </script>
     {% endif %}
     <!-- Haqiqiy 3D/AR taom modellari uchun (GLB, model-viewer veb-komponent) -->
-    <script type="module" async src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
-    <script type="module" crossorigin src="/static/react/assets/index.js?v=27"></script>
-    <link rel="stylesheet" crossorigin href="/static/react/assets/index.css?v=27">
+<!-- <model-viewer> endi React ilovasi ichida, 3D oyna ochilganda npm paketidan yuklanadi (frontend/src/utils/modelViewer.ts); CDN'dan (SRI'siz) har sahifada yuklash olib tashlandi -->
+    {% react_js %}
+    {% react_css %}
     <style>
       :root {
         --color-primary: {{ shop.color_primary|default:'#10b981' }};

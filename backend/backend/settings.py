@@ -348,7 +348,11 @@ LOCALE_PATHS = [
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('DATA_UPLOAD_MAX_MB', 10)) * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
-UPLOAD_MAX_IMAGE_MB = int(os.environ.get('UPLOAD_MAX_IMAGE_MB', 5))
+# Yuklangan rasmni WebP ga o'tkazib kichraytirish (taom rasmi menyuda tez ochilsin); o'chirish: UPLOAD_OPTIMIZE_IMAGES=False
+UPLOAD_OPTIMIZE_IMAGES = _env_bool('UPLOAD_OPTIMIZE_IMAGES', True)
+UPLOAD_IMAGE_MAX_SIDE = int(os.environ.get('UPLOAD_IMAGE_MAX_SIDE', '1000'))
+UPLOAD_IMAGE_WEBP_QUALITY = int(os.environ.get('UPLOAD_IMAGE_WEBP_QUALITY', '78'))
+UPLOAD_MAX_IMAGE_MB = int(os.environ.get('UPLOAD_MAX_IMAGE_MB', 12))    # telefon fotosi 3–10 MB; saqlanadigani WebP ga kichraytiriladi
 UPLOAD_MAX_MODEL_MB = int(os.environ.get('UPLOAD_MAX_MODEL_MB', 15))
 UPLOAD_MAX_VIDEO_MB = int(os.environ.get('UPLOAD_MAX_VIDEO_MB', 50))
 

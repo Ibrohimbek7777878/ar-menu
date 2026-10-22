@@ -1,11 +1,12 @@
 {% extends "tma/base_tma.html" %}
+{% load react_assets %}
 {% load json_tags %}
 
 {% block title %}Katta Guruhlar Tayyorgarligi — {{ shop.name|default:"Guliston" }}{% endblock %}
 
 {% block extra_head %}
 <!-- React Component System CSS -->
-<link rel="stylesheet" href="/static/react/assets/index.css?v=27">
+{% react_css %}
 {% endblock %}
 
 {% block desktop_nav %}
@@ -21,7 +22,7 @@
 </script>
 
 <!-- React Application Bundle -->
-<script type="module" src="/static/react/assets/index.js?v=27"></script>
+{% react_js %}
 {% endblock %}
 
 {% block tabbar %}
