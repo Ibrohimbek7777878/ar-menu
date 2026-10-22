@@ -228,3 +228,30 @@ class ConcurrentStockTests(TransactionTestCase):
         cake.refresh_from_db()
         self.assertEqual(cake.stock, 0)                   # yo'qolgan yangilanish yo'q: 6 - 6
         self.assertFalse(cake.is_available)
+
+
+class TableSettlementStockTests(TestCase):
+    """Stol hisobi yopilganda buyurtmalar 'delivered' bo'ladi: qoldig'i yuritiladigan taom bir marta kamayadi."""
+
+    def setUp(self):
+        from orders.application.services import RestaurantOrderService
+        self.service = RestaurantOrderService
+        self.shop = make_restaurant()
+        self.table = Table.objects.filter(shop=self.shop).first()
+
+    def order_on_table(self, *lines):
+        order = make_order(self.shop, *lines)
+        Order.objects.filter(pk=order.pk).update(table=self.table, payment_status='unpaid')
+        return order
+
+    def test_settling_reduces_tracked_stock_once_and_leaves_untracked_alone(self):
+        cake = make_product(self.shop, 'Tort', stock=5)
+        plov = make_product(self.shop, 'Osh', stock=0)
+        self.order_on_table((cake, 2), (plov, 4))
+        first = self.service.settle_table_bill(self.table.number, shop=self.shop)
+        self.assertEqual(first['status'], 'success')
+        self.service.settle_table_bill(self.table.number, shop=self.shop)          # ikkinchi marta: yopiladigan narsa yo'q
+        cake.refresh_from_db()
+        plov.refresh_from_db()
+        self.assertEqual(cake.stock, 3)
+        self.assertEqual(plov.stock, 0)

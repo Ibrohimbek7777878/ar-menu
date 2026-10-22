@@ -182,13 +182,18 @@ class RestaurantOrderService:
         total_settled = Decimal('0')
         order_numbers = []
 
+        from orders.state_machine import _reduce_stock
+
         for ord_obj in unpaid_orders:
             total_settled += ord_obj.final_amount
             order_numbers.append(ord_obj.order_number)
+            was_delivered = ord_obj.status == 'delivered'
             ord_obj.payment_status = 'paid'
             ord_obj.status = 'delivered'
             ord_obj.delivered_at = ord_obj.delivered_at or timezone.now()
             ord_obj.save(update_fields=['payment_status', 'status', 'delivered_at'])
+            if not was_delivered:
+                _reduce_stock(ord_obj)       # qoldig'i yuritiladigan taomlar kamayadi (stop-listdagi taomlar tegilmaydi)
             # Har bir buyurtma o'ziga bog'langan BITTA kirim bo'ladi, to'lov turi (naqd/karta) to'g'ri yoziladi.
             # Avval stol bo'yicha bitta bog'lanmagan yozuv yozilardi va "yetkazildi" hooki yana kirim qo'shardi.
             record_order_payment_income(ord_obj, payment_method=payment_method, actor=actor)
