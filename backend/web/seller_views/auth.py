@@ -26,25 +26,21 @@ def seller_login(request):
         elif role == 'super_admin':
             return redirect('admin_dashboard')
     if request.method == 'POST':
-        from django.core.cache import cache
-        from backend.ratelimit import client_ip
-        ip = client_ip(request)
-        cache_key = f"seller_login_attempts_{ip}"
-        attempts = cache.get(cache_key, 0)
-        if attempts >= 7:
-            messages.error(request, "Xavfsizlik: Ko'p marotaba xato urinish bo'ldi. Iltimos 5 daqiqadan so'ng qayta urinib ko'ring.")
+        from backend import login_guard
+        username = request.POST.get('username', '').strip()
+        if login_guard.is_locked(request, username):
+            messages.error(request, login_guard.LOCK_MESSAGE)
             return render(request, 'seller/login.html')
 
-        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
         if user and user.is_approved and getattr(user, 'role', '') in ('shop_owner', 'shop_manager', 'super_admin'):
-            cache.delete(cache_key)
+            login_guard.record_success(request, username, user, scope='seller')
             login(request, user)
             if getattr(user, 'role', '') == 'super_admin':
                 return redirect('admin_dashboard')
             return redirect('seller_dashboard_web')
-        cache.set(cache_key, attempts + 1, timeout=300)
+        login_guard.record_failure(request, username, scope='seller')
         messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
     return render(request, 'seller/login.html')
 

@@ -37,6 +37,13 @@ class KitchenWaiterFlowTests(TestCase):
                                               phone='1', latitude=1, longitude=1)
         self.other_waiter = AdminUser.objects.create_user(
             username='boshqa-ofitsiant', password='x-12345-y', role='waiter', shop=self.other_shop)
+        # Oshxona amallari (pishirish, tayyor) endi faqat oshpaz/rahbariyat uchun; ofitsiant stolga berish bilan shug'ullanadi
+        self.cook = AdminUser.objects.create_user(
+            username='oshpaz-x', password='Oshpaz-parol-1', role='kitchen', shop=self.shop, is_staff=True)
+        self.other_cook = AdminUser.objects.create_user(
+            username='boshqa-oshpaz', password='x-12345-y', role='kitchen', shop=self.other_shop)
+        self.cook_client = Client()
+        self.cook_client.force_login(self.cook)
         self.guest = Client()
         self.staff = Client()
         self.staff.force_login(self.waiter)
@@ -52,7 +59,7 @@ class KitchenWaiterFlowTests(TestCase):
         return Order.objects.get(pk=res.json()['order_id'])
 
     def kds(self, order, status, client=None):
-        return (client or self.staff).post(
+        return (client or self.cook_client).post(
             '/api/kds/status/', json.dumps({'order_id': order.pk, 'new_status': status}),
             content_type='application/json')
 
@@ -95,7 +102,7 @@ class KitchenWaiterFlowTests(TestCase):
     def test_other_restaurant_staff_cannot_change_the_order(self):
         order = self.guest_order()
         client = Client()
-        client.force_login(self.other_waiter)
+        client.force_login(self.other_cook)
         self.assertEqual(self.kds(order, 'preparing', client).status_code, 404)
 
     # ---- ofitsiant chaqiruvi ----

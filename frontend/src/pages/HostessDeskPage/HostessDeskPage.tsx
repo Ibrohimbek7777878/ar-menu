@@ -40,7 +40,7 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
   const initialData: InitialHostessData =
     typeof window !== 'undefined' ? window.__GULISTON_HOSTESS_DATA__ || {} : {};
 
-  const hostessName = initialData.hostess_name || 'Zarina (Hostess)';
+  const hostessName = initialData.hostess_name || window.__GULISTON_SESSION__?.name || (roleService.isDemo() ? 'Zarina (Hostess)' : '');
 
   // Namuna mehmonlar faqat DEMO rejimda; production'da ro'yxat serverdan keladi (bo'sh bo'lsa — bo'sh holat)
   const demoGuests: HostessGuest[] = [

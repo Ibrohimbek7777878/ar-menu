@@ -9,7 +9,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import BasePermission
 
 from api.authentication import MultiUserJWTAuthentication
-from web.restaurant_auth import RESTAURANT_MANAGER_ROLES, is_restaurant_staff
+from web.restaurant_auth import CAPABILITIES, RESTAURANT_MANAGER_ROLES, is_restaurant_staff
 
 # React xodim panellari Django sessiyasi bilan ishlaydi (CSRF tekshiriladi), Flutter/Bot — JWT bilan.
 RESTAURANT_API_AUTHENTICATION = [SessionAuthentication, MultiUserJWTAuthentication]
@@ -27,3 +27,17 @@ class IsRestaurantManager(BasePermission):
 
     def has_permission(self, request, view):
         return is_restaurant_staff(request.user, RESTAURANT_MANAGER_ROLES)
+
+
+def capability(name):
+    """`capability('kds')` — CAPABILITIES['kds'] rollariga ruxsat beruvchi DRF permission sinfi (R2-1)."""
+    roles = CAPABILITIES[name]
+
+    class _CapabilityPermission(BasePermission):
+        message = "Bu amal sizning rolingiz uchun ruxsat etilmagan."
+
+        def has_permission(self, request, view):
+            return is_restaurant_staff(request.user, roles)
+
+    _CapabilityPermission.__name__ = f'Can_{name}'
+    return _CapabilityPermission

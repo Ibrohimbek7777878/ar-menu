@@ -51,11 +51,15 @@ class SpaSessionTests(TestCase):
         data = session_in(self.login(boss).get('/admin/').content.decode())
         self.assertEqual((data['role'], data['roles']), ('admin', ['admin']))
 
-    def test_waiter_covers_kitchen_and_hostess_until_dedicated_roles_exist(self):
-        data = session_in(self.login(self.waiter).get('/kds/').content.decode())
-        self.assertEqual(data['role'], 'waiter')
-        self.assertEqual(data['roles'], ['waiter', 'kitchen', 'hostess'])
-        self.assertEqual(data['name'], 'rol-ofitsiant')
+    def test_each_staff_role_gets_exactly_its_own_panel(self):
+        kitchen = AdminUser.objects.create_user(username='rol-oshpaz', password='Oshpaz-1', role='kitchen', shop=self.shop)
+        hostess = AdminUser.objects.create_user(username='rol-hostess', password='Hostess-1', role='hostess', shop=self.shop)
+        data = session_in(self.login(self.waiter).get('/waiter/panel/').content.decode())
+        self.assertEqual((data['role'], data['roles'], data['name']), ('waiter', ['waiter'], 'rol-ofitsiant'))
+        data = session_in(self.login(kitchen).get('/kds/').content.decode())
+        self.assertEqual((data['role'], data['roles']), ('kitchen', ['kitchen']))
+        data = session_in(self.login(hostess).get('/arrival/desk/').content.decode())
+        self.assertEqual((data['role'], data['roles']), ('hostess', ['hostess']))
 
     def test_a_non_staff_account_is_a_guest(self):
         customer = AdminUser.objects.create_user(username='oddiy', password='Oddiy-parol-1', role='support')
@@ -75,6 +79,6 @@ class SpaSessionTests(TestCase):
     def test_name_cannot_break_out_of_the_script_tag(self):
         self.waiter.first_name = '</script><script>alert(1)</script>'
         self.waiter.save(update_fields=['first_name'])
-        html = self.login(self.waiter).get('/kds/').content.decode()
+        html = self.login(self.waiter).get('/waiter/panel/').content.decode()
         self.assertNotIn('</script><script>alert(1)', html)
         self.assertEqual(session_in(html)['name'], '</script><script>alert(1)</script>')

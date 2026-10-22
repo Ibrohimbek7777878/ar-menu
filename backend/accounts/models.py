@@ -10,6 +10,8 @@ class AdminUser(AbstractUser):
         ('courier_manager', 'Kuryer menejeri'),
         ('support', 'Qo\'llab-quvvatlash'),
         ('waiter', 'Ofitsiant'),
+        ('kitchen', 'Oshpaz (KDS)'),
+        ('hostess', 'Hostess (kutib olish, bron)'),
     ]
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='shop_owner')

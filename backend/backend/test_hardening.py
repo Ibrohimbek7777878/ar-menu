@@ -200,3 +200,19 @@ class LogSecretsTests(SimpleTestCase):
         from django.conf import settings
         self.assertIn('httpx', settings.LOGGING['loggers'])
         self.assertGreaterEqual(logging.getLevelName(settings.LOGGING['loggers']['httpx']['level']), logging.WARNING)
+
+
+class PasswordHasherTests(SimpleTestCase):
+    def test_fast_hasher_is_only_used_while_testing(self):
+        """Testlar MD5 bilan tez yuradi; production sozlamalarida standart (kuchli) hasher qolishi shart."""
+        from django.conf import settings
+        self.assertEqual(settings.PASSWORD_HASHERS[0], 'django.contrib.auth.hashers.MD5PasswordHasher')   # hozir test
+        base = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'VIRTUAL_ENV')}
+        base.update({'DJANGO_SKIP_DOTENV': '1', 'DJANGO_SECRET_KEY': 'k' * 64, 'ALLOWED_HOSTS': 'menu.example.uz',
+                     'CACHE_DIR': '/tmp/hardening-cache', 'LOG_DIR': '/tmp/hardening-logs'})
+        code = ("import os; os.environ['DJANGO_SETTINGS_MODULE']='backend.settings'\n"
+                "from django.conf import settings\nprint(getattr(settings, 'PASSWORD_HASHERS')[0])\n")
+        proc = subprocess.run([sys.executable, '-c', code], cwd=BACKEND_DIR, env=base, capture_output=True, text=True,
+                              timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn('PBKDF2PasswordHasher', proc.stdout.strip().splitlines()[-1])

@@ -832,7 +832,7 @@ def v1_call_status_api(request):
     })
 
 
-@restaurant_staff_required(api=True)
+@restaurant_staff_required(api=True, capability='pos')
 def v1_staff_calls_api(request):
     """
     GET /v1/staff/calls/
@@ -861,7 +861,7 @@ def v1_staff_calls_api(request):
     })
 
 
-@restaurant_staff_required(api=True)
+@restaurant_staff_required(api=True, capability='pos')
 @require_POST
 def v1_staff_call_accept_api(request, pk):
     """POST /v1/staff/calls/<id>/accept/ — faqat login qilgan xodim, faqat o'z restorani stoli."""
@@ -873,7 +873,7 @@ def v1_staff_call_accept_api(request, pk):
     return JsonResponse({'success': True, 'call_id': pk, 'status': 'accepted'})
 
 
-@restaurant_staff_required(api=True)
+@restaurant_staff_required(api=True, capability='pos')
 @require_POST
 def v1_staff_call_done_api(request, pk):
     """POST /v1/staff/calls/<id>/done/ — faqat login qilgan xodim, faqat o'z restorani stoli."""

@@ -4,10 +4,11 @@ Bron xizmati testlari (TZ: R4-1 … R4-5).
 import io
 import json
 import threading
+import time
 from datetime import timedelta
 
 from django.core.management import call_command
-from django.db import connection
+from django.db import OperationalError, connection
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
@@ -245,10 +246,11 @@ class ReservationApiTests(ReservationFixture, TestCase):
 
     def setUp(self):
         self.shop = self.make_restaurant('api-bron')
-        self.waiter = AdminUser.objects.create_user(username='api-bron-ofitsiant', password='Ofitsiant-1', role='waiter',
-                                                    shop=self.shop, is_staff=True)
+        # Bronlar bilan hostess ishlaydi (ofitsiant emas — ruxsat matritsasi, R2)
+        self.hostess = AdminUser.objects.create_user(username='api-bron-hostess', password='Hostess-1', role='hostess',
+                                                     shop=self.shop, is_staff=True)
         self.staff = Client()
-        self.staff.force_login(self.waiter)
+        self.staff.force_login(self.hostess)
         self.guest = Client()
 
     def post(self, client, **extra):
@@ -318,6 +320,7 @@ class ReservationApiTests(ReservationFixture, TestCase):
         self.assertNotIn('1234567', json.dumps(found))
         from django.core.cache import cache
         cache.clear()
+        self.addCleanup(cache.clear)          # tezlik sanagichi keyingi testlarga o'tib qolmasin
         codes = [self.guest.get(f'{self.API}/reservations/find/', {'q': f'GS-AAAA{i}'}).status_code for i in range(25)]
         self.assertIn(429, codes)
 
@@ -406,7 +409,7 @@ class GuestPagesTests(ReservationFixture, TestCase):
         owner = AdminUser.objects.get(username='sahifa-bron-ega')
         owner.is_approved = True
         owner.save(update_fields=['is_approved'])
-        waiter = AdminUser.objects.create_user(username='hostess-x', password='Ofitsiant-1', role='waiter',
+        waiter = AdminUser.objects.create_user(username='hostess-x', password='Hostess-1', role='hostess',
                                                shop=self.shop, is_staff=True)
         today = str(timezone.localdate())
         keep = self.book(reservation_date=today, reservation_time='23:50', table_number='1', customer_name='Bugungi Mehmon')
@@ -431,13 +434,20 @@ class ReservationConcurrencyTests(ReservationFixture, TransactionTestCase):
         results = []
 
         def attempt():
+            # SQLite (testda xotirada) yozuv qulfini "database table is locked" deb darhol qaytaradi — haqiqiy mijoz
+            # shunda qayta urinadi. Postgres'da bu holat bo'lmaydi (qator qulfi navbatga qo'yadi).
             try:
-                svc.create_reservation(shop, payload(table_number='1', customer_phone='+998901234567'))
-                results.append('ok')
-            except svc.ReservationError:
-                results.append('conflict')
-            except Exception as exc:                 # SQLite'da yozuv qulfi — bron baribir ikkilanmaydi
-                results.append(f'error:{type(exc).__name__}')
+                for _ in range(40):
+                    try:
+                        svc.create_reservation(shop, payload(table_number='1', customer_phone='+998901234567'))
+                        results.append('ok')
+                        return
+                    except svc.ReservationError:
+                        results.append('conflict')
+                        return
+                    except OperationalError:
+                        time.sleep(0.05)
+                results.append('locked')
             finally:
                 connection.close()
 

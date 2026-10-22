@@ -22,7 +22,7 @@ from notifications.admin_bot import get_restaurant_shop
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
     RESTAURANT_MANAGER_ROLES, can_view_order, guest_order_ids, is_restaurant_staff, remember_guest_order,
-    restaurant_staff_required, staff_shop, user_role,
+    restaurant_staff_required, role_home_url, staff_shop, user_role,
 )
 from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
 
@@ -1062,9 +1062,7 @@ def restaurant_admin_login(request):
     def _after_login_redirect(user):
         if next_url:
             return redirect(next_url)
-        if user_role(user) == 'waiter':
-            return redirect('waiter_panel_web')
-        return redirect('restaurant_admin_dashboard')
+        return redirect(role_home_url(user))
 
     if request.user.is_authenticated:
         if is_restaurant_staff(request.user):
@@ -1074,24 +1072,21 @@ def restaurant_admin_login(request):
         return render(request, 'restaurant_admin/login.html', {'next': next_url})
 
     if request.method == 'POST':
-        from backend.ratelimit import client_ip
-        ip = client_ip(request)
-        cache_key = f"restaurant_login_attempts_{ip}"
-        attempts = cache.get(cache_key, 0)
-        if attempts >= 7:
-            messages.error(request, "Ko'p marotaba xato urinish bo'ldi. 5 daqiqadan so'ng qayta urinib ko'ring.")
+        from backend import login_guard
+        username = request.POST.get('username', '').strip()
+        if login_guard.is_locked(request, username):
+            messages.error(request, login_guard.LOCK_MESSAGE)
             return render(request, 'restaurant_admin/login.html', {'next': next_url})
 
-        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
-        # Ofitsiant akkauntini admin yaratadi — u "sotuvchi tasdig'i" (is_approved) talab qilmaydi
-        approved = bool(user) and (getattr(user, 'is_approved', False) or user_role(user) == 'waiter')
+        # Ofitsiant/oshpaz/hostess akkauntini rahbariyat yaratadi — "sotuvchi tasdig'i" (is_approved) talab qilinmaydi
+        approved = bool(user) and (getattr(user, 'is_approved', False) or user_role(user) in ('waiter', 'kitchen', 'hostess'))
         if user and approved and is_restaurant_staff(user):
-            cache.delete(cache_key)
+            login_guard.record_success(request, username, user, scope='restaurant')
             login(request, user)
             return _after_login_redirect(user)
-        cache.set(cache_key, attempts + 1, timeout=300)
+        login_guard.record_failure(request, username, scope='restaurant')
         messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
 
     return render(request, 'restaurant_admin/login.html', {'next': next_url})
@@ -1265,7 +1260,7 @@ def tma_find_reservation(request):
     return render(request, 'tma/find_reservation.html', context)
 
 
-@restaurant_staff_required
+@restaurant_staff_required(capability='reservations')
 def arrival_desk(request):
     """
     Ekran 5: Hostess / Kutib olish paneli. Bugungi faol bronlar (kutilmoqda, keldi, o'tirdi) — vaqt tartibida.
@@ -1291,7 +1286,7 @@ def arrival_desk(request):
     return render(request, 'seller/arrival_desk.html', context)
 
 
-@restaurant_staff_required
+@restaurant_staff_required(capability='reservations')
 def arrival_timeline(request):
     """
     Ekran 6: Explore-different-approaches.png
@@ -1300,7 +1295,7 @@ def arrival_timeline(request):
     return arrival_desk(request)
 
 
-@restaurant_staff_required
+@restaurant_staff_required(capability='reservations')
 def arrival_checklist(request):
     """
     Ekran 7: Coordinate-large-party-arrivals.png
@@ -1309,7 +1304,7 @@ def arrival_checklist(request):
     return arrival_desk(request)
 
 
-@restaurant_staff_required
+@restaurant_staff_required(capability='pos')
 def waiter_mobile_panel(request):
     """
     Ekran 8: Guliston-Ofitsiant-Paneli.png (Rahbar / Ofitsiant uchun ixcham mobil boshqaruv).
@@ -1483,7 +1478,7 @@ def _serialize_kds_orders(orders_qs):
     return res
 
 
-@restaurant_staff_required
+@restaurant_staff_required(capability='kds_screen')
 def kds_screen(request):
     """
     KDS Oshxona Ekrani (Kitchen Display System):
@@ -1516,7 +1511,7 @@ def kds_screen(request):
     })
 
 
-@restaurant_staff_required(api=True)
+@restaurant_staff_required(api=True, capability='kds')
 def kds_orders_api(request):
     """KDS uchun polling JSON API: har 10 soniyada yangi buyurtmalarni oladi."""
     from orders.models import Order
@@ -1530,7 +1525,15 @@ def kds_orders_api(request):
     return JsonResponse({'orders': serialized_orders, 'status': 'ok'})
 
 
-@restaurant_staff_required(api=True)
+# Rol bo'yicha o'tkazish mumkin bo'lgan holatlar (R2): oshpaz faqat pishirish bosqichlarini, ofitsiant stolga berish
+# va bekor qilishni boshqaradi; rahbariyat hammasini.
+KDS_ROLE_STATUSES = {
+    'kitchen': {'confirmed', 'preparing', 'ready'},
+    'waiter': {'confirmed', 'delivered', 'cancelled'},
+}
+
+
+@restaurant_staff_required(api=True, capability='kds')
 def kds_status_update_api(request):
     """KDS kartochkasidagi statusni o'zgartirish (state machine yoki xavfsiz o'tish)."""
     import json
@@ -1551,6 +1554,9 @@ def kds_status_update_api(request):
 
     if not order_id or not new_status:
         return JsonResponse({'error': 'order_id va new_status talab qilinadi'}, status=400)
+    allowed = KDS_ROLE_STATUSES.get(user_role(request.user))
+    if allowed is not None and new_status not in allowed:
+        return JsonResponse({'ok': False, 'error': "Bu holatni o'zgartirish sizning rolingiz uchun ruxsat etilmagan"}, status=403)
 
     try:
         # Faqat o'z restoranining buyurtmasi; status faqat state machine orqali o'zgaradi

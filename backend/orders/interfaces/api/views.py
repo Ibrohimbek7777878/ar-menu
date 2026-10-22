@@ -18,9 +18,11 @@ from tables_restaurant.reservations import ReservationError, serialize as reserv
 from finance.models import FinanceTransaction, DebtRecord
 from orders.application.services import RestaurantOrderService
 from orders.interfaces.api.permissions import (
-    RESTAURANT_API_AUTHENTICATION, IsRestaurantManager, IsRestaurantStaff,
+    RESTAURANT_API_AUTHENTICATION, IsRestaurantManager, IsRestaurantStaff, capability,
 )
-from web.restaurant_auth import guest_session_table, is_restaurant_staff, remember_guest_order, staff_shop
+from web.restaurant_auth import (
+    guest_session_table, has_capability, is_restaurant_staff, remember_guest_order, staff_shop,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +57,7 @@ class RestaurantOrderCreateView(RestaurantAPIView):
 
     def post(self, request):
         try:
-            shop = self.staff_shop() if is_restaurant_staff(request.user) else None
+            shop = self.staff_shop() if has_capability(request.user, 'pos') else None
             order = RestaurantOrderService.create_order(request.data, shop=shop)
             remember_guest_order(request._request, order)
             return Response({
@@ -79,8 +81,12 @@ class RestaurantOrderListView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/orders/
     Barcha faol va bugungi restoran buyurtmalari (KDS, Waiter va Admin uchun).
+    Oshpaz mijoz telefonini ko'rmaydi (ruxsat matritsasi: web/restaurant_auth.py CAPABILITIES).
     """
+    permission_classes = [capability('kds')]
+
     def get(self, request):
+        show_phone = has_capability(request.user, 'pos')
         # Avval faqat is_pickup=True buyurtmalar chiqardi — mehmonning checkout buyurtmasi (is_pickup=False)
         # oshxonaga umuman ko'rinmasdi. Endi shu restoranning barcha bekor qilinmagan buyurtmalari.
         qs = (Order.objects.filter(shop=self.staff_shop())
@@ -105,7 +111,7 @@ class RestaurantOrderListView(RestaurantAPIView):
                 'table_number': o.table.number if o.table else '',
                 'table_name': f"Stol {o.table.number}" if o.table else '',
                 'customer_name': o.customer_name,
-                'customer_phone': o.customer_phone_1,
+                'customer_phone': o.customer_phone_1 if show_phone else '',
                 'status': o.status,
                 'payment_status': o.payment_status,
                 'created_at': o.created_at.isoformat(),
@@ -122,6 +128,8 @@ class KitchenItemToggleView(RestaurantAPIView):
     POST /api/v1/restaurant/kitchen/items/<int:item_id>/toggle/
     Oshpaz bir taomni tayyor bo'lganini belgilaydi.
     """
+    permission_classes = [capability('kds')]
+
     def post(self, request, item_id):
         try:
             it = OrderItem.objects.select_related('order').get(pk=item_id, order__shop=self.staff_shop())
@@ -153,6 +161,8 @@ class TableSettleBillView(RestaurantAPIView):
     POST /api/v1/restaurant/tables/<str:table_number>/settle/
     Bitta so'rov: Stol hisobi yopiladi va Moliya kassasiga avtomatik pul kirim qilinadi!
     """
+    permission_classes = [capability('pos')]
+
     def post(self, request, table_number):
         payment_method = request.data.get('payment_method', 'cash')
         res = RestaurantOrderService.settle_table_bill(
@@ -168,6 +178,8 @@ class RestaurantTablesStateView(RestaurantAPIView):
     GET /api/v1/restaurant/tables/
     Hamma stollarning joriy holati va jonli hisob summasi.
     """
+    permission_classes = [capability('tables_read')]
+
     def get(self, request):
         shop = self.staff_shop()
         tables = Table.objects.select_related('hall').filter(shop=shop, is_active=True).order_by('hall__order', 'id')
@@ -205,7 +217,7 @@ class ServiceCallActionView(RestaurantAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [AllowAny()]
-        return super().get_permissions()
+        return [capability('pos')()]
 
     def get(self, request):
         calls = ServiceCall.objects.select_related('table', 'table__hall').filter(
@@ -231,7 +243,7 @@ class ServiceCallActionView(RestaurantAPIView):
 
         shop = RestaurantOrderService.get_or_default_shop()
         table_obj = None
-        if is_restaurant_staff(request.user) or getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+        if has_capability(request.user, 'pos') or getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
             table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
         if not table_obj:
             # QR token (UUID) bilan ham qabul qilinadi: QR dan kirgan mehmonning brauzerida stol raqami o'rniga token turishi mumkin
@@ -240,7 +252,7 @@ class ServiceCallActionView(RestaurantAPIView):
                 table_obj = Table.objects.filter(shop=shop, qr_token=_uuid.UUID(table_num), is_active=True).first()
             except (ValueError, AttributeError):
                 table_obj = None
-        if not table_obj and not is_restaurant_staff(request.user):
+        if not table_obj and not has_capability(request.user, 'pos'):
             # Mehmon: stol raqamini o'zi yozishi mumkin emas — QR skanerlaganda sessiyaga yozilgan stol olinadi
             session_table = guest_session_table(request)
             if session_table and session_table.shop_id == getattr(shop, 'id', None):
@@ -303,6 +315,8 @@ class TableAddItemView(RestaurantAPIView):
     POST /api/v1/restaurant/tables/<str:table_number>/add-item/
     Ofitsiant ochiq stolga yangi taom qo'shishi (Atomic).
     """
+    permission_classes = [capability('pos')]
+
     def post(self, request, table_number):
         try:
             res = RestaurantOrderService.add_item_to_table(table_number, request.data, shop=self.staff_shop())
@@ -328,7 +342,7 @@ class RestaurantReservationListView(RestaurantAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [AllowAny()]
-        return super().get_permissions()
+        return [capability('reservations')()]
 
     def get(self, request):
         filters = {
@@ -343,7 +357,7 @@ class RestaurantReservationListView(RestaurantAPIView):
         return Response({'status': 'success', 'reservations': res_list})
 
     def post(self, request):
-        by_staff = is_restaurant_staff(request.user)
+        by_staff = has_capability(request.user, 'reservations')
         try:
             created = RestaurantOrderService.create_reservation(
                 request.data, shop=self.staff_shop() if by_staff else None, by_staff=by_staff,
@@ -357,8 +371,11 @@ class RestaurantReservationStatusView(RestaurantAPIView):
     """
     PATCH /api/v1/restaurant/reservations/<int:reservation_id>/status/   {status, table_number?}
     Holat: pending → confirmed → arrived → seated → completed; cancelled. Mumkin bo'lmagan o'tish — 409.
-    Faqat xodim; bron o'z restoraniga tegishli bo'lishi shart (begona restoran broni — 404).
+    Faqat bron bilan ishlaydigan xodim (hostess, rahbariyat); bron o'z restoraniga tegishli bo'lishi shart (begona
+    restoran broni — 404).
     """
+    permission_classes = [capability('reservations')]
+
     def patch(self, request, reservation_id):
         new_status = request.data.get('status')
         if not new_status:

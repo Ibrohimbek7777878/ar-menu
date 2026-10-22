@@ -54,9 +54,16 @@ class IsShopOwner(permissions.BasePermission):
 @permission_classes([permissions.AllowAny])
 @throttle_classes([AuthRateThrottle])
 def login_view(request):
+    from backend import login_guard
+    username = str(request.data.get('username', '')).strip()
+    if login_guard.is_locked(request, username):
+        return Response({'detail': login_guard.LOCK_MESSAGE}, status=status.HTTP_429_TOO_MANY_REQUESTS)
     serializer = LoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+    if not serializer.is_valid():
+        login_guard.record_failure(request, username, scope='api')
+        serializer.is_valid(raise_exception=True)
     user = serializer.validated_data['user']
+    login_guard.record_success(request, username, user, scope='api')
     refresh = RefreshToken.for_user(user)
     return Response({
         'access': str(refresh.access_token),

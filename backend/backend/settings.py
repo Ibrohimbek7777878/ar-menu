@@ -272,6 +272,10 @@ CELERY_BEAT_SCHEDULE = {
 # Auth
 AUTH_USER_MODEL = 'accounts.AdminUser'
 
+# Testlar tez yursin: PBKDF2 (1 mln iteratsiya) har create_user'da soniyalar oladi. Faqat test muhitida (production'ga ta'sir yo'q).
+if RUNNING_TESTS:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

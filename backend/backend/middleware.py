@@ -26,12 +26,15 @@ class SellerTenantMiddleware(MiddlewareMixin):
             return None
         role = getattr(user, 'role', '')
         # Sotuvchi /admin/* ga kirsa — xavfsiz va aqlli yo'naltirish
-        if role in ('shop_owner', 'shop_manager', 'waiter') and request.path.startswith('/admin'):
+        if role in ('shop_owner', 'shop_manager', 'waiter', 'kitchen', 'hostess') and request.path.startswith('/admin'):
             # Login, register, logout sahifalariga ruxsat beriladi (hisobni almashtirish yoki chiqish uchun)
             if request.path.startswith(('/admin/login', '/admin/register', '/admin/logout')):
                 return None
 
             from django.shortcuts import redirect
+            if role in ('kitchen', 'hostess'):
+                from web.restaurant_auth import role_home_url
+                return redirect(role_home_url(user))
             # Asosiy /admin yoki /admin/ bo'lsa -> to'g'ridan-to'g'ri o'z paneliga yo'naltirish
             if request.path in ('/admin', '/admin/'):
                 if role == 'waiter':
@@ -60,7 +63,7 @@ class SellerTenantMiddleware(MiddlewareMixin):
                 except Exception:
                     pass
             return None
-        if role in ('shop_owner', 'shop_manager', 'waiter'):
+        if role in ('shop_owner', 'shop_manager', 'waiter', 'kitchen', 'hostess'):
             try:
                 from shops.models import Shop
                 # Avval user.shop, keyin owner bo'yicha
@@ -69,8 +72,7 @@ class SellerTenantMiddleware(MiddlewareMixin):
                     request.tenant_shop = shop
                 else:
                     request.tenant_shop = Shop.objects.filter(owner=user).first()
-                if not request.tenant_shop:
-                    request.tenant_shop = Shop.objects.filter(name__icontains='restoran').first() or Shop.objects.first()
+                # Do'koni bo'lmagan xodimga "birinchi do'kon" berilmaydi: avval boshqa biznesning ma'lumotlari ko'rinardi
             except Exception:
                 pass
         return None

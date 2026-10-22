@@ -85,6 +85,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
     todayRevenue,
     setIsQrModalOpen,
     setIsStudioModalOpen,
+    userRole,
   } = useNavigation();
 
   const [activeTab, setActiveTab] = useState<AdminNavTab>(() => {
@@ -160,6 +161,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
 
   const data = liveData;
 
+  // Sidebar faqat rolga ruxsat etilgan bo'limlarni ko'rsatadi (ruxsatni server baribir tekshiradi; R2)
+  const TABS_BY_ROLE: Record<string, AdminNavTab[] | 'all'> = {
+    admin: 'all',
+    waiter: ['waiter', 'tables'],
+    kitchen: ['kds'],
+    hostess: ['hostess', 'tables'],
+  };
+  const canSeeTab = (tab: AdminNavTab) => {
+    const allowed = TABS_BY_ROLE[userRole];
+    return allowed === 'all' || !allowed || allowed.includes(tab);
+  };
+  const ROLE_LABEL: Record<string, string> = { admin: 'Boshqaruvchi', waiter: 'Ofitsiant', kitchen: 'Oshpaz', hostess: 'Hostess' };
+  const sessionName = (typeof window !== 'undefined' && window.__GULISTON_SESSION__?.name) || '';
+
   const formattedRevenue = useMemo(() => {
     return new Intl.NumberFormat('uz-UZ').format(data.today_revenue) + " so'm";
   }, [data.today_revenue]);
@@ -181,110 +196,126 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ initialT
         </div>
 
         <nav className="admin-nav">
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => handleTabChange('dashboard')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect width="7" height="9" x="3" y="3" rx="1" />
-              <rect width="7" height="5" x="14" y="3" rx="1" />
-              <rect width="7" height="9" x="14" y="12" rx="1" />
-              <rect width="7" height="5" x="3" y="16" rx="1" />
-            </svg>
-            <span>Boshqaruv markazi</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'kds' ? 'active' : ''}`}
-            onClick={() => handleTabChange('kds')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-              <line x1="6" y1="2" x2="6" y2="4" />
-              <line x1="10" y1="2" x2="10" y2="4" />
-              <line x1="14" y1="2" x2="14" y2="4" />
-            </svg>
-            <span>Oshxona (KDS)</span>
-            <span className="admin-nav-badge tabular-nums">{data.pending_kds_count}</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'waiter' ? 'active' : ''}`}
-            onClick={() => handleTabChange('waiter')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <polyline points="16 11 18 13 22 9" />
-            </svg>
-            <span>Ofitsiant paneli</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'tables' ? 'active' : ''}`}
-            onClick={() => handleTabChange('tables')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
-            </svg>
-            <span>Stollar &amp; Bron</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'hostess' ? 'active' : ''}`}
-            onClick={() => handleTabChange('hostess')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <span>Hostess paneli</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'menu' ? 'active' : ''}`}
-            onClick={() => handleTabChange('menu')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M18 2v20M6 2v20M4 6h4M4 10h4M16 6h4M16 10h4" />
-            </svg>
-            <span>Menyu</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'finance' ? 'active' : ''}`}
-            onClick={() => handleTabChange('finance')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            <span>Moliya &amp; Kassa</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-nav-item ${activeTab === 'ar' ? 'active' : ''}`}
-            onClick={() => handleTabChange('ar')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
-              <path d="m3.29 7 8.71 5.37L20.71 7" />
-              <path d="M12 12.37V22" />
-            </svg>
-            <span>3D Taomlar</span>
-            <span className="admin-nav-badge tabular-nums">{data.ar_dishes_count}</span>
-          </button>
+          {canSeeTab('dashboard') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => handleTabChange('dashboard')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect width="7" height="9" x="3" y="3" rx="1" />
+                <rect width="7" height="5" x="14" y="3" rx="1" />
+                <rect width="7" height="9" x="14" y="12" rx="1" />
+                <rect width="7" height="5" x="3" y="16" rx="1" />
+              </svg>
+              <span>Boshqaruv markazi</span>
+            </button>
+          )}
+          {canSeeTab('kds') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'kds' ? 'active' : ''}`}
+              onClick={() => handleTabChange('kds')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                <line x1="6" y1="2" x2="6" y2="4" />
+                <line x1="10" y1="2" x2="10" y2="4" />
+                <line x1="14" y1="2" x2="14" y2="4" />
+              </svg>
+              <span>Oshxona (KDS)</span>
+              <span className="admin-nav-badge tabular-nums">{data.pending_kds_count}</span>
+            </button>
+          )}
+          {canSeeTab('waiter') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'waiter' ? 'active' : ''}`}
+              onClick={() => handleTabChange('waiter')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <polyline points="16 11 18 13 22 9" />
+              </svg>
+              <span>Ofitsiant paneli</span>
+            </button>
+          )}
+          {canSeeTab('tables') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'tables' ? 'active' : ''}`}
+              onClick={() => handleTabChange('tables')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
+              </svg>
+              <span>Stollar &amp; Bron</span>
+            </button>
+          )}
+          {canSeeTab('hostess') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'hostess' ? 'active' : ''}`}
+              onClick={() => handleTabChange('hostess')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span>Hostess paneli</span>
+            </button>
+          )}
+          {canSeeTab('menu') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'menu' ? 'active' : ''}`}
+              onClick={() => handleTabChange('menu')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 2v20M6 2v20M4 6h4M4 10h4M16 6h4M16 10h4" />
+              </svg>
+              <span>Menyu</span>
+            </button>
+          )}
+          {canSeeTab('finance') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'finance' ? 'active' : ''}`}
+              onClick={() => handleTabChange('finance')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+              <span>Moliya &amp; Kassa</span>
+            </button>
+          )}
+          {canSeeTab('ar') && (
+            <button
+              type="button"
+              className={`admin-nav-item ${activeTab === 'ar' ? 'active' : ''}`}
+              onClick={() => handleTabChange('ar')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
+                <path d="m3.29 7 8.71 5.37L20.71 7" />
+                <path d="M12 12.37V22" />
+              </svg>
+              <span>3D Taomlar</span>
+              <span className="admin-nav-badge tabular-nums">{data.ar_dishes_count}</span>
+            </button>
+          )}
         </nav>
 
         <div className="admin-user-profile">
           <div className="admin-user-info">
-            <div className="admin-avatar">A</div>
+            <div className="admin-avatar">{(sessionName || 'A').charAt(0).toUpperCase()}</div>
             <div>
-              <div className="admin-user-name">Menejer</div>
-              <div className="admin-user-role">Boshqaruvchi</div>
+              <div className="admin-user-name">{sessionName || 'Menejer'}</div>
+              <div className="admin-user-role">{ROLE_LABEL[userRole] || 'Boshqaruvchi'}</div>
             </div>
           </div>
           <a

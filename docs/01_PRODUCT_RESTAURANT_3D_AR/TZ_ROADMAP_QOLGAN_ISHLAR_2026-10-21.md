@@ -159,6 +159,32 @@ Hozir backend `AdminUser.role`da faqat `waiter` bor; oshpaz va hostess rollari y
 | R2-4 🎨 | **"Xodimlar" boshqaruv sahifasi** (admin panelda): ro'yxat, yaratish, bloklash, parol almashtirish. Yangi sahifa → maket kerak | Maket ma'qullanadi, keyin qo'shiladi |
 | R2-5 🟢 | Brute-force himoyasi barcha xodim loginlarida; muvaffaqiyatsiz urinishlar auditda | Test |
 
+**R2 holati (2026-10-22): R2-1, R2-2, R2-3, R2-5 bajarildi; R2-4 🎨 maket ma'qullanishini kutmoqda.** 342 ta test (hasher tezlashgach ~30 soniyada). Brauzer e2e: `create_staff` bilan yaratilgan oshpaz `/kds/` ga tushadi, faqat "Oshxona (KDS)" bo'limini ko'radi, mijoz telefonini ko'rmaydi, buyurtmani pishirishga o'tkaza oladi; hostess `/arrival/desk/` ga tushadi; ofitsiant o'z panelida; har rol begona sahifaga kirsa o'z sahifasiga qaytariladi, konsolda 403 shovqini yo'q.
+
+Ruxsat matritsasi (`web/restaurant_auth.py: CAPABILITIES`, serverda majburiy):
+| Imkoniyat | Rahbariyat | Ofitsiant | Oshpaz | Hostess |
+|---|---|---|---|---|
+| KDS sahifasi | ✓ | — | ✓ | — |
+| Buyurtmalar ro'yxati / KDS holati | ✓ (hammasi) | ✓ (tasdiqlash, stolga berish, bekor) | ✓ (tasdiqlash, pishirish, tayyor) | — |
+| Mijoz telefoni | ✓ | ✓ | — | — |
+| POS: stol hisobi, taom qo'shish, chaqiruvlar | ✓ | ✓ | — | — |
+| Stollar holati (o'qish) | ✓ | ✓ | — | ✓ |
+| Bronlar, hostess ekrani, jonli mehmon | ✓ | — | — | ✓ |
+| Moliya, menyu va 3D | ✓ | — | — | — |
+
+**Ta'sir:** ofitsiant akkaunti endi oshxona ekrani va bronlarni ochmaydi (avval u hammasini "qoplagan"). Mavjud ofitsiantlar KDS/bron bilan ishlashi kerak bo'lsa — alohida oshpaz/hostess akkaunti: `python manage.py create_staff --shop <slug> --username <login> --role kitchen|hostess|waiter|shop_manager` (parol berilmasa xavfsiz parol yaratiladi va bir marta ko'rsatiladi; `--update` — parol/rolni qayta tiklash); bloklash: `python manage.py block_staff --username <login> [--unblock]` (akkaunt o'chirilmaydi, ochiq sessiyalar tugatiladi). Bu akkauntlar seller panelga (do'kon boshqaruvi) kirmaydi.
+
+Login himoyasi (`backend/login_guard.py`, to'rt xodim logini ham): IP bo'yicha 5 daqiqada 20 xato, login bo'yicha 15 daqiqada 8 xato (avval faqat IP bo'yicha 7 xato — restoran Wi-Fi'sida bitta xodimning xatosi hammani bloklardi; DRF/JWT loginida himoya umuman yo'q edi). Har xato, blok va muvaffaqiyatli kirish auditda (`security`/`login`), parol yozilmaydi.
+
+Qo'shimcha tuzatishlar: do'koni bo'lmagan xodimga middleware "birinchi do'kon"ni berib yuborardi (boshqa biznes ma'lumoti ko'rinardi) — olib tashlandi; test muhitida parol hasher tezlashtirildi (production o'zgarmagan, testi bor); sidebar ruxsatsiz bo'limlarni yashiradi va haqiqiy foydalanuvchi nomini ko'rsatadi (F3 yopildi); ofitsiant/hostess ekranlaridagi qattiq yozilgan "Alisher"/"Zarina" nomlari faqat DEMO'da.
+
+R2 davomida topilgan, hali tuzatilmagan:
+| # | Topilma | Bosqich |
+|---|---|---|
+| F14 | `/admin/logout/` GET (F7) — past xavf, qoldirildi; POST + forma kerak (ko'rinish o'zgarishi) | R7 🎨 |
+| F15 | Boshqaruv markazidagi KPI'larda qattiq yozilgan raqamlar (`products_count: 42`, `ar_dishes_count: 12`) | R7 |
+| F16 | Waiter panelining Django varianti (`/seller/waiter/`) va React varianti (`/waiter/panel/`) ikkita; bittasi qoldirilishi kerak | R5 |
+
 ### R3 — Ishonchli fon ishlari va Telegram 🟢 (M)
 
 | ID | Ish | Joy | Qabul |

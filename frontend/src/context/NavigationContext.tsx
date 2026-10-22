@@ -734,10 +734,16 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const run = async () => {
       if (stopped || document.hidden || inflightWrites.current > 0) return;
       try {
+        // Har rol faqat o'ziga ruxsat etilgan ma'lumotni so'raydi (server qolganiga 403 beradi): oshpaz — buyurtmalar,
+        // hostess — stollar, ofitsiant va rahbariyat — hammasi
+        const role = roleService.getCurrentRole();
+        const wantsOrders = role === 'admin' || role === 'waiter' || role === 'kitchen';
+        const wantsTables = role === 'admin' || role === 'waiter' || role === 'hostess';
+        const wantsCalls = role === 'admin' || role === 'waiter';
         const [serverOrders, serverTables, serverCalls] = await Promise.all([
-          RestaurantAPI.getOrders(),
-          RestaurantAPI.getTables(),
-          RestaurantAPI.getServiceCalls(),
+          wantsOrders ? RestaurantAPI.getOrders() : Promise.resolve(null),
+          wantsTables ? RestaurantAPI.getTables() : Promise.resolve(null),
+          wantsCalls ? RestaurantAPI.getServiceCalls() : Promise.resolve(null),
         ]);
         if (stopped || inflightWrites.current > 0) return;
 

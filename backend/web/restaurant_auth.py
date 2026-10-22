@@ -10,9 +10,35 @@ from django.contrib.auth.views import redirect_to_login
 from django.http import JsonResponse
 from django.urls import reverse
 
-# Kitchen / hostess rollari Bosqich 3 da qo'shiladi; hozircha ofitsiant ularni qoplaydi.
-RESTAURANT_STAFF_ROLES = ('super_admin', 'shop_owner', 'shop_manager', 'waiter')
 RESTAURANT_MANAGER_ROLES = ('super_admin', 'shop_owner', 'shop_manager')
+RESTAURANT_STAFF_ROLES = RESTAURANT_MANAGER_ROLES + ('waiter', 'kitchen', 'hostess')
+
+# Ruxsat matritsasi (TZ: R2-1): imkoniyat → qaysi rollar. Har rol faqat o'z ishiga kerakli narsani ko'radi:
+#   oshpaz — faqat KDS; hostess — faqat bron va stollar holati; ofitsiant — POS va chaqiruvlar; moliya — rahbariyat.
+CAPABILITIES = {
+    'kds_screen': RESTAURANT_MANAGER_ROLES + ('kitchen',),               # KDS (oshxona) sahifasi
+    'kds': RESTAURANT_MANAGER_ROLES + ('kitchen', 'waiter'),             # KDS API: buyurtmalar, holat, taom belgilari
+    'pos': RESTAURANT_MANAGER_ROLES + ('waiter',),                       # stol hisobi, taom qo'shish, chaqiruvlar
+    'tables_read': RESTAURANT_MANAGER_ROLES + ('waiter', 'hostess'),     # stollar holatini ko'rish
+    'reservations': RESTAURANT_MANAGER_ROLES + ('hostess',),             # bronlar va hostess ekrani
+    'menu_admin': RESTAURANT_MANAGER_ROLES,                              # menyu, 3D modellar
+    'finance': RESTAURANT_MANAGER_ROLES,
+}
+
+
+def has_capability(user, capability):
+    return is_restaurant_staff(user, CAPABILITIES[capability])
+
+
+def role_home_url(user):
+    """Rolga mos bosh sahifa: login'dan keyin va ruxsatsiz sahifadan qaytarilganda (R2-3)."""
+    from django.urls import NoReverseMatch, reverse
+    name = {'waiter': 'waiter_panel_web', 'kitchen': 'restaurant_kds', 'hostess': 'arrival_desk'}.get(
+        user_role(user), 'restaurant_admin_dashboard')
+    try:
+        return reverse(name)
+    except NoReverseMatch:
+        return '/'
 
 
 def user_role(user):
@@ -51,11 +77,14 @@ def _deny(request, api, status, message):
     return redirect_to_login(request.get_full_path(), login_url=reverse('restaurant_admin_login'))
 
 
-def restaurant_staff_required(view_func=None, *, roles=RESTAURANT_STAFF_ROLES, api=False):
+def restaurant_staff_required(view_func=None, *, roles=RESTAURANT_STAFF_ROLES, api=False, capability=None):
     """
-    HTML sahifa: login qilmagan → restoran login sahifasiga (?next= bilan).
-    JSON API (api=True): 401 / 403.
+    HTML sahifa: login qilmagan → restoran login sahifasiga (?next= bilan); xodim lekin ruxsati yo'q → o'z bosh sahifasiga.
+    JSON API (api=True): 401 / 403. `capability` berilsa, rollar CAPABILITIES matritsasidan olinadi.
     """
+    if capability:
+        roles = CAPABILITIES[capability]
+
     def decorator(func):
         @wraps(func)
         def _wrapped(request, *args, **kwargs):
@@ -65,9 +94,13 @@ def restaurant_staff_required(view_func=None, *, roles=RESTAURANT_STAFF_ROLES, a
             if not is_restaurant_staff(user, roles):
                 if api:
                     return _deny(request, api, 403, "Bu amal uchun ruxsatingiz yo'q.")
+                from django.http import HttpResponseForbidden
                 from django.shortcuts import redirect
-                if user_role(user) == 'waiter':
-                    return redirect('waiter_panel_web')
+                if is_restaurant_staff(user):
+                    home = role_home_url(user)
+                    if home == request.path:           # o'z bosh sahifasi ham taqiqlangan bo'lsa — aylanib qolmaslik uchun
+                        return HttpResponseForbidden("Bu sahifaga ruxsatingiz yo'q.")
+                    return redirect(home)
                 return redirect('restaurant_admin_login')
             if not api:
                 # React xodim panellari POST/PATCH da X-CSRFToken yuboradi — cookie doim mavjud bo'lsin
@@ -98,10 +131,10 @@ def remember_guest_order(request, order):
     session.modified = True
 
 
-# React paneli rollari. Server roli → panel roli; ofitsiant hozircha oshxona va hostess ekranlarini ham qoplaydi
-# (RESTAURANT_STAFF_ROLES izohiga qarang) — R2 da alohida kitchen/hostess rollari qo'shilgach shu yerda bo'linadi.
-_SPA_ROLE = {'super_admin': 'admin', 'shop_owner': 'admin', 'shop_manager': 'admin', 'waiter': 'waiter'}
-_SPA_ROLES = {'admin': ['admin'], 'waiter': ['waiter', 'kitchen', 'hostess']}
+# React paneli rollari: server roli → panel roli (har xodim aynan bitta panelga ega; rahbariyat — hammasiga).
+_SPA_ROLE = {'super_admin': 'admin', 'shop_owner': 'admin', 'shop_manager': 'admin',
+             'waiter': 'waiter', 'kitchen': 'kitchen', 'hostess': 'hostess'}
+_SPA_ROLES = {'admin': ['admin'], 'waiter': ['waiter'], 'kitchen': ['kitchen'], 'hostess': ['hostess']}
 
 
 def spa_session(request):
@@ -143,9 +176,10 @@ def guest_order_ids(request):
 
 
 def can_view_order(request, order):
-    """Buyurtmani ko'rish: uni bergan mehmon (sessiya) yoki shu restoran xodimi."""
+    """Buyurtmani ko'rish: uni bergan mehmon (sessiya) yoki buyurtma bilan ishlaydigan shu restoran xodimi
+    (rahbariyat, ofitsiant, oshpaz; hostess buyurtma ma'lumotini ko'rmaydi)."""
     if order.pk in guest_order_ids(request):
         return True
-    if is_restaurant_staff(request.user):
+    if has_capability(request.user, 'kds'):
         return user_role(request.user) == 'super_admin' or order.shop_id == getattr(staff_shop(request), 'pk', None)
     return False

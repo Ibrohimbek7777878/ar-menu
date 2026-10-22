@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { StaffNavHeader, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { roleService } from '../../core/auth/RoleService';
 import './WaiterPanelPage.css';
 
 export interface ServiceCall {
@@ -54,7 +55,8 @@ export const WaiterPanelPage: React.FC<WaiterPanelPageProps> = ({ embedded = fal
     typeof window !== 'undefined' ? window.__GULISTON_WAITER_DATA__ || {} : {};
 
   const shopName = initialData.shop?.name || 'Guliston';
-  const waiterName = initialData.waiter_name || 'Alisher (Navbatchi)';
+  // Ism serverdan (login qilgan xodim); namuna ism faqat DEMO rejimda
+  const waiterName = initialData.waiter_name || window.__GULISTON_SESSION__?.name || (roleService.isDemo() ? 'Alisher (Navbatchi)' : '');
 
   const {
     tables: sharedTables,

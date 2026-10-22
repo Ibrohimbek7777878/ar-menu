@@ -941,26 +941,22 @@ def web_login(request):
         return _role_redirect(request.user)
 
     if request.method == 'POST':
-        from django.core.cache import cache
-        from backend.ratelimit import client_ip
-        ip = client_ip(request)
-        cache_key = f"login_attempts_{ip}"
-        attempts = cache.get(cache_key, 0)
-        if attempts >= 7:
-            messages.error(request, "Xavfsizlik: Ko'p marotaba xato urinish bo'ldi. Iltimos 5 daqiqadan so'ng qayta urinib ko'ring.")
+        from backend import login_guard
+        username = request.POST.get('username', '').strip()
+        if login_guard.is_locked(request, username):
+            messages.error(request, login_guard.LOCK_MESSAGE)
             return render(request, 'admin/login.html')
 
-        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
         if not user or not user.is_approved:
-            cache.set(cache_key, attempts + 1, timeout=300)
+            login_guard.record_failure(request, username, scope='admin')
             messages.error(request, 'Login yoki parol xato yoki hisob tasdiqlanmagan.')
         elif getattr(user, 'role', '') != 'super_admin' and not getattr(user, 'is_superuser', False):
-            cache.set(cache_key, attempts + 1, timeout=300)
+            login_guard.record_failure(request, username, scope='admin')
             messages.error(request, 'Ushbu hisob super-admin emas. Sotuvchi bo\'lsangiz — quyidagi "Sotuvchi kabineti" havolasi orqali kiring.')
         else:
-            cache.delete(cache_key)
+            login_guard.record_success(request, username, user, scope='admin')
             login(request, user)
             return redirect('admin_dashboard')
     return render(request, 'admin/login.html')
