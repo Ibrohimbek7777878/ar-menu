@@ -1,0 +1,107 @@
+# CI (TZ: R10-1). PR yashil bo'lmasa birlashtirilmaydi: GitHub'da `main` uchun "Require status checks" ni yoqing
+# (Settings → Branches), tekshiruvlar: backend, frontend, deploy.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: guliston
+          POSTGRES_PASSWORD: guliston
+          POSTGRES_DB: guliston
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U guliston"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DJANGO_SKIP_DOTENV: "1"          # sinov hech qachon .env ga tayanmaydi
+      DATABASE_URL: postgres://guliston:guliston@localhost:5432/guliston
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Paketlarni o'rnatish (faqat requirements.txt'dan)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "ruff==0.17.1"
+      - name: Ruff (haqiqiy xatolar)
+        run: ruff check .
+      - name: Migratsiyalar modellar bilan mos
+        run: DEBUG=True python manage.py makemigrations --check --dry-run
+      - name: Django check --deploy (production sozlamalari bilan)
+        env:
+          DEBUG: "False"
+          SECRET_KEY: ci-only-${{ github.run_id }}-0123456789abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG
+          ALLOWED_HOSTS: menu.example.uz
+          CSRF_TRUSTED_ORIGINS: https://menu.example.uz
+        run: python manage.py check --deploy
+      - name: Testlar (internetsiz, PostgreSQL 16)
+        env:
+          DEBUG: "True"
+        run: python manage.py test --noinput
+
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: TypeScript
+        run: npx tsc -b
+      - name: oxlint
+        run: npx oxlint
+      - name: Testlar
+        run: npm test
+      - name: Build (Django static papkasiga)
+        run: BUILD_TO_DJANGO=1 npx vite build
+      - name: Build natijasi to'liq (manifest + hash'li fayllar)
+        run: |
+          test -f ../backend/static/react/.vite/manifest.json
+          ls ../backend/static/react/assets | grep -E '\-[A-Za-z0-9_-]{8}\.js$' >/dev/null
+
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skriptlar sintaksisi
+        run: for f in deploy/scripts/*.sh backend/docker/entrypoint.sh; do bash -n "$f" && echo "ok $f"; done
+      - name: Compose sozlamasi to'g'ri
+        working-directory: deploy
+        run: |
+          cp .env.production.example .env
+          sed -i 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=ci0123456789/; s/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-only-0123456789abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJ/' .env
+          docker compose config -q
+      - name: Docker rasmi quriladi
+        run: docker build -f backend/Dockerfile -t guliston-app:ci .

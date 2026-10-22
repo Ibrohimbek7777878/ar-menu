@@ -216,7 +216,6 @@ def seller_shop(request):
                 shop.save(update_fields=['business_profile'])
                 messages.success(request, "Do'koningiz yaratildi! Endi dizayn tanlang.")
                 return redirect('seller_template_gallery')
-                from shops.models import Shop
         return render(request, 'seller/shop_create.html',
                       {'no_shop': True, 'business_types': Shop.STORE_TYPE_CHOICES})
     if request.method == 'POST':

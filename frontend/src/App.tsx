@@ -8,10 +8,10 @@ import './App.css';
 
 // Har sahifa alohida bo'lak (TZ: R8-1): mehmon faqat o'zi ochgan sahifa kodini yuklaydi, xodim kodi (admin, KDS, moliya,
 // hostess, ofitsiant, QR generatori, UI laboratoriyasi) mehmonga umuman yuklanmaydi.
+// Komponent props turi saqlanadi (eslint-disable'siz): noto'g'ri prop yuborilsa `tsc` ushlaydi
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function page<M extends Record<string, any>>(loader: () => Promise<M>, name: keyof M) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return lazy(() => loader().then((m) => ({ default: m[name] as React.ComponentType<any> })));
+function page<K extends string, M extends Record<K, React.ComponentType<any>>>(loader: () => Promise<M>, name: K) {
+  return lazy(() => loader().then((m) => ({ default: m[name] })));
 }
 
 const WelcomePage = page(() => import('./pages/WelcomePage/WelcomePage'), 'WelcomePage');

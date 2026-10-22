@@ -17,7 +17,12 @@ from django.shortcuts import redirect
 from django.views.static import serve
 
 from web import views, tma_views, telegram_webhook, health
-from ar3d import views as ar3d_views
+
+
+def other_product_page(request, *args, **kwargs):
+    """Boshqa mahsulotga (market, 3D bosma studiyasi) tegishli sahifalar restoran domenida ochilmaydi: mehmon menyuga qaytadi.
+    Marshrut nomlari saqlanadi (shablonlardagi {% url %} sinmasligi uchun); sahifalarning o'zi boshqa URLConf'larda ishlayveradi."""
+    return redirect('restaurant_root')
 
 
 def restaurant_admin_redirect(request):
@@ -127,7 +132,8 @@ urlpatterns = [
     path('admin/dashboard/', tma_views.restaurant_admin_dashboard, name='admin_dashboard'),
     path('djangoadmin/', admin.site.urls),
 
-    # AR3D App URL'lari
+    # AR3D App URL'lari (3D bosma studiyasi sahifasi boshqa mahsulotniki — menyuga yo'naltiriladi; uning API'lari ishlaydi)
+    path('3d-print/', other_product_page, name='print_3d_studio'),
     path('', include('ar3d.urls')),
 
     # REST API endpoints (Stollar, buyurtmalar, to'lov)
@@ -140,14 +146,20 @@ urlpatterns = [
     path('api/payments/', include('payments.api_urls')),
     path('payment/', include('payments.urls')),
 
-    # Xavfsizlik fallback'lari (boshqa mahsulot nomlari chaqirilganda reverse xatosi bermaslik uchun)
-    path('market/', views.customer_home, name='customer_home'),
-    path('market/catalog/', views.customer_catalog, name='customer_catalog'),
-    path('market/search/', views.customer_search, name='customer_search'),
-    path('market/profile/', views.customer_profile, name='customer_profile'),
-    path('market/wishlist/', views.customer_wishlist, name='customer_wishlist'),
-    path('shop/<str:slug>/', views.customer_shop_detail, name='customer_shop_detail'),
-    path('studio/', ar3d_views.print_3d_studio_page, name='studio_home'),
+    # Xavfsizlik fallback'lari: boshqa mahsulot sahifalari restoran domenida menyuga yo'naltiriladi, lekin marshrut nomlari
+    # qoladi (boshqa mahsulot nomlari chaqirilganda reverse xatosi bermaslik uchun)
+    path('market/', other_product_page, name='customer_home'),
+    path('market/catalog/', other_product_page, name='customer_catalog'),
+    path('market/search/', other_product_page, name='customer_search'),
+    path('market/profile/', other_product_page, name='customer_profile'),
+    path('market/wishlist/', other_product_page, name='customer_wishlist'),
+    path('market/orders/', other_product_page, name='customer_orders'),
+    path('market/cart/', other_product_page, name='customer_cart'),
+    path('product/<str:slug>/', other_product_page, name='customer_product'),
+    path('shop/<str:slug>/', other_product_page, name='customer_shop_detail'),
+    path('studio/', other_product_page, name='studio_home'),
+    path('admin/shops/', other_product_page, name='admin_shops'),
+    path('admin/shops/<int:pk>/edit/', other_product_page, name='admin_shop_edit'),
 ]
 
 urlpatterns += [

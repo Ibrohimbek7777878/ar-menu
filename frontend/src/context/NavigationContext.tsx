@@ -25,7 +25,7 @@ export interface LiveOrder {
   table_name: string;
   customer_name: string;
   customer_phone?: string;
-  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'paid';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'paid' | 'cancelled';
   created_at: string;
   /** Server: buyurtma 'tayyor' bo'lgan vaqt — KDS taymeri shu yerda to'xtaydi */
   ready_at?: string | null;

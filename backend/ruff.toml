@@ -1,0 +1,10 @@
+# Qattiq qoidalar (TZ: R10-1): faqat haqiqiy xatolar. Uslub qoidalari ataylab yoqilmagan — ular CI'ni shovqinga to'ldirib,
+# jiddiy xatolarni yashirib qo'yardi. Kerak bo'lsa bosqichma-bosqich qo'shiladi.
+#   F821 aniqlanmagan nom (NameError)          F823 o'zgaruvchi qiymat berilmasdan ishlatilgan (UnboundLocalError)
+#   E722 yalang `except:`                      F632 `is` bilan literalni solishtirish
+#   F402 import tsikl o'zgaruvchisi bilan yopilgan
+target-version = "py312"
+extend-exclude = ["venv", "staticfiles", "static", "media", "archive", "bin", "logs", "cache", "node_modules"]
+
+[lint]
+select = ["F821", "F823", "E722", "F632", "F402"]

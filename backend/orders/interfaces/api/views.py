@@ -7,6 +7,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import AllowAny, SAFE_METHODS
 from rest_framework.throttling import ScopedRateThrottle
 from django.conf import settings
@@ -222,7 +223,9 @@ class ServiceCallActionView(RestaurantAPIView):
             return [AllowAny()]
         return [capability('pos')()]
 
-    def get(self, request):
+    def get(self, request, call_id=None):
+        if call_id is not None:                       # /calls/<id>/ faqat PATCH uchun (avval TypeError → 500)
+            raise MethodNotAllowed('GET')
         calls = ServiceCall.objects.select_related('table', 'table__hall').filter(
             shop=self.staff_shop()
         ).exclude(status='done').order_by('-created_at')[:30]
@@ -237,7 +240,9 @@ class ServiceCallActionView(RestaurantAPIView):
         } for c in calls]
         return Response(data)
 
-    def post(self, request):
+    def post(self, request, call_id=None):
+        if call_id is not None:
+            raise MethodNotAllowed('POST')
         table_num = str(request.data.get('table_number', ''))
         call_type = request.data.get('type', 'waiter')
         if call_type not in dict(ServiceCall.TYPE_CHOICES) or call_type == 'dish_ready':

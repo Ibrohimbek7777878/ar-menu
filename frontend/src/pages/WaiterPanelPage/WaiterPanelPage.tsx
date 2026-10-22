@@ -31,6 +31,8 @@ export interface WaiterTable {
   total_bill: number;
   active_orders_count: number;
   items?: WaiterTableItem[];
+  /** Doimiy QR havola (/t/<uuid>/) — server beradi */
+  qr_path?: string;
 }
 
 interface InitialWaiterData {
