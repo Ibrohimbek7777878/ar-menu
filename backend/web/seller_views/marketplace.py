@@ -1242,12 +1242,11 @@ def seller_order_create(request):
             return redirect('seller_order_create_web')
 
         # Buyurtma raqami: noyob (avval float'ni kesishga urinib TypeError berardi va count() bilan to'qnashardi)
-        from orders.numbering import next_order_number
+        from orders.creation import create_order
 
         total = 0
-        order = Order.objects.create(
+        order = create_order(
             shop=shop,
-            order_number=next_order_number(),
             customer_name=customer_name,
             customer_phone_1=customer_phone,
             delivery_address=address,

@@ -420,13 +420,11 @@ def waiter_panel(request):
                 items_data = []
                 
             if items_data:
-                from orders.numbering import next_order_number
-                order_num = next_order_number()
+                from orders.creation import create_order
                 total_amount = 0
                 
-                order = Order.objects.create(
+                order = create_order(
                     shop=shop,
-                    order_number=order_num,
                     customer_name=f"Stol #{table_obj.number}" if table_obj else "Ofitsiant buyurtmasi",
                     customer_phone_1=shop.phone or "+998000000000",
                     table=table_obj,

@@ -641,83 +641,85 @@ def api_order_create(request):
     bonus_earned = int(final_amount * Decimal('0.02'))  # 2% keshbek
 
     # Order yaratish
-    from web.views import _order_number
-    order = Order.objects.create(
-        order_number=_order_number(),
-        customer=customer,
-        customer_name=data['name'],
-        customer_phone_1=data['phone'],
-        shop=shop,
-        delivery_address=data['address'],
-        delivery_lat=data.get('lat'),
-        delivery_lng=data.get('lng'),
-        delivery_accuracy=data.get('accuracy'),
-        notes=data.get('notes', ''),
-        total_amount=total,
-        discount_amount=discount_amount,
-        coupon_code=coupon_code,
-        delivery_fee=delivery_fee,
-        final_amount=final_amount,
-        bonus_used=bonus_used,
-        bonus_earned=bonus_earned,
-        status='pending',
-        is_pickup=data.get('is_pickup', False),
-    )
-
-    # V14: QR stol tokeni bo'lsa — buyurtmani stolga bog'lash
-    table_token = request.data.get('table_token')
-    if table_token:
-        try:
-            import uuid as _uuid
-            from tables_restaurant.models import resolve_table_by_token
-            from django.core.signing import TimestampSigner
-            raw_t = str(table_token).strip()
-            if ':' in raw_t:
-                try:
-                    raw_t = TimestampSigner().unsign(raw_t, max_age=24 * 3600)
-                except Exception:
-                    raw_t = raw_t.split(':')[0]
-            _t = resolve_table_by_token(_uuid.UUID(raw_t))
-            if _t.shop_id == shop.id:
-                order.table = _t
-                order.save(update_fields=['table'])
-                if _t.status in ['free', 'cleaning']:
-                    _t.status = 'occupied'
-                    _t.save(update_fields=['status'])
-        except Exception:
-            pass
-
-    # Kupon sarfi — buyurtma yaratilgandan keyingina (yaratishda xato bo'lsa kupon yonmaydi)
-    if coupon_code and discount_amount > 0:
-        from orders.models import Coupon
-        Coupon.objects.filter(code=coupon_code, is_active=True).update(
-            times_used=F('times_used') + 1
-        )
-    # Bonus yechish (S5-2)
-    if customer and bonus_used > 0:
-        Customer.objects.filter(id=customer.id).update(bonus=F('bonus') - bonus_used)
-        customer.refresh_from_db()
-
-    for item_data in items_data:
-        OrderItem.objects.create(
-            order=order,
-            product=item_data['product'],
-            product_name=item_data['product'].name,
-            price=item_data['price'],
-            quantity=item_data['quantity'],
-            unit=item_data['product'].unit or 'dona',
-            total=item_data['subtotal'],
-        )
-
-    OrderStatusHistory.objects.create(
-        order=order, status='pending', note='Buyurtma yaratildi'
-    )
-
-    # Inventory zaxiralash
+    from orders.inventory import InsufficientStock, reserve_stock_or_raise
     try:
-        reserve_stock(order, timeout_minutes=15)
-    except Exception:
-        pass
+        with transaction.atomic():
+            from orders.creation import create_order
+            order = create_order(
+                customer=customer,
+                customer_name=data['name'],
+                customer_phone_1=data['phone'],
+                shop=shop,
+                delivery_address=data['address'],
+                delivery_lat=data.get('lat'),
+                delivery_lng=data.get('lng'),
+                delivery_accuracy=data.get('accuracy'),
+                notes=data.get('notes', ''),
+                total_amount=total,
+                discount_amount=discount_amount,
+                coupon_code=coupon_code,
+                delivery_fee=delivery_fee,
+                final_amount=final_amount,
+                bonus_used=bonus_used,
+                bonus_earned=bonus_earned,
+                status='pending',
+                is_pickup=data.get('is_pickup', False),
+            )
+
+            # V14: QR stol tokeni bo'lsa — buyurtmani stolga bog'lash
+            table_token = request.data.get('table_token')
+            if table_token:
+                try:
+                    import uuid as _uuid
+                    from tables_restaurant.models import resolve_table_by_token
+                    from django.core.signing import TimestampSigner
+                    raw_t = str(table_token).strip()
+                    if ':' in raw_t:
+                        try:
+                            raw_t = TimestampSigner().unsign(raw_t, max_age=24 * 3600)
+                        except Exception:
+                            raw_t = raw_t.split(':')[0]
+                    _t = resolve_table_by_token(_uuid.UUID(raw_t))
+                    if _t.shop_id == shop.id:
+                        order.table = _t
+                        order.save(update_fields=['table'])
+                        if _t.status in ['free', 'cleaning']:
+                            _t.status = 'occupied'
+                            _t.save(update_fields=['status'])
+                except Exception:
+                    pass
+
+            # Kupon sarfi — buyurtma yaratilgandan keyingina (yaratishda xato bo'lsa kupon yonmaydi)
+            if coupon_code and discount_amount > 0:
+                from orders.models import Coupon
+                Coupon.objects.filter(code=coupon_code, is_active=True).update(
+                    times_used=F('times_used') + 1
+                )
+            # Bonus yechish (S5-2)
+            if customer and bonus_used > 0:
+                Customer.objects.filter(id=customer.id).update(bonus=F('bonus') - bonus_used)
+                customer.refresh_from_db()
+
+            for item_data in items_data:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item_data['product'],
+                    product_name=item_data['product'].name,
+                    price=item_data['price'],
+                    quantity=item_data['quantity'],
+                    unit=item_data['product'].unit or 'dona',
+                    total=item_data['subtotal'],
+                )
+
+            OrderStatusHistory.objects.create(
+                order=order, status='pending', note='Buyurtma yaratildi'
+            )
+
+            # Inventory zaxiralash (yetmasa butun buyurtma qaytariladi)
+            reserve_stock_or_raise(order, timeout_minutes=15)
+
+    except InsufficientStock as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     # Customer statistikasini yangilash
     if customer:

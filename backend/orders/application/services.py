@@ -16,7 +16,7 @@ from products.models import Product
 from categories.models import Category
 from ar3d.models import Product3DModel
 from notifications.outbox import OutboxService
-from orders.numbering import next_order_number
+from orders.creation import create_order
 from orders.timeutils import local_today
 
 
@@ -106,15 +106,11 @@ class RestaurantOrderService:
         # Stol faqat shu restoranning o'zidan (boshqa restoranning shu raqamli stoli emas)
         table_obj = Table.objects.filter(shop=shop, number=table_num, is_active=True).first()
 
-        # Buyurtma raqamini generatsiya qilish
-        order_number = next_order_number()
-
         subtotal = sum((it['price'] * it['quantity'] for it in resolved_items), Decimal('0'))
         service_fee = cls.service_fee_for(subtotal)
         final_amount = subtotal + service_fee
 
-        order = Order.objects.create(
-            order_number=order_number,
+        order = create_order(
             customer_name=customer_name,
             customer_phone_1=customer_phone,
             shop=shop,
@@ -244,11 +240,9 @@ class RestaurantOrderService:
         product_id = item['product'].pk
 
         if not active_order:
-            order_number = next_order_number()
             subtotal = price * qty
             service_fee = cls.service_fee_for(subtotal)
-            active_order = Order.objects.create(
-                order_number=order_number,
+            active_order = create_order(
                 customer_name='Ofitsiant buyurtmasi',
                 shop=shop,
                 table=table_obj,

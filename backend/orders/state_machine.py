@@ -78,7 +78,7 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
             except Exception:
                 pass
             order.customer.save()
-        # Mahsulot omborini kamaytirish
+        # Mahsulot omborini kamaytirish va zaxirani yopish
         _reduce_stock(order)
 
         # Avtomatik Moliya & Kassa kirimini yozish.
@@ -100,8 +100,11 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
         if order.customer and hasattr(order, 'bonus_used') and order.bonus_used:
             order.customer.bonus = (order.customer.bonus or Decimal('0')) + order.bonus_used
             order.customer.save()
-        # Omborni qaytarish
-        _restore_stock(order)
+        # Ombor yetkazilganda kamayadi (_reduce_stock), bekor qilingan buyurtma esa hech qachon kamaytirmagan —
+        # shuning uchun qoldiq QAYTARILMAYDI (avval har bekor qilishda +qty bo'lib, qoldiq asossiz o'sardi);
+        # faqat zaxira bo'shatiladi.
+        from orders.inventory import release_reservations
+        release_reservations(order)
 
     elif new_status == 'confirmed':
         order.confirmed_at = timezone.now()
@@ -133,27 +136,46 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
 
 
 def _reduce_stock(order):
-    """Buyurtma tasdiqlanganda omborni kamaytirish."""
+    """
+    Buyurtma yetkazilganda omborni kamaytirish (TZ: R10-4).
+
+    Faqat qoldig'i yuritiladigan (stock > 0) mahsulotlar. Qator qulflanadi, shuning uchun parallel yetkazishlarda
+    qoldiq manfiy bo'lmaydi va yo'qolmaydi. Oxirgi dona sotilsa, mahsulot "mavjud emas" qilinadi: aks holda
+    stock=0 "cheksiz" deb talqin qilinib, sotuv davom etardi.
+    """
+    from django.db import transaction
+    from orders.inventory import convert_reservations
     from products.models import Product
-    for item in order.items.all():
-        try:
-            product = Product.objects.get(id=item.product_id)
+
+    with transaction.atomic():
+        for item in order.items.order_by('product_id'):
+            product = Product.objects.select_for_update().filter(id=item.product_id).first()
+            if product is None or product.stock <= 0:
+                continue
             product.stock = max(0, product.stock - item.quantity)
-            product.save(update_fields=['stock'])
-        except Product.DoesNotExist:
-            pass
+            fields = ['stock']
+            if product.stock == 0 and product.is_available:
+                product.is_available = False
+                fields.append('is_available')
+            product.save(update_fields=fields)
+        convert_reservations(order)
 
 
 def _restore_stock(order):
-    """Buyurtma bekor qilinganda omborni qaytarish."""
+    """
+    Yetkazilgan buyurtma qaytarilganda omborni tiklash (hozir hech qayerda avtomatik chaqirilmaydi: `delivered` — yakuniy
+    holat). Bekor qilishda CHAQIRILMAYDI — qarang `_reduce_stock`.
+    """
+    from django.db import transaction
     from products.models import Product
-    for item in order.items.all():
-        try:
-            product = Product.objects.get(id=item.product_id)
+
+    with transaction.atomic():
+        for item in order.items.order_by('product_id'):
+            product = Product.objects.select_for_update().filter(id=item.product_id).first()
+            if product is None or product.stock <= 0:
+                continue
             product.stock += item.quantity
             product.save(update_fields=['stock'])
-        except Product.DoesNotExist:
-            pass
 
 
 def _send_notification(order, status, old_status=None):

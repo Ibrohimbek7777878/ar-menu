@@ -613,9 +613,8 @@ def tma_checkout(request):
             customer.save(update_fields=['telegram_chat_id'])
 
         # Buyurtma raqami
-        from orders.numbering import next_order_number
-        order = Order.objects.create(
-            order_number=next_order_number(),
+        from orders.creation import create_order
+        order = create_order(
             customer=customer,
             customer_name=name,
             customer_phone_1=phone,

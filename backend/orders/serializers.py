@@ -63,15 +63,14 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        import uuid
-        validated_data['order_number'] = f'ORD-{uuid.uuid4().hex[:8].upper()}'
         validated_data['total_amount'] = sum(
             item['price'] * item['quantity'] for item in items_data
         )
         validated_data['delivery_fee'] = 0
         validated_data['discount_amount'] = 0
         validated_data['final_amount'] = validated_data['total_amount']
-        order = Order.objects.create(**validated_data)
+        from orders.creation import create_order
+        order = create_order(**validated_data)
         for item in items_data:
             item['total'] = item['price'] * item['quantity']
             OrderItem.objects.create(order=order, **item)

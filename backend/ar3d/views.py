@@ -553,8 +553,6 @@ def v1_orders_api(request):
     if not shop:
         return JsonResponse({'error': 'Do\'kon yoki stol ma\'lumotlari aniqlanmadi'}, status=400)
 
-    from orders.numbering import next_order_number
-    order_num = next_order_number()
     customer_phone = data.get('phone') or data.get('customer_phone') or "+998900000000"
     raw_customer_name = data.get('customer_name')
     if raw_customer_name:
@@ -614,45 +612,46 @@ def v1_orders_api(request):
             'note': item_note
         })
 
-    with transaction.atomic():
-        order = Order.objects.create(
-            order_number=order_num,
-            customer_name=customer_name,
-            customer_phone_1=customer_phone,
-            shop=shop,
-            table=table_obj,
-            delivery_address="Restoran ichida (Stolda)",
-            notes=note,
-            total_amount=total_amount,
-            delivery_fee=0,
-            discount_amount=0,
-            final_amount=total_amount,
-            status='pending',
-            payment_status='unpaid',
-            is_pickup=False
-        )
-
-        for ci in created_items:
-            OrderItem.objects.create(
-                order=order,
-                product=ci['product'],
-                product_name=ci['name'],
-                price=ci['price'],
-                quantity=ci['qty'],
-                unit='dona',
-                total=ci['total']
+    from orders.inventory import InsufficientStock, reserve_stock_or_raise
+    try:
+        with transaction.atomic():
+            from orders.creation import create_order
+            order = create_order(
+                customer_name=customer_name,
+                customer_phone_1=customer_phone,
+                shop=shop,
+                table=table_obj,
+                delivery_address="Restoran ichida (Stolda)",
+                notes=note,
+                total_amount=total_amount,
+                delivery_fee=0,
+                discount_amount=0,
+                final_amount=total_amount,
+                status='pending',
+                payment_status='unpaid',
+                is_pickup=False
             )
 
-        if table_obj:
-            table_obj.status = 'occupied'
-            table_obj.save(update_fields=['status'])
+            for ci in created_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=ci['product'],
+                    product_name=ci['name'],
+                    price=ci['price'],
+                    quantity=ci['qty'],
+                    unit='dona',
+                    total=ci['total']
+                )
 
-        # Mahsulot omborini zaxiralash (Stock Reservation)
-        try:
-            from orders.inventory import reserve_stock
-            reserve_stock(order, timeout_minutes=15)
-        except Exception as e:
-            logger.warning(f"Stock reservation xatosi (davom etiladi): {e}")
+            if table_obj:
+                table_obj.status = 'occupied'
+                table_obj.save(update_fields=['status'])
+
+            # Qoldig'i yuritiladigan taomlar zaxiralanadi (yetmasa butun buyurtma qaytariladi)
+            reserve_stock_or_raise(order, timeout_minutes=15)
+
+    except InsufficientStock as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
 
     remember_guest_order(request, order)
 

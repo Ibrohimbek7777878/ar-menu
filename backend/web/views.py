@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.db import transaction
 from django.db.models import Sum, Count, Q, Avg, F
 from django.utils import timezone
 from django.utils.text import slugify
@@ -54,10 +55,8 @@ def _save_cart(request, cart):
 
 
 def _order_number():
-    while True:
-        num = 'GLS-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(1000, 9999))
-        if not Order.objects.filter(order_number=num).exists():
-            return num
+    from orders.numbering import next_order_number
+    return next_order_number()
 
 
 def courier_required(view_func):
@@ -598,6 +597,7 @@ def customer_checkout(request):
 
     coupon_code = request.POST.get('coupon_code', '').strip().upper()
     discount_amount = 0
+    used_coupon = None
     if coupon_code:
         from orders.models import Coupon
         coupon = Coupon.objects.filter(code=coupon_code, is_active=True).first()
@@ -605,47 +605,56 @@ def customer_checkout(request):
             valid, _ = coupon.is_valid(total)
             if valid:
                 discount_amount = coupon.calculate_discount(total)
-                coupon.times_used += 1
-                coupon.save(update_fields=['times_used'])
+                used_coupon = coupon        # ishlatilgan deb buyurtma yaratilgach (tranzaksiya ichida, F() bilan) belgilanadi
 
     final_amount = max(0, total - discount_amount + delivery_fee)
 
-    order = Order.objects.create(
-        order_number=_order_number(),
-        customer=customer,
-        customer_name=name,
-        customer_phone_1=phone,
-        shop=shop,
-        delivery_address=address,
-        delivery_lat=lat,
-        delivery_lng=lng,
-        delivery_accuracy=accuracy,
-        notes=notes,
-        total_amount=total,
-        discount_amount=discount_amount,
-        coupon_code=coupon_code,
-        delivery_fee=delivery_fee,
-        final_amount=final_amount,
-        status='pending',
-    )
-    for item in items:
-        product = item['product']
-        OrderItem.objects.create(
-            order=order,
-            product=product,
-            product_name=product.name,
-            price=product.price,
-            quantity=item['quantity'],
-            unit=product.unit or 'dona',
-            total=item['subtotal'],
-        )
-    OrderStatusHistory.objects.create(
-        order=order, status='pending', note='Buyurtma yaratildi'
-    )
+    from orders.inventory import InsufficientStock, reserve_stock_or_raise
+    try:
+        with transaction.atomic():
+            from orders.creation import create_order
+            order = create_order(
+                customer=customer,
+                customer_name=name,
+                customer_phone_1=phone,
+                shop=shop,
+                delivery_address=address,
+                delivery_lat=lat,
+                delivery_lng=lng,
+                delivery_accuracy=accuracy,
+                notes=notes,
+                total_amount=total,
+                discount_amount=discount_amount,
+                coupon_code=coupon_code,
+                delivery_fee=delivery_fee,
+                final_amount=final_amount,
+                status='pending',
+            )
+            for item in items:
+                product = item['product']
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    product_name=product.name,
+                    price=product.price,
+                    quantity=item['quantity'],
+                    unit=product.unit or 'dona',
+                    total=item['subtotal'],
+                )
+            OrderStatusHistory.objects.create(
+                order=order, status='pending', note='Buyurtma yaratildi'
+            )
 
-    # Inventory zaxiralash
-    from orders.inventory import reserve_stock
-    reserve_stock(order, timeout_minutes=15)
+            # Inventory zaxiralash (yetmasa butun buyurtma qaytariladi)
+            reserve_stock_or_raise(order, timeout_minutes=15)
+
+            if used_coupon:
+                from orders.models import Coupon
+                Coupon.objects.filter(pk=used_coupon.pk).update(times_used=F('times_used') + 1)
+
+    except InsufficientStock as exc:
+        messages.error(request, str(exc))
+        return redirect('customer_cart')
 
     # Analytics event
     try:
