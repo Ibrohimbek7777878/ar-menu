@@ -39,7 +39,7 @@ class Product3DModel(models.Model):
     poster = models.ImageField(upload_to='ar/poster/', blank=True, null=True)
     real_size_cm = models.DecimalField(max_digits=6, decimal_places=1, default=25)
     status = models.CharField(max_length=20, choices=STATUS, default='none', db_index=True)
-    source = models.CharField(max_length=20, blank=True)
+    source = models.CharField(max_length=80, blank=True)
     error_msg = models.TextField(blank=True)
     view_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

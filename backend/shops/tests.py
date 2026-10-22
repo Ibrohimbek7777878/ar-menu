@@ -27,3 +27,18 @@ class ShopClusterTestCase(TestCase):
         shop_tech = Shop.objects.create(name='Gadget Arena', owner=self.user, store_type='electronics', latitude=40.4897, longitude=68.7842)
         self.assertEqual(shop_tech.get_cluster(), 'tech_hardware')
         self.assertEqual(shop_tech.get_cluster_icon(), '📱')
+
+
+class TemplateSlugFitsColumnsTests(TestCase):
+    """SQLite uzunlikni tekshirmaydi, PostgreSQL esa DataError beradi: do'kon sahifasi shablon slug'ini sig'dira olishi kerak."""
+
+    def test_page_template_column_holds_any_template_slug(self):
+        from shops.models import ShopPage, ShopTemplate
+        slug_len = ShopTemplate._meta.get_field('slug').max_length
+        self.assertGreaterEqual(ShopPage._meta.get_field('template').max_length, slug_len)
+
+    def test_generated_custom_slug_fits_the_slug_column(self):
+        # views: <asos (<=60)>-custom-<user pk>-<4 raqam>; user pk 10 xonagacha deb olinadi
+        longest = 60 + len('-custom-') + 10 + len('-9999')
+        from shops.models import ShopTemplate
+        self.assertLessEqual(longest, ShopTemplate._meta.get_field('slug').max_length)

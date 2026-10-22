@@ -217,6 +217,19 @@ class OrderNotificationFlowTests(TestCase):
         self.assertEqual(event.payload['order_id'], order.pk)
         self.assertNotIn('customer_name', event.payload)         # shaxsiy ma'lumot hodisada saqlanmaydi
 
+    def test_loading_a_fixture_does_not_queue_events_for_old_orders(self):
+        """loaddata (SQLite→PostgreSQL ko'chirish, tiklash) post_save'ni raw=True bilan chaqiradi: eski buyurtmalar xabar bermasligi shart."""
+        from django.core import serializers
+        order = self.make_order()
+        pk = order.pk
+        payload = serializers.serialize('json', [order])
+        OutboxEvent.objects.all().delete()
+        order.delete()                                    # delete() pk'ni tozalaydi — shuning uchun yuqorida saqlandi
+        for obj in serializers.deserialize('json', payload):
+            obj.save()                                    # Django loaddata aynan shunday saqlaydi (raw=True)
+        self.assertTrue(Order.objects.filter(pk=pk).exists())
+        self.assertFalse(OutboxEvent.objects.exists())
+
     def test_worker_sends_one_escaped_message_to_the_restaurant_chat(self):
         self.make_order(name='<b>Ali</b> & Vali')
         with mock.patch('httpx.post', return_value=telegram_ok()) as post:

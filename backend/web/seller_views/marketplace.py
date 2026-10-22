@@ -148,7 +148,7 @@ def seller_analytics(request):
     shop = request.tenant_shop
     try:
         days = int(request.GET.get('days', 7))
-    except:
+    except (TypeError, ValueError):
         days = 7
     if days not in (7, 14, 30):
         days = 7
@@ -495,7 +495,7 @@ def seller_template_save_install(request):
 
     # (1) Yangi custom shablon — galereyada "Mening shablonlarim"da ko'rinadi
     while True:
-        new_slug = f"{_slugify(base_slug, allow_unicode=True) or 'design'}-custom-{request.user.pk}-{random.randint(1000, 9999)}"
+        new_slug = f"{(_slugify(base_slug, allow_unicode=True) or 'design')[:60]}-custom-{request.user.pk}-{random.randint(1000, 9999)}"
         if not ShopTemplate.objects.filter(slug=new_slug).exists():
             break
     tpl = ShopTemplate.objects.create(

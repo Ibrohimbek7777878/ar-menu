@@ -39,7 +39,7 @@ TEMPLATE_CATEGORIES = [
 class ShopTemplate(models.Model):
     """Tayyor do'kon shablonlari - 60+ ta (Figma preview)."""
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, allow_unicode=True)
+    slug = models.SlugField(max_length=100, unique=True, allow_unicode=True)
     category = models.CharField(max_length=20, choices=TEMPLATE_CATEGORIES)
     preview_image = models.ImageField(upload_to='templates/previews/', null=True, blank=True)
     preview_mobile = models.ImageField(upload_to='templates/previews/mobile/', null=True, blank=True)
@@ -284,7 +284,7 @@ class ShopPage(models.Model):
     """Sotuvchi tomonidan vizual yig'ilgan do'kon sahifasi (store builder)."""
     TEMPLATE_CHOICES = [('minimal', 'Minimal'), ('neon', 'Neon'), ('classic', 'Classic')]
     shop = models.OneToOneField(Shop, on_delete=models.CASCADE, related_name='page')
-    template = models.CharField(max_length=20, choices=TEMPLATE_CHOICES, default='minimal')
+    template = models.CharField(max_length=100, choices=TEMPLATE_CHOICES, default='minimal')
     layout = models.JSONField(default=list, blank=True)
     is_published = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)

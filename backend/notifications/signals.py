@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Order, dispatch_uid='notify_admins_new_order')
 def notify_admins_new_order(sender, instance, created, **kwargs):
-    if not created:
+    if not created or kwargs.get('raw'):          # raw: loaddata/tiklash — eski buyurtmalar uchun xabar yuborilmaydi
         return
     try:
         from notifications.outbox import publish_outbox_event
@@ -39,7 +39,7 @@ def notify_admins_new_order(sender, instance, created, **kwargs):
 @receiver(post_save, sender=ServiceCall, dispatch_uid='notify_service_call_created')
 def notify_service_call_created(sender, instance, created, **kwargs):
     """Ofitsiant chaqiruvi / "taom tayyor" → Telegram (admin sozlamasi yoqilgan bo'lsa; qarori ishchida)."""
-    if not created:
+    if not created or kwargs.get('raw'):          # raw: loaddata/tiklash
         return
     try:
         from notifications.outbox import publish_outbox_event

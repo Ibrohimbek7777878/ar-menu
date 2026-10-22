@@ -1126,7 +1126,7 @@ def api_template_apply(request):
         colors = request.data.get('colors') if isinstance(request.data.get('colors'), dict) else {}
         layout_in = request.data.get('layout') if isinstance(request.data.get('layout'), list) else []
         name = (request.data.get('template_name') or f"{shop.name} dizayni").strip()[:100]
-        base_slug = _slugify(template.slug, allow_unicode=True) or 'design'
+        base_slug = (_slugify(template.slug, allow_unicode=True) or 'design')[:60]
         while True:
             new_slug = f"{base_slug}-custom-{request.user.pk}-{random.randint(1000, 9999)}"
             if not ShopTemplate.objects.filter(slug=new_slug).exists():
@@ -1351,7 +1351,7 @@ def api_ar_view_log(request):
             converted=bool(request.data.get('converted',False)),
         )
         # increment view_count
-        Product3DModel.objects.filter(product=product).update(view_count=models.F('view_count')+1)
+        Product3DModel.objects.filter(product=product).update(view_count=F('view_count')+1)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({'ok': True})

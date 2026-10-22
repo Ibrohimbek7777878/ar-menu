@@ -373,3 +373,12 @@ class Air3DMenuIntegrationTests(TestCase):
         self.assertEqual(order.customer_name, "Alisher Navoiy")
 
 
+
+
+class ModelSourceFitsColumnTests(TestCase):
+    """SQLite uzunlikni tekshirmaydi, PostgreSQL esa DataError beradi: 'library:<kategoriya-slug>' sig'ishi kerak."""
+
+    def test_source_column_holds_library_category_slug(self):
+        from ar3d.models import Product3DModel
+        longest = len('library:') + 50          # SlugField standart max_length=50
+        self.assertGreaterEqual(Product3DModel._meta.get_field('source').max_length, longest)
