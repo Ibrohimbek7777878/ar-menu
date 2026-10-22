@@ -25,6 +25,22 @@ export function stripApostrophes(text: string): string {
   return normalizeUzbekText(text).replace(/'/g, '');
 }
 
+// Kirill → lotin (o'zbek kirilli). Qidiruv ikkala yozuvda ham ishlashi uchun hammasi bitta "kanonik" ko'rinishga keltiriladi.
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'j', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm',
+  н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'x', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch',
+  ъ: "'", ы: 'i', ь: '', э: 'e', ю: 'yu', я: 'ya', ў: "o'", қ: 'q', ғ: "g'", ҳ: 'h',
+};
+
+/**
+ * Qidiruv uchun kanonik ko'rinish: kichik harf, kirill → lotin, barcha apostroflar olib tashlanadi
+ * ("o'g'ri", "ogri", "огри", "ўғри" — hammasi "ogri").
+ */
+export function toCanonical(text: string): string {
+  const latin = normalizeUzbekText(text).replace(/[\u0400-\u04ff]/g, (ch) => CYRILLIC_TO_LATIN[ch] ?? ch);
+  return latin.replace(/'/g, '').replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Fonetik moslashuv: o' -> o, g' -> g, sh, ch va boshqalar
  */
@@ -39,7 +55,8 @@ export function getSearchVariants(text: string): string[] {
 
 /**
  * Berilgan matnda (nomi, tavsifi, kategoriyasi) qidiruv so'rovi mavjudligini tekshiradi.
- * Barcha so'zlar (tokens) mos kelishi kerak.
+ * Barcha so'zlar (tokens) mos kelishi kerak. Taqqoslash kanonik ko'rinishda (apostrofsiz lotin) — oddiy
+ * qism-satr tekshiruvi; regex ishlatilmaydi (avval `go`, `og` yoki `.` kabi so'rovlar hamma narsani topardi).
  */
 export function matchUzbekQuery(
   targetFields: (string | undefined | null)[],
@@ -47,33 +64,9 @@ export function matchUzbekQuery(
 ): boolean {
   if (!query || !query.trim()) return true;
 
-  const rawTokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if (rawTokens.length === 0) return true;
+  const tokens = toCanonical(query).split(' ').filter(Boolean);
+  if (tokens.length === 0) return true;
 
-  // Qidirilayotgan obyekt matnlari birlashtiriladi
-  const fullTargetText = targetFields.filter(Boolean).join(' ');
-  const targetNormalized = normalizeUzbekText(fullTargetText);
-  const targetStripped = stripApostrophes(fullTargetText);
-
-  // So'rovdagi har bir so'z mos kelishi tekshiriladi
-  return rawTokens.every((token) => {
-    const tokenNormalized = normalizeUzbekText(token);
-    const tokenStripped = stripApostrophes(token);
-
-    // 1. To'g'ridan-to'g'ri apostrofi bilan mos kelishi (o'sh -> o'sh)
-    if (targetNormalized.includes(tokenNormalized)) return true;
-
-    // 2. Apostrofsiz mos kelishi (gosht -> go'sht yoki go'sht -> gosht)
-    if (targetStripped.includes(tokenStripped)) return true;
-
-    // 3. O' va G' harflarini alohida tekshirish
-    // Agar user "o" yozsa "o'" ni ham topsin
-    const relaxedToken = tokenStripped.replace(/o/g, "[o']?").replace(/g/g, "[g']?");
-    try {
-      const reg = new RegExp(relaxedToken, 'i');
-      if (reg.test(targetNormalized)) return true;
-    } catch {}
-
-    return false;
-  });
+  const target = toCanonical(targetFields.filter(Boolean).join(' '));
+  return tokens.every((token) => target.includes(token));
 }

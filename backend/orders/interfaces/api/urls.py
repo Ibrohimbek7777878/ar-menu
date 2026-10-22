@@ -16,6 +16,8 @@ from orders.interfaces.api.views import (
     RestaurantReservationFindView,
     RestaurantProduct3DScanView,
     RestaurantMenuView,
+    StopListView,
+    ProductAvailabilityView,
 )
 
 urlpatterns = [
@@ -39,6 +41,10 @@ urlpatterns = [
     # 3D Photogrammetry & 360 Spin Upload
     path('products/3d-scan/', RestaurantProduct3DScanView.as_view(), name='restaurant_product_3d_scan_create'),
     path('products/<int:product_id>/3d-scan/', RestaurantProduct3DScanView.as_view(), name='restaurant_product_3d_scan_update'),
+
+    # Stop-list: taom tugadi / qaytdi
+    path('products/stoplist/', StopListView.as_view(), name='restaurant_stoplist'),
+    path('products/<int:product_id>/availability/', ProductAvailabilityView.as_view(), name='restaurant_product_availability'),
 
     # Dynamic Menu (Pure SPA fallback)
     path('menu/', RestaurantMenuView.as_view(), name='restaurant_menu'),

@@ -5,12 +5,15 @@ import {
   Toast,
 } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { roleService } from '../../core/auth/RoleService';
 import './WelcomePage.css';
 
 interface InitialWelcomeData {
   shop?: { name: string };
   table?: { number: string | number; hall?: string };
   cartCount?: number;
+  /** Server: stolni raqam bilan tanlashga ruxsat (DEMO_MODE yoki RESTAURANT_ALLOW_TABLE_NUMBER_URL) */
+  allow_table_number?: boolean;
 }
 
 export const WelcomePage: React.FC = () => {
@@ -24,6 +27,10 @@ export const WelcomePage: React.FC = () => {
   const cartCount = navCartCount || initialData.cartCount || 0;
 
   const [inputTableNum, setInputTableNum] = useState('');
+  // Stol raqamini yozish va "NFC skaneri" production'da stolni aniqlay olmaydi (server faqat QR tokenni taniydi);
+  // ular DEMO rejimda yoki server ruxsat bergandagina ko'rsatiladi (TZ: R5-3, R1-10). Hech narsa o'chirilmagan.
+  const demo = roleService.isDemo();
+  const allowTableNumber = demo || Boolean(initialData.allow_table_number);
 
   // Toast
   const [toastMsg, setToastMsg] = useState('');
@@ -138,56 +145,60 @@ export const WelcomePage: React.FC = () => {
           </div>
 
           {/* 2. Manual Table Input */}
-          <div className="connect-option-card">
-            <div className="card-icon-title-row">
-              <div className="opt-circle-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
-                </svg>
+          {allowTableNumber && (
+            <div className="connect-option-card">
+              <div className="card-icon-title-row">
+                <div className="opt-circle-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
+                  </svg>
+                </div>
+                <div className="opt-text-block">
+                  <h4>Stol raqamini kiritish</h4>
+                  <p>Stolingiz ustidagi raqamni yozib menyuga kiring.</p>
+                </div>
               </div>
-              <div className="opt-text-block">
-                <h4>Stol raqamini kiritish</h4>
-                <p>Stolingiz ustidagi raqamni yozib menyuga kiring.</p>
-              </div>
+              <form onSubmit={handleTableSubmit} className="table-input-flex-row">
+                <input
+                  type="text"
+                  className="input-table-quick"
+                  placeholder="Stol raqami (masalan: 7)"
+                  value={inputTableNum}
+                  onChange={(e) => setInputTableNum(e.target.value)}
+                />
+                <button type="submit" className="btn-table-quick-submit">
+                  Ulanish
+                </button>
+              </form>
             </div>
-            <form onSubmit={handleTableSubmit} className="table-input-flex-row">
-              <input
-                type="text"
-                className="input-table-quick"
-                placeholder="Stol raqami (masalan: 7)"
-                value={inputTableNum}
-                onChange={(e) => setInputTableNum(e.target.value)}
-              />
-              <button type="submit" className="btn-table-quick-submit">
-                Ulanish
-              </button>
-            </form>
-          </div>
+          )}
 
           {/* 3. NFC Tap */}
-          <div className="connect-option-card">
-            <div className="card-icon-title-row">
-              <div className="opt-circle-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {demo && (
+            <div className="connect-option-card">
+              <div className="card-icon-title-row">
+                <div className="opt-circle-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36M9.46 6.21a11.76 11.76 0 0 1 0 11.58M12.91 4.1a16.1 16.1 0 0 1 0 15.8" />
+                  </svg>
+                </div>
+                <div className="opt-text-block">
+                  <h4>NFC orqali ulanish</h4>
+                  <p>Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-card-action-outline"
+                onClick={() => setIsNfcModalOpen(true)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36M9.46 6.21a11.76 11.76 0 0 1 0 11.58M12.91 4.1a16.1 16.1 0 0 1 0 15.8" />
                 </svg>
-              </div>
-              <div className="opt-text-block">
-                <h4>NFC orqali ulanish</h4>
-                <p>Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.</p>
-              </div>
+                <span>NFC / Stolni tanlash</span>
+              </button>
             </div>
-            <button
-              type="button"
-              className="btn-card-action-outline"
-              onClick={() => setIsNfcModalOpen(true)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36M9.46 6.21a11.76 11.76 0 0 1 0 11.58M12.91 4.1a16.1 16.1 0 0 1 0 15.8" />
-              </svg>
-              <span>NFC / Stolni tanlash</span>
-            </button>
-          </div>
+          )}
 
           {/* 4. Find Reservation */}
           <div className="connect-option-card">

@@ -21,6 +21,7 @@ CAPABILITIES = {
     'pos': RESTAURANT_MANAGER_ROLES + ('waiter',),                       # stol hisobi, taom qo'shish, chaqiruvlar
     'tables_read': RESTAURANT_MANAGER_ROLES + ('waiter', 'hostess'),     # stollar holatini ko'rish
     'reservations': RESTAURANT_MANAGER_ROLES + ('hostess',),             # bronlar va hostess ekrani
+    'stoplist': RESTAURANT_MANAGER_ROLES + ('kitchen', 'waiter'),        # taom tugadi/qaytdi (stop-list)
     'menu_admin': RESTAURANT_MANAGER_ROLES,                              # menyu, 3D modellar
     'finance': RESTAURANT_MANAGER_ROLES,
 }
@@ -150,6 +151,10 @@ def spa_session(request):
     payload = {'role': role or 'guest', 'roles': _SPA_ROLES.get(role, []), 'demo': bool(getattr(settings, 'DEMO_MODE', False))}
     if role:
         payload['name'] = (user.get_full_name() or user.get_username()).strip()
+        # Admin paneldan sozlanadigan ish qiymatlari (kodni o'zgartirmasdan): KDS taymeri ogohlantirish chegaralari
+        from backend.app_settings import get_int
+        warn = get_int('kds_warn_minutes', 10, 1, 120)
+        payload['config'] = {'kds_warn_minutes': warn, 'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240))}
     return payload
 
 

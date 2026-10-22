@@ -260,6 +260,23 @@ R4 davomida topilgan, hali tuzatilmagan:
 | R5-7 | "Menyu tez orada" va xato holatlari (ulanish yo'q, qayta urinish) hamma sahifada | 🟢 | |
 | R5-8 | Mehmon menyusida 2 ta bir xil "Barchasi" chipi (`mockDishes` kategoriyasi) | 🟢 | |
 
+**R5 holati (2026-10-22): mantiq qismi (🟢) bajarildi; ko'rinish qo'shadigan qismlar (🎨) maket kutmoqda.** 354 ta backend test + 5 ta frontend test (`npm test`, qo'shimcha paketsiz — Node'ning o'z test ishga tushirgichi). Brauzer e2e: mehmon welcome sahifasida soxta "stol raqami"/NFC yo'q; oshpaz taomni stop-listga qo'yadi → mehmon menyusidan yo'qoladi; mehmon uni qaytara olmaydi; qidiruvda `go` hammasini topmaydi, `ош` esa Osh'ni topadi.
+
+Bajarilgan:
+- **R5-1 (mantiq):** `POST /api/v1/restaurant/products/<id>/availability/ {available}` va `GET .../products/stoplist/` (oshpaz, ofitsiant, rahbariyat; begona restoran taomi — 404; o'zgarish auditda). Tugagan taom menyudan yo'qoladi, savatga qo'shib bo'lmaydi ("'Somsa' hozir tugagan", lekin savatdan olib tashlash mumkin), checkout tugagan taom borligini **mehmonga aytadi** va buyurtma yaratmaydi (avval jimgina tushib qolardi — mehmon qaysi taom tushmaganini bilmasdi).
+- **R5-2:** qidiruv regex'siz qayta yozildi: `go`/`og`/`.` hamma narsani topmaydi, kirill va apostroflar bir xil ishlaydi (frontend testlari eski kodda yiqiladi, yangisida o'tadi).
+- **R5-3:** welcome sahifasida "Stol raqamini kiritish" va soxta "NFC" kartasi faqat `DEMO_MODE` yoki `RESTAURANT_ALLOW_TABLE_NUMBER_URL` bilan; production'da stol faqat QR (NFC tegi ham shu `/t/<uuid>/` havolani yozib qo'yilsa, telefon uni o'zi ochadi — ilova ichida "skaner" kerak emas).
+- **R5-4:** mehmon AR menyusida namuna taomlar, brauzerdagi lokal taomlar va nom bo'yicha "taxminiy" 3D model faqat serversiz (demo) rejimda.
+- **R5-5 (mantiq):** KDS taymeri buyurtma tayyor bo'lganda to'xtaydi (server `ready_at`ni status tarixidan beradi), tayyor taom "kechikkan" bo'lib qizarmaydi; ogohlantirish chegaralari admin paneldan (`kds_warn_minutes`, `kds_late_minutes`, standart 10/20); ekran o'chib qolmasligi uchun Wake Lock; bitta umumiy `AudioContext` (avval har signalda yangisi yaratilib, band kechada brauzer limitiga yetib ovoz jimgina o'chardi).
+- **R5-8:** "Barchasi" chipi ikki marta chiqmaydi. **R5-7:** "Menyu tez orada" bo'sh holati allaqachon bor edi; xato holatlari (ulanish yo'q) keyingi bosqichda.
+
+Topilgan va **tuzatilgan** jiddiy nosozliklar:
+- `/ar/` (mehmon AR menyusi) **butun platformadagi** mahsulotlar va kategoriyalarni ko'rsatardi (Mevalar, Sabzavotlar, Gigiena… — boshqa do'konlarniki) — endi faqat shu restoran.
+- `/catalog/` arxivlangan taomlarni ham ko'rsatardi.
+- Cart API tugagan taomni "Mahsulot topilmadi" (404) deb, savatdan olib tashlashga ham ruxsat bermasdi.
+
+Maket kerak (🎨, egasi ma'qullagach): stop-list almashtirgichi (KDS/ofitsiant/admin) va "Tugagan" belgisi; KDS: kurs bo'yicha guruhlash, ommaviy "tayyor", 5 soniyalik bekor qilish; ofitsiant POS: miqdor/izoh/kurs va kechikkan chaqiruv eskalatsiyasi (R5-5, R5-6).
+
 ### R6 — Moliya hisobotlari 🎨 (M)
 
 Hozir moliya raqamlari barcha vaqt bo'yicha qo'shiladi, smena yopish va Z-hisobot yo'q, chop etish bo'sh sahifa beradi.

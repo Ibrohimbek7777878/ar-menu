@@ -25,6 +25,8 @@ export interface ServerSession {
   roles: UserRole[];
   name?: string;
   demo: boolean;
+  /** Admin paneldan sozlanadigan ish qiymatlari (xodim sessiyasida) */
+  config?: { kds_warn_minutes?: number; kds_late_minutes?: number };
 }
 
 declare global {

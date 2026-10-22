@@ -91,9 +91,11 @@ class RestaurantOrderListView(RestaurantAPIView):
         # oshxonaga umuman ko'rinmasdi. Endi shu restoranning barcha bekor qilinmagan buyurtmalari.
         qs = (Order.objects.filter(shop=self.staff_shop())
               .exclude(status__in=['cancelled', 'failed'])
-              .select_related('table').prefetch_related('items').order_by('-created_at')[:100])
+              .select_related('table').prefetch_related('items', 'history').order_by('-created_at')[:100])
         data = []
         for o in qs:
+            ready_rows = [h.created_at for h in o.history.all() if h.status == 'ready']
+            ready_at = max(ready_rows) if ready_rows else None
             items_list = [{
                 'id': it.id,
                 'name': it.product_name,
@@ -115,6 +117,7 @@ class RestaurantOrderListView(RestaurantAPIView):
                 'status': o.status,
                 'payment_status': o.payment_status,
                 'created_at': o.created_at.isoformat(),
+                'ready_at': ready_at.isoformat() if ready_at else None,   # KDS taymeri shu yerda to'xtaydi
                 'notes': o.notes,
                 'total_amount': float(o.total_amount),
                 'final_amount': float(o.final_amount),
@@ -412,6 +415,51 @@ class RestaurantReservationFindView(RestaurantAPIView):
             return Response({'status': 'not_found', 'reservation': None}, status=status.HTTP_404_NOT_FOUND)
         data = reservation_view(res, mask=True)
         return Response({'status': 'success', 'reservation': data, 'all_matches': [data]})
+
+
+class StopListView(RestaurantAPIView):
+    """
+    GET /api/v1/restaurant/products/stoplist/ — shu restoranning barcha (arxivlanmagan) taomlari va ularning mavjudligi.
+    Oshpaz, ofitsiant va rahbariyat ko'radi (tugagan taomni qaytarish uchun tugaganlari ham ro'yxatda).
+    """
+    permission_classes = [capability('stoplist')]
+
+    def get(self, request):
+        from products.models import Product
+        rows = (Product.objects.filter(shop=self.staff_shop(), is_deleted=False)
+                .select_related('category').order_by('category__name', 'name'))
+        return Response([{
+            'id': p.id, 'name': p.name, 'category': p.category.name if p.category else '',
+            'is_available': p.is_available, 'price': float(p.price),
+        } for p in rows])
+
+
+class ProductAvailabilityView(RestaurantAPIView):
+    """
+    POST /api/v1/restaurant/products/<id>/availability/   {available: true|false}
+    Stop-list (R5-1): taom tugadi yoki qaytdi. Taom menyudan darhol yo'qoladi (keyingi yuklashda) va serverda unga
+    buyurtma berib bo'lmaydi (savat va checkout `is_available`ni tekshiradi). Faqat o'z restoranining taomi (aks holda 404).
+    """
+    permission_classes = [capability('stoplist')]
+
+    def post(self, request, product_id):
+        from products.models import Product
+        value = request.data.get('available')
+        if isinstance(value, str):
+            text = value.strip().lower()
+            value = True if text in ('1', 'true', 'yes', 'ha') else False if text in ('0', 'false', 'no', "yo'q", 'yoq') else None
+        if not isinstance(value, bool):
+            return Response({'error': "'available' true yoki false bo'lishi kerak"}, status=status.HTTP_400_BAD_REQUEST)
+        product = Product.objects.filter(pk=product_id, shop=self.staff_shop(), is_deleted=False).first()
+        if not product:
+            return Response({'error': 'Taom topilmadi'}, status=status.HTTP_404_NOT_FOUND)
+        if product.is_available != value:
+            product.is_available = value
+            product.save(update_fields=['is_available'])
+            from orders.audit import log_audit
+            log_audit('stock_change', request=request, actor=request.user, target_type='product', target_id=product.pk,
+                      new_value={'event': 'stoplist', 'product': product.name, 'is_available': value})
+        return Response({'id': product.pk, 'name': product.name, 'is_available': product.is_available})
 
 
 class RestaurantProduct3DScanView(RestaurantAPIView):

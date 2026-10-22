@@ -185,7 +185,11 @@ class RestaurantFlowTests(TestCase):
         self.cart(action='set', product_id=self.somsa.pk, quantity=1)
         self.somsa.is_deleted = True
         self.somsa.save(update_fields=['is_deleted'])
-        self.assertTrue(self.checkout().json()['ok'])
+        first = self.checkout()                                  # mehmonga aytiladi (avval jimgina tushib qolardi)
+        self.assertEqual(first.status_code, 409)
+        self.assertIn('Somsa', first.json()['error'])
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertTrue(self.checkout().json()['ok'])            # savat yangilandi: qayta tasdiqlansa o'tadi
         self.assertEqual([i.product_name for i in Order.objects.get().items.all()], ['Osh'])
 
     def test_empty_cart_checkout_is_rejected(self):

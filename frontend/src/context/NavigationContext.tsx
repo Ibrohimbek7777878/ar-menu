@@ -3,6 +3,7 @@ import { RestaurantAPI } from '../services/RestaurantAPI';
 import { CartSync } from '../services/CartSync';
 import { RouteGuard } from '../core/guards/RouteGuard';
 import { roleService } from '../core/auth/RoleService';
+import { playTones } from '../utils/audio';
 import { SubdomainService } from '../core/routing/SubdomainService';
 import type { UserRole } from '../core/auth/types';
 
@@ -26,6 +27,8 @@ export interface LiveOrder {
   customer_phone?: string;
   status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'paid';
   created_at: string;
+  /** Server: buyurtma 'tayyor' bo'lgan vaqt — KDS taymeri shu yerda to'xtaydi */
+  ready_at?: string | null;
   notes?: string;
   items: OrderItem[];
   total_amount: number;
@@ -166,33 +169,11 @@ export interface NavigationContextType {
 
 export const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
-// Web Audio API beeper
+// Web Audio API beeper (bitta umumiy AudioContext: utils/audio.ts)
 function playNotificationSound(type: 'order' | 'call' | 'ready' = 'order') {
-  try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    if (type === 'ready') {
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
-    } else if (type === 'call') {
-      osc.frequency.setValueAtTime(440, ctx.currentTime); // A4
-      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.12); // E5
-    } else {
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15); // G5
-    }
-
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.35);
-  } catch {}
+  if (type === 'ready') playTones([[587.33, 0], [880, 0.15]]);           // D5 → A5
+  else if (type === 'call') playTones([[440, 0], [659.25, 0.12]]);        // A4 → E5
+  else playTones([[523.25, 0], [783.99, 0.15]]);                          // C5 → G5
 }
 
 const DEFAULT_TABLES: LiveTable[] = [
@@ -425,6 +406,7 @@ function normalizeServerOrder(o: any): LiveOrder {
     customer_phone: o.customer_phone,
     status,
     created_at: o.created_at,
+    ready_at: o.ready_at ?? null,
     notes: o.notes || '',
     total_amount: Number(o.final_amount ?? o.total_amount ?? 0),
     items: (o.items || []).map((it: any) => ({

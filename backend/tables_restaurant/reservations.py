@@ -49,13 +49,8 @@ class ReservationError(Exception):
 # ── Sozlamalar ──────────────────────────────────────────────────────────────────────────────────────────────
 
 def _setting_int(key, default, minimum, maximum):
-    from notifications.models import AppSetting
-    row = AppSetting.objects.filter(key=key.lower()).first()
-    raw = row.value if row is not None else getattr(settings, key.upper(), default)
-    try:
-        return max(minimum, min(maximum, int(raw)))
-    except (TypeError, ValueError):
-        return default
+    from backend.app_settings import get_int
+    return get_int(key, default, minimum, maximum)
 
 
 def slot_minutes():

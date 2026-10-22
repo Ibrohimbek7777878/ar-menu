@@ -233,7 +233,7 @@ def tma_catalog(request):
     category_id = request.GET.get('category')
     has_3d = request.GET.get('has_3d') == '1'
 
-    products = Product.objects.filter(is_available=True).select_related('shop', 'category')
+    products = Product.objects.filter(is_available=True, is_deleted=False).select_related('shop', 'category')
     if active_shop:
         products = products.filter(shop=active_shop)
         categories = Category.objects.filter(products__shop=active_shop, is_active=True).distinct().order_by('sort_order', 'name')
@@ -370,9 +370,13 @@ def tma_cart_api(request):
     raw_qty = max(0, min(raw_qty, 100))
     qty_param = max(raw_qty, 1)
 
-    product = Product.objects.filter(id=product_id, is_available=True, is_deleted=False).first()
+    product = Product.objects.filter(id=product_id, is_deleted=False).first()
     if not product:
         return JsonResponse({'success': False, 'error': 'Mahsulot topilmadi'}, status=404)
+    wants_more = action == 'add' or (action == 'set' and raw_qty > 0)
+    if not product.is_available and wants_more:
+        # Tugagan taomni savatga qo'shib bo'lmaydi; lekin savatdan olib tashlash (remove/decrease/set 0) mumkin
+        return JsonResponse({'success': False, 'error': f"'{product.name}' hozir tugagan", 'code': 'sold_out'}, status=409)
 
     cart = request.session.setdefault('cart', {})
     shop_key = str(product.shop_id)
@@ -459,11 +463,15 @@ def tma_checkout(request):
 
     total_amount = Decimal('0')
     items_to_create = []
+    sold_out = []          # savatda bor, lekin tugagan/arxivlangan taomlar: mehmonga aytiladi (avval jimgina tushib qolardi)
 
     for s_id, products in cart.items():
         for p_id, item in products.items():
             # Faqat mavjud, arxivlanmagan taom (avval o'chirilgan taom ham buyurtmaga tushardi)
             p = Product.objects.filter(id=p_id, is_available=True, is_deleted=False).first()
+            if not p:
+                gone = Product.objects.filter(id=p_id).values_list('name', flat=True).first()
+                sold_out.append((s_id, p_id, gone or 'Taom'))
             if p:
                 price = p.effective_price if getattr(p, 'flash_active', False) else p.price
                 qty = int(item.get('quantity', 1))
@@ -485,6 +493,17 @@ def tma_checkout(request):
         blocked = rate_limited(request, 'tma_checkout', limit=90, seconds=60)
         if blocked is not None:
             return blocked
+
+    if request.method == 'POST' and sold_out and items_to_create:
+        # Buyurtma yaratilmaydi: mehmon nima o'zgarganini bilib, tasdiqlaydi. Savat yangilanadi (qayta urinish ishlasin).
+        for s_id, p_id, _name in sold_out:
+            request.session['cart'].get(str(s_id), {}).pop(str(p_id), None)
+        request.session.modified = True
+        names = ', '.join(dict.fromkeys(name for _s, _p, name in sold_out))
+        message = f"Quyidagi taomlar hozir tugagan: {names}. Savat yangilandi — buyurtmani qayta tasdiqlang."
+        if wants_json:
+            return JsonResponse({'ok': False, 'error': message, 'sold_out': [name for _s, _p, name in sold_out]}, status=409)
+        return redirect('restaurant_cart')
 
     if request.method == 'POST' and not items_to_create:
         # Savatdagi barcha taomlar menyudan olib tashlangan
@@ -1121,6 +1140,7 @@ def tma_welcome(request):
             'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
         },
         'cartCount': cart_count,
+        'allow_table_number': bool(getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False)),
     }
 
     context = {
@@ -1346,12 +1366,14 @@ def tma_ar_menu(request):
     Model-viewer orqali taomlarni 360 gradusda va stol ustida ko'rish imkoniyati.
     """
     table, table_token = _get_tma_table(request)
-    shop = get_restaurant_shop()
+    shop = table.shop if (table and table.shop) else get_restaurant_shop()
 
-    # 3D modelga ega bo'lgan yoki faol taomlar
-    products = Product.objects.filter(has_3d=True, is_available=True).select_related('shop', 'category')
+    # Faqat shu restoranning taomlari (avval butun platformadagi — boshqa do'konlarning mahsulotlari va kategoriyalari
+    # ham restoran AR menyusida chiqardi). 3D modelga ega taomlar birinchi, bo'lmasa shu restoranning faol taomlari.
+    base = Product.objects.filter(shop=shop, is_available=True, is_deleted=False) if shop else Product.objects.none()
+    products = base.filter(has_3d=True).select_related('shop', 'category')
     if not products.exists():
-        products = Product.objects.filter(is_available=True).select_related('shop', 'category')
+        products = base.select_related('shop', 'category')
 
     cat_ids = products.values_list('category_id', flat=True).distinct()
     categories = Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True)
@@ -1381,13 +1403,15 @@ def tma_ar_menu(request):
             'is_popular': bool(p.is_featured),
         })
 
+    from collections import Counter
+    per_category = Counter(p.category_id for p in products)
     react_categories = []
     for c in categories:
         react_categories.append({
             'id': c.id,
             'name': c.name,
             'icon': getattr(c, 'icon', '') or '✨',
-            'count': c.products.filter(is_available=True).count() if hasattr(c, 'products') else None,
+            'count': per_category.get(c.id, 0),
         })
 
     flat_cart = {}

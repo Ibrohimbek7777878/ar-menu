@@ -38,11 +38,17 @@ export const ARMenuPage: React.FC = () => {
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
   const categoriesList = initialData.categories || [];
-  const productsList = initialData.products && initialData.products.length > 0
-    ? initialData.products
-    : DEFAULT_AR_PRODUCTS;
+  // Django ma'lumot yuborgan bo'lsa (initialData.shop) — faqat shu restoran taomlari, bo'sh bo'lsa ham. Demo taomlar,
+  // brauzerdagi lokal taomlar va boshqa do'konlar kategoriyalari mehmon menyusiga aralashmaydi (TZ: R5-4, R-GST-08).
+  const isServerData = Boolean(initialData.shop);
+  const productsList = isServerData
+    ? initialData.products || []
+    : initialData.products && initialData.products.length > 0
+      ? initialData.products
+      : DEFAULT_AR_PRODUCTS;
 
   const getMergedARProducts = () => {
+    if (isServerData) return productsList.filter((p) => p.has_3d);
     try {
       const raw = localStorage.getItem('guliston_custom_products');
       const customList = raw ? JSON.parse(raw) : [];
@@ -86,7 +92,7 @@ export const ARMenuPage: React.FC = () => {
 
   // Preload categories from API if missing
   useEffect(() => {
-    if (categoriesList.length === 0) {
+    if (!isServerData && categoriesList.length === 0) {
       fetch('/api/v1/categories/')
         .then((res) => res.json())
         .then((data) => {
@@ -95,7 +101,7 @@ export const ARMenuPage: React.FC = () => {
         })
         .catch(() => {});
     }
-  }, [categoriesList.length]);
+  }, [categoriesList.length, isServerData]);
 
   const handleAddToCart = (product: Product) => {
     addToCart(product.id, 1);

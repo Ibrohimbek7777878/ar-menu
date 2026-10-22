@@ -210,3 +210,12 @@ class KitchenWaiterFlowTests(TestCase):
         })
         self.assertEqual(res.status_code, 302)
         self.assertEqual(Order.objects.get().total_amount, Decimal('48000'))
+
+    # ---- R5-5: KDS taymeri tayyor bo'lganda to'xtashi uchun API tayyor bo'lgan vaqtni beradi ----
+    def test_orders_api_reports_when_the_order_became_ready(self):
+        order = self.guest_order()
+        self.assertIsNone(self.cook_client.get(f'{self.API}/orders/').json()[0]['ready_at'])
+        self.kds(order, 'ready')
+        row = self.cook_client.get(f'{self.API}/orders/').json()[0]
+        self.assertIsNotNone(row['ready_at'])
+        self.assertGreaterEqual(row['ready_at'], row['created_at'])

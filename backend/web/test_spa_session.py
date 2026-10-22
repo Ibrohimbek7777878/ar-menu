@@ -82,3 +82,31 @@ class SpaSessionTests(TestCase):
         html = self.login(self.waiter).get('/waiter/panel/').content.decode()
         self.assertNotIn('</script><script>alert(1)', html)
         self.assertEqual(session_in(html)['name'], '</script><script>alert(1)</script>')
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant', DEMO_MODE=False)
+class SessionConfigTests(TestCase):
+    """KDS taymer chegaralari admin paneldan sozlanadi (R5-5); mehmon sessiyasida sozlama yo'q."""
+
+    def setUp(self):
+        call_command('create_restaurant', name='Cfg Restorani', slug='cfg', owner='cfg-ega', password='Cfg-parol-123',
+                     tables=1, stdout=io.StringIO())
+        self.owner = AdminUser.objects.get(username='cfg-ega')
+
+    def session_for(self, user):
+        request = type('R', (), {'user': user})()
+        return spa_session(request)
+
+    def test_staff_get_defaults_and_guests_get_nothing(self):
+        self.assertEqual(self.session_for(self.owner)['config'], {'kds_warn_minutes': 10, 'kds_late_minutes': 20})
+        self.assertNotIn('config', self.session_for(type('Anon', (), {'is_authenticated': False})()))
+
+    def test_admin_settings_override_and_are_kept_sane(self):
+        from notifications.models import AppSetting
+        AppSetting.objects.create(key='kds_warn_minutes', value='7', category='kds')
+        AppSetting.objects.create(key='kds_late_minutes', value='3', category='kds')      # ogohlantirishdan kichik — tuzatiladi
+        config = self.session_for(self.owner)['config']
+        self.assertEqual(config['kds_warn_minutes'], 7)
+        self.assertGreater(config['kds_late_minutes'], config['kds_warn_minutes'])
+        AppSetting.objects.filter(key='kds_warn_minutes').update(value='xato')
+        self.assertEqual(self.session_for(self.owner)['config']['kds_warn_minutes'], 10)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { StaffNavHeader } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { keepScreenAwake, playTones } from '../../utils/audio';
 import './KDSPage.css';
 
 export interface KDSOrderItem {
@@ -21,6 +22,7 @@ export interface KDSOrder {
   customer_name: string;
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled' | 'paid';
   created_at: string;
+  ready_at?: string | null;
   notes?: string;
   items: KDSOrderItem[];
   elapsed_seconds?: number;
@@ -38,23 +40,9 @@ declare global {
   }
 }
 
-// Beeper funksiyasi - Web Audio API orqali audio signal
+// Beeper funksiyasi - Web Audio API orqali audio signal (bitta umumiy AudioContext)
 function playKdsBeep() {
-  try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.35);
-  } catch {
-    // Audio context may require user interaction
-  }
+  playTones([[880, 0]], 0.35, 0.15);
 }
 
 export interface KDSPageProps {
@@ -151,11 +139,32 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
     toggleOrderItemDone(orderId, itemId);
   };
 
+  // Ekran devorda turadi: o'chib qolmasin (Wake Lock; qo'llab-quvvatlanmasa jim o'tkaziladi)
+  useEffect(() => {
+    let release: (() => void) | undefined;
+    let cancelled = false;
+    keepScreenAwake().then((fn) => {
+      if (cancelled) fn();
+      else release = fn;
+    });
+    return () => {
+      cancelled = true;
+      release?.();
+    };
+  }, []);
+
+  // Taymer chegaralari admin paneldan sozlanadi (AppSetting kds_warn_minutes / kds_late_minutes), standart 10 / 20
+  const sessionConfig = typeof window !== 'undefined' ? window.__GULISTON_SESSION__?.config : undefined;
+  const warnMinutes = sessionConfig?.kds_warn_minutes ?? 10;
+  const lateMinutes = sessionConfig?.kds_late_minutes ?? 20;
+
+  // Tayyor bo'lgan buyurtmaning taymeri to'xtaydi (avval u cheksiz o'sib, tayyor taom ham "kechikkan" bo'lib qolardi)
   const getElapsedMinutes = useCallback(
-    (createdAtStr: string) => {
-      const created = new Date(createdAtStr).getTime();
-      const diffMs = (currentTimestamp || Date.now()) - created;
-      return Math.max(0, Math.floor(diffMs / 60000));
+    (order: Pick<KDSOrder, 'created_at' | 'status' | 'ready_at'>) => {
+      const created = new Date(order.created_at).getTime();
+      const finished = order.status === 'ready' || order.status === 'delivered' || order.status === 'paid';
+      const end = finished && order.ready_at ? new Date(order.ready_at).getTime() : (currentTimestamp || Date.now());
+      return Math.max(0, Math.floor((end - created) / 60000));
     },
     [currentTimestamp]
   );
@@ -360,9 +369,10 @@ export const KDSPage: React.FC<KDSPageProps> = ({ embedded = false }) => {
         ) : (
           <div className="kds-grid">
             {filteredOrders.map((order) => {
-              const elapsed = getElapsedMinutes(order.created_at);
-              const isLate = elapsed >= 20;
-              const isWarning = elapsed >= 10 && elapsed < 20;
+              const elapsed = getElapsedMinutes(order);
+              const isActive = order.status === 'pending' || order.status === 'confirmed' || order.status === 'preparing';
+              const isLate = isActive && elapsed >= lateMinutes;
+              const isWarning = isActive && elapsed >= warnMinutes && elapsed < lateMinutes;
 
               return (
                 <article

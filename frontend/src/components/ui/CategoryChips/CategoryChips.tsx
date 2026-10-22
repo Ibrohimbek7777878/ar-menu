@@ -25,7 +25,8 @@ export const CategoryChips: React.FC<CategoryChipsProps> = ({
         <span>Barchasi</span>
       </button>
 
-      {categories.map((cat) => (
+      {/* "Barchasi" chipi yuqorida doim bor: ma'lumotdagi xuddi shunday nomli kategoriya ikkinchi nusxa bo'lib chiqmasin */}
+      {categories.filter((cat) => cat.name.trim().toLowerCase() !== 'barchasi').map((cat) => (
         <button
           key={cat.id}
           type="button"
