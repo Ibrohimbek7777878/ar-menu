@@ -2,6 +2,7 @@
 Asosiy to'lov xizmati.
 Har bir to'lov uslubini boshqarish.
 """
+import logging
 import random
 from datetime import datetime
 
@@ -13,6 +14,8 @@ from .masking import mask_sensitive
 from .models import Payment
 from orders.state_machine import transition_order
 from orders.audit import log_audit
+
+logger = logging.getLogger(__name__)
 
 
 def mock_payments_allowed() -> bool:
@@ -149,13 +152,19 @@ def mark_payment_failed(payment, error='', request=None, actor=None):
 
 
 def dispatch_courier(order):
-    """Kuryer dispatch navbati — Celery mavjud bo'lsa delay, aks holda xavfsiz no-op."""
+    """Kuryer dispatch so'rovi — outbox hodisasi sifatida yoziladi.
+
+    Avval mavjud bo'lmagan `couriers.tasks` modulini chaqirardi va xato jimgina yutilardi. Kuryer tayinlash
+    jarayoni (marketplace yetkazib berish) yozilguncha hodisa jurnalda saqlanadi; restoran stol buyurtmalari
+    kuryer talab qilmaydi.
+    """
+    if getattr(order, 'table_id', None):
+        return
     try:
-        from couriers.tasks import dispatch_courier as _task
-        _task.delay(order.id)
+        from notifications.outbox import publish_outbox_event
+        publish_outbox_event('order', str(order.id), 'courier.dispatch_requested', {'order_id': order.id})
     except Exception:
-        # Celery/Rabbit/Redis sozlanmagan — ishlab chiqish rejimida xavfsiz o'tkazib yuboriladi
-        pass
+        logger.exception("Kuryer so'rovini outbox'ga yozib bo'lmadi (order=%s)", order.id)
 
 
 def confirm_webhook(method, data):

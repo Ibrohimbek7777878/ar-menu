@@ -1,48 +1,114 @@
 """
 Telegram bildirishnoma xizmati.
 Telegram Bot API orqali buyurtma holatini xabar berish.
+
+Yuborish `notifications.telegram_client` orqali (token har chaqiruvda o'qiladi, xato turi ajratiladi). Ichki
+yuborishlar `OutboxEvent` navbati orqali fon ishchisida bajariladi (notifications/outbox.py), so'rov ichida emas.
 """
+import logging
+
 import httpx
 from django.conf import settings
+from django.utils import timezone
+from notifications import telegram_client
 from notifications.models import NotificationLog
+from notifications.telegram_client import esc
 
+logger = logging.getLogger(__name__)
+
+# Eski import'lar uchun (web/health.py). Yangi kod `settings`dan chaqiruv vaqtida o'qiydi.
 TELEGRAM_BOT_TOKEN = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = getattr(settings, 'TELEGRAM_CHAT_ID', '')
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
 
 def _send_message(chat_id, text, parse_mode='HTML', reply_markup=None):
-    """Telegram'ga xabar yuborish."""
-    if not TELEGRAM_BOT_TOKEN:
-        return {'success': False, 'error': 'Bot token topilmadi'}
-    if not chat_id:
-        return {'success': False, 'error': 'Chat ID kiritilmagan'}
+    """Telegram'ga xabar yuborish. {'success', 'error', 'retryable', 'skipped'} qaytaradi."""
+    return telegram_client.send(chat_id, text, parse_mode=parse_mode, reply_markup=reply_markup).as_dict()
 
-    payload = {
-        'chat_id': chat_id,
-        'text': text,
-        'parse_mode': parse_mode,
-    }
-    if reply_markup:
-        payload['reply_markup'] = reply_markup
 
+def _default_chat_id():
+    """Umumiy guruh/admin chat (env TELEGRAM_CHAT_ID), chaqiruv vaqtida o'qiladi."""
+    value = str(getattr(settings, 'TELEGRAM_CHAT_ID', '') or '').strip()
+    return '' if value.lower() == 'none' else value
+
+
+def _order_chat_ids(order):
+    """Buyurtma tegishli restoranning xodim/admin chatlari, bo'lmasa umumiy guruh."""
+    from notifications.admin_bot import get_shop_admin_chat_ids
+    ids = [str(c) for c in get_shop_admin_chat_ids(getattr(order, 'shop', None)) if c]
+    default = _default_chat_id()
+    if not ids and default:
+        ids = [default]
+    return ids
+
+
+def _order_link(order):
+    """Xodim uchun buyurtma havolasi: faqat ochiq domen (RESTAURANT_PUBLIC_URL) sozlangan bo'lsa."""
+    base = getattr(settings, 'RESTAURANT_PUBLIC_URL', '')
+    if not base:
+        return ''
+    return f'\n\n🔗 <a href="{base}/seller/orders/{order.pk}/">Buyurtmani ko\'rish</a>'
+
+
+def _hhmm(value):
+    return timezone.localtime(value).strftime('%H:%M') if value else 'N/A'
+
+
+def _log(order, recipient, text, result):
     try:
-        resp = httpx.post(
-            f"{TELEGRAM_API_URL}/sendMessage",
-            json=payload,
-            timeout=10,
+        NotificationLog.objects.create(
+            order=order, type='telegram', recipient=str(recipient or 'N/A'), message=text[:4000],
+            success=bool(result.get('success')), error_message=str(result.get('error', ''))[:500],
         )
-        data = resp.json()
-        return {'success': data.get('ok', False), 'error': data.get('description', '')}
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
+    except Exception:
+        logger.exception('[Telegram] NotificationLog yozilmadi')
+
+
+def _notify_staff(order, text, reply_markup=None):
+    """Matnni restoran xodimlariga yuboradi va natijani jurnalga yozadi."""
+    results = []
+    for cid in _order_chat_ids(order):
+        result = _send_message(cid, text, reply_markup=reply_markup)
+        results.append(result)
+        _log(order, cid, text, result)
+    return results
+
+
+def _notify_customer(order, text):
+    customer = getattr(order, 'customer', None)
+    chat = getattr(customer, 'telegram_chat_id', '') if customer else ''
+    if not chat:
+        return None
+    result = _send_message(chat, text)
+    _log(order, chat, text, result)
+    return result
+
+
+def _combine(results):
+    """Bir nechta qabul qiluvchiga yuborish natijasini bitta qarorga keltiradi.
+
+    Kamida bittasiga yetgan bo'lsa — muvaffaqiyat (qolganlar jurnalda; qayta urinish yetganlarga dublikat berardi).
+    Hech kim yo'q yoki bot sozlanmagan — `skipped` (xato emas, sozlama holati).
+    """
+    if not results:
+        return {'success': False, 'skipped': True, 'error': "Chat ID yo'q"}
+    if any(r.get('success') for r in results):
+        return {'success': True, 'error': ''}
+    return {
+        'success': False,
+        'skipped': all(r.get('skipped') for r in results),
+        'retryable': any(r.get('retryable') for r in results),
+        'retry_after': max((r.get('retry_after') or 0) for r in results),
+        'error': results[0].get('error', ''),
+    }
 
 
 def get_chat_id_from_username(username):
     """Botga yozgan foydalanuvchining chat_id'sini olish."""
     try:
         resp = httpx.get(
-            f"{TELEGRAM_API_URL}/getUpdates",
+            f"https://api.telegram.org/bot{telegram_client.get_token()}/getUpdates",
             timeout=10,
         )
         data = resp.json()
@@ -56,271 +122,209 @@ def get_chat_id_from_username(username):
     return None
 
 
+def notify_enabled(key, default=False):
+    """Admin sozlamasi (AppSetting) yoki .env (KEY nomi katta harfda) bilan yoqiladigan bildirishnoma."""
+    from notifications.models import AppSetting
+    row = AppSetting.objects.filter(key=key).first()
+    if row is not None:
+        return str(row.value).strip().lower() in ('1', 'true', 'yes', 'on', 'ha')
+    return bool(getattr(settings, key.upper(), default))
+
+
 def send_order_created(order):
-    """Yangi buyurtma yaratilganda xabar — guruh + mijozga."""
+    """Yangi buyurtma yaratilganda xabar — restoran xodimlariga + mijozga."""
     items_text = "\n".join([
-        f"  • {item.product_name} x{item.quantity} — {int(item.total):,} so'm"
+        f"  • {esc(item.product_name)} x{item.quantity} — {int(item.total):,} so'm"
         for item in order.items.all()
     ])
 
-    order_link = f"http://127.0.0.1:8000/seller/orders/{order.pk}/"
-
     table_text = ""
-    if hasattr(order, 'table') and order.table:
-        table_text = f"🍽 <b>STOL:</b> №{order.table.number}"
+    if getattr(order, 'table', None):
+        table_text = f"🍽 <b>STOL:</b> №{esc(order.table.number)}"
         if order.table.hall:
-            table_text += f" ({order.table.hall.name})"
+            table_text += f" ({esc(order.table.hall.name)})"
         table_text += "\n"
 
     text = (
         f"🛒 <b>Yangi buyurtma!</b>\n\n"
-        f"📦 #{order.order_number}\n"
+        f"📦 #{esc(order.order_number)}\n"
         f"{table_text}"
-        f"👤 {order.customer_name}\n"
-        f"📞 {order.customer_phone_1}\n"
-        f"📍 {order.delivery_address or 'Ko\'rsatilmagan'}\n\n"
+        f"👤 {esc(order.customer_name)}\n"
+        f"📞 {esc(order.customer_phone_1)}\n"
+        f"📍 {esc(order.delivery_address) or 'Ko\'rsatilmagan'}\n\n"
         f"🛍 <b>Mahsulotlar:</b>\n{items_text}\n\n"
         f"💰 Jami: {int(order.total_amount):,} so'm\n"
         f"🚗 Yetkazish: {int(order.delivery_fee):,} so'm\n"
-        f"💳 Umumiy: {int(order.final_amount):,} so'm\n\n"
-        f"🔗 <a href=\"{order_link}\">Buyurtmani ko'rish</a>"
+        f"💳 Umumiy: {int(order.final_amount):,} so'm"
+        f"{_order_link(order)}"
     )
-
-    # Aniq restoranning xodimlari va adminlariga yuborish (Multi-shop isolation)
-    results = []
-    from notifications.admin_bot import get_shop_admin_chat_ids, build_order_keyboard
-    target_chat_ids = get_shop_admin_chat_ids(getattr(order, 'shop', None))
-    if not target_chat_ids and TELEGRAM_CHAT_ID:
-        target_chat_ids = [str(TELEGRAM_CHAT_ID)]
 
     reply_markup = None
     try:
+        from notifications.admin_bot import build_order_keyboard
         reply_markup = build_order_keyboard(order)
     except Exception:
-        pass
+        logger.exception('[Telegram] Buyurtma tugmalari qurilmadi (order=%s)', order.pk)
 
-    for cid in target_chat_ids:
-        result = _send_message(cid, text, reply_markup=reply_markup)
-        results.append(result)
-        NotificationLog.objects.create(
-            order=order, type='telegram', recipient=cid,
-            message=text, success=result.get('success', False), error_message=result.get('error', ''),
-        )
+    results = _notify_staff(order, text, reply_markup=reply_markup)
 
     # Mijozga alohida xabar
-    if order.customer and order.customer.telegram_chat_id:
-        customer_text = (
-            f"Salom, <b>{order.customer_name}</b>! 👋\n\n"
-            f"Buyurtmangiz qabul qilindi!\n"
-            f"📦 #{order.order_number}\n"
-            f"💰 Umumiy: {int(order.final_amount):,} so'm\n\n"
-            f"Tez orada tasdiqlanadi!"
-        )
-        result = _send_message(order.customer.telegram_chat_id, customer_text)
-        results.append(result)
-
-    return results[0] if results else {'success': False, 'error': 'Chat ID yo\'q'}
+    customer_result = _notify_customer(order, (
+        f"Salom, <b>{esc(order.customer_name)}</b>! 👋\n\n"
+        f"Buyurtmangiz qabul qilindi!\n"
+        f"📦 #{esc(order.order_number)}\n"
+        f"💰 Umumiy: {int(order.final_amount):,} so'm\n\n"
+        f"Tez orada tasdiqlanadi!"
+    ))
+    if customer_result:
+        results.append(customer_result)
+    return _combine(results)
 
 
 def send_table_reservation_alert(reservation):
     """Yangi stol broni haqida Telegram guruh va ofitsiantlarga bildirishnoma yuborish."""
-    tbl_str = f"№{reservation.table.number}" if reservation.table else "Joyida beriladi"
-    hall_str = reservation.hall.name if reservation.hall else (reservation.table.hall.name if reservation.table and reservation.table.hall else "Asosiy zal")
-    
+    tbl_str = f"№{esc(reservation.table.number)}" if reservation.table else "Joyida beriladi"
+    hall_str = esc(reservation.hall.name) if reservation.hall else (
+        esc(reservation.table.hall.name) if reservation.table and reservation.table.hall else "Asosiy zal")
+
     text = (
         f"📅 <b>YANGI STOL BRONI QABUL QILINDI!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🍽 <b>Restoran:</b> {reservation.shop.name}\n"
-        f"👤 <b>Mehmon:</b> {reservation.customer_name}\n"
-        f"📞 <b>Telefon:</b> {reservation.customer_phone}\n"
+        f"🍽 <b>Restoran:</b> {esc(reservation.shop.name)}\n"
+        f"👤 <b>Mehmon:</b> {esc(reservation.customer_name)}\n"
+        f"📞 <b>Telefon:</b> {esc(reservation.customer_phone)}\n"
         f"👥 <b>Mehmonlar soni:</b> {reservation.guests_count} kishi\n"
         f"📆 <b>Sana:</b> {reservation.reservation_date.strftime('%d.%m.%Y')}\n"
         f"⏰ <b>Vaqt:</b> {reservation.reservation_time.strftime('%H:%M')}\n"
         f"🏢 <b>Zal:</b> {hall_str}\n"
         f"📍 <b>Stol:</b> {tbl_str}\n"
-        f"📝 <b>Izoh:</b> <i>{reservation.notes or 'Qo\'shimcha talab yo\'q'}</i>\n\n"
+        f"📝 <b>Izoh:</b> <i>{esc(reservation.notes) or 'Qo\'shimcha talab yo\'q'}</i>\n\n"
         f"👉 <i>Ofitsiant/Kassir paneli orqali tasdiqlang.</i>"
     )
 
     from notifications.admin_bot import get_shop_admin_chat_ids
-    target_chat_ids = get_shop_admin_chat_ids(getattr(reservation, 'shop', None))
-    if not target_chat_ids and TELEGRAM_CHAT_ID:
-        target_chat_ids = [str(TELEGRAM_CHAT_ID)]
+    target_chat_ids = [str(c) for c in get_shop_admin_chat_ids(getattr(reservation, 'shop', None)) if c]
+    if not target_chat_ids and _default_chat_id():
+        target_chat_ids = [_default_chat_id()]
 
-    res_list = []
-    for cid in target_chat_ids:
-        res = _send_message(cid, text)
-        res_list.append(res)
-    return res_list[0] if res_list else {'success': False, 'error': 'Chat ID sozlanmagan'}
+    return _combine([_send_message(cid, text) for cid in target_chat_ids])
 
 
-def send_status_updated(order, old_status, new_status):
-    """Buyurtma holati o'zgarganda xabar — guruh + mijozga."""
-    STATUS_EMOJI = {
-        'pending': '⏳', 'confirmed': '✅', 'preparing': '👨‍🍳',
-        'ready': '📦', 'out_for_delivery': '🚗', 'delivered': '🎉', 'cancelled': '❌',
-    }
-    STATUS_TEXT = {
-        'pending': 'Kutilmoqda', 'confirmed': 'Tasdiqlangan',
-        'preparing': 'Tayyorlanmoqda', 'ready': 'Tayyor — olib ketish',
-        'out_for_delivery': "Yo'lda", 'delivered': 'Yetkazildi', 'cancelled': 'Bekor qilindi',
-    }
+STATUS_EMOJI = {
+    'pending': '⏳', 'confirmed': '✅', 'preparing': '👨‍🍳',
+    'ready': '📦', 'out_for_delivery': '🚗', 'delivered': '🎉', 'cancelled': '❌',
+}
+STATUS_TEXT = {
+    'pending': 'Kutilmoqda', 'confirmed': 'Tasdiqlangan',
+    'preparing': 'Tayyorlanmoqda', 'ready': 'Tayyor — olib ketish',
+    'out_for_delivery': "Yo'lda", 'delivered': 'Yetkazildi', 'cancelled': 'Bekor qilindi',
+}
 
+
+def send_status_updated(order, old_status=None, new_status=None, notify_staff=True):
+    """Buyurtma holati o'zgarganda xabar — xodimlarga (admin sozlamasi bilan) + mijozga."""
+    new_status = new_status or order.status
     emoji = STATUS_EMOJI.get(new_status, '📋')
     status_text = STATUS_TEXT.get(new_status, new_status)
-    order_link = f"http://127.0.0.1:8000/seller/orders/{order.pk}/"
-
-    # Guruh uchun
-    text = (
-        f"{emoji} <b>Buyurtma holati o'zgardi!</b>\n\n"
-        f"📦 #{order.order_number}\n"
-        f"👤 {order.customer_name}\n\n"
-        f"🔄 {STATUS_TEXT.get(old_status, old_status)} → <b>{status_text}</b>"
-    )
-    if new_status == 'out_for_delivery' and order.courier:
-        text += f"\n🚗 Kuryer: {order.courier.name}"
-    elif new_status == 'delivered':
-        text += f"\n⏰ Yetkazildi: {order.delivered_at.strftime('%H:%M') if order.delivered_at else 'N/A'}"
-    text += f"\n\n🔗 <a href=\"{order_link}\">Buyurtmani ko'rish</a>"
+    courier_name = esc(order.courier.name) if getattr(order, 'courier', None) else ''
 
     results = []
-    if TELEGRAM_CHAT_ID:
-        result = _send_message(TELEGRAM_CHAT_ID, text)
-        results.append(result)
-        NotificationLog.objects.create(
-            order=order, type='telegram', recipient=TELEGRAM_CHAT_ID,
-            message=text, success=result['success'], error_message=result.get('error', ''),
+    if notify_staff:
+        text = (
+            f"{emoji} <b>Buyurtma holati o'zgardi!</b>\n\n"
+            f"📦 #{esc(order.order_number)}\n"
+            f"👤 {esc(order.customer_name)}\n\n"
+            f"🔄 {STATUS_TEXT.get(old_status, old_status or '—')} → <b>{status_text}</b>"
         )
-
-    # Mijozga alohida xabar
-    if order.customer and order.customer.telegram_chat_id:
-        customer_emoji = STATUS_EMOJI.get(new_status, '📋')
-        customer_text = (
-            f"{customer_emoji} <b>Buyurtma #{order.order_number}</b>\n\n"
-            f"Holat: <b>{status_text}</b>"
-        )
-        if new_status == 'out_for_delivery' and order.courier:
-            customer_text += f"\n🚗 Kuryer: {order.courier.name}"
+        if new_status == 'out_for_delivery' and courier_name:
+            text += f"\n🚗 Kuryer: {courier_name}"
         elif new_status == 'delivered':
-            customer_text += f"\n✅ Yetkazildi!"
-        elif new_status == 'cancelled':
-            customer_text += f"\n❌ Bekor qilindi"
+            text += f"\n⏰ Yetkazildi: {_hhmm(order.delivered_at)}"
+        text += _order_link(order)
+        results = _notify_staff(order, text)
 
-        result = _send_message(order.customer.telegram_chat_id, customer_text)
-        results.append(result)
-
-    return results[0] if results else {'success': False, 'error': 'Chat ID yo\'q'}
+    customer_text = f"{emoji} <b>Buyurtma #{esc(order.order_number)}</b>\n\nHolat: <b>{status_text}</b>"
+    if new_status == 'out_for_delivery' and courier_name:
+        customer_text += f"\n🚗 Kuryer: {courier_name}"
+    elif new_status == 'delivered':
+        customer_text += "\n✅ Yetkazildi!"
+    elif new_status == 'cancelled':
+        customer_text += "\n❌ Bekor qilindi"
+    customer_result = _notify_customer(order, customer_text)
+    if customer_result:
+        results.append(customer_result)
+    return _combine(results)
 
 
 def send_courier_assigned(order):
-    """Kuryer biriktirilganda xabar — guruh + mijozga."""
+    """Kuryer biriktirilganda xabar — xodimlarga + mijozga."""
+    courier = getattr(order, 'courier', None)
     text = (
         f"🚗 <b>Kuryer biriktirildi!</b>\n\n"
-        f"📦 #{order.order_number}\n"
-        f"👤 {order.customer_name}\n"
-        f"📍 {order.delivery_address or 'Ko\'rsatilmagan'}\n\n"
-        f"🧑 Kuryer: {order.courier.name if order.courier else 'N/A'}\n"
-        f"📞 Tel: {order.courier.phone if order.courier else 'N/A'}"
+        f"📦 #{esc(order.order_number)}\n"
+        f"👤 {esc(order.customer_name)}\n"
+        f"📍 {esc(order.delivery_address) or 'Ko\'rsatilmagan'}\n\n"
+        f"🧑 Kuryer: {esc(courier.name) if courier else 'N/A'}\n"
+        f"📞 Tel: {esc(courier.phone) if courier else 'N/A'}"
     )
+    results = _notify_staff(order, text)
+    customer_result = _notify_customer(order, (
+        f"🚗 <b>Buyurtma #{esc(order.order_number)}</b>\n\n"
+        f"Kuryer yo'lda! 🚚\n"
+        f"🧑 {esc(courier.name) if courier else 'N/A'}\n"
+        f"📞 {esc(courier.phone) if courier else 'N/A'}"
+    ))
+    if customer_result:
+        results.append(customer_result)
+    return _combine(results)
 
+
+def send_order_delivered(order, notify_staff=True):
+    """Buyurtma yetkazilganda xabar — xodimlarga + mijozga."""
     results = []
-    if TELEGRAM_CHAT_ID:
-        result = _send_message(TELEGRAM_CHAT_ID, text)
-        results.append(result)
-        NotificationLog.objects.create(
-            order=order, type='telegram', recipient=TELEGRAM_CHAT_ID,
-            message=text, success=result['success'], error_message=result.get('error', ''),
-        )
-
-    # Mijozga
-    if order.customer and order.customer.telegram_chat_id:
-        customer_text = (
-            f"🚗 <b>Buyurtma #{order.order_number}</b>\n\n"
-            f"Kuryer yo'lda! 🚚\n"
-            f"🧑 {order.courier.name if order.courier else 'N/A'}\n"
-            f"📞 {order.courier.phone if order.courier else 'N/A'}"
-        )
-        result = _send_message(order.customer.telegram_chat_id, customer_text)
-        results.append(result)
-
-    return results[0] if results else {'success': False, 'error': 'Chat ID yo\'q'}
-
-
-def send_order_delivered(order):
-    """Buyurtma yetkazilganda xabar — guruh + mijozga."""
-    text = (
-        f"🎉 <b>Buyurtma yetkazildi!</b>\n\n"
-        f"📦 #{order.order_number}\n"
-        f"👤 {order.customer_name}\n"
-        f"💰 Summa: {int(order.final_amount):,} so'm\n"
-        f"⏰ Vaqt: {order.delivered_at.strftime('%H:%M') if order.delivered_at else 'N/A'}"
-    )
-
-    results = []
-    if TELEGRAM_CHAT_ID:
-        result = _send_message(TELEGRAM_CHAT_ID, text)
-        results.append(result)
-        NotificationLog.objects.create(
-            order=order, type='telegram', recipient=TELEGRAM_CHAT_ID,
-            message=text, success=result['success'], error_message=result.get('error', ''),
-        )
-
-    # Mijozga
-    if order.customer and order.customer.telegram_chat_id:
-        customer_text = (
+    if notify_staff:
+        results = _notify_staff(order, (
             f"🎉 <b>Buyurtma yetkazildi!</b>\n\n"
-            f"📦 #{order.order_number}\n"
-            f"💰 {int(order.final_amount):,} so'm\n\n"
-            f"Rahmat! 🙏"
-        )
-        result = _send_message(order.customer.telegram_chat_id, customer_text)
-        results.append(result)
-
-    return results[0] if results else {'success': False, 'error': 'Chat ID yo\'q'}
+            f"📦 #{esc(order.order_number)}\n"
+            f"👤 {esc(order.customer_name)}\n"
+            f"💰 Summa: {int(order.final_amount):,} so'm\n"
+            f"⏰ Vaqt: {_hhmm(order.delivered_at)}"
+        ))
+    customer_result = _notify_customer(order, (
+        f"🎉 <b>Buyurtma yetkazildi!</b>\n\n"
+        f"📦 #{esc(order.order_number)}\n"
+        f"💰 {int(order.final_amount):,} so'm\n\n"
+        f"Rahmat! 🙏"
+    ))
+    if customer_result:
+        results.append(customer_result)
+    return _combine(results)
 
 
 def send_order_cancelled(order, reason=''):
     """Buyurtma bekor qilinganda xabar."""
     text = (
         f"❌ <b>Buyurtma bekor qilindi!</b>\n\n"
-        f"📦 #{order.order_number}\n"
-        f"👤 {order.customer_name}\n"
+        f"📦 #{esc(order.order_number)}\n"
+        f"👤 {esc(order.customer_name)}\n"
         f"💰 Summa: {int(order.final_amount):,} so'm"
     )
     if reason:
-        text += f"\n📝 Sabab: {reason}"
-
-    chat_id = TELEGRAM_CHAT_ID
-    result = _send_message(chat_id, text)
-
-    NotificationLog.objects.create(
-        order=order,
-        type='telegram',
-        recipient=chat_id or 'N/A',
-        message=text,
-        success=result['success'],
-        error_message=result.get('error', ''),
-    )
-    return result
+        text += f"\n📝 Sabab: {esc(reason)}"
+    return _combine(_notify_staff(order, text))
 
 
 def send_stock_warning(product, current_stock):
     """Ombor kamayganda xabar."""
     text = (
         f"⚠️ <b>Ombor kamaydi!</b>\n\n"
-        f"📦 {product.name}\n"
+        f"📦 {esc(product.name)}\n"
         f"📊 Qoldiq: {current_stock} dona\n"
-        f"🏪 Do'kon: {product.shop.name}"
+        f"🏪 Do'kon: {esc(product.shop.name)}"
     )
-
-    result = _send_message(TELEGRAM_CHAT_ID, text)
-    NotificationLog.objects.create(
-        type='telegram',
-        recipient=TELEGRAM_CHAT_ID or 'N/A',
-        message=text,
-        success=result['success'],
-        error_message=result.get('error', ''),
-    )
+    chat = _default_chat_id()
+    result = _send_message(chat, text)
+    _log(None, chat, text, result)
     return result
 
 
@@ -330,43 +334,41 @@ def send_daily_report(orders_today, revenue_today):
         f"📊 <b>Kunlik hisobot</b>\n\n"
         f"📦 Buyurtmalar: {orders_today}\n"
         f"💰 Daromad: {int(revenue_today):,} so'm\n"
-        f"📅 Sana: {timezone.now().strftime('%d.%m.%Y')}"
+        f"📅 Sana: {timezone.localdate().strftime('%d.%m.%Y')}"
     )
-
-    result = _send_message(TELEGRAM_CHAT_ID, text)
-    return result
+    return _send_message(_default_chat_id(), text)
 
 
 def send_new_review(review):
     """Yangi sharh kelganda xabar."""
     text = (
         f"⭐ <b>Yangi sharh!</b>\n\n"
-        f"📦 {review.product.name if review.product else 'N/A'}\n"
-        f"👤 {review.customer_name}\n"
+        f"📦 {esc(review.product.name) if review.product else 'N/A'}\n"
+        f"👤 {esc(review.customer_name)}\n"
         f"⭐ {review.rating}/5\n"
-        f"💬 {review.comment[:100] if review.comment else 'Yoq'}"
+        f"💬 {esc(review.comment[:100]) if review.comment else 'Yoq'}"
     )
+    return _send_message(_default_chat_id(), text)
 
-    result = _send_message(TELEGRAM_CHAT_ID, text)
-    return result
+
+SERVICE_INFO = {
+    'waiter': ("🔔 OFITSIANT CHAQIRUVI!", "Mijoz ofitsiantni chaqirmoqda."),
+    'tea': ("🫖 CHOY YANGILASH!", "Mijoz choy yangilashni so'ramoqda."),
+    'bread': ("🍞 ISSIQ NON!", "Mijoz issiq non keltirishni so'ramoqda."),
+    'bill': ("🧾 HISOB (CHEK) SO'ROVI!", "Mijoz hisob-kitob qilishni so'ramoqda."),
+    'dish_ready': ("🍽 TAOM TAYYOR!", "Oshxona taomni tayyorladi — stolga olib boring."),
+}
 
 
 def send_table_service_call(shop, table, service_type, note=''):
     """
     Stoldan ofitsiant chaqirish yoki xizmat so'rash bildirishnomasi.
-    service_type: 'waiter' (Ofitsiant), 'tea' (Choy), 'bread' (Non), 'bill' (Hisob/Chek)
+    service_type: 'waiter' (Ofitsiant), 'tea' (Choy), 'bread' (Non), 'bill' (Hisob/Chek), 'dish_ready' (Taom tayyor)
     """
-    from django.utils import timezone
-    SERVICE_INFO = {
-        'waiter': ("🔔 OFITSIANT CHAQIRUVI!", "Mijoz ofitsiantni chaqirmoqda."),
-        'tea': ("🫖 CHOY YANGILASH!", "Mijoz choy yangilashni so'ramoqda."),
-        'bread': ("🍞 ISSIQ NON!", "Mijoz issiq non keltirishni so'ramoqda."),
-        'bill': ("🧾 HISOB (CHEK) SO'ROVI!", "Mijoz hisob-kitob qilishni so'ramoqda."),
-    }
     title, desc = SERVICE_INFO.get(service_type, ("🔔 XIZMAT CHAQIRUVI!", "Mijoz xizmat so'ramoqda."))
-    table_str = f"Stol №{table.number}" if table else "Noma'lum stol"
-    hall_str = f" ({table.hall.name})" if table and getattr(table, 'hall', None) else ""
-    shop_name = shop.name if shop else "Muassasa"
+    table_str = f"Stol №{esc(table.number)}" if table else "Noma'lum stol"
+    hall_str = f" ({esc(table.hall.name)})" if table and getattr(table, 'hall', None) else ""
+    shop_name = esc(shop.name) if shop else "Muassasa"
 
     text = (
         f"<b>{title}</b>\n"
@@ -376,10 +378,10 @@ def send_table_service_call(shop, table, service_type, note=''):
         f"📝 <b>Holat:</b> {desc}\n"
     )
     if note:
-        text += f"💬 <b>Izoh:</b> {note}\n"
-    text += f"⏰ <b>Vaqt:</b> {timezone.now().strftime('%H:%M:%S')}\n"
-    text += f"━━━━━━━━━━━━━━━━━━━\n"
-    text += f"<i>Iltimos, kechiktirmasdan xizmat ko'rsating!</i>"
+        text += f"💬 <b>Izoh:</b> {esc(note)}\n"
+    text += f"⏰ <b>Vaqt:</b> {timezone.localtime().strftime('%H:%M:%S')}\n"
+    text += "━━━━━━━━━━━━━━━━━━━\n"
+    text += "<i>Iltimos, kechiktirmasdan xizmat ko'rsating!</i>"
 
     target_chat_ids = []
     # Agar stolga ofitsiant biriktirilgan bo'lsa
@@ -388,30 +390,28 @@ def send_table_service_call(shop, table, service_type, note=''):
         w_chat = getattr(waiter, 'telegram_chat_id', '') or getattr(waiter, 'telegram_id', '')
         if w_chat:
             target_chat_ids.append(str(w_chat))
-    
+
     # Shop egasining chat_id si
     if shop and hasattr(shop, 'owner') and getattr(shop.owner, 'telegram_chat_id', None):
         owner_chat = str(shop.owner.telegram_chat_id)
         if owner_chat not in target_chat_ids:
             target_chat_ids.append(owner_chat)
 
-    # Standart guruh chat_id
-    if TELEGRAM_CHAT_ID and str(TELEGRAM_CHAT_ID) not in target_chat_ids:
-        target_chat_ids.append(str(TELEGRAM_CHAT_ID))
+    # Shu restoranning xodim chatlari, bo'lmasa standart guruh
+    from notifications.admin_bot import get_shop_admin_chat_ids
+    for cid in get_shop_admin_chat_ids(shop) if shop else []:
+        if str(cid) not in target_chat_ids:
+            target_chat_ids.append(str(cid))
+    default = _default_chat_id()
+    if default and default not in target_chat_ids:
+        target_chat_ids.append(default)
 
     results = []
     for cid in target_chat_ids:
         r = _send_message(cid, text)
         results.append(r)
-        NotificationLog.objects.create(
-            type='telegram',
-            recipient=cid,
-            message=text,
-            success=r.get('success', False),
-            error_message=r.get('error', ''),
-        )
-
-    return results[0] if results else {'success': False, 'error': 'Chat ID topilmadi'}
+        _log(None, cid, text, r)
+    return _combine(results)
 
 
 def handle_webhook(update):
@@ -425,10 +425,7 @@ def handle_webhook(update):
         cb_chat_id = cb_message.get('chat', {}).get('id')
 
         # Telegram spinner to'xtashi uchun answerCallbackQuery
-        try:
-            httpx.post(f"{TELEGRAM_API_URL}/answerCallbackQuery", json={"callback_query_id": cb_id}, timeout=5)
-        except Exception:
-            pass
+        telegram_client.call('answerCallbackQuery', {"callback_query_id": cb_id})
 
         # 3D Buyurtma holatini o'zgartirish (Usta tomonidan)
         if cb_data.startswith('3d_status:'):
@@ -444,34 +441,25 @@ def handle_webhook(update):
                     order.save(update_fields=['status'])
 
                     if new_status == 'printing':
-                        _send_message(cb_chat_id, f"⚙️ Buyurtma <b>#{order.order_number}</b> holati <b>'Chop etilmoqda'</b> ga o'zgartirildi!")
+                        _send_message(cb_chat_id, f"⚙️ Buyurtma <b>#{esc(order.order_number)}</b> holati <b>'Chop etilmoqda'</b> ga o'zgartirildi!")
                         if order.telegram_chat_id:
                             _send_message(
                                 order.telegram_chat_id,
-                                f"⚙️ <b>Xushxabar, {order.customer_name}!</b>\n\n"
-                                f"Sizning <b>#{order.order_number}</b> raqamli 3D printer buyurtmangiz hozirda usta tomonidan 3D printerda chop etilishni boshladi! 🚀\n\n"
+                                f"⚙️ <b>Xushxabar, {esc(order.customer_name)}!</b>\n\n"
+                                f"Sizning <b>#{esc(order.order_number)}</b> raqamli 3D printer buyurtmangiz hozirda usta tomonidan 3D printerda chop etilishni boshladi! 🚀\n\n"
                                 f"Tayyor bo'lishi bilan sizga fotosurat va lokatsiya yuboramiz."
                             )
                     elif new_status == 'ready':
                         notify_customer_3d_order_ready(order)
-                        _send_message(cb_chat_id, f"✅ Buyurtma <b>#{order.order_number}</b> 'TAYYOR' deb belgilandi va mijozga rasm/lokatsiya yuborildi!")
+                        _send_message(cb_chat_id, f"✅ Buyurtma <b>#{esc(order.order_number)}</b> 'TAYYOR' deb belgilandi va mijozga rasm/lokatsiya yuborildi!")
             return {'success': True}
 
         # Mijoz ustaxona lokatsiyasini so'raganda
         elif cb_data.startswith('3d_get_loc'):
             from notifications.services.print3d_notification_service import GULISTON_STUDIO_LAT, GULISTON_STUDIO_LON
-            try:
-                httpx.post(
-                    f"{TELEGRAM_API_URL}/sendLocation",
-                    json={
-                        "chat_id": cb_chat_id,
-                        "latitude": GULISTON_STUDIO_LAT,
-                        "longitude": GULISTON_STUDIO_LON,
-                    },
-                    timeout=10,
-                )
-            except Exception:
-                pass
+            telegram_client.call('sendLocation', {
+                "chat_id": cb_chat_id, "latitude": GULISTON_STUDIO_LAT, "longitude": GULISTON_STUDIO_LON,
+            })
             loc_msg = (
                 f"📍 <b>Guliston 3D Studio & AR Center</b>\n"
                 f"🏢 <b>Manzil:</b> Guliston shahar, Sayxun ko'chasi 14-uy\n"
@@ -524,16 +512,20 @@ def handle_webhook(update):
         if len(parts) > 1:
             order_number = parts[1]
             from orders.models import Order
-            try:
-                order = Order.objects.get(order_number=order_number)
+            from notifications.admin_bot import is_admin
+            # Buyurtma raqami taxmin qilinadi (GLS-YYYYMMDD-NNNN): ism va summani faqat buyurtma egasi (shu Telegram
+            # akkaunt bog'langan mijoz) yoki admin ko'ra oladi; boshqalarga "topilmadi" (mavjudligi ham oshkor bo'lmaydi)
+            order = Order.objects.select_related('customer').filter(order_number=order_number).first()
+            owner_chat = str(getattr(getattr(order, 'customer', None), 'telegram_chat_id', '') or '')
+            if order and (owner_chat == str(chat_id) or is_admin(chat_id, user.get('username', ''))):
                 status_text = dict(Order.STATUS_CHOICES).get(order.status, order.status)
                 response_text = (
-                    f"📦 #{order.order_number}\n"
-                    f"👤 {order.customer_name}\n"
+                    f"📦 #{esc(order.order_number)}\n"
+                    f"👤 {esc(order.customer_name)}\n"
                     f"💰 {int(order.final_amount):,} so'm\n"
-                    f"📊 Holat: {status_text}"
+                    f"📊 Holat: {esc(status_text)}"
                 )
-            except Order.DoesNotExist:
+            else:
                 response_text = "Buyurtma topilmadi"
             _send_message(chat_id, response_text)
 
@@ -544,7 +536,7 @@ def handle_webhook(update):
         base_url = f"{scheme}://{domain}"
 
         welcome = (
-            f"Assalomu alaykum, <b>{user.get('first_name', 'qadrli mijoz')}</b>! 👋\n\n"
+            f"Assalomu alaykum, <b>{esc(user.get('first_name') or 'qadrli mijoz')}</b>! 👋\n\n"
             f"🏪 <b>Online Store Guliston & AR Menu</b> rasmiy Telegram Mini App botiga xush kelibsiz!\n\n"
             f"Bu yerda siz:\n"
             f"• 🛍 Barcha do'kon va restoranlardan xarid qilishingiz\n"
@@ -577,7 +569,7 @@ def handle_webhook(update):
         if shop:
             menu_url = f"{scheme}://{domain}/m/{shop.slug}/"
             response_text = (
-                f"🍽 <b>{shop.name} — 3D/AR Menyu</b>\n\n"
+                f"🍽 <b>{esc(shop.name)} — 3D/AR Menyu</b>\n\n"
                 f"Kamerangiz orqali taomlarni 3D ko'rib, buyurtma bering:\n"
                 f"👉 Quyidagi tugma orqali menyuni oching:"
             )
@@ -597,12 +589,12 @@ def handle_webhook(update):
         _send_message(chat_id, response_text, reply_markup=markup)
 
     elif text == '/kassa' or text.startswith('/kassa'):
-        from shops.models import Shop
         from finance.models import FinanceTransaction
-        from django.utils import timezone
         from django.db.models import Sum
+        from notifications.admin_bot import get_restaurant_shop, is_admin
         today = timezone.localdate()
-        shop = Shop.objects.first()
+        # Kassa — moliyaviy ma'lumot: avval istalgan Telegram foydalanuvchiga "birinchi do'kon" kassasi ko'rsatilardi
+        shop = get_restaurant_shop() if is_admin(chat_id, user.get('username', '')) else None
         if shop:
             tx_today = FinanceTransaction.objects.filter(shop=shop, tx_date=today, is_cancelled=False)
             inc = tx_today.filter(tx_type='income', stage__in=['income', 'realized']).aggregate(s=Sum('amount'))['s'] or 0
@@ -612,14 +604,14 @@ def handle_webhook(update):
             fmt_exp = f"{int(exp):,}".replace(",", " ")
             fmt_net = f"{int(net):,}".replace(",", " ")
             response_text = (
-                f"📊 <b>{shop.name} — Bugungi Kassa ({today.strftime('%d.%m.%Y')})</b>\n\n"
+                f"📊 <b>{esc(shop.name)} — Bugungi Kassa ({today.strftime('%d.%m.%Y')})</b>\n\n"
                 f"🟢 <b>Kirim:</b> {fmt_inc} so'm\n"
                 f"🔴 <b>Chiqim:</b> {fmt_exp} so'm\n"
                 f"💎 <b>Sof kassa:</b> {fmt_net} so'm\n\n"
                 f"Batafsil ma'lumot do'kon moliya panelida."
             )
         else:
-            response_text = "Kassa ma'lumotlari topilmadi."
+            response_text = "Kassa ma'lumotlari faqat adminlar uchun."
         _send_message(chat_id, response_text)
 
     elif text == '/taxi' or text.startswith('/taksi'):
@@ -632,18 +624,9 @@ def handle_webhook(update):
 
     elif text == '/location' or text.startswith('/manzil'):
         from notifications.services.print3d_notification_service import GULISTON_STUDIO_LAT, GULISTON_STUDIO_LON
-        try:
-            httpx.post(
-                f"{TELEGRAM_API_URL}/sendLocation",
-                json={
-                    "chat_id": chat_id,
-                    "latitude": GULISTON_STUDIO_LAT,
-                    "longitude": GULISTON_STUDIO_LON,
-                },
-                timeout=10,
-            )
-        except Exception:
-            pass
+        telegram_client.call('sendLocation', {
+            "chat_id": chat_id, "latitude": GULISTON_STUDIO_LAT, "longitude": GULISTON_STUDIO_LON,
+        })
         response_text = (
             f"📍 <b>Guliston 3D Studio & AR Center</b>\n"
             f"🏢 <b>Manzil:</b> Guliston shahar, Sayxun ko'chasi 14-uy\n"
@@ -676,10 +659,11 @@ def handle_webhook(update):
 
 def set_chat_menu_button(chat_id=None, base_url=None):
     """Telegram botning pastki chap burchagidagi doimiy Mini App (TMA) tugmasini o'rnatish."""
-    if not TELEGRAM_BOT_TOKEN:
+    if not telegram_client.get_token():
         return {'success': False, 'error': 'Bot token topilmadi'}
     if not base_url:
-        from django.conf import settings
+        base_url = getattr(settings, 'RESTAURANT_PUBLIC_URL', '')
+    if not base_url:
         domain = getattr(settings, 'PUBLIC_DOMAIN', '127.0.0.1:8000')
         scheme = 'http' if '127.0.0.1' in domain or 'localhost' in domain else 'https'
         base_url = f"{scheme}://{domain}"
@@ -696,14 +680,5 @@ def set_chat_menu_button(chat_id=None, base_url=None):
     if chat_id:
         payload["chat_id"] = chat_id
 
-    try:
-        resp = httpx.post(
-            f"{TELEGRAM_API_URL}/setChatMenuButton",
-            json=payload,
-            timeout=10,
-        )
-        data = resp.json()
-        return {'success': data.get('ok', False), 'result': data}
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-
+    result = telegram_client.call('setChatMenuButton', payload)
+    return {'success': result.ok, 'error': result.error}

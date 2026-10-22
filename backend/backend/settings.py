@@ -365,6 +365,10 @@ LOGGING = {
     'loggers': {
         'django.request': {'handlers': _log_handlers, 'level': 'WARNING', 'propagate': False},
         'django.security': {'handlers': _log_handlers, 'level': 'WARNING', 'propagate': False},
+        # httpx har so'rovni INFO darajasida to'liq URL bilan yozadi: Telegram URL'ida bot tokeni bor
+        # (…/bot<TOKEN>/sendMessage) — token log fayliga tushib qolardi (R3)
+        'httpx': {'handlers': _log_handlers, 'level': 'WARNING', 'propagate': False},
+        'httpcore': {'handlers': _log_handlers, 'level': 'WARNING', 'propagate': False},
     },
 }
 if RUNNING_TESTS:
@@ -419,6 +423,15 @@ TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 TELEGRAM_ADMIN_CHAT_IDS = os.environ.get('TELEGRAM_ADMIN_CHAT_IDS', '')
 # Webhook secret (bo'sh bo'lsa bot tokeni + SECRET_KEY dan hosil qilinadi — notifications/webhook_security.py)
 TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '')
+# Bot API manzili (bo'sh = rasmiy api.telegram.org). Lokal Bot API serveri yoki soxta server bilan sinash uchun.
+TELEGRAM_API_BASE = os.environ.get('TELEGRAM_API_BASE', '')
+# Bildirishnoma navbatini Celery turtki bilan tezlashtirish (standart: yo'q — `manage.py run_workers` yetarli)
+OUTBOX_USE_CELERY = _env_bool('OUTBOX_USE_CELERY', False)
+# Xodim chatiga yuboriladigan qo'shimcha xabarlar (admin paneldagi AppSetting ustun turadi): holat o'zgarishi,
+# ofitsiant chaqiruvi, taom tayyor. Standart: o'chiq (har qadamda chatni to'ldirib yubormaslik uchun).
+TELEGRAM_NOTIFY_STATUS_CHANGES = _env_bool('TELEGRAM_NOTIFY_STATUS_CHANGES', False)
+TELEGRAM_NOTIFY_SERVICE_CALLS = _env_bool('TELEGRAM_NOTIFY_SERVICE_CALLS', False)
+TELEGRAM_NOTIFY_DISH_READY = _env_bool('TELEGRAM_NOTIFY_DISH_READY', False)
 ADMIN_PANEL_PASSWORD = os.environ.get('ADMIN_PANEL_PASSWORD', '')
 
 # Mahsulot #1: Restoran 3D Menyu & Stollar boti

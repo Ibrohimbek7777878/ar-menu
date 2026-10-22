@@ -76,13 +76,12 @@ def health_check(request):
             'error': str(e),
         }
 
-    # Telegram bot tekshirish
+    # Telegram bot tekshirish (token qismi ham ko'rsatilmaydi: /health/ ochiq)
     try:
-        from notifications.services.telegram_service import TELEGRAM_BOT_TOKEN
-        if TELEGRAM_BOT_TOKEN:
+        from notifications.telegram_client import get_token
+        if get_token():
             health['services']['telegram'] = {
                 'status': 'configured',
-                'bot_token': '***' + TELEGRAM_BOT_TOKEN[-4:] if len(TELEGRAM_BOT_TOKEN) > 4 else '***',
             }
         else:
             health['services']['telegram'] = {
@@ -93,6 +92,20 @@ def health_check(request):
             'status': 'error',
             'error': str(e),
         }
+
+    # Bildirishnoma navbati (outbox): ishchi (manage.py run_workers) ishlamasa eski hodisalar to'planib qoladi
+    try:
+        from notifications.outbox import outbox_stats
+        stats = outbox_stats()
+        stale = stats['oldest_pending_seconds'] is not None and stats['oldest_pending_seconds'] > 120
+        health['services']['outbox'] = {
+            'status': 'warning' if (stale or stats['failed']) else 'healthy',
+            **stats,
+        }
+        if stale:
+            health['services']['outbox']['hint'] = "Navbat to'planmoqda: 'manage.py run_workers' ishlayaptimi?"
+    except Exception as e:
+        health['services']['outbox'] = {'status': 'unknown', 'error': str(e)}
 
     # Sentry tekshirish
     try:
@@ -116,7 +129,6 @@ def health_check(request):
         'name': 'Online Store Guliston',
         'version': '1.0.0',
         'debug': settings.DEBUG,
-        'allowed_hosts': settings.ALLOWED_HOSTS[:5],  # First 5 only
     }
 
     # Overall status

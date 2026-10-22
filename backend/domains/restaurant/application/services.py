@@ -53,10 +53,5 @@ class RestaurantTableApplicationService:
             notes=note,
             status='pending',
         )
-        # Telegram orqali xabarnoma yuborish
-        try:
-            from notifications.telegram_bot import send_waiter_call_notification
-            send_waiter_call_notification(call)
-        except Exception as e:
-            logger.warning(f"Ofitsiant chaqiruvi xabarnomasi yuborilmadi: {e}")
+        # Telegram xabarnomasi ServiceCall post_save signali orqali outbox'ga yoziladi (notifications/signals.py)
         return call

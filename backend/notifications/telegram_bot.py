@@ -28,29 +28,22 @@ def _log(recipient, message, success, error='', msg_type='telegram'):
 
 
 def send_message(chat_id, text, parse_mode='HTML', reply_markup=None):
-    """Bitta Telegram xabari yuborish (reply_markup qo'llab-quvvatlaydi). Muvaffaqiyatli bo'lsa True."""
-    token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
-    if not token:
-        logger.warning('TELEGRAM_BOT_TOKEN o\'rnatilmagan — xabar yuborilmadi.')
+    """Bitta Telegram xabari yuborish (reply_markup qo'llab-quvvatlaydi). Muvaffaqiyatli bo'lsa True.
+
+    Yuborish `telegram_client` orqali: token chaqiruv vaqtida o'qiladi, HTML parse xatosida oddiy matn bilan
+    qayta yuboriladi, xato matniga token qo'shilmaydi.
+    """
+    from . import telegram_client
+    result = telegram_client.send(chat_id, text, parse_mode=parse_mode, reply_markup=reply_markup)
+    if result.skipped:
+        logger.warning("Telegram bot tokeni o'rnatilmagan — xabar yuborilmadi.")
         return False
     if not chat_id:
         return False
-    try:
-        payload = {'chat_id': str(chat_id), 'text': text, 'parse_mode': parse_mode}
-        if reply_markup:
-            payload['reply_markup'] = reply_markup
-        resp = httpx.post(
-            API.format(token=token, method='sendMessage'),
-            json=payload,
-            timeout=10,
-        )
-        ok = resp.status_code == 200 and resp.json().get('ok')
-        _log(chat_id, text, bool(ok), '' if ok else resp.text[:500])
-        return bool(ok)
-    except Exception as e:
-        _log(chat_id, text, False, str(e)[:500])
-        logger.error(f'Telegram yuborish xatosi: {e}')
-        return False
+    _log(chat_id, text, result.ok, '' if result.ok else result.error)
+    if not result.ok:
+        logger.error('Telegram yuborish xatosi (chat=%s): %s', chat_id, result.error)
+    return result.ok
 
 
 def edit_message_text(chat_id, message_id, text, parse_mode='HTML', reply_markup=None):

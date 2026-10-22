@@ -191,3 +191,12 @@ class GuestWriteThrottleTests(TestCase):
             codes = [staff.get('/api/v1/restaurant/orders/').status_code for _ in range(6)]
             codes += [self.call(staff, i).status_code for i in range(4)]
         self.assertNotIn(429, codes)
+
+
+class LogSecretsTests(SimpleTestCase):
+    def test_httpx_request_urls_are_not_logged(self):
+        """Telegram URL'ida bot tokeni bor: httpx INFO jurnali tokenni log fayliga yozib yubormasligi kerak."""
+        import logging
+        from django.conf import settings
+        self.assertIn('httpx', settings.LOGGING['loggers'])
+        self.assertGreaterEqual(logging.getLevelName(settings.LOGGING['loggers']['httpx']['level']), logging.WARNING)

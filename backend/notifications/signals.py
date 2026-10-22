@@ -1,5 +1,9 @@
 """
-Signal: yangi buyurtma → admin Telegram chatlariga xabar.
+Signallar: biznes hodisasi → outbox (TZ: R3-4, R3-5).
+
+Hech qaysi signal so'rov ichida tarmoqqa chiqmaydi: faqat `outbox_events` jadvaliga yozadi, yuborishni
+`manage.py run_workers` bajaradi. Bildirishnoma o'zi ham xato bersa, buyurtma yoki chaqiruv yaratilishiga
+xalaqit bermaydi (xato logga yoziladi).
 """
 import logging
 
@@ -7,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from orders.models import Order
+from tables_restaurant.models import ServiceCall
 
 logger = logging.getLogger(__name__)
 
@@ -24,16 +29,25 @@ def notify_admins_new_order(sender, instance, created, **kwargs):
             payload={
                 'order_id': instance.id,
                 'order_number': instance.order_number,
-                'customer_name': instance.customer_name,
-                'total_amount': str(instance.total_amount),
                 'shop_id': instance.shop_id,
             }
         )
-    except Exception as e:
-        # Fallback to direct call agar outbox xato bersa
-        logger.warning(f'Outbox publish failed, fallback to direct notify: {e}')
-        try:
-            from notifications.admin_bot import notify_new_order
-            notify_new_order(instance)
-        except Exception as direct_err:
-            logger.warning(f'Direct admin notification failed: {direct_err}')
+    except Exception:
+        logger.exception("Yangi buyurtma xabarini outbox'ga yozib bo'lmadi (order=%s)", instance.pk)
+
+
+@receiver(post_save, sender=ServiceCall, dispatch_uid='notify_service_call_created')
+def notify_service_call_created(sender, instance, created, **kwargs):
+    """Ofitsiant chaqiruvi / "taom tayyor" → Telegram (admin sozlamasi yoqilgan bo'lsa; qarori ishchida)."""
+    if not created:
+        return
+    try:
+        from notifications.outbox import publish_outbox_event
+        publish_outbox_event(
+            aggregate_type='service_call',
+            aggregate_id=str(instance.id),
+            event_type='service_call.created',
+            payload={'call_id': instance.id, 'call_type': instance.call_type, 'shop_id': instance.shop_id},
+        )
+    except Exception:
+        logger.exception("Chaqiruv xabarini outbox'ga yozib bo'lmadi (call=%s)", instance.pk)

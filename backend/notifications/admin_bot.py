@@ -8,6 +8,7 @@ from django.utils import timezone
 from accounts.models import AdminUser
 from notifications.models import TelegramSubscriber
 from notifications.telegram_bot import send_message, edit_message_text, edit_message_reply_markup, answer_callback_query
+from notifications.telegram_client import esc
 from tables_restaurant.models import Table, NFCCard
 from shops.models import Shop
 from orders.models import Order
@@ -191,7 +192,7 @@ def build_tables_monitoring_text(shop=None):
 
     return (
         f"📊 <b>BUGUNGI STOLLAR HISOBOTI ({today_formatted})</b>\n"
-        f"🏪 Restoran: <b>\"{shop.name}\"</b>\n\n"
+        f"🏪 Restoran: <b>\"{esc(shop.name)}\"</b>\n\n"
         f"🪑 Jami stollar: <b>{total_tables} ta</b>\n"
         f"🟢 Bo'sh stollar: <b>{free_tables} ta</b>\n"
         f"🔴 Band / Bron stollar: <b>{occupied_tables} ta</b>\n\n"
@@ -272,7 +273,7 @@ def build_table_detail_text(table_id):
         items = active_order.items.all()
         if items.exists():
             order_lines = [
-                f"• {it.quantity}x {it.product_name} — {_fmt_sum(it.total)} so'm"
+                f"• {it.quantity}x {esc(it.product_name)} — {_fmt_sum(it.total)} so'm"
                 for it in items
             ]
             items_str = "\n".join(order_lines)
@@ -285,11 +286,11 @@ def build_table_detail_text(table_id):
         total_str = "0 so'm"
         time_str = "Stol hozirda bo'sh" if is_free else "Yangi mehmon o'tirdi"
 
-    hall_name = table.hall.name if table.hall else "Asosiy zal"
+    hall_name = esc(table.hall.name) if table.hall else "Asosiy zal"
 
     return (
         f"📍 <b>STOL № {table.number} TAFSILOTI</b>\n"
-        f"🏪 Restoran: <b>{table.shop.name}</b>\n"
+        f"🏪 Restoran: <b>{esc(table.shop.name)}</b>\n"
         f"🏛 Zal: <b>{hall_name}</b> (sig'imi: {table.capacity} kishi)\n"
         f"Holati: {status_icon} <b>{status_label}</b> ({status_desc})\n"
         f"NFC tekkizishlar soni: <b>{tap_count} marta</b>\n\n"
@@ -374,10 +375,10 @@ def build_recent_orders_text(limit=5):
     lines = ["🧾 <b>So'nggi buyurtmalar</b>\n"]
     for o in orders:
         emoji = STATUS_UZ.get(o.status, ('⚪️ ' + o.status, o.status))[0]
-        table_str = f" | 🪑 Stol #{o.table.number}" if o.table else ""
+        table_str = f" | 🪑 Stol #{esc(o.table.number)}" if o.table else ""
         lines.append(
-            f"{emoji} <b>{o.order_number}</b> — {o.customer_name}{table_str}\n"
-            f"   🏬 {o.shop.name} | 💰 {_fmt_sum(o.final_amount)} so'm\n"
+            f"{emoji} <b>{esc(o.order_number)}</b> — {esc(o.customer_name)}{table_str}\n"
+            f"   🏬 {esc(o.shop.name)} | 💰 {_fmt_sum(o.final_amount)} so'm\n"
             f"   🕒 {timezone.localtime(o.created_at).strftime('%d.%m.%Y %H:%M')}"
         )
     return "\n\n".join(lines)
@@ -386,13 +387,13 @@ def build_recent_orders_text(limit=5):
 def notify_new_order(order):
     """Yangi buyurtma → barcha admin chatlariga xabar."""
     emoji = STATUS_UZ.get(order.status, ('⚪️', order.status))[0]
-    table_str = f"\n🪑 Stol: <b>#{order.table.number}</b>" if order.table else ""
+    table_str = f"\n🪑 Stol: <b>#{esc(order.table.number)}</b>" if order.table else ""
     text = (
         "🔔 <b>Yangi buyurtma!</b>\n\n"
         f"🧾 Raqam: <b>{order.order_number}</b>{table_str}\n"
-        f"👤 Mijoz: {order.customer_name}\n"
-        f"📞 Tel: {getattr(order, 'customer_phone', '') or '-'}\n"
-        f"🏬 Do'kon: {order.shop.name}\n"
+        f"👤 Mijoz: {esc(order.customer_name)}\n"
+        f"📞 Tel: {esc(getattr(order, 'customer_phone_1', '') or '-')}\n"
+        f"🏬 Do'kon: {esc(order.shop.name)}\n"
         f"💰 Summa: <b>{_fmt_sum(order.final_amount)} so'm</b>\n"
         f"{emoji} Holat: {STATUS_UZ.get(order.status, ('-', order.status))[0]}\n\n"
         f"Batafsil ko'rish: /stollar yoki /orders"
@@ -640,7 +641,7 @@ def handle_table_callback(data, chat_id, message_id=None, cq_id=None, username='
                     if order.telegram_chat_id:
                         send_message(
                             order.telegram_chat_id,
-                            f"⚙️ <b>Xushxabar, {order.customer_name}!</b>\n\n"
+                            f"⚙️ <b>Xushxabar, {esc(order.customer_name)}!</b>\n\n"
                             f"Sizning <b>#{order.order_number}</b> raqamli 3D printer buyurtmangiz hozirda usta tomonidan 3D printerda chop etilishni boshladi! 🚀\n\n"
                             f"Tayyor bo'lishi bilan sizga fotosurat va lokatsiya yuboramiz."
                         )

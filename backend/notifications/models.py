@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class NotificationLog(models.Model):
@@ -199,6 +200,10 @@ class OutboxEvent(models.Model):
     error_message = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     processed_at = models.DateTimeField(null=True, blank=True)
+    # Qayta urinish jadvali: xato bo'lsa keyingi urinish shu vaqtdan oldin bo'lmaydi (backoff)
+    next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
+    # 'processing' ga olingan vaqt: ishchi yiqilib qolsa, shu bo'yicha hodisa qayta navbatga qaytariladi
+    locked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'outbox_events'

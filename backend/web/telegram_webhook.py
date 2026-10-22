@@ -5,11 +5,14 @@ TZ: TZ_BOT_VA_STOLLAR_TIZIMI.md
 import json
 import httpx
 
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.conf import settings
 
+from notifications import telegram_client
+from notifications.telegram_client import esc
 from notifications.models import TelegramSubscriber, BotMessage
 from notifications.webhook_security import is_valid_telegram_webhook
 from web.restaurant_auth import restaurant_staff_required
@@ -114,6 +117,11 @@ def _handle_telegram_update(request):
     except json.JSONDecodeError:
         return JsonResponse({'ok': True})
 
+    # Telegram bir xil update'ni qayta yuborishi mumkin (javob sekin bo'lsa): ikki marta bajarilmasin
+    update_id = data.get('update_id')
+    if update_id is not None and not cache.add(f'tg_update:restaurant:{update_id}', 1, 3600):
+        return JsonResponse({'ok': True, 'duplicate': True})
+
     callback_query = data.get('callback_query')
     if callback_query:
         cq_id = callback_query.get('id')
@@ -139,14 +147,7 @@ def _handle_telegram_update(request):
         if handle_table_callback(cq_data, chat_id, message_id=message_id, cq_id=cq_id, username=username):
             return JsonResponse({'ok': True})
 
-        try:
-            httpx.post(
-                f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/answerCallbackQuery",
-                json={"callback_query_id": cq_id},
-                timeout=5,
-            )
-        except Exception:
-            pass
+        telegram_client.call('answerCallbackQuery', {"callback_query_id": cq_id})
         return JsonResponse({'ok': True})
 
     message = data.get('message') or data.get('channel_post') or {}
@@ -218,7 +219,7 @@ def _handle_telegram_update(request):
     if text_clean.startswith('/start') or text_clean in ('/menu', 'menu', 'menyu', 'Menyu', 'boshlash', 'start'):
         if table_num:
             welcome = (
-                f"Assalomu alaykum, <b>{first_name or 'aziz mehmon'}</b>! 👋\n\n"
+                f"Assalomu alaykum, <b>{esc(first_name or 'aziz mehmon')}</b>! 👋\n\n"
                 f"🍽 Siz <b>Stol №{table_num}</b> ga muvaffaqiyatli ulandingiz!\n\n"
                 f"Restoranimizning interaktiv 3D AR menyusi orqali:\n"
                 f"• Mazali taomlarimizni 3D holda stolingiz ustida ko'rishingiz\n"
@@ -228,7 +229,7 @@ def _handle_telegram_update(request):
             )
         else:
             welcome = (
-                f"Assalomu alaykum, <b>{first_name or 'aziz mehmon'}</b>! 👋\n\n"
+                f"Assalomu alaykum, <b>{esc(first_name or 'aziz mehmon')}</b>! 👋\n\n"
                 f"🍽 Restoranimizning <b>3D AR interaktiv menyusi</b>ga xush kelibsiz!\n\n"
                 f"Telefoningiz orqali:\n"
                 f"• Mazali taomlarimizni 3D holda stolingiz ustida ko'rishingiz\n"
@@ -242,7 +243,7 @@ def _handle_telegram_update(request):
 
     elif text_clean == '/id':
         admin_flag = " (Admin / Biznes egasi ✅)" if is_user_admin else ""
-        resp_id = f"Sizning Chat ID: <code>{chat_id}</code>\nUsername: @{username}{admin_flag}"
+        resp_id = f"Sizning Chat ID: <code>{chat_id}</code>\nUsername: @{esc(username)}{admin_flag}"
         send_message(chat_id, resp_id)
         bot_msg.response = resp_id
         bot_msg.save(update_fields=['response'])
@@ -315,7 +316,7 @@ def _handle_telegram_update(request):
         rest_btn = {"web_app": {"url": f"{base_url}/restaurant/"}} if is_https else {"url": f"{base_url}/restaurant/"}
         response_text = (
             f"🖨 <b>3D Printer va 3D Modellashtirish Studiyasi</b>\n\n"
-            f"Salom, <b>{first_name or 'hurmatli mijoz'}</b>! Bizning 3D studiyamiz orqali siz:\n"
+            f"Salom, <b>{esc(first_name or 'hurmatli mijoz')}</b>! Bizning 3D studiyamiz orqali siz:\n"
             f"• Tayyor 3D modellarni ko'rishingiz va yuklab olishingiz\n"
             f"• O'zingiz xohlagan detallar yoki suvenirlarni 3D printerda buyurtma qilishingiz\n"
             f"• Yuqori aniqlikdagi PLA / PETG materiallaridan foydalanishingiz mumkin.\n\n"
@@ -338,7 +339,7 @@ def _handle_telegram_update(request):
         rest_btn = {"web_app": {"url": f"{base_url}/restaurant/"}} if is_https else {"url": f"{base_url}/restaurant/"}
         response_text = (
             f"🛍 <b>Online Do'kon (Marketplace)</b>\n\n"
-            f"Salom, <b>{first_name or 'hurmatli mijoz'}</b>! Bizning onlayn savdo maydonchamiz orqali:\n"
+            f"Salom, <b>{esc(first_name or 'hurmatli mijoz')}</b>! Bizning onlayn savdo maydonchamiz orqali:\n"
             f"• Oziq-ovqat, maishiy va kundalik mahsulotlarni xarid qilishingiz\n"
             f"• Tezkor yetkazib berish xizmatidan foydalanishingiz mumkin.\n\n"
             f"Do'konga o'tish uchun quyidagi tugmani bosing 👇"
@@ -360,7 +361,7 @@ def _handle_telegram_update(request):
         rest_btn = {"web_app": {"url": f"{base_url}/restaurant/"}} if is_https else {"url": f"{base_url}/restaurant/"}
         response_text = (
             f"📍 <b>Restoran Stollari & Bron Qilish</b>\n\n"
-            f"Salom, <b>{first_name or 'hurmatli mehmon'}</b>!\n"
+            f"Salom, <b>{esc(first_name or 'hurmatli mehmon')}</b>!\n"
             f"• Bo'sh stollarni ko'rish va oldindan bron qilish\n"
             f"• Stolingiz hisobini tekshirish va xodimlarni chaqirish uchun quyidagi tugmani bosing 👇"
         )
@@ -376,7 +377,7 @@ def _handle_telegram_update(request):
 
     else:
         reply = (
-            f"Assalomu alaykum, <b>{first_name or 'hurmatli mehmon'}</b>! 😊\n\n"
+            f"Assalomu alaykum, <b>{esc(first_name or 'hurmatli mehmon')}</b>! 😊\n\n"
             f"🍽 Restoranimizning 3D AR menyusidan foydalanish yoki buyurtmalaringizni ko'rish uchun "
             f"quyidagi tugmalardan birini tanlang 👇"
         )
@@ -459,7 +460,7 @@ def market_webhook(request):
     }
 
     resp = (
-        f"Assalomu alaykum, <b>{first_name or 'hurmatli xaridor'}</b>! 👋\n\n"
+        f"Assalomu alaykum, <b>{esc(first_name or 'hurmatli xaridor')}</b>! 👋\n\n"
         f"🛍 <b>Online Store Guliston</b> gipermarketiga xush kelibsiz!\n\n"
         f"Bizning onlayn savdo maydonchamiz orqali:\n"
         f"• Shahringizdagi do'konlardan tovarlarni qulay xarid qilishingiz\n"
@@ -535,7 +536,7 @@ def studio_webhook(request):
     }
 
     reply = (
-        f"Assalomu alaykum, <b>{first_name or 'hurmatli muhandis'}</b>! ⚙️\n\n"
+        f"Assalomu alaykum, <b>{esc(first_name or 'hurmatli muhandis')}</b>! ⚙️\n\n"
         f"🖨 <b>3D Printing & Prototyping Studio</b>ga xush kelibsiz!\n\n"
         f"Xizmatlarimiz:\n"
         f"• Talab bo'yicha ehtiyot qismlar, maketlar va suvenirlar chop etish\n"

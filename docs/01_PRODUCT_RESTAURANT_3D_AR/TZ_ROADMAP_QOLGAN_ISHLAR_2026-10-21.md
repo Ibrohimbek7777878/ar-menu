@@ -171,6 +171,23 @@ Hozir backend `AdminUser.role`da faqat `waiter` bor; oshpaz va hostess rollari y
 | R3-6 | Havolalar `127.0.0.1:8000` emas, `RESTAURANT_PUBLIC_URL`dan; `update_id` takrorlanishi (dedupe); `/kassa` do'konga bog'langan; vaqtlar mahalliy | `telegram_service.py:66,171`, `admin_bot.py` | Test |
 | R3-7 | Bitta `run_workers` buyrug'i (3D + outbox); `start_local.sh` shuni ishga tushiradi | | Bir buyruq — hamma ishchi |
 
+**R3 holati (2026-10-22): R3-1…R3-7 bajarildi.** 270 ta test yashil (`.env` bilan ham, `.env`siz ham), `check --deploy` 0 muammo, migratsiya farqi yo'q. Haqiqiy brauzer + soxta Telegram serveri bilan e2e: checkout ~0.8 s va Telegram bilan umuman bog'liq emas; xabar fon ishchi orqali 2 soniya ichida yetadi; Telegram o'chiq bo'lsa buyurtma baribir qabul qilinadi, hodisa 15 s → 1 daq → 5 daq → 15 daq → 30 daq kechikish bilan qayta uriniladi va Telegram qaytgach yetkaziladi; ismdagi `<b>…</b> & …` to'g'ri escape qilinadi.
+
+Nima o'zgardi (egasi bilishi shart):
+- **Fon ishchi majburiy:** bildirishnomalar endi `python manage.py run_workers` orqali yuboriladi (u 3D ishchini ham o'z ichiga oladi; `start_local.sh` shuni ishga tushiradi). Ishchi ishlamasa xabarlar yuborilmaydi, balki navbatda turadi: `/health/` → `services.outbox` (`warning` + maslahat), `python manage.py outbox_status [--retry-failed]`. Production'da (R9) systemd/docker xizmati sifatida yuritiladi.
+- Buyurtma xabari **bitta** (avval ikki marta kelishi mumkin edi: umumiy admin chatiga va restoran chatiga) va faqat shu restoranning chatlariga ketadi.
+- Xodim chatiga qo'shimcha xabarlar standart **o'chiq**: holat o'zgarishi, ofitsiant chaqiruvi, "taom tayyor". Yoqish: admin paneldagi `AppSetting` kalitlari `telegram_notify_status_changes`, `telegram_notify_service_calls`, `telegram_notify_dish_ready` = `true` (yoki `.env` da `TELEGRAM_NOTIFY_*`). Mijoz o'zi Telegram orqali kirgan bo'lsa (R1-11, tasdiqlangan) unga holat xabarlari boradi.
+- Bot buyruqlari: `/order <raqam>` endi faqat buyurtma egasi yoki admin uchun (avval raqamni taxmin qilgan har kim ism va summani ko'rardi); `/kassa` faqat adminlar uchun va aniq restoran bo'yicha (avval istalgan Telegram foydalanuvchiga "birinchi do'kon" kassasi ko'rsatilardi).
+- Xabardagi havola `RESTAURANT_PUBLIC_URL` dan; sozlanmagan bo'lsa havola qo'shilmaydi (avval `127.0.0.1:8000`).
+- `httpx` jurnali o'chirildi (INFO darajasida Telegram URL'i, ya'ni bot tokeni log faylga yozilardi); `/health/` bot tokeni oxirgi 4 belgisini va `allowed_hosts` ni ko'rsatmaydi.
+
+R3 davomida topilgan, hali tuzatilmagan:
+| # | Topilma | Bosqich |
+|---|---|---|
+| F8 | Boshqa mahsulotlarning jo'natuvchilari (`notifications/bots.py: send_bot_message`, `print3d_notification_service`) hali eski usulda: escape yo'q, xato turi ajratilmaydi, sinxron. Restoran oqimiga tegmaydi | R10 |
+| F9 | `reservation_created` hodisasi payload'ida mijoz ismi saqlanadi (`orders/application/services.py`); qolgan hodisalarda faqat ID | R4 |
+| F10 | Webhook dedupe `cache.add` ga tayanadi: bir nechta server jarayonida umumiy kesh (Redis yoki fayl) kerak — R9 da tekshiriladi | R9 |
+
 ### R4 — Bron va hostess 🟢 (M)
 
 | ID | Ish | Qabul |

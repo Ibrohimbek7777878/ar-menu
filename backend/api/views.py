@@ -726,12 +726,7 @@ def api_order_create(request):
         customer.last_order_at = timezone.now()
         customer.save()
 
-    # Telegram
-    try:
-        from notifications.services.telegram_service import send_order_created
-        send_order_created(order)
-    except Exception:
-        pass
+    # Telegram xabarnoma Order post_save signali orqali outbox'ga yoziladi (so'rov ichida yuborilmaydi)
 
     # Savatni tozalash
     if 'cart' in request.session:

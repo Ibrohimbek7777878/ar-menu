@@ -122,8 +122,8 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
         changed_by=actor if isinstance(actor, AdminUser) else None,
     )
 
-    # Telegram xabar yuborish
-    _send_notification(order, new_status)
+    # Telegram xabar: outbox hodisasi (yuborishni fon ishchisi bajaradi)
+    _send_notification(order, new_status, old_status)
 
     msg = f"Buyurtma #{order.order_number} holati: {ORDER_STATES[new_status]['label']}"
     if request:
@@ -156,20 +156,18 @@ def _restore_stock(order):
             pass
 
 
-def _send_notification(order, status):
-    """Telegram xabar yuborish."""
+def _send_notification(order, status, old_status=None):
+    """Holat o'zgarishi haqidagi Telegram xabarini outbox'ga yozadi (so'rovda tarmoqqa chiqilmaydi)."""
     try:
-        from notifications.services.telegram_service import (
-            send_order_created,
-            send_status_updated,
-            send_order_delivered,
+        from notifications.outbox import publish_outbox_event
+        publish_outbox_event(
+            aggregate_type='order',
+            aggregate_id=str(order.pk),
+            event_type='order.status_changed',
+            payload={'order_id': order.pk, 'old_status': old_status, 'new_status': status},
         )
-        if status == 'delivered':
-            send_order_delivered(order)
-        else:
-            send_status_updated(order)
     except Exception:
-        pass
+        logger.exception("Holat xabarini outbox'ga yozib bo'lmadi (order=%s)", order.pk)
 
 
 def get_order_timeline(order):

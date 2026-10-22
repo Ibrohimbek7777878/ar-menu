@@ -17,7 +17,6 @@ from shops.models import Shop
 from orders.models import Order, OrderItem, OrderStatusHistory
 from accounts.models import Customer
 from payments.payment_service import create_order_payment
-from notifications.services.telegram_service import send_order_created
 from notifications.admin_bot import get_restaurant_shop
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
@@ -630,11 +629,8 @@ def tma_checkout(request):
             order=order, status='pending', note='Telegram Mini App orqali buyurtma berildi'
         )
 
-        # Telegram xabarnoma
-        try:
-            send_order_created(order)
-        except Exception:
-            pass
+        # Telegram xabarnoma so'rov ichida yuborilmaydi: Order post_save signali outbox hodisasini yozadi,
+        # yuborishni fon ishchisi bajaradi (notifications/signals.py, outbox.py)
 
         # Savatni tozalash
         request.session['cart'] = {}

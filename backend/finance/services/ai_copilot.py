@@ -72,9 +72,9 @@ def process_finance_ai_query(shop, raw_text, user=None):
     categories = list(FinanceCategory.objects.filter(shop=shop))
     
     # Try Gemini API if available
+    from ai.gemini_client import ask_gemini_json, CloudAINotConfigured
     gemini_result = None
     try:
-        from ai.gemini_client import ask_gemini_json
         prompt = f"""
         Sen O'zbekiston kafelari, to'yxonalari va restoranlari uchun aqlli moliya buxgalterisan.
         Foydalanuvchi kundalik kassa, tushum va xarajatlarini oddiy o'zbek tilida yozgan:
@@ -108,6 +108,8 @@ def process_finance_ai_query(shop, raw_text, user=None):
         res = ask_gemini_json(prompt)
         if isinstance(res, dict) and 'transactions' in res:
             gemini_result = res
+    except CloudAINotConfigured as e:
+        logger.info("Moliya tahlili: bulut AI ulanmagan, lokal qoidalar ishlatiladi (%s)", e)
     except Exception as e:
         logger.warning(f"Gemini finance parsing fallback to local: {e}")
 
