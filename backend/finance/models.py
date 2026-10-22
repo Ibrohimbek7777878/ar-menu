@@ -1,4 +1,5 @@
 from django.db import models
+from backend.softdelete import SoftDeleteModel
 from django.utils import timezone
 from django.conf import settings
 
@@ -74,6 +75,7 @@ class FinanceTransaction(models.Model):
         verbose_name_plural = 'Moliya operatsiyalari'
         ordering = ['-tx_date', '-created_at']
         constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='finance_tx_amount_positive'),
             # Bitta buyurtma uchun bitta faol kirim — daromad ikki marta hisoblanmasligi uchun (TZ R-FIN-02)
             models.UniqueConstraint(
                 fields=['order'],
@@ -130,7 +132,7 @@ class FinanceMovementHistory(models.Model):
         return f"TX #{self.transaction_id}: {self.from_stage} -> {self.to_stage} ({self.moved_at.strftime('%d.%m.%Y %H:%M')})"
 
 
-class DebtRecord(models.Model):
+class DebtRecord(SoftDeleteModel):
     DEBT_TYPE_CHOICES = [
         ('customer', 'Mijoz nasiyasi (Bizga beradi)'),
         ('supplier', 'Yetkazib beruvchi qarzi (Biz beramiz)'),
@@ -158,6 +160,12 @@ class DebtRecord(models.Model):
         verbose_name = 'Qarz / Nasiya yozuvi'
         verbose_name_plural = 'Qarz / Nasiya daftari'
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='debt_amount_positive'),
+            models.CheckConstraint(
+                condition=models.Q(paid_amount__gte=0, paid_amount__lte=models.F('amount')),
+                name='debt_paid_within_amount'),
+        ]
 
     @property
     def remaining_amount(self):

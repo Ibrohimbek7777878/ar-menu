@@ -1,4 +1,5 @@
 from django.db import models
+from backend.softdelete import SoftDeleteAllManager, SoftDeleteBehaviour, SoftDeleteManager
 
 # Import from separate modules
 from orders.inventory import StockReservation
@@ -8,7 +9,10 @@ from orders.audit import AuditLog
 from orders.coupons import Coupon
 
 
-class Order(models.Model):
+class Order(SoftDeleteBehaviour, models.Model):
+    objects = SoftDeleteManager()                 # o'chirilganlarni ko'rsatmaydi; delete() yozuvni yashiradi (backend/softdelete.py)
+    all_objects = SoftDeleteAllManager()          # admin / tiklash / slug bandligini tekshirish uchun: hammasi
+
     STATUS_CHOICES = [
         ('pending', 'Kutilmoqda'),
         ('confirmed', 'Tasdiqlangan'),
@@ -92,6 +96,12 @@ class Order(models.Model):
             models.Index(fields=['status', '-created_at'], name='orders_stat_cr_idx'),
             models.Index(fields=['is_deleted', '-created_at'], name='orders_del_cr_idx'),
         ]
+        constraints = [
+            # Pul maydonlari manfiy bo'lmaydi (TZ: R10-7): xato hisob-kitob bazaga tushmasin
+            models.CheckConstraint(
+                condition=models.Q(total_amount__gte=0, final_amount__gte=0, discount_amount__gte=0, delivery_fee__gte=0),
+                name='order_amounts_non_negative'),
+        ]
 
     def __str__(self):
         return f'{self.order_number} — {self.customer_name}'
@@ -150,6 +160,10 @@ class OrderItem(models.Model):
         indexes = [
             models.Index(fields=['order', 'course'], name='item_ord_crs_idx'),
             models.Index(fields=['order', 'is_done'], name='item_ord_done_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(quantity__gt=0), name='order_item_quantity_positive'),
+            models.CheckConstraint(condition=models.Q(price__gte=0, total__gte=0), name='order_item_amounts_non_negative'),
         ]
 
     @property

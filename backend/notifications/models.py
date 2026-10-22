@@ -1,4 +1,5 @@
 from django.db import models
+from backend.softdelete import SoftDeleteModel
 from django.utils import timezone
 
 
@@ -97,7 +98,7 @@ class Promotion(models.Model):
         return True
 
 
-class Review(models.Model):
+class Review(SoftDeleteModel):
     product = models.ForeignKey(
         'products.Product', on_delete=models.CASCADE, related_name='reviews'
     )

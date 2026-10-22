@@ -55,6 +55,9 @@ class Payment(models.Model):
         ordering = ['-created_at']
         verbose_name = "To'lov"
         verbose_name_plural = "To'lovlar"
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gte=0), name='payment_amount_non_negative'),
+        ]
 
     def __str__(self):
         return f'{self.merchant_transaction_id} — {self.provider} — {self.amount} {self.currency}'

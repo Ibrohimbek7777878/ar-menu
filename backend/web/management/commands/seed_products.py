@@ -262,7 +262,7 @@ class Command(BaseCommand):
 
             for i, (name, price, desc, cal) in enumerate(products_list):
                 slug = slugify(f'{name}-{cat_name}-{i}', allow_unicode=True)
-                if Product.objects.filter(slug=slug).exists():
+                if Product.all_objects.filter(slug=slug).exists():
                     slug = slugify(f'{name}-{cat_name}-{i}-{random.randint(100,999)}', allow_unicode=True)
 
                 if Product.objects.filter(name=name, category=category).exists():

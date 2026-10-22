@@ -1,4 +1,5 @@
 from django.contrib import admin
+from backend.softdelete import SoftDeleteAdminMixin
 from .models import FinanceCategory, FinanceTransaction, DebtRecord
 
 @admin.register(FinanceCategory)
@@ -14,7 +15,7 @@ class FinanceTransactionAdmin(admin.ModelAdmin):
     search_fields = ['title', 'notes', 'shop__name']
 
 @admin.register(DebtRecord)
-class DebtRecordAdmin(admin.ModelAdmin):
+class DebtRecordAdmin(SoftDeleteAdminMixin, admin.ModelAdmin):
     list_display = ['id', 'person_name', 'shop', 'debt_type', 'amount', 'paid_amount', 'status', 'due_date']
     list_filter = ['debt_type', 'status']
     search_fields = ['person_name', 'phone', 'notes']

@@ -1229,7 +1229,7 @@ def api_shop_import_products(request, shop_id):
             import uuid as _uuid
             base_slug = slugify(p.name, allow_unicode=True) or f"product-{p.id}"
             new_slug = f"{base_slug}-{target.id}-{str(_uuid.uuid4())[:6]}"
-            while Product.objects.filter(slug=new_slug).exists():
+            while Product.all_objects.filter(slug=new_slug).exists():
                 new_slug = f"{base_slug}-{target.id}-{str(_uuid.uuid4())[:6]}"
             # Clone
             p.pk = None

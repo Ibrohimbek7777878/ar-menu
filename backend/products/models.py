@@ -1,4 +1,5 @@
 from django.db import models
+from backend.softdelete import SoftDeleteAllManager, SoftDeleteBehaviour, SoftDeleteManager
 
 
 PRODUCT_DESIGN_TEMPLATES = [
@@ -11,7 +12,11 @@ PRODUCT_DESIGN_TEMPLATES = [
 ]
 
 
-class Product(models.Model):
+class Product(SoftDeleteBehaviour, models.Model):
+    objects = SoftDeleteManager()                 # o'chirilganlarni ko'rsatmaydi; delete() yozuvni yashiradi (backend/softdelete.py)
+    all_objects = SoftDeleteAllManager()          # admin / tiklash / slug bandligini tekshirish uchun: hammasi
+    soft_delete_extra = {'is_available': False}
+
     shop = models.ForeignKey(
         'shops.Shop', on_delete=models.PROTECT, related_name='products'
     )
@@ -131,16 +136,37 @@ class Product(models.Model):
                 condition=models.Q(stock__gte=0),
                 name='product_stock_non_negative'
             ),
+            models.CheckConstraint(condition=models.Q(price__gte=0), name='product_price_non_negative'),
         ]
 
     def __str__(self):
         return f'{self.name} — {self.shop.name}'
 
+    SLUG_BASE_LENGTH = 40          # SlugField(50): "-N" qo'shimchasi sig'ishi uchun
+
     def save(self, *args, **kwargs):
-        if not self.slug:
-            from django.utils.text import slugify
-            self.slug = slugify(self.name, allow_unicode=True)
+        if not self.slug or self._state.adding:
+            self.slug = self._unique_slug()
         super().save(*args, **kwargs)
+
+    def _unique_slug(self):
+        """
+        Slug butun jadval bo'yicha noyob (URL'larda ishlatiladi). Ikkinchi "Plov" (boshqa restoranda ham) 500 bermaydi:
+        "plov", "plov-2", ... O'chirilgan (yashirilgan) mahsulotlar ham band hisoblanadi — `all_objects`.
+        50 belgidan uzun nom PostgreSQL'da DataError berardi (SQLite sezmaydi) — qirqiladi.
+        """
+        import uuid
+        from django.utils.text import slugify
+        taken = Product.all_objects.exclude(pk=self.pk) if self.pk else Product.all_objects.all()
+        if self.slug and len(self.slug) <= 50 and not taken.filter(slug=self.slug).exists():
+            return self.slug                       # aniq berilgan va bo'sh slug o'zgarmaydi
+        base = (slugify(self.slug or self.name, allow_unicode=True) or 'taom')[:self.SLUG_BASE_LENGTH].strip('-') or 'taom'
+        candidate = base
+        for number in range(2, 12):
+            if not taken.filter(slug=candidate).exists():
+                return candidate
+            candidate = f'{base}-{number}'
+        return f'{base}-{uuid.uuid4().hex[:6]}'
 
     @property
     def has_discount(self):

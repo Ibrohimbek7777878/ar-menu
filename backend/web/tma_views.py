@@ -470,7 +470,7 @@ def tma_checkout(request):
             # Faqat mavjud, arxivlanmagan taom (avval o'chirilgan taom ham buyurtmaga tushardi)
             p = Product.objects.filter(id=p_id, is_available=True, is_deleted=False).first()
             if not p:
-                gone = Product.objects.filter(id=p_id).values_list('name', flat=True).first()
+                gone = Product.all_objects.filter(id=p_id).values_list('name', flat=True).first()
                 sold_out.append((s_id, p_id, gone or 'Taom'))
             if p:
                 price = p.effective_price if getattr(p, 'flash_active', False) else p.price

@@ -47,9 +47,12 @@
                     </td>
                     <td class="text-gray-500">{{ review.created_at|date:"d.m.Y" }}</td>
                     <td class="!text-right">
-                        <a href="{% url 'admin_review_delete' review.pk %}" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition inline-grid" title="O'chirish" onclick="return confirm('Sharhni o\'chirishni tasdiqlaysizmi?')">
-                            <span class="material-icons-outlined !text-lg">delete</span>
-                        </a>
+                        <form method="post" action="{% url 'admin_review_delete' review.pk %}" class="inline-block" onsubmit="return confirm('Sharhni o\'chirishni tasdiqlaysizmi?')">
+                            {% csrf_token %}
+                            <button type="submit" class="grid size-8 place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition inline-grid" title="O'chirish">
+                                <span class="material-icons-outlined !text-lg">delete</span>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 {% empty %}

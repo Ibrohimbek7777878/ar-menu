@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from backend.softdelete import SoftDeleteAllManager, SoftDeleteBehaviour, SoftDeleteManager
 
 class Hall(models.Model):
     shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, related_name='halls')
@@ -18,7 +19,10 @@ class Hall(models.Model):
         return f"{self.name} ({self.shop.name})"
 
 
-class Table(models.Model):
+class Table(SoftDeleteBehaviour, models.Model):
+    objects = SoftDeleteManager()                 # o'chirilganlarni ko'rsatmaydi; delete() yozuvni yashiradi (backend/softdelete.py)
+    all_objects = SoftDeleteAllManager()          # admin / tiklash / slug bandligini tekshirish uchun: hammasi
+
     STATUS = [('free','Bo\'sh'),('occupied','Band'),('ordering','Buyurtma'),('waiting','Kutmoqda'),('ready','Tayyor'),('bill','Hisob'),('cleaning','Tozalanmoqda')]
     hall = models.ForeignKey(Hall, on_delete=models.CASCADE, related_name='tables')
     shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, db_index=True, related_name='restaurant_tables')
@@ -165,7 +169,7 @@ def generate_reservation_code():
     return 'GS-' + ''.join(secrets.choice(_CODE_ALPHABET) for _ in range(5))
 
 
-class TableReservation(models.Model):
+class TableReservation(SoftDeleteBehaviour, models.Model):
     """
     Restoran stollarini oldindan yoki joyida bron qilish (Reservation) tizimi.
     Mijoz: Sana, vaqt, mehmonlar soni, maxsus istaklar bilan stolni band qiladi.
@@ -174,6 +178,9 @@ class TableReservation(models.Model):
     Holatlar (yagona ro'yxat, frontend bilan bir xil): pending → confirmed → arrived → seated → completed;
     pending/confirmed/arrived → cancelled. O'tishlar tables_restaurant/reservations.py da tekshiriladi.
     """
+    objects = SoftDeleteManager()                 # o'chirilganlarni ko'rsatmaydi; delete() yozuvni yashiradi (backend/softdelete.py)
+    all_objects = SoftDeleteAllManager()          # admin / tiklash / slug bandligini tekshirish uchun: hammasi
+
     STATUS_CHOICES = [
         ('pending', 'Kutilmoqda'),
         ('confirmed', 'Tasdiqlangan'),

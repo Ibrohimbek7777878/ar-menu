@@ -83,7 +83,7 @@ def api_agro_apply_starter_pack(request):
             mp = item.master_product
             base_slug = slugify(mp.name, allow_unicode=True) or f"agro-{mp.id}"
             new_slug = f"{base_slug}-{shop.id}-{str(uuid.uuid4())[:6]}"
-            while Product.objects.filter(slug=new_slug).exists():
+            while Product.all_objects.filter(slug=new_slug).exists():
                 new_slug = f"{base_slug}-{shop.id}-{str(uuid.uuid4())[:6]}"
 
             Product.objects.create(
@@ -170,7 +170,7 @@ def api_agro_claim_product(request):
 
     base_slug = slugify(mp.name, allow_unicode=True) or f"agro-{mp.id}"
     new_slug = f"{base_slug}-{shop.id}-{str(uuid.uuid4())[:6]}"
-    while Product.objects.filter(slug=new_slug).exists():
+    while Product.all_objects.filter(slug=new_slug).exists():
         new_slug = f"{base_slug}-{shop.id}-{str(uuid.uuid4())[:6]}"
 
     product = Product.objects.create(
@@ -265,7 +265,7 @@ def api_agro_bulk_grid_save(request):
 
             base_slug = slugify(name, allow_unicode=True) or "product"
             new_slug = f"{base_slug}-{shop.id}-{str(uuid.uuid4())[:6]}"
-            while Product.objects.filter(slug=new_slug).exists():
+            while Product.all_objects.filter(slug=new_slug).exists():
                 new_slug = f"{base_slug}-{shop.id}-{str(uuid.uuid4())[:6]}"
 
             Product.objects.create(

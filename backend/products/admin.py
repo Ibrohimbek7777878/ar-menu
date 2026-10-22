@@ -1,4 +1,5 @@
 from django.contrib import admin
+from backend.softdelete import SoftDeleteAdminMixin
 from .models import Product, ThreeDAsset, ProductBundle
 
 
@@ -16,7 +17,7 @@ class ThreeDAssetInline(admin.StackedInline):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(SoftDeleteAdminMixin, admin.ModelAdmin):
     list_display = [
         'name', 'shop', 'price', 'old_price', 'unit',
         'category', 'design_template', 'is_available', 'stock', 'is_featured',

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from backend.softdelete import SoftDeleteAdminMixin
 from django.utils.html import format_html
 from django.urls import reverse
 from .models import Order, OrderItem, OrderStatusHistory, Coupon
@@ -20,7 +21,7 @@ class OrderStatusHistoryInline(admin.TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(SoftDeleteAdminMixin, admin.ModelAdmin):
     list_display = [
         'order_number', 'customer_name', 'shop', 'final_amount',
         'status', 'is_pickup', 'courier', 'created_at'

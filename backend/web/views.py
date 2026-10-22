@@ -8,6 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Sum, Count, Q, Avg, F
@@ -1353,7 +1354,7 @@ def admin_product_create(request):
             messages.error(request, 'Do\'konni tanlang')
         elif not product.name:
             messages.error(request, 'Mahsulot nomini kiriting')
-        elif Product.objects.filter(slug=product.slug).exists():
+        elif Product.all_objects.filter(slug=product.slug).exists():
             messages.error(request, 'Bunday nomli mahsulot allaqachon mavjud')
         else:
             product.save()
@@ -1518,8 +1519,8 @@ def admin_ar(request):
 
         elif action == 'delete_library_model':
             lib_id = request.POST.get('library_id')
-            ProductLibrary.objects.filter(pk=lib_id).delete()
-            messages.success(request, "3D model kutubxonadan o'chirildi.")
+            ProductLibrary.objects.filter(pk=lib_id).update(is_active=False)      # yashiriladi, fayl va bog'lanishlar saqlanadi
+            messages.success(request, "3D model kutubxonadan olib tashlandi (yashirildi).")
 
         return redirect('admin_ar')
 
@@ -1883,7 +1884,9 @@ def admin_reviews(request):
 
 
 @login_required(login_url='web_login')
+@require_POST
 def admin_review_delete(request, pk):
+    # GET bilan o'chirish CSRF'ga ochiq edi (boshqa saytdagi <img src> ham sharhni o'chirardi); endi POST + yashirish
     review = get_object_or_404(Review, pk=pk)
     review.delete()
     messages.success(request, 'Sharh o\'chirildi')

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from backend.softdelete import SoftDeleteAdminMixin
 from .models import NotificationLog, Banner, Promotion, Review, AppSetting
 
 
@@ -24,7 +25,7 @@ class PromotionAdmin(admin.ModelAdmin):
 
 
 @admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
+class ReviewAdmin(SoftDeleteAdminMixin, admin.ModelAdmin):
     list_display = ['product', 'customer', 'rating', 'created_at']
     list_filter = ['rating']
 
