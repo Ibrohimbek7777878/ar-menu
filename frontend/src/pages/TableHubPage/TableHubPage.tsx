@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
+import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { useNavigation } from '../../context/NavigationContext';
 import './TableHubPage.css';
 
@@ -74,14 +75,44 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
   const [toastIcon, setToastIcon] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
-  const showToast = (msg: string, icon = '') => {
+  const showToast = (msg: string, icon = '', durationMs = 2400) => {
     setToastMsg(msg);
     setToastIcon(icon);
     setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2400);
+    setTimeout(() => setToastVisible(false), durationMs);
   };
 
-  const handleServiceCall = (serviceName: string) => {
+  // Server bron formasini qayta ishlagach javob xabari (muvaffaqiyat + bron kodi yoki xato sababi) shu yerda ko'rsatiladi.
+  // Avval bu xabar umuman ko'rsatilmasdi: mehmon bron qabul qilinganini ham, kodini ham bilmasdi.
+  useEffect(() => {
+    if (initialData.flashMsg) {
+      setToastMsg(initialData.flashMsg);
+      setToastIcon('');
+      setToastVisible(true);
+      const timer = window.setTimeout(() => setToastVisible(false), 12000);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Haqiqiy chaqiruv yuboriladi (avval faqat "chaqirildi" deb yozilardi, hech narsa yuborilmasdi)
+  const SERVICE_TYPES: Record<string, string> = {
+    Ofitsiant: 'waiter',
+    'Hisob-kitob (chek)': 'bill',
+    'Choy yangilash': 'tea',
+    'Issiq non': 'bread',
+  };
+  const handleServiceCall = async (serviceName: string) => {
+    if (!table?.number) {
+      showToast("Avval stol ustidagi QR kodni skanerlang — shunda ofitsiant qaysi stolga kelishini biladi");
+      return;
+    }
+    const res = await RestaurantAPI.createServiceCall(table.number, SERVICE_TYPES[serviceName] || 'waiter', serviceName);
+    if (!res) {
+      showToast("Chaqiruv yuborilmadi. Aloqani tekshirib qayta urinib ko'ring");
+      return;
+    }
     showToast(`"${serviceName}" chaqirildi. Xizmatchi yaqinlashmoqda.`);
   };
 

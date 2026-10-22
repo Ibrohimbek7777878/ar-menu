@@ -6,10 +6,13 @@ const STORAGE_KEY = 'restaurant_device_grant';
 /** Yo'l qaysi panel rolini talab qiladi (null — mehmon sahifasi). */
 export function roleRequiredForPath(path: string): UserRole | null {
   const clean = path.split('?')[0].split('#')[0];
-  if (clean.includes('/admin') || clean.includes('/finance')) return 'admin';
-  if (clean.includes('/waiter') || clean.includes('/ofitsiant')) return 'waiter';
-  if (clean.includes('/kds') || clean.includes('/kitchen')) return 'kitchen';
-  if (clean.includes('/hostess') || clean.includes('/arrival')) return 'hostess';
+  // Mehmon bron sahifalari (/reservation/arrival, /reservation/find) xodim sahifasi emas
+  if (/^\/(reservation|table|cart|checkout|orders|order)(\/|$)/.test(clean)) return null;
+  const has = (...names: string[]) => new RegExp(`(^|/)(${names.join('|')})(/|$)`).test(clean);
+  if (has('admin', 'finance')) return 'admin';
+  if (has('waiter', 'ofitsiant')) return 'waiter';
+  if (has('kds', 'kitchen')) return 'kitchen';
+  if (has('hostess', 'arrival')) return 'hostess';
   return null;
 }
 

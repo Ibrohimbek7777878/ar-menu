@@ -156,19 +156,33 @@ class NFCCard(models.Model):
         return f"{scheme}://{domain}/m/{self.shop.slug}/?nfc=1"
 
 
+_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'      # 0/O, 1/I/L aralashmasin
+
+
+def generate_reservation_code():
+    """Taxmin qilib bo'lmaydigan bron kodi: GS-K7QX2 (31^5 ≈ 28 mln variant)."""
+    import secrets
+    return 'GS-' + ''.join(secrets.choice(_CODE_ALPHABET) for _ in range(5))
+
+
 class TableReservation(models.Model):
     """
     Restoran stollarini oldindan yoki joyida bron qilish (Reservation) tizimi.
     Mijoz: Sana, vaqt, mehmonlar soni, maxsus istaklar bilan stolni band qiladi.
     Ofitsiant / Admin: Bronni tasdiqlaydi yoki stol biriktiradi.
+
+    Holatlar (yagona ro'yxat, frontend bilan bir xil): pending → confirmed → arrived → seated → completed;
+    pending/confirmed/arrived → cancelled. O'tishlar tables_restaurant/reservations.py da tekshiriladi.
     """
     STATUS_CHOICES = [
         ('pending', 'Kutilmoqda'),
         ('confirmed', 'Tasdiqlangan'),
+        ('arrived', 'Keldi (kutmoqda)'),
         ('seated', 'O\'tirdi (Faol)'),
         ('completed', 'Yakunlangan'),
         ('cancelled', 'Bekor qilingan'),
     ]
+    ACTIVE_STATUSES = ('pending', 'confirmed', 'arrived', 'seated')
 
     shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, related_name='table_reservations')
     table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
@@ -180,6 +194,9 @@ class TableReservation(models.Model):
     reservation_time = models.TimeField(verbose_name="Bron vaqti")
     notes = models.TextField(blank=True, verbose_name="Maxsus istaklar / Izoh")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    public_code = models.CharField(max_length=12, unique=True, default=generate_reservation_code, editable=False,
+                                   verbose_name="Bron kodi")
+    is_walk_in = models.BooleanField(default=False, verbose_name="Jonli kelgan (oldindan bron qilinmagan)")
     is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="O'chirilgan (Soft delete)")
     deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -188,6 +205,7 @@ class TableReservation(models.Model):
     class Meta:
         db_table = 'restaurant_table_reservations'
         ordering = ['-reservation_date', '-reservation_time', '-created_at']
+        indexes = [models.Index(fields=['shop', 'reservation_date', 'status'], name='resv_shop_date_status_idx')]
 
     def __str__(self):
         tbl = f" (Stol #{self.table.number})" if self.table else ""
@@ -195,7 +213,7 @@ class TableReservation(models.Model):
 
     @property
     def code(self):
-        return f"GS-{self.id + 2840}"
+        return self.public_code
 
     @property
     def table_number(self):

@@ -198,6 +198,29 @@ R3 davomida topilgan, hali tuzatilmagan:
 | R4-4 | `ReservationPage`: har tashrifchiga mock "Muhayyo Karimova" ko'rsatilmaydi (`DEMO_MODE`); `form.submit()` PATCH'ni bekor qilmaydi (`await`); kod va telefon birga tekshiriladi | E2E |
 | R4-5 | Bron sanasi o'tmishda bo'lmaydi; `arrival_confirm` `json.dumps(time)` 500 xatosi | Test |
 
+**R4 holati (2026-10-22): R4-1…R4-5 bajarildi.** 311 ta test yashil. Haqiqiy brauzer e2e (baza nusxasi, `DEMO_MODE=False`): mehmon `/table/` formasi orqali bron qiladi va kodini ko'radi; xato sana/telefon aniq xabar beradi; 4 stol band bo'lganda 5-bron "bo'sh stol qolmagan" deydi; hostess `/arrival/desk/` da faqat bugungi faol bronlarni ko'radi → "Kelishdi" → "Joylashtirildi" (stol band) → jonli mehmon qabul qilish; band stolga jonli mehmon rad etiladi; mehmon kod bilan topadi (ism maskalangan) va o'zi kelganini bildiradi (rezerv qilingan stol tasodifiy token orqali ulanadi).
+
+Nima o'zgardi (egasi bilishi shart):
+- **Bron kodi endi taxmin qilinmaydi:** `GS-K7QX2` (avval ketma-ket `GS-2841, GS-2842…` — kodlarni terib begona bronlarning sana/vaqt/stolini yig'ish mumkin edi). Mavjud bronlarga migratsiya yangi kod beradi. Qidiruv tezligi cheklangan (20/daqiqa).
+- Uchta alohida bron yaratish yo'li bitta xizmatga (`tables_restaurant/reservations.py`) birlashtirildi: sana/vaqt/telefon/ism/mehmonlar soni qat'iy tekshiriladi (o'tmish va noto'g'ri format — aniq xato; avval jimgina "bugun 19:00"), bir stolga bir vaqt oralig'ida (standart 120 daqiqa; AppSetting `reservation_slot_minutes`) ikki faol bron mumkin emas, stol berilmasa tizim eng kichik mos bo'sh stolni o'zi tanlaydi, mehmon o'z restoranidan boshqa zalni tanlay olmaydi.
+- Holatlar bitta ro'yxat: `pending → confirmed → arrived → seated → completed`, `cancelled`. Yangi `arrived` ("Keldi") holati: avval frontend `arrived` yuborganda server uni `seated` ga aylantirib stolni band qilib qo'yardi. Noto'g'ri o'tish — 409. "Joylashtirildi" stolni band qiladi, "yakunlandi/bekor" hisobi ochiq bo'lmagan stolni bo'shatadi. Bron kutayotgan bo'sh stol xodim panelida `reserved` ko'rinadi (60 daqiqa oldin).
+- Hostess ekrani haqiqiy ma'lumot bilan ishlaydi: namuna mehmonlar ("Muhayyo Karimova" va b.) va soxta "Registon Zali"/"08-stol" faqat `DEMO_MODE`da; bekor qilingan bron "keldi" bo'lib ko'rinmaydi; jonli mehmon serverda yaratiladi (avval mahalliy ID server ID bilan to'qnashib, begona bronni PATCH qilishi mumkin edi); xato bo'lsa server sababi ko'rsatiladi; "Eslatma" tugmasi endi "SMS yuborildi" deb yolg'on aytmaydi.
+- Mehmon bron sahifasi: begona namuna bron ko'rsatilmaydi; kelishni tasdiqlash serverda bron kodi bilan bajariladi (stol raqamini mehmon o'zi yubormaydi, bron bugungi bo'lishi shart, telefon berilsa mos kelishi shart).
+
+R4 davomida topilgan va **tuzatilgan** oldingi nosozliklar (e2e va testlar ochib berdi):
+- `/table/` (Stol va bron markazi) har so'rovda `NameError: timezone` bilan yiqilardi.
+- Bron formasi (`/table/` POST) CSRF cookie yo'qligi sababli **doim 403** berardi; javob xabari (`flashMsg`) React sahifasida umuman ko'rsatilmasdi — mehmon bron qabul qilinganini ham, kodini ham bilmasdi.
+- "Choy / Non / Ofitsiant / Hisob" tugmalari faqat "chaqirildi" deb yozardi, hech narsa yubormasdi (endi haqiqiy chaqiruv).
+- `App.tsx`: `/ar` tekshiruvi `/arrival/…` va `/reservation/arrival` dan oldin turgani uchun hostess ekrani va mehmon "kelishni tasdiqlash" sahifasi o'rniga AR menyu ochilardi (F1).
+- `/table/` konteksti barcha mehmonlarning so'nggi 10 ta buyurtmasini shablonga uzatardi (olib tashlandi); zal ro'yxatdan tanlash begona restoran zalini qabul qilardi.
+
+R4 davomida topilgan, hali tuzatilmagan:
+| # | Topilma | Bosqich |
+|---|---|---|
+| F11 | Parallel bron testi SQLite'da ishlaydi (yozuv qulfi bilan), lekin qator qulfi (`select_for_update`) va to'qnashuvning DB cheklovi (PostgreSQL `EXCLUDE`) faqat Postgres'da isbotlanadi | R9 / R10 |
+| F12 | Mehmon bronini tasdiqlash/eslatish uchun SMS yo'q (xizmat ulanmagan); mehmon kodni faqat ekranda ko'radi — Telegram orqali yuborish (R1-11 tasdiqlangan ID bilan) keyingi qadam | R5 |
+| F13 | Kelishni tasdiqlash sahifasida kod bilan birga telefon so'rash (qo'shimcha maydon) — ko'rinish o'zgarishi, 🎨 tasdig'i kerak. Hozir kod tasodifiy va qidiruv cheklangan, shuning uchun xavf past | R5 🎨 |
+
 ### R5 — Mehmon va oshxona tajribasi 🟢 + 🎨 (M)
 
 | ID | Ish | UI | Qabul |

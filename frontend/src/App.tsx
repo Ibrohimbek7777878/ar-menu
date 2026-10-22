@@ -55,6 +55,17 @@ const AppContent: React.FC = () => {
     return <AdminDashboardPage initialTab="kds" />;
   }
 
+  // Bron qidirish & Kelishni tasdiqlash (/reservation/arrival yoki /reservation/find).
+  // Hostess va "/ar" tekshiruvlaridan OLDIN turishi shart: "/reservation/arrival" ham "/arrival/" va "/ar" ni o'z ichiga oladi.
+  if (currentPath.includes('/reservation/arrival') || currentPath.includes('/reservation/find')) {
+    return <ReservationPage />;
+  }
+
+  // Hostess / Kutib Olish Paneli — "/ar" tekshiruvidan OLDIN: "/arrival/..." ham "/ar" bilan boshlanadi (/arrival/desk, /arrival/timeline, /arrival/checklist, /hostess)
+  if (currentPath.includes('/arrival/') || currentPath.includes('/hostess')) {
+    return <HostessDeskPage />;
+  }
+
   // Moliya & Kassa Paneli (/finance)
   if (currentPath.includes('/finance')) {
     return <AdminDashboardPage initialTab="finance" />;
@@ -65,19 +76,9 @@ const AppContent: React.FC = () => {
     return <ARMenuPage />;
   }
 
-  // Hostess / Kutib Olish Paneli (/arrival/desk, /arrival/timeline, /arrival/checklist, /hostess)
-  if (currentPath.includes('/arrival/') || currentPath.includes('/hostess')) {
-    return <HostessDeskPage />;
-  }
-
   // Ofitsiant va Xizmat Paneli (/waiter yoki /ofitsiant)
   if (currentPath.includes('/waiter') || currentPath.includes('/ofitsiant')) {
     return <WaiterPanelPage />;
-  }
-
-  // Bron qidirish & Kelishni tasdiqlash (/reservation/arrival yoki /reservation/find)
-  if (currentPath.includes('/reservation/arrival') || currentPath.includes('/reservation/find')) {
-    return <ReservationPage />;
   }
 
   // Stol & Bron Hubi (/table/ yoki /reservation/)

@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { StaffNavHeader, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
+import { roleService } from '../../core/auth/RoleService';
 import './HostessDeskPage.css';
 
 export interface HostessGuest {
@@ -13,7 +14,8 @@ export interface HostessGuest {
   hall: string;
   time: string;
   guests_count: number;
-  status: 'pending' | 'arrived' | 'seated';
+  // Server bilan bir xil ro'yxat (tables_restaurant.TableReservation.STATUS_CHOICES); 'confirmed' ekranda 'pending' kabi
+  status: 'pending' | 'confirmed' | 'arrived' | 'seated';
   notes?: string;
 }
 
@@ -40,7 +42,8 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
 
   const hostessName = initialData.hostess_name || 'Zarina (Hostess)';
 
-  const initialGuests: HostessGuest[] = initialData.guests || [
+  // Namuna mehmonlar faqat DEMO rejimda; production'da ro'yxat serverdan keladi (bo'sh bo'lsa — bo'sh holat)
+  const demoGuests: HostessGuest[] = [
     {
       id: 1,
       code: 'GS-2841',
@@ -89,16 +92,31 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
       status: 'seated',
     },
   ];
+  const initialGuests: HostessGuest[] = initialData.guests ?? (roleService.isDemo() ? demoGuests : []);
+  // Haqiqiy (server) sessiyada hamma amal serverda bajariladi; demoda esa eski lokal xatti-harakat
+  const serverBacked = roleService.hasServerSession();
 
   const [guests, setGuests] = useState<HostessGuest[]>(initialGuests);
 
-  // Jonli backend bronlarini yuklash
-  useEffect(() => {
-    RestaurantAPI.getReservations().then((res) => {
-      if (res?.reservations && res.reservations.length > 0) {
-        setGuests(res.reservations);
-      }
+  // Jonli backend bronlari: ochilganda va har 15 soniyada. Bo'sh ro'yxat ham serverdan qabul qilinadi.
+  const loadGuests = useCallback(() => {
+    return RestaurantAPI.getReservations({ date: 'today', status: 'active' }).then((res) => {
+      if (res && Array.isArray(res.reservations)) setGuests(res.reservations);
     });
+  }, []);
+  useEffect(() => {
+    let active = true;
+    const poll = () => {
+      RestaurantAPI.getReservations({ date: 'today', status: 'active' }).then((res) => {
+        if (active && res && Array.isArray(res.reservations)) setGuests(res.reservations);
+      });
+    };
+    poll();
+    const timer = window.setInterval(poll, 15000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const [activeTab, setActiveTab] = useState<'desk' | 'timeline' | 'checklist'>('desk');
@@ -108,8 +126,8 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestPhone, setNewGuestPhone] = useState('+998 ');
-  const [newGuestTable, setNewGuestTable] = useState('02');
-  const [newGuestHall, setNewGuestHall] = useState('Asosiy Zal');
+  const [newGuestTable, setNewGuestTable] = useState('');
+  const [newGuestHall, setNewGuestHall] = useState('');
   const [newGuestCount, setNewGuestCount] = useState(2);
   const [newGuestNotes, setNewGuestNotes] = useState('');
 
@@ -133,28 +151,43 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
     setTimeout(() => setToastVisible(false), 2400);
   };
 
-  const handleMarkArrived = (id: number) => {
-    setGuests((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, status: 'arrived' } : g))
-    );
-    RestaurantAPI.updateReservationStatus(id, 'arrived');
+  // Server holatini o'zgartiradi; xato bo'lsa serverning aniq xabarini ko'rsatadi va ro'yxatni qayta o'qiydi
+  const changeStatus = async (id: number, status: HostessGuest['status'] | 'completed' | 'cancelled') => {
+    const res = await RestaurantAPI.updateReservationStatus(id, status);
+    if (!res || res.error) {
+      showToast(res?.error || "Server bilan aloqa yo'q — holat o'zgarmadi");
+      void loadGuests();
+      return false;
+    }
+    void loadGuests();
+    return true;
+  };
+
+  const handleMarkArrived = async (id: number) => {
+    if (serverBacked) {
+      if (!(await changeStatus(id, 'arrived'))) return;
+    } else {
+      setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, status: 'arrived' } : g)));
+    }
     showToast('Mehmon yetib kelgani qayd etildi');
   };
 
-  const handleMarkSeated = (id: number) => {
+  const handleMarkSeated = async (id: number) => {
     const targetGuest = guests.find((g) => g.id === id);
+    if (serverBacked) {
+      if (!(await changeStatus(id, 'seated'))) return;
+    } else {
+      setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, status: 'seated' } : g)));
+    }
     if (targetGuest) {
       updateTableStatus(targetGuest.table_number, 'occupied', targetGuest.guests_count);
     }
-    setGuests((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, status: 'seated' } : g))
-    );
-    RestaurantAPI.updateReservationStatus(id, 'seated');
     showToast("Mehmon stolga o'tqazildi va stol band deb belgilandi");
   };
 
   const handleSendReminder = (guest: HostessGuest) => {
-    showToast(`${guest.name}ga eslatma SMS yuborildi`);
+    // SMS xizmati ulanmagan: avval "SMS yuborildi" deb yolg'on aytilardi
+    showToast(`SMS xizmati hali ulanmagan — mehmonga qo'ng'iroq qiling: ${guest.phone}`);
   };
 
   const toggleChecklistItem = (id: number) => {
@@ -163,50 +196,64 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
     );
   };
 
-  const handleSaveNewGuest = (e: React.FormEvent) => {
+  // Modal ro'yxati: stol hali tanlanmagan bo'lsa birinchi bo'sh stol (yoki birinchi stol)
+  const walkInTable = sharedTables.some((t) => String(t.number) === newGuestTable)
+    ? newGuestTable
+    : String((sharedTables.find((t) => t.status === 'free') || sharedTables[0])?.number ?? '');
+  const hallOptions = Array.from(new Set(sharedTables.map((t) => t.hall)));
+
+  const handleSaveNewGuest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGuestName.trim()) {
       showToast('Iltimos, mehmon ismini kiriting');
       return;
     }
+    const phone = newGuestPhone.replace(/\D/g, '').length > 3 ? newGuestPhone.trim() : '';
 
+    if (serverBacked) {
+      // Jonli mehmon: server stolni band qiladi; band stol yoki to'qnashuv bo'lsa aniq xato qaytaradi
+      const saved = await RestaurantAPI.createReservation({
+        customer_name: newGuestName.trim(),
+        customer_phone: phone,
+        table_number: walkInTable,
+        guests_count: newGuestCount,
+        notes: newGuestNotes.trim() || 'Jonli kelgan mehmon (Walk-in)',
+        walk_in: true,
+      });
+      if (!saved || saved.error) {
+        showToast(saved?.error || "Server bilan aloqa yo'q — mehmon qayd etilmadi");
+        return;
+      }
+      setIsAddModalOpen(false);
+      setNewGuestName('');
+      setNewGuestNotes('');
+      updateTableStatus(walkInTable, 'occupied', newGuestCount);
+      void loadGuests();
+      showToast(`${newGuestName.trim()} qabul qilindi va #${walkInTable} stolga biriktirildi`);
+      return;
+    }
+
+    // Demo (serversiz) rejim: lokal ro'yxat
     const newGuest: HostessGuest = {
-      id: guests.length + 1,
+      id: -(guests.length + 1),              // manfiy ID: server ID bilan hech qachon to'qnashmaydi
       code: `GS-${Math.floor(1000 + Math.random() * 9000)}`,
       name: newGuestName.trim(),
-      phone: newGuestPhone.trim() || '+998 90 000 00 00',
-      table_number: newGuestTable,
-      hall: newGuestHall,
+      phone: phone || '+998 90 000 00 00',
+      table_number: walkInTable,
+      hall: newGuestHall || 'Asosiy Zal',
       time: 'Hozir',
       guests_count: newGuestCount,
       status: 'arrived',
       notes: newGuestNotes.trim() || 'Jonli kelgan mehmon (Walk-in)',
     };
-
     setGuests((prev) => [newGuest, ...prev]);
     setIsAddModalOpen(false);
     setNewGuestName('');
     setNewGuestNotes('');
-    
-    // Backend bazasiga yozish
-    RestaurantAPI.createReservation({
-      customer_name: newGuest.name,
-      customer_phone: newGuest.phone,
-      table_number: newGuest.table_number,
-      hall: newGuest.hall,
-      guests_count: newGuest.guests_count,
-      notes: newGuest.notes,
-      status: 'arrived',
-    }).then((saved) => {
-      if (saved?.reservation?.id) {
-        setGuests((prev) => prev.map((g) => g === newGuest ? { ...g, id: saved.reservation.id, code: saved.reservation.code } : g));
-      }
-    });
-
     showToast(`${newGuest.name} qabul qilindi va #${newGuest.table_number} stolga biriktirildi`);
   };
 
-  const pendingCount = guests.filter((g) => g.status === 'pending').length;
+  const pendingCount = guests.filter((g) => g.status === 'pending' || g.status === 'confirmed').length;
   const arrivedCount = guests.filter((g) => g.status === 'arrived').length;
   const seatedCount = guests.filter((g) => g.status === 'seated').length;
 
@@ -320,7 +367,7 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
               filteredGuests.map((guest) => (
                 <div
                   key={guest.id}
-                  className={`guest-desk-card status-${guest.status}`}
+                  className={`guest-desk-card status-${guest.status === 'confirmed' ? 'pending' : guest.status}`}
                 >
                   <div className="guest-card-left">
                     <div className="guest-table-box">
@@ -343,13 +390,13 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
                   </div>
 
                   <div className="guest-card-actions">
-                    {guest.status === 'pending' && (
+                    {(guest.status === 'pending' || guest.status === 'confirmed') && (
                       <>
                         <button
                           type="button"
                           className="btn-guest-remind"
                           onClick={() => handleSendReminder(guest)}
-                          title="Eslatma SMS yuborish"
+                          title="Mehmonga eslatma (SMS xizmati ulanmagan)"
                         >
                           Eslatma
                         </button>
@@ -480,7 +527,7 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
                 <div className="hostess-field">
                   <label>Stol raqami:</label>
                   <select
-                    value={newGuestTable}
+                    value={walkInTable}
                     onChange={(e) => {
                       setNewGuestTable(e.target.value);
                       const found = sharedTables.find((t) => String(t.number) === e.target.value);
@@ -511,13 +558,12 @@ export const HostessDeskPage: React.FC<HostessDeskPageProps> = ({ embedded = fal
               <div className="hostess-field">
                 <label>Zal nomi:</label>
                 <select
-                  value={newGuestHall}
+                  value={newGuestHall || (sharedTables.find((t) => String(t.number) === walkInTable)?.hall ?? '')}
                   onChange={(e) => setNewGuestHall(e.target.value)}
                 >
-                  <option value="Asosiy Zal">Asosiy Zal</option>
-                  <option value="Registon Zali">Registon Zali</option>
-                  <option value="VIP Xona">VIP Xona</option>
-                  <option value="Yozgi Ayvon">Yozgi Ayvon</option>
+                  {hallOptions.map((hall) => (
+                    <option key={hall} value={hall}>{hall}</option>
+                  ))}
                 </select>
               </div>
 

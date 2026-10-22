@@ -306,163 +306,37 @@ class RestaurantOrderService:
     @classmethod
     def get_reservations(cls, filters: Dict[str, Any] = None, shop: Shop = None) -> List[Dict[str, Any]]:
         """
-        1-Modul: Hostess uchun stol band qilish ro'yxati (faqat o'z restorani).
+        1-Modul: Hostess uchun bronlar ro'yxati (faqat o'z restorani). Standart: bugun, faol holatlar.
+        Mantiq tables_restaurant/reservations.py da (R4).
         """
+        from tables_restaurant import reservations as svc
         filters = filters or {}
         shop = shop or cls.get_or_default_shop()
-        qs = TableReservation.objects.select_related('table', 'hall', 'shop').filter(shop=shop, is_deleted=False)
-
-        date_val = filters.get('date')
-        if date_val == 'today':
-            qs = qs.filter(reservation_date=local_today())
-        elif date_val:
-            qs = qs.filter(reservation_date=date_val)
-
-        status_val = filters.get('status')
-        if status_val and status_val != 'all':
-            qs = qs.filter(status=status_val)
-
-        q = filters.get('q')
-        if q:
-            from django.db.models import Q
-            qs = qs.filter(
-                Q(customer_name__icontains=q) |
-                Q(customer_phone__icontains=q) |
-                Q(table__number__icontains=q)
-            )
-
-        reservations = []
-        for r in qs[:100]:
-            hall_name = r.hall.name if r.hall else (r.table.hall.name if r.table and r.table.hall else 'Asosiy Zal')
-            reservations.append({
-                'id': r.id,
-                'code': r.code,
-                'name': r.customer_name,
-                'customer_name': r.customer_name,
-                'phone': r.customer_phone,
-                'customer_phone': r.customer_phone,
-                'table_number': r.table_number,
-                'hall': hall_name,
-                'date': str(r.reservation_date),
-                'time': r.reservation_time.strftime('%H:%M') if r.reservation_time else '19:00',
-                'reservation_time': r.reservation_time.strftime('%H:%M') if r.reservation_time else '19:00',
-                'guests_count': r.guests_count,
-                'status': r.status,
-                'notes': r.notes or '',
-            })
-        return reservations
+        rows = svc.list_reservations(shop, date=filters.get('date'), status=filters.get('status'), q=filters.get('q'))
+        return [svc.serialize(r) for r in rows]
 
     @classmethod
-    @transaction.atomic
     def create_reservation(cls, payload: Dict[str, Any], shop: Shop = None, by_staff: bool = False) -> Dict[str, Any]:
         """
-        1-Modul: Yangi stol band qilish (Reservation).
-        Mehmon yaratgan bron doim 'pending' — statusni faqat xodim belgilaydi.
+        1-Modul: Yangi stol band qilish. Sana/vaqt qat'iy tekshiriladi, to'qnashuv bo'lmaydi, stol berilmasa
+        o'zi tanlanadi. Mehmon yaratgan bron doim 'pending'; xodim 'confirmed' yoki jonli mehmon (walk-in) qo'sha oladi.
+        `ReservationError` ko'tarishi mumkin (chaqiruvchi 400/409 qiladi).
         """
+        from tables_restaurant import reservations as svc
         shop = shop or cls.get_or_default_shop()
-        table_num = str(payload.get('table_number', '')).strip()
-        table_obj = None
-        if table_num:
-            table_obj = Table.objects.filter(shop=shop, number=table_num).first()
-
-        hall_name = payload.get('hall_name') or payload.get('hall')
-        hall_obj = None
-        if hall_name:
-            hall_obj = Hall.objects.filter(shop=shop, name__icontains=hall_name).first()
-
-        date_val = payload.get('reservation_date') or payload.get('date')
-        if not date_val or str(date_val).lower() == 'hozir':
-            parsed_date = local_today()
-        else:
-            try:
-                parsed_date = datetime.date.fromisoformat(str(date_val))
-            except ValueError:
-                parsed_date = local_today()
-
-        time_val = payload.get('reservation_time') or payload.get('time')
-        if not time_val or str(time_val).lower() == 'hozir':
-            parsed_time = timezone.localtime().time()
-        else:
-            try:
-                parts = str(time_val).split(':')
-                parsed_time = datetime.time(int(parts[0]), int(parts[1]))
-            except Exception:
-                parsed_time = datetime.time(19, 0)
-
-        res = TableReservation.objects.create(
-            shop=shop,
-            table=table_obj,
-            hall=hall_obj,
-            customer_name=payload.get('customer_name') or payload.get('name', 'Hurmatli Mehmon'),
-            customer_phone=payload.get('customer_phone') or payload.get('phone', '+998 90 000 00 00'),
-            guests_count=int(payload.get('guests_count', 2)),
-            reservation_date=parsed_date,
-            reservation_time=parsed_time,
-            notes=payload.get('notes', ''),
-            status=(
-                payload.get('status')
-                if by_staff and payload.get('status') in dict(TableReservation.STATUS_CHOICES)
-                else 'pending'
-            )
-        )
-
-        OutboxService.log_event(
-            event_type='reservation_created',
-            payload={
-                'reservation_id': res.id,
-                'code': res.code,
-                'customer_name': res.customer_name,
-                'table_number': res.table_number
-            }
-        )
-
-        return {
-            'id': res.id,
-            'code': res.code,
-            'name': res.customer_name,
-            'customer_name': res.customer_name,
-            'phone': res.customer_phone,
-            'customer_phone': res.customer_phone,
-            'table_number': res.table_number,
-            'hall': hall_name or 'Asosiy Zal',
-            'date': str(res.reservation_date),
-            'time': res.reservation_time.strftime('%H:%M'),
-            'reservation_time': res.reservation_time.strftime('%H:%M'),
-            'guests_count': res.guests_count,
-            'status': res.status,
-            'notes': res.notes,
-        }
+        return svc.serialize(svc.create_reservation(shop, payload, by_staff=by_staff))
 
     @classmethod
-    @transaction.atomic
-    def update_reservation_status(cls, reservation_id: int, new_status: str, shop: Shop = None) -> Dict[str, Any]:
+    def update_reservation_status(cls, reservation_id: int, new_status: str, shop: Shop = None,
+                                  table_number=None) -> Dict[str, Any]:
         """
-        1-Modul: Bron holatini o'zgartirish (arrived, seated, confirmed, cancelled).
+        1-Modul: Bron holatini o'zgartirish (pending → confirmed → arrived → seated → completed; cancelled).
+        `ReservationError` ko'tarishi mumkin.
         """
+        from tables_restaurant import reservations as svc
         shop = shop or cls.get_or_default_shop()
-        res = TableReservation.objects.filter(pk=reservation_id, shop=shop).first()
-        if not res:
-            return {'error': 'Bron topilmadi', 'status': 'failed'}
-
-        res.status = new_status
-        if new_status == 'cancelled':
-            res.is_deleted = False # soft-delete vs status
-        res.save(update_fields=['status'])
-
-        if new_status == 'seated' and res.table:
-            res.table.status = 'occupied'
-            res.table.save(update_fields=['status'])
-
-        OutboxService.log_event(
-            event_type='reservation_status_changed',
-            payload={
-                'reservation_id': res.id,
-                'code': res.code,
-                'status': new_status
-            }
-        )
-
-        return {'id': res.id, 'status': res.status, 'code': res.code}
+        reservation = svc.change_status(shop, reservation_id, new_status, table_number=table_number)
+        return svc.serialize(reservation)
 
     @classmethod
     @transaction.atomic

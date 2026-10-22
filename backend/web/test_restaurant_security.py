@@ -278,10 +278,13 @@ class RestaurantApiTests(RestaurantFixtureMixin, TestCase):
         self.assertEqual(Product.objects.count(), before)
 
     def test_guest_reservation_status_is_always_pending(self):
+        from datetime import timedelta
+        from django.utils import timezone
         res = self.client.post(f'{self.API}/reservations/', {
             'customer_name': 'Ali', 'customer_phone': '+998901112233', 'status': 'seated',
+            'reservation_date': str(timezone.localdate() + timedelta(days=1)), 'reservation_time': '19:00',
         }, content_type='application/json')
-        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.status_code, 201, res.content)
         self.assertEqual(res.json()['reservation']['status'], 'pending')
 
 

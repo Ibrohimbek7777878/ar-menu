@@ -7,9 +7,10 @@ import json
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import Q
 from django.conf import settings
+from django.utils import timezone
 
 from categories.models import Category
 from products.models import Product
@@ -695,6 +696,7 @@ def tma_checkout(request):
     return render(request, 'tma/checkout.html', context)
 
 
+@ensure_csrf_cookie
 def tma_table_hub(request):
     """
     Mening Stolim & Stol Bron Qilish Hubi.
@@ -709,9 +711,8 @@ def tma_table_hub(request):
        - Stolni oldindan bron qilish formasi (Sana, vaqt, mehmonlar, zal, istaklar)
        - Mijozning oldingi buyurtmalari va bronlari
     """
-    from tables_restaurant.models import Table, Hall, TableReservation
-    from notifications.services.telegram_service import send_table_reservation_alert
-    import datetime
+    from tables_restaurant import reservations as reservation_svc
+    from tables_restaurant.models import Table, Hall
 
     table, table_token = _get_tma_table(request)
     active_shop = table.shop if (table and table.shop) else get_restaurant_shop()
@@ -724,11 +725,14 @@ def tma_table_hub(request):
     if request.method == 'POST':
         action = request.POST.get('action')
 
-        # 1. Joyida stol tanlash
+        # 1. Joyida stol tanlash — ro'yxatdan tanlash taxmin qilinadi (begona stolga buyurtma), shuning uchun
+        #    production'da faqat QR orqali; DEMO_MODE yoki RESTAURANT_ALLOW_TABLE_NUMBER_URL bilan ruxsat (R1-10)
         if action == 'select_table':
             table_id = request.POST.get('table_id')
-            if table_id:
-                sel_table = Table.objects.filter(pk=table_id, is_active=True).first()
+            if not getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+                flash_msg = "Stolni tanlash uchun stol ustidagi QR kodni skanerlang."
+            elif table_id:
+                sel_table = Table.objects.filter(pk=table_id, shop=active_shop, is_active=True).first()
                 if sel_table:
                     request.session['tma_table_token'] = str(sel_table.number)
                     request.session.modified = True
@@ -743,35 +747,23 @@ def tma_table_hub(request):
             request.session.modified = True
             return redirect('restaurant_table_hub')
 
-        # 3. Stolni oldindan bron qilish
+        # 3. Stolni oldindan bron qilish (tekshiruv, to'qnashuv, stol tanlash — tables_restaurant/reservations.py)
         elif action == 'reserve_table':
-            name = request.POST.get('customer_name', '').strip()
-            phone = request.POST.get('customer_phone', '').strip()
-            res_date = request.POST.get('reservation_date')
-            res_time = request.POST.get('reservation_time')
-            guests = int(request.POST.get('guests_count', 2))
-            hall_id = request.POST.get('hall_id')
-            notes = request.POST.get('notes', '').strip()
-
-            if name and phone and res_date and res_time:
-                hall_obj = Hall.objects.filter(pk=hall_id).first() if hall_id else None
-                reservation_obj = TableReservation.objects.create(
-                    shop=active_shop,
-                    customer_name=name,
-                    customer_phone=phone,
-                    guests_count=guests,
-                    reservation_date=res_date,
-                    reservation_time=res_time,
-                    hall=hall_obj,
-                    notes=notes,
-                    status='pending',
-                )
-                try:
-                    send_table_reservation_alert(reservation_obj)
-                except Exception:
-                    pass
+            try:
+                reservation_obj = reservation_svc.create_reservation(active_shop, {
+                    'customer_name': request.POST.get('customer_name', ''),
+                    'customer_phone': request.POST.get('customer_phone', ''),
+                    'reservation_date': request.POST.get('reservation_date'),
+                    'reservation_time': request.POST.get('reservation_time'),
+                    'guests_count': request.POST.get('guests_count', 2),
+                    'hall_id': request.POST.get('hall_id'),
+                    'notes': request.POST.get('notes', ''),
+                }, by_staff=False)
                 reservation_success = True
-                flash_msg = f"Rahmat, {name}! Stolingiz muvaffaqiyatli bron qilindi. Ofitsiantlarimiz sizni kutishadi."
+                flash_msg = (f"Rahmat, {reservation_obj.customer_name}! Stol {reservation_obj.table_number}-raqam bilan "
+                             f"bron qilindi. Bron kodingiz: {reservation_obj.code} — saqlab qo'ying.")
+            except reservation_svc.ReservationError as exc:
+                flash_msg = exc.message
 
     # Faol stoldagi buyurtmalar
     table_orders = []
@@ -825,7 +817,6 @@ def tma_table_hub(request):
         'flashMsg': flash_msg,
     }
 
-    orders = Order.objects.all().order_by('-created_at')[:10]
     today_str = timezone.localdate().isoformat()
 
     context = {
@@ -837,7 +828,6 @@ def tma_table_hub(request):
         'tables': tables,
         'halls': halls,
         'cart_count': cart_count,
-        'orders': orders,
         'reservation_success': reservation_success,
         'reservation_obj': reservation_obj,
         'flash_msg': flash_msg,
@@ -1149,33 +1139,64 @@ def tma_welcome(request):
     return render(request, 'tma/welcome.html', context)
 
 
+@ensure_csrf_cookie
 def tma_arrival_confirm(request):
     """
-    Ekran 3: Create-a-reservation-arrival-screen.png
-    Mehmon kelganini tasdiqlash sahifasi (Muhayyo Karimova, GS-2841, Stol 08).
+    Ekran 3: Mehmon kelganini tasdiqlash sahifasi.
+    Mehmon bron kodi bilan o'zi kelganini bildiradi: bron 'arrived' bo'ladi va sessiyaga bron qilingan stol
+    (tasodifiy QR token orqali) yoziladi — stol raqamini mehmon o'zi yozmaydi (TZ: R4-3, R1-10).
     """
-    from tables_restaurant.models import TableReservation, Table
+    from tables_restaurant import reservations as reservation_svc
+    from tables_restaurant.models import TableReservation
 
     shop = get_restaurant_shop()
-    code = request.GET.get('code') or request.POST.get('code') or ('GS-2841' if settings.DEMO_MODE else '')
-    table_num = request.GET.get('table') or request.POST.get('table') or ('08' if settings.DEMO_MODE else '')
+    code = (request.GET.get('code') or request.POST.get('code') or ('GS-2841' if settings.DEMO_MODE else '')).strip()
+    error = ''
+
+    res_obj = None
+    if shop and code:
+        res_obj = find_reservation_by_code_or_phone(
+            TableReservation.objects.filter(shop=shop, is_deleted=False).select_related('table', 'hall'), code)
 
     if request.method == 'POST':
-        # Kelishni tasdiqlash: stolni sessiyaga yozib Dasturxon Menyusiga yo'naltirish
-        request.session['tma_table_token'] = table_num
-        request.session.modified = True
-        return redirect(f"/menu/?table={table_num}&arrived=1")
+        phone = (request.POST.get('phone') or '').strip()
+        if res_obj and phone:          # telefon ham berilsa, kod bilan mos kelishi shart
+            digits = ''.join(ch for ch in phone if ch.isdigit())
+            if not ''.join(ch for ch in res_obj.customer_phone if ch.isdigit()).endswith(digits[-9:]):
+                res_obj = None
+        if settings.DEMO_MODE and not res_obj and request.POST.get('table'):
+            # Demo: eski xatti-harakat (stol raqami bilan), production'da ishlamaydi
+            request.session['tma_table_token'] = request.POST.get('table')
+            request.session.modified = True
+            return redirect(f"/menu/?table={request.POST.get('table')}&arrived=1")
+        if not res_obj:
+            error = "Bron topilmadi. Kodni tekshirib qayta urinib ko'ring."
+        elif res_obj.reservation_date != timezone.localdate():
+            error = f"Bu bron {res_obj.reservation_date.strftime('%d.%m.%Y')} sanasiga. Kelish kuni qayta urining."
+        elif res_obj.status in ('completed', 'cancelled'):
+            error = "Bu bron yakunlangan yoki bekor qilingan."
+        elif not res_obj.table:
+            error = "Bronga hali stol biriktirilmagan. Iltimos, hostess bilan bog'laning."
+        else:
+            try:
+                if res_obj.status in ('pending', 'confirmed'):
+                    reservation_svc.change_status(shop, res_obj.pk, 'arrived')
+            except reservation_svc.ReservationError as exc:
+                error = exc.message
+            else:
+                request.session['tma_table_token'] = str(res_obj.table.qr_token)
+                request.session.modified = True
+                return redirect(f"/menu/?table={res_obj.table.qr_token}&arrived=1")
 
-    # Bron faqat kiritilgan kod bo'yicha qidiriladi (avval istalgan kodga birinchi bron ko'rsatilardi)
-    res_obj = find_reservation_by_code_or_phone(TableReservation.objects.filter(shop=shop), code) if shop else None
-
-    if res_obj:
+    if res_obj and res_obj.status not in ('completed', 'cancelled'):
         reservation = {
+            'id': res_obj.pk,
             'customer_name': mask_name(res_obj.customer_name),
-            'code': code,
-            'reservation_time': str(res_obj.reservation_time),
+            'code': res_obj.code,
+            'reservation_time': res_obj.reservation_time.strftime('%H:%M'),
             'guests_count': res_obj.guests_count,
-            'table_number': str(res_obj.table.number) if getattr(res_obj, 'table', None) else table_num,
+            'table_number': str(res_obj.table.number) if res_obj.table else '',
+            'hall': res_obj.hall.name if res_obj.hall else (res_obj.table.hall.name if res_obj.table and res_obj.table.hall else ''),
         }
     elif settings.DEMO_MODE:
         reservation = {
@@ -1183,7 +1204,7 @@ def tma_arrival_confirm(request):
             'code': code,
             'reservation_time': '19:30',
             'guests_count': 4,
-            'table_number': table_num,
+            'table_number': request.GET.get('table') or '08',
         }
     else:
         reservation = None
@@ -1192,6 +1213,7 @@ def tma_arrival_confirm(request):
         'shop': {'name': shop.name if shop else 'Guliston'},
         'mode': 'arrival',
         'reservation': reservation,
+        'error': error,
     }
 
     context = {
@@ -1203,32 +1225,28 @@ def tma_arrival_confirm(request):
     return render(request, 'tma/arrival_confirm.html', context)
 
 
+@ensure_csrf_cookie
 def tma_find_reservation(request):
     """
-    Ekran 4: Find-a-reservation.png
-    Bron kodi yoki telefon orqali qidirish sahifasi.
+    Ekran 4: bron kodi (GS-K7QX2) yoki to'liq telefon orqali qidirish sahifasi. Ism/telefon maskalanadi.
     """
+    from backend.ratelimit import rate_limited
+    from tables_restaurant import reservations as reservation_svc
     from tables_restaurant.models import TableReservation
     shop = get_restaurant_shop()
     query = (request.GET.get('q') or request.GET.get('code') or request.GET.get('phone') or '').strip()
     found_res = None
     if query and shop:
-        # Faqat aniq kod yoki to'liq telefon (avval "9" kabi bitta raqam bilan begona bron chiqardi)
-        found_res = find_reservation_by_code_or_phone(TableReservation.objects.filter(shop=shop), query)
+        if rate_limited(request, 'reservation_find', 20, 60) is not None:
+            query = ''          # juda tez-tez qidirilmoqda: natija ko'rsatilmaydi
+        else:
+            found_res = find_reservation_by_code_or_phone(
+                TableReservation.objects.filter(shop=shop, is_deleted=False).select_related('table', 'hall'), query)
 
     res_data = None
     if found_res:
-        res_data = {
-            'id': found_res.id,
-            'code': f"GS-{2840 + found_res.id}",
-            'customer_name': mask_name(found_res.customer_name),
-            'customer_phone': mask_phone(found_res.customer_phone),
-            'table_number': found_res.table.number if getattr(found_res, 'table', None) else '',
-            'reservation_time': str(found_res.reservation_time),
-            'guests_count': found_res.guests_count,
-            'hall': found_res.hall.name if getattr(found_res, 'hall', None) else 'Registon Zali',
-            'status': getattr(found_res, 'get_status_display', lambda: found_res.status)(),
-        }
+        res_data = reservation_svc.serialize(found_res, mask=True)
+        res_data['status'] = found_res.get_status_display()
 
     react_reservation_data = {
         'shop': {'name': shop.name if shop else 'Guliston'},
@@ -1250,38 +1268,23 @@ def tma_find_reservation(request):
 @restaurant_staff_required
 def arrival_desk(request):
     """
-    Ekran 5: GulistonArrivalDesk.png
-    Hostess / Kutib olish paneli (Kimni kutyapmiz? 3 kutilmoqda, 1 kelishdi).
+    Ekran 5: Hostess / Kutib olish paneli. Bugungi faol bronlar (kutilmoqda, keldi, o'tirdi) — vaqt tartibida.
+    Avval barcha (o'tmishdagi va bekor qilingan ham) bronlar chiqar, bekor qilingan bron "keldi" ko'rinardi.
     """
-    from tables_restaurant.models import TableReservation
+    from tables_restaurant import reservations as reservation_svc
 
     shop = staff_shop(request)
-    reservations_qs = TableReservation.objects.filter(shop=shop)
-
-    react_guests = []
-    for r in reservations_qs[:15]:
-        react_guests.append({
-            'id': r.id,
-            'code': f"GS-{2840 + r.id}",
-            'name': r.customer_name,
-            'phone': r.customer_phone,
-            'table_number': r.table.number if getattr(r, 'table', None) else '08',
-            'hall': r.hall.name if getattr(r, 'hall', None) else 'Registon Zali',
-            'time': str(r.reservation_time),
-            'guests_count': r.guests_count,
-            'status': 'pending' if r.status == 'pending' else 'arrived',
-            'notes': r.notes or '',
-        })
+    rows = reservation_svc.list_reservations(shop, date='today', status='active') if shop else []
 
     react_hostess_data = {
         'shop': {'name': shop.name if shop else 'Guliston'},
-        'hostess_name': request.user.get_full_name() or request.user.username if request.user.is_authenticated else 'Zarina (Hostess)',
-        'guests': react_guests,
+        'hostess_name': (request.user.get_full_name() or request.user.username) if request.user.is_authenticated else '',
+        'guests': [reservation_svc.serialize(r) for r in rows],
     }
 
     context = {
         'shop': shop,
-        'reservations': reservations_qs[:10],
+        'reservations': rows[:10],
         'proto_active': 'desk',
         'react_hostess_data_json': json.dumps(react_hostess_data),
     }

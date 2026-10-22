@@ -208,12 +208,11 @@ export const RestaurantAPI = {
     }
   },
 
-  // 10. Stol band qilish ro'yxati (Hostess Desk)
+  // 10. Stol band qilish ro'yxati (Hostess Desk). Standart: bugun, faol holatlar.
   async getReservations(params?: { date?: string; status?: string; q?: string }) {
     try {
-      const query = new URLSearchParams(params as any).toString();
-      const url = `${API_BASE}/reservations/${query ? `?${query}` : ''}`;
-      const res = await fetch(url);
+      const query = new URLSearchParams((params || {}) as Record<string, string>).toString();
+      const res = await fetch(`${API_BASE}/reservations/${query ? `?${query}` : ''}`);
       if (!res.ok) throw new Error('Fetch reservations failed');
       return await res.json();
     } catch (err) {
@@ -222,7 +221,7 @@ export const RestaurantAPI = {
     }
   },
 
-  // 11. Yangi stol band qilish (Reservation)
+  // 11. Yangi bron / jonli mehmon (walk_in). Server xatosi ({error, code, status}) qaytariladi, tarmoq xatosida null.
   async createReservation(payload: {
     customer_name: string;
     customer_phone?: string;
@@ -230,11 +229,9 @@ export const RestaurantAPI = {
     guests_count?: number;
     reservation_date?: string;
     reservation_time?: string;
-    date?: string;
-    time?: string;
     notes?: string;
     hall?: string;
-    status?: string;
+    walk_in?: boolean;
   }) {
     try {
       const res = await fetch(`${API_BASE}/reservations/`, {
@@ -242,24 +239,26 @@ export const RestaurantAPI = {
         headers: jsonHeaders(),
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Create reservation failed');
-      return await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { error: data?.error || "Bronni saqlab bo'lmadi", code: data?.code, status: res.status };
+      return data;
     } catch (err) {
       console.warn('[RestaurantAPI] Offline fallback for createReservation:', err);
       return null;
     }
   },
 
-  // 12. Bron holatini o'zgartirish (arrived, seated, confirmed, cancelled)
-  async updateReservationStatus(reservationId: number | string, status: string) {
+  // 12. Bron holatini o'zgartirish (pending → confirmed → arrived → seated → completed; cancelled)
+  async updateReservationStatus(reservationId: number | string, status: string, tableNumber?: string | number) {
     try {
       const res = await fetch(`${API_BASE}/reservations/${reservationId}/status/`, {
         method: 'PATCH',
         headers: jsonHeaders(),
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(tableNumber === undefined ? { status } : { status, table_number: tableNumber }),
       });
-      if (!res.ok) throw new Error('Update reservation status failed');
-      return await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { error: data?.error || "Holatni o'zgartirib bo'lmadi", code: data?.code, status: res.status };
+      return data;
     } catch (err) {
       console.warn('[RestaurantAPI] Offline fallback for updateReservationStatus:', err);
       return null;

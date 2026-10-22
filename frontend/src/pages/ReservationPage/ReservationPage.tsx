@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
+import { roleService } from '../../core/auth/RoleService';
 import './ReservationPage.css';
 
 export interface ReservationInfo {
@@ -22,7 +23,18 @@ interface InitialReservationData {
   reservation?: ReservationInfo;
   query?: string;
   cartCount?: number;
+  error?: string;
 }
+
+// Server holat kodlari → mehmonga tushunarli matn
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Kutilmoqda',
+  confirmed: 'Tasdiqlangan',
+  arrived: 'Keldi',
+  seated: "Stolga o'tirdi",
+  completed: 'Yakunlangan',
+  cancelled: 'Bekor qilingan',
+};
 
 export const ReservationPage: React.FC = () => {
   const { navigate, cartCount: navCartCount } = useNavigation();
@@ -31,7 +43,8 @@ export const ReservationPage: React.FC = () => {
   const shopName = initialData.shop?.name || 'Guliston';
   const defaultMode = window.location.pathname.includes('/arrival') ? 'arrival' : (initialData.mode || 'find');
 
-  const defaultReservation: ReservationInfo = initialData.reservation || {
+  // Namuna bron ("Muhayyo Karimova") faqat DEMO rejimda: avval har tashrifchiga begona odamning broni ko'rsatilardi
+  const demoReservation: ReservationInfo = {
     code: 'GS-2841',
     customer_name: 'Muhayyo Karimova',
     customer_phone: '+998 90 123 45 67',
@@ -41,11 +54,15 @@ export const ReservationPage: React.FC = () => {
     hall: 'Registon Zali',
     status: 'Tasdiqlangan',
   };
+  const defaultReservation: ReservationInfo | null =
+    initialData.reservation || (roleService.isDemo() ? demoReservation : null);
 
   const [mode, setMode] = useState<'find' | 'arrival'>(defaultMode);
   const [searchTab, setSearchTab] = useState<'code' | 'phone'>('code');
   const [query, setQuery] = useState(initialData.query || '');
   const [foundReservation, setFoundReservation] = useState<ReservationInfo | null>(defaultReservation);
+  // Bron topilmagan bo'lsa 'kelishni tasdiqlash' ekrani ko'rsatiladigan narsa yo'q — qidiruv ko'rinadi
+  const viewMode: 'find' | 'arrival' = mode === 'arrival' && foundReservation ? 'arrival' : 'find';
 
   // Toast
   const [toastMsg, setToastMsg] = useState('');
@@ -58,6 +75,19 @@ export const ReservationPage: React.FC = () => {
     setToastVisible(true);
     setTimeout(() => setToastVisible(false), 2400);
   };
+
+  // Kelishni tasdiqlash serverda rad etilgan bo'lsa (kod noto'g'ri, bron boshqa kunga...) sababi ko'rsatiladi
+  useEffect(() => {
+    if (initialData.error) {
+      setToastMsg(initialData.error);
+      setToastIcon('');
+      setToastVisible(true);
+      const timer = window.setTimeout(() => setToastVisible(false), 3600);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,12 +109,9 @@ export const ReservationPage: React.FC = () => {
     navigate(`/reservation/find/?q=${encodeURIComponent(query.trim())}`);
   };
 
-  const handleConfirmArrival = (tableNum: string | number) => {
-    // Backend API statusini yangilash
-    if (foundReservation?.id) {
-      RestaurantAPI.updateReservationStatus(foundReservation.id, 'arrived');
-    }
-
+  const handleConfirmArrival = () => {
+    // Kelishni server bron kodi bo'yicha qayd etadi va rezerv qilingan stolni sessiyaga yozadi (mehmon stol
+    // raqamini o'zi yubormaydi). Avval bu yerda xodimga tegishli PATCH yuborilardi va jimgina rad etilardi.
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/reservation/arrival/';
@@ -96,11 +123,11 @@ export const ReservationPage: React.FC = () => {
     csrfInput.value = csrf;
     form.appendChild(csrfInput);
 
-    const tableInput = document.createElement('input');
-    tableInput.type = 'hidden';
-    tableInput.name = 'table';
-    tableInput.value = String(tableNum);
-    form.appendChild(tableInput);
+    const codeInput = document.createElement('input');
+    codeInput.type = 'hidden';
+    codeInput.name = 'code';
+    codeInput.value = foundReservation?.code || '';
+    form.appendChild(codeInput);
 
     document.body.appendChild(form);
     form.submit();
@@ -120,14 +147,14 @@ export const ReservationPage: React.FC = () => {
         <div className="res-mode-switcher">
           <button
             type="button"
-            className={`mode-btn ${mode === 'arrival' ? 'active' : ''}`}
+            className={`mode-btn ${viewMode === 'arrival' ? 'active' : ''}`}
             onClick={() => setMode('arrival')}
           >
             Kelishni tasdiqlash
           </button>
           <button
             type="button"
-            className={`mode-btn ${mode === 'find' ? 'active' : ''}`}
+            className={`mode-btn ${viewMode === 'find' ? 'active' : ''}`}
             onClick={() => setMode('find')}
           >
             Bronni qidirish
@@ -137,12 +164,12 @@ export const ReservationPage: React.FC = () => {
         {/* ══════════════════════════════════════════════════════
             MODE 1: KELISHNI TASDIQLASH (ARRIVAL CONFIRM)
            ══════════════════════════════════════════════════════ */}
-        {mode === 'arrival' && (
+        {viewMode === 'arrival' && foundReservation && (
           <div className="arrival-view">
             <div className="arrival-hero-card">
               <span className="res-badge">Tashrif qaydnomasi</span>
               <h1 className="arrival-title serif">
-                {foundReservation?.customer_name || 'Hurmatli Mehmon'},<br />
+                {foundReservation.customer_name},<br />
                 Stolingiz tayyor!
               </h1>
               <p className="arrival-desc">
@@ -156,19 +183,19 @@ export const ReservationPage: React.FC = () => {
                 <div className="arrival-table-circle">
                   <span className="circle-kicker">Stol</span>
                   <strong className="circle-num tabular-nums">
-                    {foundReservation?.table_number || '08'}
+                    {foundReservation.table_number}
                   </strong>
                 </div>
 
                 <div className="arrival-meta-right">
                   <span className="res-code-badge tabular-nums">
-                    KOD: #{foundReservation?.code || 'GS-2841'}
+                    KOD: #{foundReservation.code}
                   </span>
                   <strong className="arrival-guest-name">
-                    {foundReservation?.customer_name || 'Muhayyo Karimova'}
+                    {foundReservation.customer_name}
                   </strong>
                   <span className="arrival-hall-name">
-                    {foundReservation?.hall || 'Registon Zali'}
+                    {foundReservation.hall}
                   </span>
                 </div>
               </div>
@@ -177,13 +204,13 @@ export const ReservationPage: React.FC = () => {
                 <div className="info-box">
                   <span className="info-box-label">Belgilangan vaqt</span>
                   <strong className="info-box-val tabular-nums">
-                    {foundReservation?.reservation_time || '19:30'}
+                    {foundReservation.reservation_time}
                   </strong>
                 </div>
                 <div className="info-box">
                   <span className="info-box-label">Mehmonlar soni</span>
                   <strong className="info-box-val tabular-nums">
-                    {foundReservation?.guests_count || 4} kishi
+                    {foundReservation.guests_count} kishi
                   </strong>
                 </div>
               </div>
@@ -191,7 +218,7 @@ export const ReservationPage: React.FC = () => {
               <button
                 type="button"
                 className="btn-confirm-and-menu"
-                onClick={() => handleConfirmArrival(foundReservation?.table_number || '08')}
+                onClick={handleConfirmArrival}
               >
                 <span>Stol menyusini ochish</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -219,7 +246,7 @@ export const ReservationPage: React.FC = () => {
         {/* ══════════════════════════════════════════════════════
             MODE 2: BRONNI QIDIRISH (FIND RESERVATION)
            ══════════════════════════════════════════════════════ */}
-        {mode === 'find' && (
+        {viewMode === 'find' && (
           <div className="find-view">
             <div className="find-header">
               <span className="res-badge">Bron holati</span>
@@ -227,7 +254,7 @@ export const ReservationPage: React.FC = () => {
                 Broningizni tekshiring
               </h1>
               <p className="find-desc">
-                Bron kodi (masalan, GS-2841) yoki ro'yxatdan o'tgan telefon raqamingizni kiriting.
+                Bron kodi (masalan, GS-K7QX2) yoki ro'yxatdan o'tgan telefon raqamingizni kiriting.
               </p>
             </div>
 
@@ -238,7 +265,7 @@ export const ReservationPage: React.FC = () => {
                   className={`search-tab-btn ${searchTab === 'code' ? 'active' : ''}`}
                   onClick={() => setSearchTab('code')}
                 >
-                  Bron kodi (GS-2841)
+                  Bron kodi (GS-K7QX2)
                 </button>
                 <button
                   type="button"
@@ -255,7 +282,7 @@ export const ReservationPage: React.FC = () => {
                   className="search-field"
                   placeholder={
                     searchTab === 'code'
-                      ? 'Bron kodi (masalan: GS-2841)'
+                      ? 'Bron kodi (masalan: GS-K7QX2)'
                       : '+998 90 123 45 67'
                   }
                   value={query}
@@ -281,7 +308,7 @@ export const ReservationPage: React.FC = () => {
                     </h3>
                   </div>
                   <span className="found-status-tag">
-                    {foundReservation.status || 'Tasdiqlangan'}
+                    {STATUS_LABEL[foundReservation.status || ''] || foundReservation.status || 'Tasdiqlangan'}
                   </span>
                 </div>
 

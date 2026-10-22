@@ -13,7 +13,8 @@ from django.conf import settings
 from django.utils import timezone
 from orders.models import Order, OrderItem
 from tables_restaurant.models import Table, ServiceCall, Hall, TableReservation
-from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
+from tables_restaurant.privacy import find_reservation_by_code_or_phone
+from tables_restaurant.reservations import ReservationError, serialize as reservation_view, upcoming_reserved_table_ids
 from finance.models import FinanceTransaction, DebtRecord
 from orders.application.services import RestaurantOrderService
 from orders.interfaces.api.permissions import (
@@ -168,7 +169,9 @@ class RestaurantTablesStateView(RestaurantAPIView):
     Hamma stollarning joriy holati va jonli hisob summasi.
     """
     def get(self, request):
-        tables = Table.objects.select_related('hall').filter(shop=self.staff_shop(), is_active=True).order_by('hall__order', 'id')
+        shop = self.staff_shop()
+        tables = Table.objects.select_related('hall').filter(shop=shop, is_active=True).order_by('hall__order', 'id')
+        reserved_ids = upcoming_reserved_table_ids(shop)     # yaqin orada bron kutayotgan bo'sh stollar
         data = []
         for t in tables:
             # Stolning ochiq hisobini hisoblash
@@ -180,7 +183,7 @@ class RestaurantTablesStateView(RestaurantAPIView):
                 'id': t.id,
                 'number': t.number,
                 'hall': t.hall.name if t.hall else 'Asosiy Zal',
-                'status': t.status,
+                'status': 'reserved' if (t.status == 'free' and t.id in reserved_ids) else t.status,
                 'capacity': t.capacity,
                 'guests_count': 0,
                 'total_bill': float(bill_sum),
@@ -311,10 +314,16 @@ class TableAddItemView(RestaurantAPIView):
             return Response({'error': "Taomni qo'shib bo'lmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+def _reservation_error(exc):
+    return Response({'error': exc.message, 'code': exc.code}, status=exc.status)
+
+
 class RestaurantReservationListView(RestaurantAPIView):
     """
-    GET /api/v1/restaurant/reservations/ - Ro'yxat (xodim)
-    POST /api/v1/restaurant/reservations/ - Yangi bron yaratish (mehmon ham)
+    GET /api/v1/restaurant/reservations/ - Ro'yxat (xodim). Standart: bugun, faol holatlar.
+        ?date=today|YYYY-MM-DD|all  ?status=active|all|<holat>  ?q=
+    POST /api/v1/restaurant/reservations/ - Yangi bron yaratish (mehmon ham).
+        Xato: 400 (noto'g'ri ma'lumot), 409 (stol shu vaqtda band / bo'sh stol yo'q).
     """
     def get_permissions(self):
         if self.request.method == 'POST':
@@ -327,46 +336,54 @@ class RestaurantReservationListView(RestaurantAPIView):
             'status': request.GET.get('status'),
             'q': request.GET.get('q'),
         }
-        res_list = RestaurantOrderService.get_reservations(filters, shop=self.staff_shop())
+        try:
+            res_list = RestaurantOrderService.get_reservations(filters, shop=self.staff_shop())
+        except ReservationError as exc:
+            return _reservation_error(exc)
         return Response({'status': 'success', 'reservations': res_list})
 
     def post(self, request):
+        by_staff = is_restaurant_staff(request.user)
         try:
-            by_staff = is_restaurant_staff(request.user)
             created = RestaurantOrderService.create_reservation(
                 request.data, shop=self.staff_shop() if by_staff else None, by_staff=by_staff,
             )
-            return Response({'status': 'success', 'reservation': created}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ReservationError as exc:
+            return _reservation_error(exc)
+        return Response({'status': 'success', 'reservation': created}, status=status.HTTP_201_CREATED)
 
 
 class RestaurantReservationStatusView(RestaurantAPIView):
     """
-    PATCH /api/v1/restaurant/reservations/<int:reservation_id>/status/
-    Holatni o'zgartirish (arrived, seated, confirmed, cancelled).
+    PATCH /api/v1/restaurant/reservations/<int:reservation_id>/status/   {status, table_number?}
+    Holat: pending → confirmed → arrived → seated → completed; cancelled. Mumkin bo'lmagan o'tish — 409.
+    Faqat xodim; bron o'z restoraniga tegishli bo'lishi shart (begona restoran broni — 404).
     """
     def patch(self, request, reservation_id):
-        new_status = request.data.get('status', 'arrived')
-        if new_status == 'arrived':
-            new_status = 'seated'  # frontend 'arrived' yuboradi, modelda 'seated'
-        if new_status not in dict(TableReservation.STATUS_CHOICES):
-            return Response({'error': "Noto'g'ri holat"}, status=status.HTTP_400_BAD_REQUEST)
-        res = RestaurantOrderService.update_reservation_status(reservation_id, new_status, shop=self.staff_shop())
-        if res.get('error'):
-            return Response(res, status=status.HTTP_404_NOT_FOUND)
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({'error': 'Holat ko\'rsatilmagan'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            res = RestaurantOrderService.update_reservation_status(
+                reservation_id, new_status, shop=self.staff_shop(), table_number=request.data.get('table_number'))
+        except ReservationError as exc:
+            return _reservation_error(exc)
         return Response(res)
 
 
 class RestaurantReservationFindView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/reservations/find/?q=...
-    Mehmon o'z bronini aniq kod (GS-XXXX) yoki to'liq telefon bo'yicha topadi.
-    Avval qisman moslik (icontains) bilan begona bronlarning ismi va telefoni chiqardi.
+    Mehmon o'z bronini aniq kod (GS-K7QX2) yoki to'liq telefon bo'yicha topadi; ism/telefon maskalanadi.
+    Qidiruv tezligi cheklanadi (kodni terib ko'rish mumkin emas).
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
+        from backend.ratelimit import rate_limited
+        limited = rate_limited(request, 'reservation_find', 20, 60)
+        if limited is not None:
+            return limited
         q = request.GET.get('q', '').strip()
         if not q:
             return Response({'error': "Qidiruv so'zi kiritilmadi"}, status=status.HTTP_400_BAD_REQUEST)
@@ -376,21 +393,7 @@ class RestaurantReservationFindView(RestaurantAPIView):
         )
         if not res:
             return Response({'status': 'not_found', 'reservation': None}, status=status.HTTP_404_NOT_FOUND)
-        data = {
-            'id': res.id,
-            'code': res.code,
-            'name': mask_name(res.customer_name),
-            'customer_name': mask_name(res.customer_name),
-            'phone': mask_phone(res.customer_phone),
-            'customer_phone': mask_phone(res.customer_phone),
-            'table_number': res.table_number,
-            'hall': res.hall.name if res.hall else (res.table.hall.name if res.table and res.table.hall else 'Asosiy Zal'),
-            'date': str(res.reservation_date),
-            'time': res.reservation_time.strftime('%H:%M') if res.reservation_time else '',
-            'reservation_time': res.reservation_time.strftime('%H:%M') if res.reservation_time else '',
-            'guests_count': res.guests_count,
-            'status': res.status,
-        }
+        data = reservation_view(res, mask=True)
         return Response({'status': 'success', 'reservation': data, 'all_matches': [data]})
 
 

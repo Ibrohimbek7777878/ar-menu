@@ -1,13 +1,13 @@
 """
 Bron ma'lumotlarini mehmonga xavfsiz ko'rsatish (TZ: R-SEC-04, R-SEC-13).
 
-Mehmon o'z bronini faqat aniq kod (GS-XXXX) yoki to'liq telefon raqami bilan topadi;
-javobda ism va telefon maskalanadi — ketma-ket kodlarni terib begona odam PII yig'a olmaydi.
+Mehmon o'z bronini faqat aniq kod (GS-K7QX2) yoki to'liq telefon raqami bilan topadi;
+javobda ism va telefon maskalanadi. Kod endi taxmin qilib bo'lmaydi (tasodifiy, 31^5 variant); avval u ketma-ket
+`GS-{id+2840}` edi va kodlarni terib begona bronlarning sana/vaqt/stolini yig'ish mumkin edi (TZ: R4).
 """
 import re
 
-_CODE_RE = re.compile(r'(?i)\s*GS-?(\d+)\s*')
-_CODE_OFFSET = 2840  # TableReservation.code = f"GS-{id + 2840}"
+_CODE_RE = re.compile(r'(?i)\s*GS-?([A-Z0-9]{5})\s*')
 
 
 def mask_phone(phone):
@@ -35,8 +35,7 @@ def find_reservation_by_code_or_phone(res_qs, query):
         return None
     code_match = _CODE_RE.fullmatch(query)
     if code_match:
-        num = int(code_match.group(1))
-        return res_qs.filter(id=num - _CODE_OFFSET).first() if num > _CODE_OFFSET else None
+        return res_qs.filter(public_code=f"GS-{code_match.group(1).upper()}").first()
     digits = ''.join(ch for ch in query if ch.isdigit())
     if len(digits) >= 9:
         last9 = digits[-9:]
