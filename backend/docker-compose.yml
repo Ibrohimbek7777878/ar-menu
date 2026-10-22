@@ -1,3 +1,4 @@
+# ESKI variant (PgBouncer + Redis + Celery). Pilot uchun yengil va sinalgan stek: ../deploy/docker-compose.yml (README: ../deploy/README.md)
 version: "3.9"
 
 services:
@@ -68,7 +69,7 @@ services:
       - "6379:6379"
 
   web:
-    build: .
+    build: {context: .., dockerfile: backend/Dockerfile}
     command: gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 4
     env_file:
       - .env
@@ -86,7 +87,7 @@ services:
       - "8000:8000"
 
   worker:
-    build: .
+    build: {context: .., dockerfile: backend/Dockerfile}
     command: celery -A backend worker -l info --concurrency=4
     env_file:
       - .env
@@ -100,7 +101,7 @@ services:
       - pgbouncer
 
   beat:
-    build: .
+    build: {context: .., dockerfile: backend/Dockerfile}
     command: celery -A backend beat -l info
     env_file:
       - .env

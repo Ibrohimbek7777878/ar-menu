@@ -348,6 +348,31 @@ Qolgan (R9/R10): media'ni nginx/CDN orqali berish va keshlash sarlavhalari (R8-7
 | R9-8 | Production bazasi: test ma'lumotlari arxivlanadi (o'chirilmaydi), haqiqiy restoran `create_restaurant` bilan ochiladi | |
 | R9-9 | Redis (kesh, rate limit, kelajakda SSE) — ixtiyoriy, yuk testi ko'rsatsa qo'shiladi | |
 
+**R9 holati (2026-10-22): kod va skriptlar tayyor va lokal sinalgan; serverga qo'yish egasining VPS/domen qaroriga bog'liq (👤).** Hamma narsa `deploy/` papkasida, qo'llanma: `deploy/README.md`. Nginx o'rniga **Caddy** tanlandi (Let's Encrypt avtomatik, bitta fayl sozlama; R9-4 maqsadi o'zgarmadi).
+
+- **R9-1:** `DATABASE_URL` (postgres/sqlite) o'qiladi; production SQLite bilan ishga tushmaydi (`ALLOW_SQLITE_IN_PRODUCTION` bilan majburlash mumkin); `CONN_MAX_AGE=60`. `migrate_sqlite_to_postgres.sh` haqiqiy baza nusxasida sinaldi: 2282 ob'ekt, jadval qatorlari to'liq mos, ketma-ketliklar to'g'ri. To'liq test to'plami PostgreSQL 16 da ham yashil.
+- **R9-2/R9-3:** `docker compose` (db, init, web, worker, caddy); non-root rasm (uid 10001); gunicorn gthread (`workers=min(cpu*2+1, 4)`, 4 thread, `--reload`siz); `collectstatic` xatoda to'xtaydi; `systemd` birliklari (qayta yoqilganda o'zi turishi uchun `restart: unless-stopped` + Docker xizmati). **Server qayta yuklanishi sinalmagan.**
+- **R9-4/R8-7:** Caddy: HTTPS, zstd/gzip, hash'li fayllar `immutable`, `/media/` 1 kun + `nosniff`, `db.sqlite3` va path traversal yopiq. Lokal domen `localhost` (Caddy ichki sertifikati). **Haqiqiy domen va Let's Encrypt sinalmagan.**
+- **R9-5:** `backup.sh` (pg_dump + media, 7 kunlik/5 haftalik/14 kunlik pre-deploy saqlash, sha256), `restore.sh`, `verify_backup.sh` (zaxirani alohida bazaga tiklab qator sonlarini tekshiradi — haftalik taymer). Tiklash sinovi o'tdi. **Zaxira hali faqat serverning o'zida** (tashqi nusxa qo'lda — README'da yozilgan).
+- **R9-6:** `healthcheck.sh` (ketma-ket ikkinchi xatoda Telegram ogohlantirish, tiklanganda xabar, outbox navbati to'planib qolsa ogohlantirish); Sentry (`sentry-sdk==2.72.0` qotirildi; shaxsiy ma'lumot yuborilmasligi rasm ichida tekshirildi). Haqiqiy Telegram bot bilan sinalmagan (soxta Telegram serveri).
+- **R9-7:** `deploy.sh` (noyob teg, deploydan oldin zaxira, sog'lomlikni kutish, **nosoz versiyada avtomatik orqaga qaytish va ogohlantirish**), `rollback.sh`. Avtomatik orqaga qaytish lokal sinaldi (ataylab buzilgan versiya bilan); migratsiyalar orqaga qaytarilmaydi — sxema o'zgargan bo'lsa `restore.sh` bilan deploydan oldingi zaxira kerak (skript sarlavhasida yozilgan).
+- **R9-8:** haqiqiy restoran toza bazada `create_restaurant` bilan ochiladi (README); test ma'lumotlari production bazasiga umuman ko'chirilmaydi, shu sababli alohida arxivlash skripti kerak bo'lmadi.
+- **R9-9 (Redis):** qo'shilmadi — yuk testi (R10) ko'rsatmaguncha kerak emas.
+
+**Topilgan va tuzatilgan (F-jadval R9):**
+
+| № | Topilma | Tuzatish |
+|---|---|---|
+| F1 | `api_ar_view_log` da `models.F` — `models` import qilinmagan, shu endpoint har chaqirilganda `NameError` | `F` import qilindi |
+| F2 | `marketplace.py` da yalang `except:` | `(TypeError, ValueError)` |
+| F3 | **PostgreSQL'da yiqiladigan, SQLite yashirgan xato:** `Product3DModel.source` 20 belgi, ma'lumotda `library:texnika-elektronika` (27) — kutubxonadan 3D biriktirish PG'da `DataError` berardi (restoran mahsulotiga ham tegishli) | 80 belgigacha kengaytirildi (migratsiya `ar3d 0005`), test |
+| F4 | Xuddi shunday: `ShopPage.template` (20) va `ShopTemplate.slug` (50) generatsiya qilingan `…-custom-<id>-<son>` slug'iga sig'maydi (marketplace) | 100 belgigacha, asos slug 60 ga qirqiladi (`shops 0014`), test |
+| F5 | `loaddata` (ko'chirish/tiklash) `post_save` ni `raw=True` bilan chaqiradi: har bir **eski buyurtma uchun Telegram'ga yangi xabar** ketardi | Signallar `raw` da jim; test (tuzatishsiz yiqiladi) |
+| F6 | Yuklanadigan `media` hajmi root egaligida yaratilib qolishi mumkin edi (zaxira skripti alpine bilan oldin ochsa) — yuklash `Permission denied` | `init` xizmati egalikni har ishga tushirishda to'g'rilaydi; zaxira skripti mavjud bo'lmagan hajmni yaratmaydi (`volume-nocopy`) |
+| F7 | `sentry-sdk` va `psutil` `>=` bilan qotirilmagan edi — keyingi build boshqa versiya olishi mumkin | Aniq versiyalar |
+
+Qolgan: haqiqiy VPS/domen/Telegram bilan birinchi ishga tushirish (👤); yuk testi va 1000 bir vaqtdagi foydalanuvchi isboti (R10); tashqi zaxira (S3/B2/rclone).
+
 ### R10 — Sifat, CI va yuk testi 🟢 (M)
 
 | ID | Ish | Qabul |

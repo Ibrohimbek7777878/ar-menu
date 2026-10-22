@@ -1,0 +1,7 @@
+[Unit]
+Description=Guliston — zaxirani tiklab sinash
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/guliston
+ExecStart=/srv/guliston/deploy/scripts/verify_backup.sh

@@ -140,3 +140,8 @@ backend/logs/
 
 # Local paste/drop artifacts
 Pasted image*.png
+
+# deploy: sirlar, zaxira nusxalar va deploy holati (git'ga tushmaydi)
+deploy/.env
+deploy/backups/
+deploy/.state/

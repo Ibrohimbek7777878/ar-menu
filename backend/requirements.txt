@@ -24,7 +24,7 @@ numpy==2.5.3
 packaging==26.3
 pillow==12.3.0
 prompt_toolkit==3.0.53
-psutil>=6.0
+psutil==7.2.2
 psycopg2-binary==2.9.12
 pygltflib==1.16.5
 PyJWT==2.13.0
@@ -33,7 +33,7 @@ python-dotenv==1.2.3
 redis==8.1.0
 requests==2.34.2
 segno==1.6.6
-sentry-sdk>=2.0
+sentry-sdk==2.72.0
 six==1.17.0
 sqlparse==0.5.5
 trimesh==5.1.0

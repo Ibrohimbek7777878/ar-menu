@@ -1,0 +1,130 @@
+# Restoran 3D menyu — production steki (TZ: R9-2). Ishga tushirish: deploy/README.md
+#   cd deploy && cp .env.production.example .env && (qiymatlarni to'ldiring) && docker compose up -d --build
+#
+# Xizmatlar: db (PostgreSQL), web (gunicorn), worker (bildirishnoma + 3D ishchi), caddy (TLS + statika + media).
+# Tashqariga faqat Caddy portlari (80/443) ochiladi; baza va web ichki tarmoqda.
+
+name: guliston
+
+x-app: &app
+  image: guliston-app:${APP_TAG:-latest}
+  build:
+    context: ..
+    dockerfile: backend/Dockerfile
+  env_file: .env
+  environment: &app-env
+    DEBUG: "False"
+    DJANGO_PRODUCT: restaurant         # shu server faqat restoran mahsuloti (urls_restaurant); X-Product sarlavhasi e'tiborga olinmaydi
+    DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ALLOWED_HOSTS: ${DOMAIN}
+    CSRF_TRUSTED_ORIGINS: https://${DOMAIN},https://${DOMAIN}:${HTTPS_PORT:-443}
+    RESTAURANT_PUBLIC_URL: https://${DOMAIN}
+    PUBLIC_DOMAIN: ${DOMAIN}
+    SECURE_BEHIND_PROXY: "True"
+    TRUSTED_PROXY_COUNT: "1"
+    DJANGO_SKIP_DOTENV: "1"           # barcha sozlama shu fayl/muhitdan; konteyner ichida .env qidirilmaydi
+  restart: unless-stopped
+  volumes:
+    - media:/app/media
+    - logs:/app/logs
+    - cache:/app/cache
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command: >
+      postgres
+      -c max_connections=100
+      -c shared_buffers=${PG_SHARED_BUFFERS:-256MB}
+      -c effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-768MB}
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
+      -c log_min_duration_statement=500
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Bir martalik root xizmati: yuklangan fayllar/jurnal/kesh hajmlari `app` (uid 10001) yoza olishi uchun egasini to'g'rilaydi.
+  # Hajm kimning qo'li bilan yaratilganidan qat'i nazar (masalan zaxira skripti alpine bilan oldin ochgan bo'lsa) ishonchli ishlaydi.
+  init:
+    <<: *app
+    restart: "no"
+    user: "0:0"
+    entrypoint: ["sh", "-c"]
+    command:
+      - find /app/media /app/logs /app/cache -xdev \( ! -user app -o ! -group app \) -exec chown app:app {} +
+    environment:
+      <<: *app-env
+    healthcheck:
+      disable: true
+
+  web:
+    <<: *app
+    command: ["web"]
+    environment:
+      <<: *app-env
+    volumes:
+      - media:/app/media
+      - logs:/app/logs
+      - cache:/app/cache
+      - static:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-H", "X-Forwarded-Proto: https", "-H", "Host: ${DOMAIN}", "http://localhost:8000/health/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  worker:
+    <<: *app
+    command: ["worker"]
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - static:/srv/static:ro
+      - media:/srv/media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  media:
+  static:
+  logs:
+  cache:
+  caddy_data:
+  caddy_config:

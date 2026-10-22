@@ -1,0 +1,20 @@
+# Fon ishchilar: Telegram bildirishnomalari (outbox) + taom 3D generatsiyasi. Nusxa: /etc/systemd/system/
+[Unit]
+Description=Guliston restoran menyu — fon ishchilar
+After=guliston-web.service
+Requires=guliston-web.service
+
+[Service]
+User=guliston
+Group=guliston
+WorkingDirectory=/srv/guliston/backend
+EnvironmentFile=/etc/guliston/guliston.env
+Environment=DJANGO_SKIP_DOTENV=1
+ExecStart=/srv/guliston/backend/venv/bin/python manage.py run_workers
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

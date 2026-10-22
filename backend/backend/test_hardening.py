@@ -22,7 +22,8 @@ GOOD_KEY = 'k' * 64
 def import_settings(**env):
     """settings.py ni .env'siz, aniq muhit bilan alohida jarayonda import qiladi; (kod, stderr, stdout)."""
     base = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'VIRTUAL_ENV')}
-    base.update({'DJANGO_SKIP_DOTENV': '1', 'CACHE_DIR': '/tmp/hardening-cache', 'LOG_DIR': '/tmp/hardening-logs'})
+    base.update({'DJANGO_SKIP_DOTENV': '1', 'CACHE_DIR': '/tmp/hardening-cache', 'LOG_DIR': '/tmp/hardening-logs',
+                 'DATABASE_URL': 'postgres://u:p@db:5432/app'})
     base.update(env)
     code = (
         "import os; os.environ['DJANGO_SETTINGS_MODULE']='backend.settings'\n"
@@ -209,10 +210,56 @@ class PasswordHasherTests(SimpleTestCase):
         self.assertEqual(settings.PASSWORD_HASHERS[0], 'django.contrib.auth.hashers.MD5PasswordHasher')   # hozir test
         base = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'VIRTUAL_ENV')}
         base.update({'DJANGO_SKIP_DOTENV': '1', 'DJANGO_SECRET_KEY': 'k' * 64, 'ALLOWED_HOSTS': 'menu.example.uz',
-                     'CACHE_DIR': '/tmp/hardening-cache', 'LOG_DIR': '/tmp/hardening-logs'})
+                     'CACHE_DIR': '/tmp/hardening-cache', 'LOG_DIR': '/tmp/hardening-logs',
+                     'DATABASE_URL': 'postgres://u:p@db:5432/app'})
         code = ("import os; os.environ['DJANGO_SETTINGS_MODULE']='backend.settings'\n"
                 "from django.conf import settings\nprint(getattr(settings, 'PASSWORD_HASHERS')[0])\n")
         proc = subprocess.run([sys.executable, '-c', code], cwd=BACKEND_DIR, env=base, capture_output=True, text=True,
                               timeout=60)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn('PBKDF2PasswordHasher', proc.stdout.strip().splitlines()[-1])
+
+
+class DatabaseConfigTests(SimpleTestCase):
+    """DATABASE_URL o'qiladi; production'da SQLite ruxsat etilmaydi (TZ: R9-1)."""
+
+    def run_settings(self, **env):
+        base = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'VIRTUAL_ENV')}
+        base.update({'DJANGO_SKIP_DOTENV': '1', 'CACHE_DIR': '/tmp/hardening-cache', 'LOG_DIR': '/tmp/hardening-logs'})
+        base.update(env)
+        code = ("import os, json; os.environ['DJANGO_SETTINGS_MODULE']='backend.settings'\n"
+                "from django.conf import settings\nd = settings.DATABASES['default']\n"
+                "print(json.dumps({k: str(d.get(k, '')) for k in ('ENGINE','NAME','USER','PASSWORD','HOST','PORT','CONN_MAX_AGE')} | "
+                "{'OPTIONS': d.get('OPTIONS', {})}))\n")
+        return subprocess.run([sys.executable, '-c', code], cwd=BACKEND_DIR, env=base, capture_output=True, text=True, timeout=60)
+
+    def test_database_url_is_parsed_including_special_characters_and_ssl(self):
+        import json as _json
+        proc = self.run_settings(DEBUG='True', DATABASE_URL='postgres://app:p%40ss%3Aw%2Frd@db.internal:6543/guliston?sslmode=require')
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        cfg = _json.loads(proc.stdout.strip().splitlines()[-1])
+        self.assertEqual(cfg['ENGINE'], 'django.db.backends.postgresql')
+        self.assertEqual((cfg['NAME'], cfg['USER'], cfg['PASSWORD'], cfg['HOST'], cfg['PORT']),
+                         ('guliston', 'app', 'p@ss:w/rd', 'db.internal', '6543'))
+        self.assertEqual(cfg['OPTIONS'], {'sslmode': 'require'})
+
+    def test_database_url_beats_the_legacy_postgres_variables(self):
+        import json as _json
+        proc = self.run_settings(DEBUG='True', DATABASE_URL='postgres://a:b@h1/n1', POSTGRES_DB='eski', POSTGRES_HOST='h2')
+        cfg = _json.loads(proc.stdout.strip().splitlines()[-1])
+        self.assertEqual((cfg['NAME'], cfg['HOST']), ('n1', 'h1'))
+
+    def test_unknown_scheme_is_refused(self):
+        proc = self.run_settings(DEBUG='True', DATABASE_URL='mysql://a:b@h/n')
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('DATABASE_URL', proc.stderr)
+
+    def test_production_refuses_sqlite_unless_explicitly_allowed(self):
+        env = {'DJANGO_SECRET_KEY': 'k' * 64, 'ALLOWED_HOSTS': 'menu.example.uz'}
+        proc = self.run_settings(**env)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('SQLite', proc.stderr)
+        allowed = self.run_settings(ALLOW_SQLITE_IN_PRODUCTION='True', **env)
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        dev = self.run_settings(DEBUG='True')                       # lokal ishlab chiqishda SQLite oddiy
+        self.assertEqual(dev.returncode, 0, dev.stderr)

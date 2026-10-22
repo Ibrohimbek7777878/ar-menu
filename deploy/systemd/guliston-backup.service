@@ -1,0 +1,7 @@
+[Unit]
+Description=Guliston — zaxira nusxa (docker stek)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/guliston
+ExecStart=/srv/guliston/deploy/scripts/backup.sh

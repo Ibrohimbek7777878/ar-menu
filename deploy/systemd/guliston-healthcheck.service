@@ -1,0 +1,7 @@
+[Unit]
+Description=Guliston — sog'lomlik tekshiruvi
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/guliston
+ExecStart=/srv/guliston/deploy/scripts/healthcheck.sh

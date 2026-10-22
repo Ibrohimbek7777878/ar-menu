@@ -1,0 +1,21 @@
+# Docker build kontekstiga tushmasligi kerak bo'lgan hamma narsa (rasm kichik va tez qurilsin, sir/ma'lumot tushmasin)
+.git
+**/.env
+**/.env.*
+**/venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+apps
+docs
+frontend
+scripts
+deploy
+backend/media
+backend/db.sqlite3
+backend/staticfiles
+backend/logs
+backend/cache
+backend/archive
+backend/bin
+backend/django.log

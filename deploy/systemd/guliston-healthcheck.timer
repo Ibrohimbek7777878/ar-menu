@@ -1,0 +1,10 @@
+[Unit]
+Description=Guliston — har daqiqa sog'lomlik tekshiruvi
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

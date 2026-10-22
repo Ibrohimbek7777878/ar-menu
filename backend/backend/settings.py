@@ -202,8 +202,38 @@ AUTHENTICATION_BACKENDS = [
     'accounts.backends.CustomerBackend',
 ]
 
-# Database — PostgreSQL when POSTGRES_DB is set, otherwise SQLite (dev/default)
-if os.environ.get('POSTGRES_DB'):
+# Database (TZ: R9-1). Ustuvorlik: DATABASE_URL (postgres://user:parol@host:5432/nom?sslmode=require) →
+# POSTGRES_DB (eski usul) → SQLite (faqat lokal ishlab chiqish). Production'da SQLite ishlatilmaydi: bir nechta gunicorn
+# jarayoni bitta fayl bo'yicha yozuvda bir-birini bloklaydi; zarurat bo'lsa ALLOW_SQLITE_IN_PRODUCTION=True.
+def _database_from_url(url):
+    from urllib.parse import parse_qsl, unquote, urlparse
+    parsed = urlparse(url)
+    scheme = parsed.scheme.split('+')[0]
+    if scheme in ('postgres', 'postgresql', 'pgsql'):
+        options = dict(parse_qsl(parsed.query))
+        config = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(parsed.path.lstrip('/')),
+            'USER': unquote(parsed.username or ''),
+            'PASSWORD': unquote(parsed.password or ''),
+            'HOST': parsed.hostname or 'localhost',
+            'PORT': str(parsed.port or 5432),
+            # PgBouncer (transaction pool) ishlatilsa DB_CONN_MAX_AGE=0; to'g'ridan-to'g'ri ulanishda ulanish qayta ishlatiladi
+            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', 60)),
+            'CONN_HEALTH_CHECKS': True,
+        }
+        if options.get('sslmode'):
+            config['OPTIONS'] = {'sslmode': options['sslmode']}
+        return config
+    if scheme == 'sqlite':
+        path = unquote(parsed.path)
+        return {'ENGINE': 'django.db.backends.sqlite3', 'NAME': path if path.startswith('/') else BASE_DIR / (path.lstrip('/') or 'db.sqlite3')}
+    raise ImproperlyConfigured(f"DATABASE_URL sxemasi qo'llab-quvvatlanmaydi: {scheme!r} (postgres:// yoki sqlite:///)")
+
+
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {'default': _database_from_url(os.environ['DATABASE_URL'])}
+elif os.environ.get('POSTGRES_DB'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -223,6 +253,13 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+if (not DEBUG and not RUNNING_TESTS and DATABASES['default']['ENGINE'].endswith('sqlite3')
+        and not _env_bool('ALLOW_SQLITE_IN_PRODUCTION', False)):
+    raise ImproperlyConfigured(
+        "Production'da SQLite ishlatib bo'lmaydi (bir nechta jarayon yozuvda bloklanadi). DATABASE_URL=postgres://... "
+        "bering (yoki ongli ravishda ALLOW_SQLITE_IN_PRODUCTION=True)."
+    )
 
 # Cache — Redis bo'lsa Redis; production'da Redis'siz bo'lsa fayl keshi (bitta serverdagi barcha gunicorn
 # jarayonlari uchun UMUMIY: rate limit hisoblagichlari jarayonlar orasida bo'lingan bo'lmaydi); lokal/testda xotira.
