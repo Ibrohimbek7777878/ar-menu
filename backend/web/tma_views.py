@@ -1123,6 +1123,23 @@ def restaurant_admin_logout(request):
 # YANGI REPLIT PROTOTIP EKRANLARI (WARM CREAM & FOREST GREEN)
 # ==============================================================================
 
+def _featured_dishes(shop, limit=8):
+    """Yangi bosh sahifa uchun rasmli taomlar: avval "tavsiya" belgilanganlar, keyin qolganlari (soni cheklangan)."""
+    if not shop:
+        return []
+    rows = (Product.objects.filter(shop=shop, is_available=True, is_deleted=False)
+            .exclude(image='').select_related('model3d').order_by('-is_featured', 'id')[:limit])
+    return [{
+        'id': p.id,
+        'name': p.name,
+        'description': (p.description or '')[:110],
+        'price': float(p.price),
+        'image': p.image.url,
+        'has_3d': bool(p.has_3d and p.ar_model),
+        'is_popular': bool(p.is_featured),
+    } for p in rows]
+
+
 def tma_welcome(request):
     """
     Ekran 2: Guliston-Welcome-Entry.png
@@ -1140,6 +1157,7 @@ def tma_welcome(request):
         },
         'cartCount': cart_count,
         'allow_table_number': bool(getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False)),
+        'featured': _featured_dishes(table.shop if (table and table.shop) else shop),
     }
 
     context = {

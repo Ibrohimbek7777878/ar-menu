@@ -148,7 +148,10 @@ def spa_session(request):
     from django.conf import settings
     user = getattr(request, 'user', None)
     role = _SPA_ROLE.get(user_role(user), '') if is_restaurant_staff(user) else ''
-    payload = {'role': role or 'guest', 'roles': _SPA_ROLES.get(role, []), 'demo': bool(getattr(settings, 'DEMO_MODE', False))}
+    from backend.app_settings import get_choice
+    payload = {'role': role or 'guest', 'roles': _SPA_ROLES.get(role, []), 'demo': bool(getattr(settings, 'DEMO_MODE', False)),
+               # Mehmon dizayni (yangi/eski): kodni o'zgartirmasdan admin sozlamadan almashtiriladi
+               'design': get_choice('guest_design', 'new', ('new', 'classic'))}
     if role:
         payload['name'] = (user.get_full_name() or user.get_username()).strip()
         # Admin paneldan sozlanadigan ish qiymatlari (kodni o'zgartirmasdan): KDS taymeri ogohlantirish chegaralari

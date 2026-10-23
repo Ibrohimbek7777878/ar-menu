@@ -176,6 +176,8 @@ ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 
 # yuborish mumkin. Production'da stol faqat QR'dagi tasodifiy token (/t/<uuid>/) orqali aniqlanadi. Raqam bilan kirish
 # faqat DEMO_MODE'da yoki shu flag aniq yoqilganda ishlaydi (TZ R1-10; funksiya o'chirilmagan — flag ortiga yashirilgan).
 RESTAURANT_ALLOW_TABLE_NUMBER_URL = _env_bool('RESTAURANT_ALLOW_TABLE_NUMBER_URL', DEMO_MODE)
+# Mehmon sahifalari dizayni: 'new' (yangi) yoki 'classic' (eski). Admin paneldan (AppSetting `guest_design`) ham almashtiriladi.
+GUEST_DESIGN = os.environ.get('GUEST_DESIGN', 'new').strip().lower()
 # Bosma QR kodlar ko'rsatadigan domen (masalan https://menu.example.uz). Bo'sh bo'lsa — xodim ochgan sayt domeni.
 RESTAURANT_PUBLIC_URL = os.environ.get('RESTAURANT_PUBLIC_URL', '').strip().rstrip('/')
 

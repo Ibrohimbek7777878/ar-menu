@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bosh sahifa maketi — Registon Restorani</title>
+<!-- MAKET (kod emas): ma'qullash uchun. Rasmlar backend/media/dish papkasidan olingan. Oynani kengaytirib/toraytirib ko'ring. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #EA580C; --brand-hover: #C2410C; --brand-light: #FFF7ED; --brand-subtle: #FFEDD5;
+    --accent: #E11D48; --ink: #1C1917; --muted: #57534E; --line: #E7E5E4; --bg: #FAF7F2; --card: #fff;
+    --radius: 20px; --shadow: 0 10px 30px -12px rgba(124, 45, 18, .25);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; overflow-x: hidden; }
+  h1, h2, h3 { font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif; letter-spacing: -.02em; }
+  img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+
+  .maket-bar { background: var(--ink); color: #fff; text-align: center; font-size: 13px; padding: 8px 16px; }
+  .maket-bar b { color: #FDBA74; }
+
+  /* ── Sarlavha ── */
+  header.top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .wrap { width: min(100% - 32px, 1440px); margin-inline: auto; }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+  .logo { display: flex; align-items: center; gap: 10px; font: 700 19px 'Outfit'; }
+  .logo i { width: 34px; height: 34px; border-radius: 10px; background: var(--brand); color: #fff; display: grid; place-items: center; font-style: normal; font-size: 16px; }
+  nav.tabs { display: none; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+  nav.tabs a { padding: 8px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--muted); transition: .2s; }
+  nav.tabs a.on { background: var(--brand-light); color: var(--brand); }
+  nav.tabs a:hover { color: var(--brand); }
+  .top .right { display: flex; gap: 8px; align-items: center; }
+  .chip { font-size: 13px; font-weight: 700; padding: 8px 12px; border-radius: 12px; background: var(--brand-light); color: var(--brand); border: 1px solid var(--brand-subtle); }
+  .cart { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: #fff; display: grid; place-items: center; position: relative; }
+  .cart b { position: absolute; top: -6px; right: -6px; background: var(--brand); color: #fff; font-size: 11px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
+
+  /* ── Hero ── */
+  .hero { position: relative; padding: 32px 0 56px; overflow-x: clip; }
+  .hero .wrap { display: grid; gap: 32px; align-items: center; }
+  .eyebrow { display: inline-flex; gap: 8px; align-items: center; background: #fff; border: 1px solid var(--brand-subtle); color: var(--brand); font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 999px; }
+  .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: pulse 1.8s infinite; }
+  h1 { font-size: clamp(36px, 5.2vw, 72px); line-height: 1.02; font-weight: 800; margin: 18px 0 14px; }
+  h1 em { font-style: normal; color: var(--brand); position: relative; white-space: nowrap; }
+  h1 em::after { content: ''; position: absolute; left: 0; right: 0; bottom: 2px; height: 10px; background: var(--brand-subtle); z-index: -1; border-radius: 6px; transform-origin: left; animation: underline 1s .8s both; }
+  .lead { color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); max-width: 52ch; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 22px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 26px; border-radius: 16px; font-weight: 700; font-size: 16px; border: 0; cursor: pointer; transition: transform .2s, box-shadow .2s, background .2s; }
+  .btn.primary { background: var(--brand); color: #fff; box-shadow: 0 12px 24px -10px rgba(234, 88, 12, .7); }
+  .btn.primary:hover { background: var(--brand-hover); transform: translateY(-2px); }
+  .btn.primary svg { transition: transform .2s; } .btn.primary:hover svg { transform: translateX(4px); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .btn.ghost:hover { border-color: var(--brand); color: var(--brand); transform: translateY(-2px); }
+  .trust { display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--muted); }
+  .trust span::before { content: '✓ '; color: #16A34A; font-weight: 800; }
+
+  .stage { position: relative; aspect-ratio: 1 / 1; max-width: 620px; width: 100%; margin-inline: auto; }
+  .stage::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #FFEDD5, #FED7AA 60%, #FDBA74); }
+  .ring { position: absolute; inset: 1%; border-radius: 50%; border: 2px dashed rgba(234, 88, 12, .45); animation: spin 40s linear infinite; }
+  .main-dish { position: absolute; inset: 11%; border-radius: 50%; overflow: hidden; box-shadow: 0 40px 60px -25px rgba(124, 45, 18, .55); animation: float 6s ease-in-out infinite; border: 8px solid #fff; }
+  .main-dish img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); }
+  .steam { position: absolute; top: 4%; left: 42%; width: 16%; height: 24%; pointer-events: none; }
+  .steam i { position: absolute; bottom: 0; width: 30%; height: 100%; border-radius: 50%; background: rgba(255,255,255,.7); filter: blur(10px); animation: steam 3.6s ease-in infinite; opacity: 0; }
+  .steam i:nth-child(1) { left: 0; } .steam i:nth-child(2) { left: 35%; animation-delay: 1.2s; } .steam i:nth-child(3) { left: 70%; animation-delay: 2.2s; }
+  .mini { position: absolute; width: 21%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; border: 5px solid #fff; box-shadow: var(--shadow); animation: float 5s ease-in-out infinite; }
+  .mini img { width: 100%; height: 100%; object-fit: cover; }
+  .mini.a { top: 4%; right: 6%; animation-delay: -1s; } .mini.b { bottom: 8%; left: 0; animation-delay: -2.5s; } .mini.c { bottom: 2%; right: 12%; animation-delay: -4s; }
+  .tag { position: absolute; background: #fff; border-radius: 16px; padding: 10px 14px; box-shadow: var(--shadow); font-size: 13px; font-weight: 700; display: flex; gap: 10px; align-items: center; animation: float 7s ease-in-out infinite; }
+  .tag small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+  .tag.t1 { left: -2%; top: 20%; animation-delay: -2s; } .tag.t2 { right: -2%; bottom: 36%; animation-delay: -3.5s; }
+  .tag .dot { width: 34px; height: 34px; border-radius: 10px; background: var(--brand-light); display: grid; place-items: center; color: var(--brand); }
+  .badge360 { position: absolute; top: 12%; left: 12%; background: var(--ink); color: #fff; font-weight: 800; font-size: 13px; padding: 8px 12px; border-radius: 12px; display: flex; align-items: center; gap: 6px; }
+  .badge360 svg { animation: spin 6s linear infinite; }
+
+  /* ── Bo'limlar ── */
+  section.block { padding: 40px 0; }
+  .head { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 22px; }
+  .head h2 { font-size: clamp(26px, 3vw, 38px); font-weight: 800; }
+  .head p { color: var(--muted); }
+  .head a { color: var(--brand); font-weight: 700; white-space: nowrap; }
+
+  .scroller { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 1fr); gap: 18px; overflow-x: auto; padding: 4px 2px 18px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .scroller::-webkit-scrollbar { display: none; }
+  .dish { background: var(--card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); scroll-snap-align: start; transition: transform .3s, box-shadow .3s; display: flex; flex-direction: column; }
+  .dish:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
+  .dish .ph { aspect-ratio: 4 / 3; overflow: hidden; position: relative; }
+  .dish .ph img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+  .dish:hover .ph img { transform: scale(1.08); }
+  .dish .b3d { position: absolute; left: 12px; top: 12px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 10px; }
+  .dish .hot { position: absolute; right: 12px; top: 12px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 10px; }
+  .dish .body { padding: 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .dish h3 { font-size: 18px; } .dish p { font-size: 14px; color: var(--muted); }
+  .dish .row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 12px; }
+  .price { font: 800 20px 'Outfit'; color: var(--brand); } .price small { font: 500 13px 'Plus Jakarta Sans'; color: var(--muted); }
+  .add { background: var(--brand); color: #fff; border: 0; border-radius: 12px; padding: 10px 16px; font-weight: 700; cursor: pointer; transition: .2s; }
+  .add:hover { background: var(--brand-hover); transform: scale(1.05); }
+
+  .cats { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cats a { flex: none; padding: 10px 18px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-weight: 600; font-size: 14px; transition: .2s; }
+  .cats a:hover, .cats a.on { background: var(--brand); color: #fff; border-color: var(--brand); transform: translateY(-2px); }
+
+  .connect { display: grid; gap: 16px; }
+  .opt { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; display: flex; gap: 16px; align-items: flex-start; transition: .25s; }
+  .opt:hover { border-color: var(--brand); transform: translateY(-4px); box-shadow: var(--shadow); }
+  .opt .ic { width: 52px; height: 52px; flex: none; border-radius: 16px; background: var(--brand-light); color: var(--brand); display: grid; place-items: center; font-size: 24px; }
+  .opt h3 { font-size: 18px; margin-bottom: 2px; } .opt p { font-size: 14px; color: var(--muted); }
+
+  .banner { border-radius: 28px; background: linear-gradient(120deg, #C2410C, #EA580C 60%, #FB923C); color: #fff; padding: clamp(24px, 4vw, 48px); display: grid; gap: 24px; align-items: center; overflow: hidden; position: relative; }
+  .banner h2 { font-size: clamp(26px, 3.4vw, 42px); font-weight: 800; }
+  .banner p { opacity: .9; max-width: 46ch; margin: 8px 0 18px; }
+  .banner .btn { background: #fff; color: var(--brand); }
+  .banner .spin3d { width: min(70%, 280px); aspect-ratio: 1; margin-inline: auto; border-radius: 50%; overflow: hidden; border: 8px solid rgba(255,255,255,.9); animation: tilt 8s ease-in-out infinite; box-shadow: 0 30px 50px -20px rgba(0,0,0,.5); }
+  .banner .spin3d img { width: 100%; height: 100%; object-fit: cover; }
+
+  footer { padding: 40px 0 90px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  /* Pastki navigatsiya (telefonda) */
+  .bottom { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-top: 1px solid var(--line); display: flex; justify-content: space-around; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 30; }
+  .bottom a { display: grid; justify-items: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--muted); padding: 4px 10px; }
+  .bottom a.on { color: var(--brand); } .bottom a span { font-size: 20px; }
+
+  /* ── Kirish animatsiyalari ── */
+  .rise { opacity: 0; transform: translateY(24px); animation: rise .8s cubic-bezier(.2, .7, .2, 1) forwards; animation-delay: calc(var(--i, 0) * 110ms); }
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s, transform .7s cubic-bezier(.2, .7, .2, 1); transition-delay: calc(var(--i, 0) * 90ms); }
+  .reveal.in { opacity: 1; transform: none; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, .5); } 100% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); } }
+  @keyframes steam { 0% { transform: translateY(20%) scale(.6); opacity: 0; } 30% { opacity: .8; } 100% { transform: translateY(-120%) scale(1.4); opacity: 0; } }
+  @keyframes underline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes tilt { 0%, 100% { transform: rotateY(-14deg) rotateZ(-3deg); } 50% { transform: rotateY(14deg) rotateZ(3deg); } }
+
+  /* ── Kengayish: telefon → planshet → kompyuter → katta ekran ── */
+  @media (max-width: 719px) {
+    .tag.t1 { left: 0; } .tag.t2 { right: 0; }
+    .cta .btn { flex: 1 1 100%; justify-content: center; }
+    .maket-bar { font-size: 12px; }
+  }
+  @media (min-width: 720px) {
+    .connect { grid-template-columns: repeat(2, 1fr); }
+    .banner { grid-template-columns: 1.3fr 1fr; }
+    .scroller { grid-auto-columns: minmax(260px, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    nav.tabs { display: flex; } .bottom { display: none; } footer { padding-bottom: 40px; }
+    .hero { padding: 56px 0 80px; }
+    .hero .wrap { grid-template-columns: 1.05fr 1fr; gap: 56px; }
+    .connect { grid-template-columns: repeat(4, 1fr); }
+    .scroller { grid-auto-flow: row; grid-template-columns: repeat(4, 1fr); overflow: visible; }
+  }
+  @media (min-width: 1600px) {
+    .wrap { width: min(100% - 96px, 1680px); }
+    .scroller { grid-template-columns: repeat(5, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .rise, .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="maket-bar"><b>MAKET</b> · ma'qullash uchun, ishchi kod emas · oynani kengaytirib va toraytirib ko'ring (telefon / planshet / kompyuter / katta ekran)</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#"><i>G</i> Registon Restorani</a>
+    <nav class="tabs"><a class="on" href="#">Asosiy</a><a href="#menu">Menyu</a><a href="#">360° Taomlar</a><a href="#stol">Stol xizmatlari</a><a href="#">Buyurtmalar</a></nav>
+    <div class="right"><span class="chip">● Stol 1</span><a class="cart" href="#" aria-label="Savat">🛒<b>2</b></a></div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow rise" style="--i:0">Xush kelibsiz</span>
+        <h1 class="rise" style="--i:1">Haqiqiy o'zbek <em>ta'mi</em>,<br>stolingizda</h1>
+        <p class="lead rise" style="--i:2">Milliy taomlarimizni 360° ko'rinishda aylantirib ko'ring, tanlang va buyurtmangiz to'g'ridan-to'g'ri oshxonaga tushadi. Kutish ham, qog'oz menyu ham yo'q.</p>
+        <div class="cta rise" style="--i:3">
+          <a class="btn primary" href="#menu">Menyuni ko'rish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn ghost" href="#">⟳ 360° taomlar</a>
+        </div>
+        <div class="trust rise" style="--i:4"><span>Halol</span><span>Yangi mahsulotlar</span><span>Buyurtma 1 daqiqada</span></div>
+      </div>
+
+      <div class="rise" style="--i:2"><div class="stage" aria-hidden="true">
+        <div class="ring"></div>
+        <div class="main-dish"><img src="../../../backend/media/dish/plov.jpg" alt="Choyxona palovi"></div>
+        <div class="steam"><i></i><i></i><i></i></div>
+        <div class="mini a"><img src="../../../backend/media/dish/shashlik.jpg" alt=""></div>
+        <div class="mini b"><img src="../../../backend/media/dish/somsa.jpg" alt=""></div>
+        <div class="mini c"><img src="../../../backend/media/dish/soup.jpg" alt=""></div>
+        <div class="badge360"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg> 360°</div>
+        <div class="tag t1"><span class="dot">★</span><div>Bugungi tanlov<small>Choyxona palovi</small></div></div>
+        <div class="tag t2"><span class="dot">⏱</span><div>~ 15 daqiqa<small>tayyorlanish vaqti</small></div></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="block" id="menu">
+    <div class="wrap">
+      <div class="head reveal"><div><h2>Mashhur taomlar</h2><p>Mehmonlarimiz eng ko'p buyurtma qiladiganlar</p></div><a href="#">Hammasini ko'rish →</a></div>
+      <div class="cats reveal" style="--i:1"><a class="on" href="#">Barchasi</a><a href="#">Milliy taomlar</a><a href="#">Kaboblar</a><a href="#">Somsalar</a><a href="#">Salatlar</a><a href="#">Non va pishiriqlar</a><a href="#">Shirinliklar</a><a href="#">Ichimliklar</a></div>
+      <div class="scroller" style="margin-top:20px">
+        <article class="dish reveal" style="--i:0"><div class="ph"><img loading="lazy" src="../../../backend/media/dish/plov.jpg" alt=""><span class="b3d">360°</span><span class="hot">Tavsiya</span></div><div class="body"><h3>Choyxona palovi</h3><p>Lazer guruch, barra qo'y go'shti, sariq sabzi, no'xat.</p><div class="row"><span class="price">38 000 <small>so'm</small></span><button class="add">+ Qo'shish</button></div></div></article>
+        <article class="dish reveal" style="--i:1"><div class="ph"><img loading="lazy" src="../../../backend/media/dish/shashlik.jpg" alt=""><span class="b3d">360°</span></div><div class="body"><h3>Qo'y go'shtli shashlik</h3><p>Mangalda pishirilgan barra go'sht, piyoz va ko'katlar bilan.</p><div class="row"><span class="price">18 000 <small>so'm</small></span><button class="add">+ Qo'shish</button></div></div></article>
+        <article class="dish reveal" style="--i:2"><div class="ph"><img loading="lazy" src="../../../backend/media/dish/somsa.jpg" alt=""><span class="b3d">360°</span></div><div class="body"><h3>Tandir somsa</h3><p>Tandirda pishgan qarsildoq xamirli, mayin mol go'shti.</p><div class="row"><span class="price">9 000 <small>so'm</small></span><button class="add">+ Qo'shish</button></div></div></article>
+        <article class="dish reveal" style="--i:3"><div class="ph"><img loading="lazy" src="../../../backend/media/dish/soup.jpg" alt=""><span class="b3d">360°</span></div><div class="body"><h3>Mastava sho'rva</h3><p>Pomidorli quyuq sho'rva, yangi ko'katlar bilan.</p><div class="row"><span class="price">24 000 <small>so'm</small></span><button class="add">+ Qo'shish</button></div></div></article>
+        <article class="dish reveal" style="--i:4"><div class="ph"><img loading="lazy" src="../../../backend/media/dish/salad.jpg" alt=""><span class="b3d">360°</span></div><div class="body"><h3>Bahor salati</h3><p>Yangi sabzavotlar, avokado va zaytun moyi.</p><div class="row"><span class="price">22 000 <small>so'm</small></span><button class="add">+ Qo'shish</button></div></div></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="banner reveal">
+        <div>
+          <h2>Taomni buyurtmadan oldin ko'ring</h2>
+          <p>Har bir taomni telefon yoki kompyuterda barmoq bilan aylantirib, hajmi va tarkibini ko'zingiz bilan baholang.</p>
+          <a class="btn" href="#">360° taomlarni ko'rish →</a>
+        </div>
+        <div class="spin3d"><img src="../../../backend/media/dish/bread.jpg" alt=""></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="stol">
+    <div class="wrap">
+      <div class="head reveal"><div><h2>Stolga ulanish</h2><p>O'zingizga qulay usulni tanlang</p></div></div>
+      <div class="connect">
+        <a class="opt reveal" style="--i:0" href="#"><span class="ic">▦</span><div><h3>QR kodni skanerlash</h3><p>Stol ustidagi QR kodga telefon kamerangizni qarating.</p></div></a>
+        <a class="opt reveal" style="--i:1" href="#"><span class="ic">#</span><div><h3>Stol raqamini kiritish</h3><p>Stolingiz ustidagi raqamni yozib menyuga kiring.</p></div></a>
+        <a class="opt reveal" style="--i:2" href="#"><span class="ic">◉</span><div><h3>NFC orqali ulanish</h3><p>Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.</p></div></a>
+        <a class="opt reveal" style="--i:3" href="#"><span class="ic">🗓</span><div><h3>Bron qilingan stolni qidirish</h3><p>Oldindan joy band qilgan bo'lsangiz, raqamingiz orqali toping.</p></div></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Registon Restorani · Guliston · 3D menyu</div></footer>
+
+<nav class="bottom"><a class="on" href="#"><span>⌂</span>Asosiy</a><a href="#menu"><span>☕</span>Menyu</a><a href="#"><span>⬡</span>3D Taom</a><a href="#"><span>🛒</span>Savat</a><a href="#"><span>🧾</span>Hisob</a></nav>
+
+<script>
+  // Skroll qilinganda bo'limlar yumshoq paydo bo'ladi
+  const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  // Katta taom kursor harakatiga yengil javob beradi (faqat sichqonchali qurilmada)
+  const stage = document.querySelector('.stage');
+  if (matchMedia('(hover:hover)').matches && stage) {
+    stage.addEventListener('mousemove', (e) => { const r = stage.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; stage.style.transform = `perspective(900px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg)`; });
+    stage.addEventListener('mouseleave', () => stage.style.transform = '');
+    stage.style.transition = 'transform .25s ease-out';
+  }
+</script>
+</body>
+</html>

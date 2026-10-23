@@ -6,6 +6,8 @@ import {
 } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { roleService } from '../../core/auth/RoleService';
+import { getGuestDesign } from '../../utils/guestDesign';
+import { WelcomePageNew } from './WelcomePageNew';
 import './WelcomePage.css';
 
 interface InitialWelcomeData {
@@ -16,7 +18,8 @@ interface InitialWelcomeData {
   allow_table_number?: boolean;
 }
 
-export const WelcomePage: React.FC = () => {
+/** Eski (klassik) bosh sahifa — o'chirilmagan: admin sozlamasi `guest_design = classic` bo'lsa ko'rsatiladi. */
+const WelcomePageClassic: React.FC = () => {
   const { navigate, setTableNumber, cartCount: navCartCount, setIsQrModalOpen, setIsNfcModalOpen, userRole } = useNavigation();
   // QR generator — xodim vositasi; mehmon stol ustidagi QR ni telefon kamerasi bilan skanerlaydi (TZ: R-SEC-08)
   const isStaff = userRole !== 'guest';
@@ -243,3 +246,5 @@ export const WelcomePage: React.FC = () => {
     </div>
   );
 };
+
+export const WelcomePage: React.FC = () => (getGuestDesign() === 'classic' ? <WelcomePageClassic /> : <WelcomePageNew />);

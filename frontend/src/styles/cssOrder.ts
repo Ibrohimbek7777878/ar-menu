@@ -36,3 +36,6 @@ import '../pages/HostessDeskPage/HostessDeskPage.css'
 import '../pages/KDSPage/KDSPage.css'
 import '../pages/FinancePage/FinancePage.css'
 import '../pages/AdminDashboardPage/AdminDashboardPage.css'
+// Yangi mehmon dizayni (maket ma'qullangan): eski uslublardan KEYIN — eski dizayn o'zgarmaydi
+import './welcomeNew.css'
+import './designNew.css'

@@ -37,7 +37,7 @@ class SpaSessionTests(TestCase):
 
     def test_guest_page_says_guest_and_not_demo(self):
         data = session_in(Client().get('/menu/').content.decode())
-        self.assertEqual(data, {'role': 'guest', 'roles': [], 'demo': False})
+        self.assertEqual(data, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
 
     def test_owner_is_admin_on_staff_pages(self):
         client = self.login(self.owner)
@@ -174,3 +174,67 @@ class ReactAssetTagTests(TestCase):
             self.assertEqual(self.client.get('/ui-components/').status_code, 404)
         with override_settings(DEBUG=False, DEMO_MODE=True, ROOT_URLCONF='backend.urls_restaurant'):
             self.assertEqual(self.client.get('/ui-components/').status_code, 200)
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant', DEMO_MODE=False)
+class GuestDesignSettingTests(TestCase):
+    """Eski/yangi dizayn kodni o'zgartirmasdan almashtiriladi (AGENTS.md 4-qoida: eskisi o'chirilmaydi, yashiriladi)."""
+
+    def design(self):
+        return session_in(Client().get('/menu/').content.decode())['design']
+
+    def test_new_design_is_the_default(self):
+        self.assertEqual(self.design(), 'new')
+
+    def test_admin_setting_switches_back_to_the_classic_design(self):
+        from notifications.models import AppSetting
+        AppSetting.objects.create(key='guest_design', value='classic', category='guest')
+        self.assertEqual(self.design(), 'classic')
+
+    @override_settings(GUEST_DESIGN='classic')
+    def test_env_default_is_used_when_no_admin_setting(self):
+        self.assertEqual(self.design(), 'classic')
+
+    def test_garbage_value_falls_back_to_the_default(self):
+        from notifications.models import AppSetting
+        AppSetting.objects.create(key='guest_design', value='<script>', category='guest')
+        self.assertEqual(self.design(), 'new')
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant', DEMO_MODE=False)
+class WelcomeFeaturedDishesTests(TestCase):
+
+    def setUp(self):
+        call_command('create_restaurant', name='Tavsiya', slug='tavsiya', owner='tavsiya-ega',
+                     password='Tavsiya-parol-1', tables=2, stdout=io.StringIO())
+        self.shop = Shop.objects.get(slug='tavsiya')
+
+    def featured(self):
+        html = Client().get('/welcome/').content.decode()
+        match = re.search(r'window\.__GULISTON_WELCOME_DATA__ = (\{.*?\});\s*</script>', html, re.S)
+        assert match, 'welcome ma\'lumoti topilmadi'
+        return json.loads(match.group(1))['featured']
+
+    def make(self, name, image='', featured=False, available=True):
+        from categories.models import Category
+        from products.models import Product
+        cat, _ = Category.objects.get_or_create(name='Taomlar', defaults={'name_uz': 'Taomlar', 'name_ru': 'Taomlar'})
+        return Product.objects.create(shop=self.shop, name=name, price=10000, category=cat, image=image,
+                                      is_featured=featured, is_available=available)
+
+    def test_only_available_dishes_with_a_photo_are_featured_recommended_first(self):
+        self.make('Rasmsiz osh')
+        self.make('Oddiy', image='dish/somsa.jpg')
+        self.make('Tavsiya', image='dish/plov.jpg', featured=True)
+        self.make('Mavjud emas', image='dish/soup.jpg', available=False)
+        names = [d['name'] for d in self.featured()]
+        self.assertEqual(names, ['Tavsiya', 'Oddiy'])
+
+    def test_featured_is_capped(self):
+        for i in range(12):
+            self.make(f'Taom {i}', image='dish/plov.jpg')
+        self.assertEqual(len(self.featured()), 8)
+
+    def test_no_photos_gives_an_empty_list_not_an_error(self):
+        self.make('Rasmsiz')
+        self.assertEqual(self.featured(), [])

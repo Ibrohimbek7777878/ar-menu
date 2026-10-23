@@ -25,6 +25,8 @@ export interface ServerSession {
   roles: UserRole[];
   name?: string;
   demo: boolean;
+  /** Mehmon sahifalari dizayni (admin sozlamasi `guest_design`): 'new' — yangi, 'classic' — eski */
+  design?: 'new' | 'classic';
   /** Admin paneldan sozlanadigan ish qiymatlari (xodim sessiyasida) */
   config?: { kds_warn_minutes?: number; kds_late_minutes?: number };
 }

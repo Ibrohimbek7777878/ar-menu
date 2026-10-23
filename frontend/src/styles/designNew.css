@@ -1,0 +1,112 @@
+/* ─────────────────────────────────────────────────────────────
+   Yangi mehmon dizayni — umumiy komponentlar uchun (sarlavha, menyu, taom kartasi).
+   Hammasi `[data-design='new']` ostida: admin sozlamasi `guest_design = classic` bo'lsa bu qoidalar ishlamaydi va
+   eski dizayn avvalgidek qoladi (eski uslublar o'zgartirilmagan, o'chirilmagan).
+   Bu fayl cssOrder.ts da ENG OXIRIDA ulanadi.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Kenglik: Django shabloni (`base_tma.html`) ilovani 960–1360 px ustunga siqib turardi; yangi dizaynda butun ekran ── */
+[data-design='new'] .gul-app-shell {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+  background-color: transparent;
+}
+
+/* ── Kontent kengligi: 1200 px ustun o'rniga katta ekranda kengroq ── */
+@media (min-width: 1280px) {
+  [data-design='new'] .header-nav-container,
+  [data-design='new'] .menu-main-content,
+  [data-design='new'] .ar-page-main {
+    max-width: 1440px;
+    padding-inline: 32px;
+  }
+}
+@media (min-width: 1600px) {
+  [data-design='new'] .header-nav-container,
+  [data-design='new'] .menu-main-content,
+  [data-design='new'] .ar-page-main {
+    max-width: 1680px;
+    padding-inline: 48px;
+  }
+}
+
+/* ── Sarlavha ── */
+[data-design='new'] .header-nav {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+[data-design='new'] .header-nav-container { height: 64px; }
+[data-design='new'] .brand-crest { width: 34px; height: 34px; border-radius: 10px; }
+[data-design='new'] .brand-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48vw; }
+[data-design='new'] .header-table-badge { white-space: nowrap; }
+[data-design='new'] .header-nav svg { stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+[data-design='new'] .desktop-nav-item { transition: color 0.2s, background 0.2s, transform 0.2s; }
+[data-design='new'] .desktop-nav-item:hover { color: var(--brand-primary, #EA580C); }
+[data-design='new'] .header-cart-btn,
+[data-design='new'] .btn-header-call-waiter { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+[data-design='new'] .header-cart-btn:hover,
+[data-design='new'] .btn-header-call-waiter:hover { transform: translateY(-2px); }
+
+/* ── Menyu: ustunlar ── */
+@media (min-width: 1024px) {
+  [data-design='new'] .menu-dishes-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+}
+@media (min-width: 1500px) {
+  [data-design='new'] .menu-dishes-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* ── Taom kartasi ── */
+[data-design='new'] .dish-card {
+  border-radius: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+[data-design='new'] .dish-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px -12px rgba(124, 45, 18, 0.25);
+}
+[data-design='new'] .dish-card-media { aspect-ratio: 4 / 3; }
+[data-design='new'] .dish-card-img { transition: transform 0.6s ease; }
+[data-design='new'] .dish-card:hover .dish-card-img { transform: scale(1.08); }
+[data-design='new'] .dish-card-title { font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em; }
+[data-design='new'] .price-val { font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif; font-weight: 800; }
+[data-design='new'] .btn-add-to-cart { border-radius: 12px; transition: background 0.2s, transform 0.2s; }
+[data-design='new'] .btn-add-to-cart:hover { transform: scale(1.05); }
+
+/* Rasmi yo'q taom: "$" belgisi o'rniga iliq fon va taom bosh harfi */
+[data-design='new'] .dish-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FFEDD5, #FED7AA 60%, #FDBA74);
+}
+[data-design='new'] .dish-card-placeholder svg { display: none; }
+[data-design='new'] .dish-card-placeholder::before {
+  content: attr(data-letter);
+  font: 800 64px 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  color: var(--brand-primary, #EA580C);
+  opacity: 0.55;
+}
+
+/* ── Kirish animatsiyasi: kartalar ketma-ket paydo bo'ladi (hover'ga xalaqit bermaslik uchun faqat boshida) ── */
+@keyframes dn-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+[data-design='new'] .menu-dishes-grid .dish-card { animation: dn-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(2) { animation-delay: 60ms; }
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(3) { animation-delay: 120ms; }
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(4) { animation-delay: 180ms; }
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(5) { animation-delay: 240ms; }
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(6) { animation-delay: 300ms; }
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(n + 7) { animation-delay: 360ms; }
+
+/* ── Toifa tugmalari ── */
+[data-design='new'] .chip-pill { transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s; }
+[data-design='new'] .chip-pill:hover { transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-design='new'] .menu-dishes-grid .dish-card { animation: none; }
+  [data-design='new'] .dish-card,
+  [data-design='new'] .dish-card-img { transition: none; }
+}
