@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin qismi tahlili — 2026-10-23</title>
+<style>
+  :root { --brand:#EA580C; --ink:#1C1917; --muted:#57534E; --line:#E7E5E4; --bg:#FAF7F2; --card:#fff; --bad:#DC2626; --warn:#D97706; --ok:#16A34A; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); line-height:1.6; }
+  .wrap { width:min(100% - 32px, 1080px); margin-inline:auto; }
+  header.hero { background:var(--ink); color:#fff; padding:36px 0; }
+  header.hero h1 { margin:0 0 6px; font-size:clamp(26px,4vw,38px); }
+  header.hero p { margin:0; color:#D6D3D1; max-width:70ch; }
+  h2 { font-size:26px; margin:44px 0 8px; } h3 { font-size:19px; margin:26px 0 6px; }
+  p { margin:8px 0; } .muted { color:var(--muted); }
+  .grid { display:grid; gap:14px; } .g2 { grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); } .g4 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; }
+  .score { font-size:15px; } .score b { display:block; font-size:19px; margin-bottom:4px; }
+  .pill { display:inline-block; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px; color:#fff; vertical-align:middle; }
+  .p0 { background:var(--bad); } .p1 { background:var(--warn); } .p2 { background:#64748B; } .good { background:var(--ok); }
+  ul { margin:8px 0; padding-left:20px; } li { margin:5px 0; }
+  figure { margin:14px 0; } figure img { width:100%; border:1px solid var(--line); border-radius:12px; display:block; background:#fff; }
+  figcaption { font-size:13px; color:var(--muted); margin-top:6px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { background:#F5F5F4; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
+  code { background:#F5F5F4; padding:1px 6px; border-radius:6px; font-size:13px; }
+  .note { border-left:4px solid var(--brand); background:#FFF7ED; padding:12px 16px; border-radius:0 12px 12px 0; margin:14px 0; }
+  .persona { border-top:4px solid var(--brand); }
+  nav.toc { display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 0; } nav.toc a { color:#fff; border:1px solid #57534E; border-radius:999px; padding:4px 12px; font-size:13px; text-decoration:none; } nav.toc a:hover { background:var(--brand); border-color:var(--brand); }
+  footer { padding:40px 0 60px; color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <h1>Admin qismi tahlili</h1>
+    <p>Restoran egasi, moliyachi, buxgalter va mehmon nuqtai nazaridan. Real demo ma'lumot bilan (10 kunlik 54 ta buyurtma, 16 ta chiqim, 2 ta qarz), brauzerda tekshirilgan. 2026-10-23.</p>
+    <nav class="toc"><a href="#xulosa">Xulosa</a><a href="#ega">Restoran egasi</a><a href="#moliya">Moliyachi</a><a href="#buxgalter">Buxgalter</a><a href="#mehmon">Mehmon</a><a href="#jadval">Xatolar jadvali</a><a href="#reja">Reja</a><a href="#tekshirilmadi">Tekshirilmaganlar</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<h2 id="xulosa">Xulosa (rost)</h2>
+<p><b>Admin qismi bitta emas, ikkita alohida panel</b> va ular bir-biriga mos kelmaydigan raqam ko'rsatadi:</p>
+<div class="grid g2">
+  <div class="card"><b>1. «Seller» paneli</b> (<code>/seller/</code>, Django shablonlari). Restoran egasi shu yerga tushadi.<br><span class="muted">Funksiya ko'p va ishlaydi: buyurtmalar, mahsulotlar, stollar, KDS, moliya, Telegram. Lekin boshqa mahsulotlar (Bozor, 3D Print) bilan aralash, qisman inglizcha, tashqi CDN'larga bog'liq.</span></div>
+  <div class="card"><b>2. «Boshqaruv» paneli</b> (<code>/admin/</code>, React). Faqat super-admin kiradi.<br><span class="muted">Toza va yangi uslubda, lekin «Bugungi tushum» butun davr tushumini ko'rsatadi, «Menyu» bo'limi bo'sh.</span></div>
+</div>
+<div class="grid g4" style="margin-top:14px">
+  <div class="card score"><b>Restoran egasi</b><span class="pill p1">ishlaydi, lekin chalkash</span></div>
+  <div class="card score"><b>Moliyachi</b><span class="pill p1">yaxshi asos, hisobot yetarli emas</span></div>
+  <div class="card score"><b>Buxgalter</b><span class="pill p0">tayyor emas</span></div>
+  <div class="card score"><b>Mehmon (admin orqali)</b><span class="pill p1">chek bor, rasmlar yo'q</span></div>
+</div>
+
+<h2 id="ega">1. Restoran egasi (biznes mijozi)</h2>
+<div class="card persona">
+<p><b>Egasi nima xohlaydi:</b> ertalab kirib «bugun qancha topdim, nima band, nimani to'ldirish kerak» ni 10 soniyada ko'rish; taom narxi va rasmini o'zi o'zgartirish; xodimlarni boshqarish.</p>
+<h3>Yaxshi</h3>
+<ul>
+  <li>Bitta kirish (<code>/admin/login/</code>), roli bo'yicha tegishli panelga yo'naltiradi.</li>
+  <li>Buyurtmalar: holat bo'yicha filtr, har buyurtmada «Chek» va «Ko'rish».</li>
+  <li>Mahsulotlar: qo'shish, tahrirlash, 3D yaratish, Excel/CSV yuklash, toifalar.</li>
+  <li>Stollar va QR, KDS, Telegram bot sozlamalari bir joyda.</li>
+</ul>
+<h3>Muammolar</h3>
+<ul>
+  <li><span class="pill p0">P0</span> <b>Sharhlar sahifasi (<code>/seller/reviews/</code>) sharh bo'lsa 500 xato beradi.</b> Tekshirildi: <code>NoReverseMatch: admin_review_delete</code>. Mehmon birinchi sharh qoldirgach egasi sahifani ocha olmaydi.</li>
+  <li><span class="pill p0">P0</span> <b>React panelda «Bugungi tushum (kassa)» = 5 847 000 so'm</b>, vaholanki bugungi tushum 675 000 (bazada tekshirildi). 5 847 000 — butun davr yig'indisi. «Buyurtmalar soni 59» ham bugungi emas, butun davr bo'yicha. Egasi noto'g'ri raqam bo'yicha qaror qiladi.</li>
+  <li><span class="pill p1">P1</span> <b>Boshqa mahsulotlar aralashgan.</b> Chap menyuda «Online Store (Bozor)», «3D Studio &amp; Servis», «3D Print Navbati» turadi. Restoran egasiga kerak emas.</li>
+  <li><span class="pill p1">P1</span> <b>Til aralash.</b> Menyu va sozlamalar formasi inglizcha («Order Management», «Main info», «Delivery and geo», «Name», «Address»), joylari o'zbekcha. UZ/RU/EN tugmasi bor, lekin tarjima to'liq emas.</li>
+  <li><span class="pill p1">P1</span> <b>React panelning «Menyu» bo'limi bo'sh</b> (faqat sarlavha va «Mijoz menyusini ko'rish» tugmasi). Taomni tahrirlash faqat Seller panelda. Egasi ikki panel orasida adashadi.</li>
+  <li><span class="pill p1">P1</span> <b>Soxta taom rasmlari.</b> 28 taomdan 22 tasining «rasmi» rangli kvadrat, o'rtasida qora yozuv. Panel buni ko'rsatmaydi ham, ogohlantirmaydi ham.</li>
+  <li><span class="pill p1">P1</span> <b>Internetga bog'liq.</b> Panel <code>cdn.tailwindcss.com</code> (dasturchilar uchun, production uchun emas) va Google Fonts / Material Icons dan yuklanadi. Restoran Wi-Fi'si sekin bo'lsa yoki uzilsa, panel bezaksiz chiqadi va ikonlar <code>inventory_2</code>, <code>receipt_long</code> kabi matn bo'lib qoladi. Menda bu aynan shunday ko'rindi.</li>
+  <li><span class="pill p2">P2</span> <b>Ro'yxatlar sahifalanmaydi.</b> Buyurtmalar sahifasi 61 buyurtmada 312 KB HTML. Kuniga 150 buyurtmada bir yildan keyin ochilmay qoladi.</li>
+</ul>
+<figure><img src="img/react_dashboard.png" alt="React boshqaruv paneli"><figcaption>React «Boshqaruv markazi»: toza, brend ranglarida. Lekin «Bugungi tushum (kassa) 5 847 000» butun davr yig'indisi.</figcaption></figure>
+<figure><img src="img/react_menyu_bosh.png" alt="Menyu bo'limi bo'sh"><figcaption>React panelning «Menyu» bo'limi: bo'sh. Taom, narx, rasm va stop-list boshqaruvi yo'q.</figcaption></figure>
+<figure><img src="img/seller_mahsulotlar.png" alt="Seller mahsulotlar"><figcaption>Seller paneli «Mahsulotlar &amp; 3D»: boy funksiya, lekin taom «rasmlari» rangli kvadrat. Chap menyuda boshqa mahsulot bo'limlari ko'rinib turibdi.</figcaption></figure>
+<figure><img src="img/seller_buyurtmalar.png" alt="Seller buyurtmalar"><figcaption>Buyurtmalar: holat filtri va «Chek» tugmasi yaxshi ishlangan. Sahifalash yo'q.</figcaption></figure>
+<figure><img src="img/seller_sozlamalar.png" alt="Sozlamalar formasi"><figcaption>Do'kon sozlamalari: sarlavhalar inglizcha, joylari o'zbekcha. «Category: Not selected».</figcaption></figure>
+</div>
+
+<h2 id="moliya">2. Moliyachi</h2>
+<div class="card persona">
+<p><b>Moliyachi nima xohlaydi:</b> kun oxirida kassani yopish, naqd va plastik bo'yicha solishtirish, xarajatlar qayerga ketganini ko'rish, nasiya va qarzlarni nazorat qilish.</p>
+<h3>Yaxshi (tekshirilgan)</h3>
+<ul>
+  <li>Kirim, chiqim, sof qoldiq kartalari naqd va plastik bo'yicha. Sana filtri: Bugun / 7 kun / Shu oy / Yillik (Seller panelda).</li>
+  <li>Nasiya va qarz daftari to'g'ri hisoblaydi: «Bizga 1 500 000 / Bizdan 2 200 000» (3 200 000 − 1 000 000 to'langan = 2 200 000 ✓).</li>
+  <li>Xarajat kategoriyalari, «Kassa topshirish», Telegram hisobot, storno (bekor qilish) mexanizmi.</li>
+  <li>Parallel so'rovlarda pul ikki marta hisoblanmaydi (avtomatik testlar PostgreSQL'da: qarz to'lovi, kirim, stol yopish).</li>
+</ul>
+<h3>Muammolar</h3>
+<ul>
+  <li><span class="pill p0">P0</span> <b>Ikki panel ikki xil raqam.</b> Seller «Bugun» tushum 675 000, React «Bugungi tushum» 5 847 000. Moliyachi qaysi biriga ishonishni bilmaydi (roadmap R6-4).</li>
+  <li><span class="pill p1">P1</span> <b>React moliya API sana filtrini qabul qilmaydi va ro'yxatni sahifalamaydi.</b> <code>period</code> va <code>range</code> parametrlari bilan so'rov bir xil 19 KB javob berdi (barcha 70 yozuv). Bir yildan keyin minglab yozuv har ochilishda yuklanadi.</li>
+  <li><span class="pill p1">P1</span> <b>Kanban doskasi cheksiz uzun:</b> «Kassaga kirdi» ustuni 54 ta kartadan iborat, butun sahifa 12 767 piksel balandlikda. Kunlik ish uchun noqulay, sana bo'yicha cheklanmagan.</li>
+  <li><span class="pill p1">P1</span> <b>Smena ochish/yopish va Z-hisobot yo'q.</b> «Kassa topshirish» tugmasi bor, lekin kunlik Z-hisobot (naqd, karta, chiqim, nasiya, kassadagi qoldiq) kodda yo'q (R6-2).</li>
+  <li><span class="pill p1">P1</span> <b>«Sof cho'ntak (FOYDA)» aslida foyda emas, pul oqimi.</b> U tushum − chiqim (−25 000). Xomashyo sotib olish tannarx emas, investitsiya foyda hisobiga kirmasligi kerak (R6-6). Moliyachi «foyda» so'zini noto'g'ri tushunadi.</li>
+  <li><span class="pill p2">P2</span> Aralash to'lov (naqd + karta), chegirma, xizmat haqi va «nasiyaga yopish» hisobni yopishda yo'q (R6-5).</li>
+  <li><span class="pill p2">P2</span> «AI Ovozli yordamchi» (Gemini) moliya matnini tashqi AI xizmatiga yuboradi. Egasi bundan xabardor bo'lishi va uni o'chira olishi kerak (bu sahifada o'chirish sozlamasi ko'rinmadi).</li>
+</ul>
+<figure><img src="img/seller_moliya.png" alt="Seller moliya"><figcaption>Seller «Moliya &amp; Kassa»: kartalar, filtrlar, nasiya, Excel/PDF/Telegram tugmalari. Tushunarli va boy, asos yaxshi.</figcaption></figure>
+</div>
+
+<h2 id="buxgalter">3. Buxgalter</h2>
+<div class="card persona">
+<p><b>Buxgalter nima xohlaydi:</b> davr bo'yicha toza hisobot (Excel/PDF), har kirim buyurtmaga bog'langan, o'zgartirib bo'lmaydigan tarix, soliq va fiskal chek.</p>
+<h3>Yaxshi</h3>
+<ul>
+  <li>Har buyurtmaga faqat bitta faol kirim (bazada cheklov bilan), shuning uchun daromad ikki marta yozilmaydi.</li>
+  <li>Tranzaksiyalar o'chirilmaydi: storno qilinadi; «Joyi o'zgartirilganmi» ustuni va audit jurnali bor. Qarz yozuvlari endi yashiriladi, o'chmaydi.</li>
+</ul>
+<h3>Muammolar</h3>
+<ul>
+  <li><span class="pill p0">P0</span> <b>«Excel» eksport aslida CSV va har qator boshiga ko'rinmas BOM belgisi (U+FEFF) qo'shiladi.</b> Sabab: kod <code>charset=utf-8-sig</code> bilan <code>write()</code> qiladi va BOM'ni yana qo'lda yozadi. Birinchi ustun (ID) Excel va buxgalteriya dasturlarida buziladi. Tekshirildi: har qator <code>﻿79,23.10.2026,…</code> ko'rinishida.</li>
+  <li><span class="pill p1">P1</span> <b>Eksport davr bo'yicha cheklanmaydi</b> (barcha 70 qator), kategoriya nomida emoji bor (<code>🌾 Guruch…</code>), buyurtma raqami alohida ustun emas (izohga yopishgan), avtomatik yozuvlarda «Kiritgan xodim: Admin».</li>
+  <li><span class="pill p1">P1</span> <b>«PDF hisobot» aslida brauzer chop etadigan HTML</b>; sarlavhada inglizcha oy nomi («October 2026 oylik hisoboti»). Qog'ozga chiqishi (58/80 mm, A4) tekshirilmagan (R6-3).</li>
+  <li><span class="pill p1">P1</span> <b>Fiskal chek (OFD) yo'q</b> va QQS/soliq ustunlari yo'q. O'zbekistonda qonuniy talab. Provayder va kalitlarni egasi tanlaydi (R6-7).</li>
+  <li><span class="pill p2">P2</span> Davrni yopish (qulflash) yo'q: o'tgan oy yozuvlariga hali ham yangi yozuv kiritish mumkin.</li>
+</ul>
+</div>
+
+<h2 id="mehmon">4. Mehmon (admin qaysi natijani mehmonga beradi)</h2>
+<div class="card persona">
+<ul>
+  <li><b>Chek:</b> har buyurtmada «Chek» sahifasi bor; yaxshi. Chop etish sifati va fiskal chek yo'q (yuqoriga qarang).</li>
+  <li><b>QR stendlar:</b> admin QR stendlarini chop etadi. QR doimiy tasodifiy havola bo'lgani yaxshi (stol raqamini topib bo'lmaydi).</li>
+  <li><b>Taom rasmlari:</b> mehmon menyuda ko'radigan rasmlarni egasi yuklaydi, lekin 28 dan 22 tasi hali soxta. Admin bu haqda aytmaydi.</li>
+  <li><b>Stop-list:</b> oshpaz tugagan taomni qo'yadi, mehmon menyusidan yo'qoladi (R5 da bajarilgan). Egasi paneldan ko'rishi va boshqarishi uchun «Menyu» bo'limi kerak, u bo'sh.</li>
+</ul>
+</div>
+
+<h2>5. Xavfsizlik va muhandislik (qisqa)</h2>
+<div class="card">
+<ul>
+  <li><span class="pill p1">P1</span> <code>admin_review_delete</code> faqat <code>login_required</code>: sharhni do'koniga qaramay istalgan kirgan foydalanuvchi o'chira oladi (bozor URL'larida ishlaydi; restoran URL'larida umuman yo'q, shuning uchun sahifa 500). Do'kon bo'yicha cheklash kerak.</li>
+  <li><span class="pill p1">P1</span> Tashqi CDN: <code>cdn.tailwindcss.com</code> brauzerda har safar CSS yig'adi (sekin, rate-limit, tashqi kod ishonchi). Lokal yig'ilgan CSS va o'z shriftimiz kerak (6 yillik chidamlilik talabi).</li>
+  <li><span class="pill p2">P2</span> Ikki panel ikki xil kod bazasida: har moliya o'zgarishi ikki joyda qilinadi, shuning uchun raqamlar farq qilyapti. Uzoq muddatda bitta panel kerak.</li>
+</ul>
+</div>
+
+<h2 id="jadval">Topilgan xatolar jadvali</h2>
+<table>
+  <tr><th>№</th><th>Xato</th><th>Kim sezadi</th><th>Daraja</th><th>Qanday tekshirildi</th></tr>
+  <tr><td>1</td><td><code>/seller/reviews/</code> sharh bo'lsa 500</td><td>Egasi</td><td><span class="pill p0">P0</span></td><td>Brauzerda: NoReverseMatch</td></tr>
+  <tr><td>2</td><td>React «Bugungi tushum» = butun davr (5 847 000, haqiqiy 675 000)</td><td>Egasi, moliyachi</td><td><span class="pill p0">P0</span></td><td>Bazadagi yig'indi bilan solishtirildi</td></tr>
+  <tr><td>3</td><td>CSV har qatorda BOM</td><td>Buxgalter</td><td><span class="pill p0">P0</span></td><td>Faylning matni o'qildi, kod sababi topildi</td></tr>
+  <tr><td>4</td><td>Panel CDN'ga bog'liq (Tailwind, shrift, ikonlar)</td><td>Hamma</td><td><span class="pill p1">P1</span></td><td>base.html; shrift bloklanganda ikonlar matn bo'ldi</td></tr>
+  <tr><td>5</td><td>Boshqa mahsulot bo'limlari menyuda</td><td>Egasi</td><td><span class="pill p1">P1</span></td><td>Skrinshot</td></tr>
+  <tr><td>6</td><td>Til aralash (EN/UZ)</td><td>Egasi</td><td><span class="pill p1">P1</span></td><td>Skrinshot</td></tr>
+  <tr><td>7</td><td>React «Menyu» bo'sh</td><td>Egasi</td><td><span class="pill p1">P1</span></td><td>Skrinshot</td></tr>
+  <tr><td>8</td><td>Moliya API: sana filtri va sahifalash yo'q</td><td>Moliyachi</td><td><span class="pill p1">P1</span></td><td>3 xil parametr, bir xil 19 KB javob</td></tr>
+  <tr><td>9</td><td>Kanban doskasi cheksiz (12 767 px)</td><td>Moliyachi</td><td><span class="pill p1">P1</span></td><td>To'liq sahifa skrinshoti</td></tr>
+  <tr><td>10</td><td>Smena / Z-hisobot yo'q</td><td>Moliyachi</td><td><span class="pill p1">P1</span></td><td>Kodda qidirildi</td></tr>
+  <tr><td>11</td><td>«Foyda» = pul oqimi</td><td>Moliyachi</td><td><span class="pill p1">P1</span></td><td>Hisob va nomlanish</td></tr>
+  <tr><td>12</td><td>Eksport davr bo'yicha emas, emoji, «PDF» = HTML</td><td>Buxgalter</td><td><span class="pill p1">P1</span></td><td>Fayl mazmuni</td></tr>
+  <tr><td>13</td><td>Fiskal chek (OFD) va QQS yo'q</td><td>Buxgalter</td><td><span class="pill p1">P1</span></td><td>Roadmap R6-7 (egasi qarori)</td></tr>
+  <tr><td>14</td><td>Sharhni o'chirish do'kon bo'yicha cheklanmagan</td><td>Xavfsizlik</td><td><span class="pill p1">P1</span></td><td>Kod o'qildi</td></tr>
+  <tr><td>15</td><td>Ro'yxatlar sahifalanmaydi (312 KB)</td><td>Hamma</td><td><span class="pill p2">P2</span></td><td>Sahifa hajmi o'lchandi</td></tr>
+</table>
+
+<h2 id="reja">Taklif qilinadigan reja</h2>
+<div class="grid g2">
+  <div class="card"><b>1-bosqich — raqamlar va xatolar</b> <span class="pill p0">P0</span><ul>
+    <li>Sharhlar sahifasi 500 va do'kon bo'yicha cheklash</li>
+    <li>«Bugungi tushum», buyurtmalar soni: bitta server hisobi, ikki panel bir xil</li>
+    <li>CSV: BOM xatosi, davr filtri, «.00», emojisiz, buyurtma raqami ustuni</li>
+  </ul></div>
+  <div class="card"><b>2-bosqich — egasi paneli</b> <span class="pill p1">P1</span><ul>
+    <li>Boshqa mahsulot bo'limlarini yashirish (bayroq orqali, o'chirmasdan)</li>
+    <li>To'liq o'zbekcha</li>
+    <li>Tailwind va ikonlarni o'z serverimizga ko'chirish (internetsiz ishlasin)</li>
+    <li>«Menyu» bo'limi: taom, narx, rasm yuklash, stop-list, «rasmi yo'q/soxta» ogohlantirishi</li>
+  </ul></div>
+  <div class="card"><b>3-bosqich — moliya</b> <span class="pill p1">P1</span><ul>
+    <li>Sana filtri va sahifalash (server tomonida)</li>
+    <li>Smena va Z-hisobot, kassadagi qoldiq</li>
+    <li>«Foyda» o'rniga to'g'ri nomlar: pul oqimi / operatsion foyda</li>
+    <li>Davrni yopish, aniq PDF/Excel</li>
+  </ul></div>
+  <div class="card"><b>4-bosqich</b> <span class="pill p2">P2</span><ul>
+    <li>Aralash to'lov, chegirma, nasiyaga yopish</li>
+    <li>Fiskal chek (OFD): <b>egasi provayderni tanlashi kerak</b></li>
+    <li>Bitta panelga birlashtirish (katta qaror)</li>
+  </ul></div>
+</div>
+<div class="note"><b>Sizdan bitta qaror kerak:</b> ikki paneldan qaysi biri asosiy bo'lsin? Mening tavsiyam: <b>React «Boshqaruv» paneli asosiy bo'lsin</b> (yangi dizaynga mos, toza). Seller panelining ishlayotgan funksiyalari (mahsulot formasi, moliya) uning ichiga bosqichma-bosqich ko'chiriladi, eskisi o'chirilmay yashirib qo'yiladi.</div>
+
+<h2 id="tekshirilmadi">Bu tahlilda tekshirilmaganlar</h2>
+<ul>
+  <li>Ofitsiant POS (kassa) to'liq oqimi, KDS ishlashi, haqiqiy Telegram bot.</li>
+  <li>Chekni qog'ozga chop etish (58/80 mm, A4) va telefon/planshetdagi ko'rinish.</li>
+  <li>Rolga qarab chegaralar (R2 da avtomatik testlangan, bu yerda qayta ko'rilmadi).</li>
+  <li>Yuk ostida ishlash (R10-8).</li>
+  <li>Demo ma'lumot meniki: buyurtma vaqtlari tasodifiy yozilgan, shuning uchun ularni «bugun» deb talqin qilmang. Raqamlar muqoyasasi (675 000 va 5 847 000) bazadagi yig'indilar bilan tekshirildi.</li>
+</ul>
+
+</main>
+<footer><div class="wrap">Admin tahlili · 2026-10-23 · Registon Restorani demo nusxasi</div></footer>
+</body>
+</html>
