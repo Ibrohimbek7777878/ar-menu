@@ -32,7 +32,7 @@ Har ish tugagach to'xtang va Claude'ga xabar bering: Claude tekshiradi, keyin ke
 ## Gemini repoga to'g'ridan-to'g'ri kira oladimi?
 
 - Gemini CLI / IDE agenti **shu papkada** ishlasa, fayllarni yo'l bo'yicha o'zi o'qiydi.
-- Veb-chat bo'lsa, uni fayllarni o'qiy olmaydi: ikkala TZ matnini va kerakli kod fayllarini chatga yuklang.
+- Veb-chat bo'lsa, u fayllarni o'qiy olmaydi: ikkala TZ matnini va kerakli kod fayllarini chatga yuklang.
 
 ## Gemini'ga birinchi xabar (nusxa ko'chiring)
 

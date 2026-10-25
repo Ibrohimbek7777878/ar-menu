@@ -165,7 +165,7 @@ Qoidalar: sahifa **boshqa sahifaning holatini o'qimaydi**; global holat faqat `s
 
 **0.2 Ichki CSS/JS ni keshlanadigan fayllarga chiqarish**
 - `backend/templates/seller/base_seller.html` (~50–65 KB ichki `<style>`, 12–45 KB ichki `<script>`) → `backend/static/seller/seller.css` va `seller.js`. Sahifaga xos ichki bloklar o'sha sahifa shablonida qoladi, lekin >5 KB bo'lsa alohida fayl.
-- `STORAGES['staticfiles']` ga `ManifestStaticFilesStorage` (production) — `{% static %}` hash'li nom beradi. Caddy (`deploy/Caddyfile`) hash'li `static` fayllarga ham `immutable` qo'yadi (hozir faqat `/static/react/assets/` uchun regex bor). Eski nomlar buzilmasligi uchun `collectstatic` testi.
+- Production'da `whitenoise.storage.CompressedManifestStaticFilesStorage` **allaqachon yoqilgan** (`backend/backend/settings.py`, `STORAGES`), shuning uchun `{% static %}` hash'li nom beradi (`seller.<12 hex>.css`). Yangi fayllar **faqat `{% static %}` orqali** ulanadi. Caddy (`deploy/Caddyfile`) hash'li fayllarga `immutable` qo'yadi: hozir faqat `/static/react/assets/` uchun regex bor; `\.[0-9a-f]{12}\.(css|js|woff2)$` namunasi uchun ham qoida qo'shiladi. Test: barcha shablonlarni render qilib, `{% static %}` havolalari manifestda borligini tekshiruvchi smoke test.
 - **Qabul:** `/seller/orders/` ikkinchi ochilishida (kesh) HTML hajmi 289 KB dan **≤ 120 KB** ga (ro'yxat sahifalanadi, 0.4) va ichki CSS ≤ 5 KB; DOMContentLoaded (localhost) ≤ 300 ms.
 
 **0.3 `/djangoadmin/` va ortiqcha marshrutlarni mahsulot URLconf'laridan olish**
@@ -289,7 +289,7 @@ Ro'yxat (kartalar, qidiruv, holat filtri, «Tugadi», «Tavsiya», «Yashirilgan
 # Caddy: host bo'yicha
 resto-admin.example.uz {
     encode zstd gzip
-    @hashed path_regexp hashed ^/static/(admins|react)/.+-[A-Za-z0-9_-]{8}\.(js|css)$
+    @hashed path_regexp hashed (^/static/(admins|react)/.+-[A-Za-z0-9_-]{8}\.(js|css)$|^/static/.+\.[0-9a-f]{12}\.(css|js|woff2)$)
     handle @hashed { root * /srv; header Cache-Control "public, max-age=31536000, immutable"; file_server }
     handle /static/* { root * /srv; file_server }
     reverse_proxy web-staff:8000
@@ -349,6 +349,6 @@ Bosqichlar ketma-ketligi (Gemini uchun): **eski TZ 1-bosqich → eski TZ 2-bosqi
 | Katta hajm, uzoq ish | Har sahifa alohida commit va qabul; 0-bosqich o'z-o'zidan foyda beradi |
 | Eski va yangi o'rtasida farq (ikki joyda xato) | Raqamlar bitta funksiyadan (`today_summary`); testda ikkala panel solishtiriladi |
 | Tailwind yig'ish skriptida sinf yo'qolishi (`content` skanerlashda dinamik sinflar) | Dinamik sinf nomlari `safelist` ga; `/seller/*` sahifalari skrinshot solishtiruvi (Claude) |
-| `ManifestStaticFilesStorage` yo'qolgan fayl havolasida xato beradi | `collectstatic` va barcha shablonlarni render qiluvchi smoke test (`web/test_url_smoke.py` allaqachon bor) |
+| Manifest-storage yo'qolgan fayl havolasida xato beradi | `collectstatic` va barcha shablonlarni render qiluvchi smoke test (`web/test_url_smoke.py` allaqachon bor) |
 | Keshlangan menyu eskirgan narx ko'rsatadi | Signal orqali versiya oshadi; test: narx o'zgarsa ≤ 2 s |
 | Yangi paket qo'shilishi | Faqat `react-router-dom` (va ixtiyoriy `drf-spectacular`), aniq versiya |
