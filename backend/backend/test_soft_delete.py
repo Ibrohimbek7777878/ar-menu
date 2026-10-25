@@ -176,9 +176,11 @@ class HardDeleteCallsAreAccountedForTests(TestCase):
         ('web/views.py', 'review.delete()'): 'Review — yumshoq o\'chirish (SoftDeleteModel)',
         ('web/seller_views/marketplace.py', 'review.delete()'): 'Review — yumshoq o\'chirish (SoftDeleteModel)',
         ('api/seller_views.py', 'product.delete()'): 'Product — yumshoq o\'chirish (SoftDeleteBehaviour)',
+        ('orders/interfaces/api/menu_admin.py', 'product.delete()'): 'Product — yumshoq o\'chirish (SoftDeleteBehaviour)',
         ('finance/views.py', 'cs.delete()'): 'Moliya ustuni sozlamasi (tranzaksiyalar boshqa ustunga ko\'chiriladi)',
         ('finance/views.py', 'DebtRecord.objects.filter'): 'DebtRecord — yumshoq o\'chirish (SoftDeleteModel)',
     }
+
 
     def test_every_delete_call_is_known(self):
         skip_dirs = {'venv', 'migrations', 'staticfiles', 'static', 'media', 'archive', 'node_modules', '__pycache__', 'scripts'}

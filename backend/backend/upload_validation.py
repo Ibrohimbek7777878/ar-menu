@@ -169,11 +169,13 @@ class UploadValidationMiddleware(MiddlewareMixin):
     @staticmethod
     def _reject(request, error):
         wants_json = (
-            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            request.path.startswith('/api/')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             or 'application/json' in request.headers.get('Accept', '')
         )
         if wants_json:
-            return JsonResponse({'success': False, 'ok': False, 'error': error}, status=400)
+            return JsonResponse({'success': False, 'ok': False, 'error': error, 'detail': error}, status=400)
+
         # HTML forma: xabar ko'rsatib, shu sahifaga qaytariladi
         try:
             messages.error(request, error)

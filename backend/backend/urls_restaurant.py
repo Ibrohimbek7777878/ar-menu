@@ -115,6 +115,7 @@ urlpatterns = [
     # Restoran REST API (React xodim panellari va mehmon menyusi). Avval faqat backend/urls.py da edi —
     # 8001-portda barcha /api/v1/restaurant/... so'rovlari 404 qaytarardi (TZ: R-GST-03)
     path('api/v1/restaurant/', include('orders.interfaces.api.urls')),
+    path('api/restaurant/admin/v1/menu/', include('orders.interfaces.api.menu_admin_urls')),
 
     # Telegram Bot Webhook
     path('bot/restaurant/webhook/', telegram_webhook.restaurant_webhook, name='bot_restaurant_webhook'),

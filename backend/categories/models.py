@@ -11,6 +11,7 @@ class Category(models.Model):
     image = models.ImageField(upload_to='categories/', null=True, blank=True)
     sort_order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    is_restaurant = models.BooleanField(default=False)
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True,
         related_name='children'

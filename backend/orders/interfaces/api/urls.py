@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from finance.api_views import (
     FinanceDebtCreateView, FinanceDebtPayView, FinanceTxCancelView, FinanceTxCreateView,
 )
@@ -59,4 +59,8 @@ urlpatterns = [
     path('finance/tx/<int:tx_id>/cancel/', FinanceTxCancelView.as_view(), name='restaurant_finance_tx_cancel'),
     path('finance/debts/', FinanceDebtCreateView.as_view(), name='restaurant_finance_debt_create'),
     path('finance/debts/<int:debt_id>/pay/', FinanceDebtPayView.as_view(), name='restaurant_finance_debt_pay'),
+
+    # Admin Menu Management
+    path('admin/menu/', include('orders.interfaces.api.menu_admin_urls')),
 ]
+

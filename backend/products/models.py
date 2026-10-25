@@ -51,6 +51,12 @@ class Product(SoftDeleteBehaviour, models.Model):
     video = models.FileField('Video', upload_to='products/videos/', null=True, blank=True)
     ar_model = models.URLField('3D model (GLB)', blank=True, null=True,
                                help_text='AR uchun .glb model manzili (bo\'sh bo\'lsa demo model)')
+    prep_minutes = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text="Tayyorlanish vaqti (daqiqada)"
+    )
+    has_real_photo = models.BooleanField(
+        default=False, help_text="Haqiqiy rasm yuklanganda True"
+    )
     is_available = models.BooleanField(default=True)
     stock = models.IntegerField(default=0)
     is_organic = models.BooleanField(default=False)

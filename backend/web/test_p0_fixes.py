@@ -22,7 +22,10 @@ from products.models import Product
 from shops.models import Shop
 
 
-@override_settings(ROOT_URLCONF='backend.urls_restaurant')
+@override_settings(
+    ROOT_URLCONF='backend.urls_restaurant',
+    ALLOWED_HOSTS=['localhost', '127.0.0.1', 'testserver', '.example.com'],
+)
 class ReviewP0Tests(TestCase):
     """5.1: /seller/reviews/ va admin_review_delete xavfsizlik testlari."""
 
@@ -98,6 +101,10 @@ class ReviewP0Tests(TestCase):
         self.assertFalse(rev.is_deleted)
 
 
+@override_settings(
+    ROOT_URLCONF='backend.urls_restaurant',
+    ALLOWED_HOSTS=['localhost', '127.0.0.1', 'testserver', '.example.com'],
+)
 class TodaySummaryP0Tests(TestCase):
     """5.2: Bugungi tushum va buyurtmalar soni (3 kunlik ma'lumotda faqat bugun)."""
 
@@ -185,6 +192,10 @@ class TodaySummaryP0Tests(TestCase):
         self.assertEqual(response.context['stats']['today_revenue'], summary['income'])
 
 
+@override_settings(
+    ROOT_URLCONF='backend.urls_restaurant',
+    ALLOWED_HOSTS=['localhost', '127.0.0.1', 'testserver', '.example.com'],
+)
 class CsvExportP0Tests(TestCase):
     """5.4: CSV eksport (yagona BOM, from/to filtri, Buyurtma № ustuni)."""
 
