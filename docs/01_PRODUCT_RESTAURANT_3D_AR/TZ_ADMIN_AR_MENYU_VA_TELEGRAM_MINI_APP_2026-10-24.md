@@ -2,6 +2,8 @@
 
 Sana: 2026-10-24 · Holat: **egasi ko'rib chiqishi kerak** · Kod yozuvchi: Gemini · Tekshiruvchi va GitHub'ga yuboruvchi: Claude
 
+> **O'ZGARISH (2026-10-26):** admin panelni alohida ilovalarga ajratish bo'yicha yangi hujjat chiqdi: `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md`. Bu hujjatdan **1-bosqich (P0 xatolar), 2-bosqich (Seller tozalash) va 5–6-bosqich (Telegram)** o'zgarishsiz amal qilinadi. **4-bosqich (Menyu frontend, React «Menyu» tabi) BEKOR**, Menyu sahifasi yangi `resto-admin` ilovasida qilinadi. 3-bosqichning (Menyu backend) API yo'li `/api/restaurant/admin/v1/menu/…` ga ko'chadi, model o'zgarishlari o'zgarmaydi. 7-bosqichning moliya va 3D qismlari ham resto-admin ichida. Bajarish tartibi: `TZ_INDEX_VA_BOSHLASH.md`. Telegram bosqichlari alohida `feature/telegram-miniapp` branch'ida.
+
 Bu hujjat **o'z-o'zidan to'liq**: Gemini loyihani oldindan bilmasa ham ishlay oladi. Asos: 2026-10-23 admin tahlili (`admin_tahlil_2026-10-23/index.html`) va menyu bo'limini real vazifalar bilan sinash natijalari.
 
 ---
