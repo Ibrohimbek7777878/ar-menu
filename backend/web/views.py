@@ -1886,10 +1886,18 @@ def admin_reviews(request):
 @login_required(login_url='web_login')
 @require_POST
 def admin_review_delete(request, pk):
-    # GET bilan o'chirish CSRF'ga ochiq edi (boshqa saytdagi <img src> ham sharhni o'chirardi); endi POST + yashirish
+    from django.http import HttpResponseForbidden
     review = get_object_or_404(Review, pk=pk)
+    role = getattr(request.user, 'role', '')
+    if role != 'super_admin' and not getattr(request.user, 'is_superuser', False):
+        shop = getattr(request.user, 'shop', None) or getattr(request, 'tenant_shop', None)
+        if not shop or review.product.shop_id != shop.id:
+            return HttpResponseForbidden("Boshqa do'konning sharhini o'chirish taqiqlangan")
     review.delete()
     messages.success(request, 'Sharh o\'chirildi')
+    referer = request.META.get('HTTP_REFERER')
+    if referer and 'reviews' in referer:
+        return redirect(referer)
     return redirect('admin_reviews')
 
 

@@ -309,13 +309,26 @@ class RestaurantFinanceSyncView(RestaurantAPIView):
 
     def get(self, request):
         from finance.api_views import serialize_debt, serialize_tx
+        from finance.services.summary import today_summary
         shop = self.staff_shop()
         txs = FinanceTransaction.objects.filter(shop=shop).select_related('category').order_by('-created_at')[:300]
         debts = DebtRecord.objects.filter(shop=shop).order_by('-created_at')[:150]
-        return Response({
+        data = {
             'transactions': [serialize_tx(t) for t in txs],
             'debts': [serialize_debt(d) for d in debts],
-        })
+        }
+        if request.GET.get('summary') in ('1', 'true', 'True'):
+            summary = today_summary(shop)
+            data['summary'] = {
+                'income': float(summary['income']),
+                'income_cash': float(summary['income_cash']),
+                'income_card': float(summary['income_card']),
+                'expense': float(summary['expense']),
+                'net_profit': float(summary['net_profit']),
+                'orders_count': summary['orders_count'],
+                'average_check': float(summary['average_check']),
+            }
+        return Response(data)
 
 
 class TableAddItemView(RestaurantAPIView):

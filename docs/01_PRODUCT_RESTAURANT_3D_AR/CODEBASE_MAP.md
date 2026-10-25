@@ -56,3 +56,18 @@ Ushbu mahsulot quyidagi fayllar, modellar va shablonlar orqali ishlaydi:
 * **[`backend/templates/seller/kds.html`](file:///home/ibrohim/Desktop/client_baza/online%20store_guliston/backend/templates/seller/kds.html):** Oshpaz ekrani (Kitchen Display System).
 * **[`backend/templates/seller/waiter_panel.html`](file:///home/ibrohim/Desktop/client_baza/online%20store_guliston/backend/templates/seller/waiter_panel.html):** Ofitsiant POS paneli.
 * **[`backend/templates/seller/telegram_messages.html`](file:///home/ibrohim/Desktop/client_baza/online%20store_guliston/backend/templates/seller/telegram_messages.html):** Telegram xabarlari auditi.
+
+---
+
+## 5. Yangi Resto-Admin Arxitekturasi (2026-10-26)
+
+* **`admins/resto/`:** Alohida Vite + React SPA ilovasi (har sahifa = o'z URL'i + o'z JS bo'lagi + o'z API'si):
+  * `/resto/menu/` — Menyu boshqaruvi (taom, narx, rasm, stop-list).
+  * `/resto/3d/` — 3D va AR modellar vitrinasi va boshqaruvi.
+  * `/resto/staff/` — Xodimlar va rollar.
+  * `/resto/orders/` — Jonli buyurtmalar.
+  * `/resto/management/` — Restoran operatsion boshqaruvi.
+  * `/resto/finance/` — Kassa va moliya hisobotlari.
+  * `/resto/tables/` — Zallar va stollar xaritasi.
+  * `/resto/settings/` — Restoran sozlamalari.
+* **API yo'llari:** `/api/restaurant/admin/v1/...` (har sahifa uchun alohida, shop-scoped va ruxsat nazorati bilan).

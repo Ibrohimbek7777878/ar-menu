@@ -1,6 +1,6 @@
 # Restoran 3D/AR menyu — qisqa TZ
 
-**Sana:** 2026-10-15 · **Holat:** ⏳ tasdiq kutilmoqda · **To'liq versiya:** `TZ_RESTORAN_AUDIT_VA_TUZATISH_2026-10-15.md` (76 band, fayl va qator havolalari bilan)
+**Sana:** 2026-10-15 · **Holat:** ✅ Qisman bajarilgan (Bosqich 0–2), qolgani 2026-10-26 yangi arxitekturasiga ko'chirilgan · **Joriy boshlash tartibi:** `TZ_INDEX_VA_BOSHLASH.md` · **To'liq audit:** `TZ_RESTORAN_AUDIT_VA_TUZATISH_2026-10-15.md`
 
 ## Maqsad
 Restoranni real ishlaydigan va xavfsiz qilish. QR → menyu → buyurtma → oshxona → ofitsiant → kassa zanjiri bitta server orqali ishlashi va hamma qurilmada bir xil ko'rinishi kerak.

@@ -5,9 +5,12 @@
 | **Loyiha** | Online Store Guliston: Restoran 3D/AR OS (#1), Marketplace (#2), 3D Studio (#3) |
 | **Sana** | 2026-10-15 |
 | **Asos** | `main` branch, commit `3043be1` |
-| **Holat** | ⏳ **TASDIQ KUTILMOQDA.** Loyiha egasi tasdiqlamaguncha kod o'zgartirilmaydi (AGENTS.md, 1-qoida) |
+| **Holat** | ✅ **RESTORAN QISMI QISMAN BAJARILGAN VA YANGILANGAN.** Bosqich 0 (Xavfsizlik) va Bosqich 1-2 (Mehmon va Moliya) `fix/restaurant-phase0-security` branchida bajarildi. Qolgan audit bandlari va yangi arxitektura `docs/01_PRODUCT_RESTAURANT_3D_AR/TZ_INDEX_VA_BOSHLASH.md` bo'yicha amalga oshiriladi. |
 | **Kim uchun** | Loyiha egasi va ushbu TZ'ni bajaradigan dasturchilar va AI agentlar |
 | **Oldingi audit** | `docs/04_SHARED_MODULES_AND_ARCHIVE/kamchiliklar.md` (2026-09-25). Undagi ba'zi bandlar hali ham ochiq (10-bo'lim) |
+
+> **OGOHLANTIRISH (2026-10-26):**
+> Restoran OS (#1) mahsuloti uchun ushbu TZ dagi asosiy kamchiliklar bartaraf etilgan. Hozirda yangi arxitektura asosida `admins/resto` alohida ilovasi va yangi soddalashtirilgan menyu boshqaruvi tatbiq etilmoqda.
 
 ---
 

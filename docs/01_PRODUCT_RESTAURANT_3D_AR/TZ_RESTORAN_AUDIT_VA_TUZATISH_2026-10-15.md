@@ -5,9 +5,13 @@
 | **Mahsulot** | #1 Restoran 3D/AR va NFC menyu (port 8001, `backend/backend/urls_restaurant.py`) |
 | **Sana** | 2026-10-15 |
 | **Asos** | `main`, commit `3043be1` |
-| **Holat** | ⏳ **TASDIQ KUTILMOQDA.** Loyiha egasi tasdiqlamaguncha kod o'zgartirilmaydi (AGENTS.md, 1-qoida) |
+| **Holat** | ✅ **QISMAN BAJARILGAN VA YANGILANGAN (SUPERSEDED / COMPLETED).** Bosqich 0 (Xavfsizlik), Bosqich 1 (Mehmon oqimi) va Bosqich 2 (Moliya) `fix/restaurant-phase0-security` branchida bajarildi (commitlar `b021260`..`231fbc6`). Qolgan bandlar va yangi arxitektura `TZ_ADMIN_AR_MENYU_VA_TELEGRAM_MINI_APP_2026-10-24.md` hamda `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md` ga ko'chirildi. Amaldagi boshlash tartibi: `TZ_INDEX_VA_BOSHLASH.md`. |
 | **Kim uchun** | Loyiha egasi va ushbu TZ'ni bajaradigan dasturchilar va AI agentlar |
 | **Umumiy TZ** | `docs/00_ARCHITECTURE_MASTER/TZ_AUDIT_KAMCHILIKLAR_2026-10-15.md`. Ushbu fayl undagi restoranga oid bandlarni batafsil va yangi topilmalar bilan to'ldiradi |
+
+> **OGOHLANTIRISH VA YO'RIQNOMA (2026-10-26):**
+> Ushbu hujjat tarixiy audit hujjati hisoblanadi. Undagi kritik xavfsizlik (KDS himoyasi, to'lov imzosi tekshiruvi, XSS, IDOR) va mehmon oqimi muammolari muvaffaqiyatli bartaraf etilgan.
+> Xodimlar, Menyu boshqaruvi va Admin paneli bo'yicha qolgan ishlar 2026-10-26 sanasidagi yangi alohida ilova arxitekturasi (`admins/resto/`) asosida amalga oshirilmoqda. Yangi vazifalar uchun `TZ_INDEX_VA_BOSHLASH.md` ga qarang.
 
 ---
 

@@ -193,7 +193,7 @@ Eslatma: `Product.slug` uzunligi 50, `Product.save()` allaqachon noyob slug yara
 
 ### 3.6 Yangi API (faqat `capability('menu_admin')`, do'kon bo'yicha cheklangan)
 
-Prefiks: `/api/v1/restaurant/menu-admin/` (fayl: `backend/orders/interfaces/api/menu_admin.py`, URL'lar `urls.py` ga).
+Prefiks: `/api/restaurant/admin/v1/menu/` (yangi TZ-2 4.3 arxitekturasiga mos; fayl: `backend/orders/interfaces/api/menu_admin.py`, URL'lar `urls.py` ga).
 
 | Metod va yo'l | Vazifa |
 |---|---|
@@ -374,12 +374,12 @@ Domen (HTTPS) hali yo'q bo'lsa, lokal sinov Cloudflare tunnel bilan; `RESTAURANT
 |---|---|---|---|
 | 1 | **P0 xatolar:** 5.1 sharhlar, 5.2 bugungi hisob, 5.4 CSV BOM | P0 | S |
 | 2 | **Seller paneli tozalash:** `panel_scope`, 2.2 jadvali, 2.3 dashboard, 5.6 til | P0/P1 | M |
-| 3 | **Menyu backend:** 3.4–3.6 (migratsiyalar, `menu-admin` API, testlar) | P1 | M |
-| 4 | **Menyu frontend:** 3.1–3.2 (React «Menyu» tabi), Seller `/seller/products/` 3.3 | P1 | L |
-| 5 | **Telegram T1–T3:** bot javobi, `setup_telegram_miniapp`, `startapp` stol | P1 | M |
-| 6 | **Telegram T4–T5 + 3D bo'limi 4.1–4.2** | P1 | M |
-| 7 | **Moliya 5.3** (sana filtri/sahifalash), yangi dizaynni AR sahifasiga | P1 | M |
-| 8 | **5.5 CDN'lardan voz kechish** | P1 | M |
+| 3 | **Menyu backend:** 3.4–3.6 (migratsiyalar, `/api/restaurant/admin/v1/menu/` API, testlar) | P1 | M |
+| 4 | ~~**Menyu frontend:** (React «Menyu» tabi)~~ — **BEKOR**, `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md` 4.4 bo'yicha yangi `admins/resto` ilovasida qilinadi | — | — |
+| 5 | **Telegram T1–T3:** bot javobi, `setup_telegram_miniapp`, `startapp` stol (`feature/telegram-miniapp` branch'ida) | P1 | M |
+| 6 | **Telegram T4–T5 + 3D bo'limi 4.1–4.2** (`feature/telegram-miniapp` branch'ida) | P1 | M |
+| 7 | **Moliya 5.3** (sana filtri/sahifalash), yangi dizaynni AR sahifasiga (resto-admin ichida) | P1 | M |
+| 8 | ~~**5.5 CDN'lardan voz kechish**~~ — `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md` 0.1-bandiga ko'chirildi | — | — |
 | 9 | T6 (mehmon bildirishnomasi) | P2 | S |
 
 Har bosqich: kichik commit'lar, xabar formati `feat(admin): …` / `fix(finance): …`, oxirida `Co-Authored-By: Gemini <noreply@google.com>`. Bosqich tugagach **testlar yashil bo'lmaguncha** keyingisiga o'tmang.

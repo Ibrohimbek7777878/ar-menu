@@ -8,6 +8,7 @@
 | **Holat** | ✅ Egasi roadmap bo'yicha ishlashga ruxsat bergan (2026-10-21: "shu roadmap bo'yicha ketasan") |
 | **Maqsad** | Bitta restoranda haqiqiy mijozlar bilan **pilot**, so'ng 1000+ foydalanuvchi va 6 yillik barqarorlik |
 | **Oldingi hujjatlar** | `TZ_RESTORAN_AUDIT_VA_TUZATISH_2026-10-15.md` (76 band), `TZ_LOKAL_RASMDAN_3D_MENYU_2026-10-16.md`, `00_ARCHITECTURE_MASTER/TZ_AUDIT_KAMCHILIKLAR_2026-10-15.md` |
+| **Yangi amaldagi TZ'lar (2026-10-24/26)** | `TZ_INDEX_VA_BOSHLASH.md` (boshlash tartibi), `TZ_ADMIN_AR_MENYU_VA_TELEGRAM_MINI_APP_2026-10-24.md` (P0 xatolar, Seller tozalash, Menyu, Telegram), `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md` (0-bosqich tezlashtirish va resto-admin ilovasi) |
 
 ---
 

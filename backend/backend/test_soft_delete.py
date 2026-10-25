@@ -174,6 +174,7 @@ class HardDeleteCallsAreAccountedForTests(TestCase):
         ('web/views.py', 'item.delete()'): 'Sevimlilar',
         ('web/views.py', 'Product3DModel.objects.filter(product=p).delete()'): '3D model qayta yaratiladigan hosila ma\'lumot',
         ('web/views.py', 'review.delete()'): 'Review — yumshoq o\'chirish (SoftDeleteModel)',
+        ('web/seller_views/marketplace.py', 'review.delete()'): 'Review — yumshoq o\'chirish (SoftDeleteModel)',
         ('api/seller_views.py', 'product.delete()'): 'Product — yumshoq o\'chirish (SoftDeleteBehaviour)',
         ('finance/views.py', 'cs.delete()'): 'Moliya ustuni sozlamasi (tranzaksiyalar boshqa ustunga ko\'chiriladi)',
         ('finance/views.py', 'DebtRecord.objects.filter'): 'DebtRecord — yumshoq o\'chirish (SoftDeleteModel)',

@@ -255,21 +255,19 @@ def _handle_telegram_update(request):
             bot_msg.response = err_txt
             bot_msg.save(update_fields=['response'])
             return JsonResponse({'ok': True})
-        from finance.models import FinanceTransaction
-        from django.utils import timezone
-        from django.db.models import Sum
-        today = timezone.localdate()
         target_shop = shop or get_restaurant_shop()
         if target_shop:
-            tx_today = FinanceTransaction.objects.filter(shop=target_shop, tx_date=today, is_cancelled=False)
-            inc = tx_today.filter(tx_type='income', stage__in=['income', 'realized']).aggregate(s=Sum('amount'))['s'] or 0
-            exp = tx_today.filter(tx_type='expense', stage__in=['expense', 'realized']).aggregate(s=Sum('amount'))['s'] or 0
-            net = inc - exp
+            from finance.services.summary import today_summary
+            summary = today_summary(target_shop)
+            inc = summary['income']
+            exp = summary['expense']
+            net = summary['net_profit']
             fmt_inc = f"{int(inc):,}".replace(",", " ")
             fmt_exp = f"{int(exp):,}".replace(",", " ")
             fmt_net = f"{int(net):,}".replace(",", " ")
+            today_str = summary['today_date'].strftime('%d.%m.%Y')
             response_text = (
-                f"📊 <b>{target_shop.name} — Bugungi Kassa ({today.strftime('%d.%m.%Y')})</b>\n\n"
+                f"📊 <b>{target_shop.name} — Bugungi Kassa ({today_str})</b>\n\n"
                 f"🟢 <b>Kirim:</b> {fmt_inc} so'm\n"
                 f"🔴 <b>Chiqim:</b> {fmt_exp} so'm\n"
                 f"💎 <b>Sof kassa:</b> {fmt_net} so'm\n\n"

@@ -1,7 +1,7 @@
 # TZ — Lokal noutbukda: yangi restoran, taom rasmidan avtomatik 3D menyu
 
-**Sana:** 2026-10-16 · **Holat:** ⏳ tasdiq kutilmoqda · **Asos:** branch `fix/restaurant-phase0-security` (Bosqich 0 tayyor)
-**Bog'liq TZ:** `TZ_RESTORAN_AUDIT_VA_TUZATISH_2026-10-15.md` (R-3D-01…05, R-GST-07/08)
+**Sana:** 2026-10-16 · **Holat:** ✅ Bajarilgan / Yangilangan (`create_restaurant`, `run_3d_worker`, `start_local.sh` `3fcec35` commitida qilindi; Menyu boshqaruvi va 3D modellash `admins/resto` ilovasiga ko'chirilgan) · **Asos:** branch `fix/restaurant-phase0-security`
+**Bog'liq yangi TZ'lar:** `TZ_ADMIN_AR_MENYU_VA_TELEGRAM_MINI_APP_2026-10-24.md`, `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md`, `TZ_INDEX_VA_BOSHLASH.md`
 
 ## Maqsad
 Server bo'lmagan holda, noutbukda bitta **yangi restoran** ochiladi. Admin taomni nomi, narxi va **rasmi** bilan kiritadi, tizim o'sha rasmdan **avtomatik 3D model** yasaydi. Mehmon esa telefonda (shu Wi-Fi tarmog'ida) menyuni ochib, taomni **3D aylantirib** ko'radi. AR (stol ustida ko'rish) bu bosqichga kirmaydi.

@@ -14,6 +14,7 @@ urlpatterns = [
     path('shop/', seller_views.seller_shop, name='seller_shop_web'),
     path('shop/builder/', seller_views.seller_shop_builder, name='seller_shop_builder_web'),
     path('reviews/', seller_views.seller_reviews, name='seller_reviews_web'),
+    path('reviews/<int:pk>/delete/', seller_views.seller_review_delete, name='seller_review_delete'),
     path('customers/', seller_views.seller_customers, name='seller_customers_web'),
     path('profile/', seller_views.seller_profile, name='seller_profile_web'),
     path('template-gallery/', seller_views.seller_template_gallery, name='seller_template_gallery'),

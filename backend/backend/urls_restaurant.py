@@ -16,7 +16,7 @@ from django.conf.urls.static import static
 from django.shortcuts import redirect
 from django.views.static import serve
 
-from web import views, tma_views, telegram_webhook, health
+from web import views, seller_views, tma_views, telegram_webhook, health
 
 
 def other_product_page(request, *args, **kwargs):
@@ -109,6 +109,7 @@ urlpatterns = [
     path('ar-menu/', tma_views.tma_ar_menu, name='ar_menu_home'),
 
     # Mini ERP (Restoran Boshqaruvi: Stollar, KDS, Ofitsiant)
+    path('seller/reviews/<int:pk>/delete/', seller_views.seller_review_delete, name='admin_review_delete'),
     path('seller/', include('web.seller_urls')),
 
     # Restoran REST API (React xodim panellari va mehmon menyusi). Avval faqat backend/urls.py da edi —

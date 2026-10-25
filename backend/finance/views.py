@@ -855,26 +855,39 @@ def seller_finance(request):
 
 @seller_required
 def finance_export_excel(request):
-    """Excel orqali ochishga moslashtirilgan UTF-8 BOM CSV fayli eksporti."""
+    """Excel orqali ochishga moslashtirilgan UTF-8 CSV fayli eksporti (bitta BOM bilan)."""
+    from django.utils.dateparse import parse_date
     shop = request.tenant_shop
     today = timezone.localdate()
     transactions = (
         FinanceTransaction.objects.filter(shop=shop, is_cancelled=False)
-        .select_related('category', 'created_by')
+        .select_related('category', 'created_by', 'order')
         .prefetch_related('movements')
         .order_by('-tx_date', '-created_at')
     )
 
-    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    from_date = request.GET.get('from')
+    to_date = request.GET.get('to')
+    if from_date:
+        parsed_from = parse_date(from_date)
+        if parsed_from:
+            transactions = transactions.filter(tx_date__gte=parsed_from)
+    if to_date:
+        parsed_to = parse_date(to_date)
+        if parsed_to:
+            transactions = transactions.filter(tx_date__lte=parsed_to)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="moliya_{shop.slug}_{today}.csv"'
-    
-    # Write UTF-8 BOM for Microsoft Excel compatibility
-    response.write('\ufeff'.encode('utf-8'))
+
+    # Yagona UTF-8 BOM — Excel'da to'g'ri ochilishi uchun (har qatorda emas, faqat bir marta boshida)
+    response.write('\ufeff')
     writer = csv.writer(response)
 
     writer.writerow([
         "ID",
         "Sana",
+        "Buyurtma №",
         "Bosqich (Holati)",
         "Turi",
         "Kategoriya",
@@ -883,28 +896,33 @@ def finance_export_excel(request):
         "To'lov shakli",
         "Qo'shimcha Izoh",
         "Kiritgan xodim",
-        "Joyi o'zgartirilganmi"
+        "Joyi o'zgartirilganmi",
     ])
 
     for t in transactions:
         stage_desc = t.stage_name
         tx_type_desc = "Kirim (+)" if t.tx_type == 'income' else "Chiqim (-)"
-        cat_name = f"{t.category.icon} {t.category.name}" if t.category else "Umumiy"
+        cat_name = t.category.name if t.category else "Umumiy"
         moved_status = "Ha (O'zgartirilgan)" if t.is_moved else "Yo'q (Asl holat)"
-        created_by_name = t.created_by.get_full_name() or t.created_by.username if t.created_by else "Admin"
+        order_num = t.order.order_number if t.order else ""
+        if t.created_by:
+            created_by_name = t.created_by.get_full_name() or t.created_by.username
+        else:
+            created_by_name = "Tizim"
 
         writer.writerow([
             t.id,
             t.tx_date.strftime('%d.%m.%Y'),
+            order_num,
             stage_desc,
             tx_type_desc,
             cat_name,
-            t.title,
-            int(t.amount),
+            t.title or "",
+            f"{float(t.amount):.2f}",
             t.get_payment_method_display(),
             t.notes or "",
             created_by_name,
-            moved_status
+            moved_status,
         ])
 
     return response

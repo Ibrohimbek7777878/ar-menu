@@ -993,9 +993,10 @@ def restaurant_admin_dashboard(request):
     occupied_tables_count = tables_qs.filter(status='occupied').count()
 
     orders_qs = Order.objects.filter(shop=shop)
-    today_orders = orders_qs.filter(created_at__gte=today_start)
-    today_orders_count = today_orders.count()
-    today_rev = today_orders.exclude(status__in=['cancelled', 'failed']).aggregate(s=Sum('final_amount'))['s'] or 0
+    from finance.services.summary import today_summary
+    summary = today_summary(shop)
+    today_orders_count = summary['today_orders_count']
+    today_rev = summary['today_revenue']
 
     kds_orders = orders_qs.filter(status__in=['pending', 'confirmed', 'preparing']).order_by('-created_at')
     pending_kds_count = kds_orders.count()

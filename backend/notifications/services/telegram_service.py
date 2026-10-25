@@ -589,22 +589,21 @@ def handle_webhook(update):
         _send_message(chat_id, response_text, reply_markup=markup)
 
     elif text == '/kassa' or text.startswith('/kassa'):
-        from finance.models import FinanceTransaction
-        from django.db.models import Sum
         from notifications.admin_bot import get_restaurant_shop, is_admin
-        today = timezone.localdate()
         # Kassa — moliyaviy ma'lumot: avval istalgan Telegram foydalanuvchiga "birinchi do'kon" kassasi ko'rsatilardi
         shop = get_restaurant_shop() if is_admin(chat_id, user.get('username', '')) else None
         if shop:
-            tx_today = FinanceTransaction.objects.filter(shop=shop, tx_date=today, is_cancelled=False)
-            inc = tx_today.filter(tx_type='income', stage__in=['income', 'realized']).aggregate(s=Sum('amount'))['s'] or 0
-            exp = tx_today.filter(tx_type='expense', stage__in=['expense', 'realized']).aggregate(s=Sum('amount'))['s'] or 0
-            net = inc - exp
+            from finance.services.summary import today_summary
+            summary = today_summary(shop)
+            inc = summary['income']
+            exp = summary['expense']
+            net = summary['net_profit']
             fmt_inc = f"{int(inc):,}".replace(",", " ")
             fmt_exp = f"{int(exp):,}".replace(",", " ")
             fmt_net = f"{int(net):,}".replace(",", " ")
+            today_str = summary['today_date'].strftime('%d.%m.%Y')
             response_text = (
-                f"📊 <b>{esc(shop.name)} — Bugungi Kassa ({today.strftime('%d.%m.%Y')})</b>\n\n"
+                f"📊 <b>{esc(shop.name)} — Bugungi Kassa ({today_str})</b>\n\n"
                 f"🟢 <b>Kirim:</b> {fmt_inc} so'm\n"
                 f"🔴 <b>Chiqim:</b> {fmt_exp} so'm\n"
                 f"💎 <b>Sof kassa:</b> {fmt_net} so'm\n\n"

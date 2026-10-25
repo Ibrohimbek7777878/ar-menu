@@ -46,14 +46,17 @@ def seller_dashboard(request):
 
     from accounts.models import Customer
     from notifications.models import Review
+    from finance.services.summary import today_summary
+
+    summary = today_summary(shop)
 
     ctx = {
         'shop': shop,
         'stats': {
             'total_products': products_qs.count(),
             'total_orders': orders_qs.count(),
-            'today_orders': today_orders.count(),
-            'today_revenue': today_orders.exclude(status__in=['cancelled', 'failed']).aggregate(s=Sum('final_amount'))['s'] or 0,
+            'today_orders': summary['today_orders_count'],
+            'today_revenue': summary['income'],
             'week_revenue': live_week.aggregate(s=Sum('final_amount'))['s'] or 0,
             'avg_rating': round(products_qs.aggregate(a=Avg('rating'))['a'] or 0, 1),
             'total_customers': Customer.objects.filter(orders__shop=shop).distinct().count(),
@@ -236,6 +239,25 @@ def seller_reviews(request):
     from notifications.models import Review
     reviews = Review.objects.filter(product__shop=shop).select_related('product', 'customer').order_by('-created_at')
     return render(request, 'seller/reviews.html', {'shop': shop, 'reviews': reviews})
+
+
+@seller_required
+@require_POST
+def seller_review_delete(request, pk):
+    """Sharhni o'chirish (soft-delete): faqat o'z do'koni sharhi uchun (IDOR himoyasi)."""
+    from notifications.models import Review
+    from web.restaurant_auth import staff_shop
+    from django.http import HttpResponseForbidden
+    from django.shortcuts import get_object_or_404
+    shop = getattr(request, 'tenant_shop', None) or staff_shop(request)
+    review = get_object_or_404(Review, pk=pk)
+    role = getattr(request.user, 'role', '')
+    if role != 'super_admin' and not getattr(request.user, 'is_superuser', False):
+        if not shop or review.product.shop_id != shop.id:
+            return HttpResponseForbidden("Boshqa do'konning sharhini o'chirish taqiqlangan")
+    review.delete()
+    messages.success(request, "Sharh muvaffaqiyatli o'chirildi")
+    return redirect('seller_reviews_web')
 
 
 @seller_required
