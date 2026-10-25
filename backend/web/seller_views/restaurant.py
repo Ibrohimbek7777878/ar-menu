@@ -170,6 +170,12 @@ def seller_nfc_dashboard(request):
     """
     from tables_restaurant.models import NFCCard, Table, Hall
     from django.conf import settings as _s
+    from backend.app_settings import get_choice
+
+    scope = get_choice('panel_scope', 'restaurant', ('restaurant', 'all'))
+    if scope == 'restaurant' and not getattr(_s, 'DEMO_MODE', False):
+        return redirect('seller_dashboard_web')
+
     shop = request.tenant_shop
     if not shop:
         messages.warning(request, "NFC stendlarini boshqarish uchun do'kon tanlanmagan.")

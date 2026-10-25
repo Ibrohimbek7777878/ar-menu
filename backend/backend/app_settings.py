@@ -22,3 +22,14 @@ def get_choice(key, default, choices):
     raw = row.value if row is not None else getattr(settings, key.upper(), default)
     value = str(raw).strip().lower()
     return value if value in choices else default
+
+
+def get_bool(key, default=False):
+    """AppSetting yoki .env dan boolean sozlama o'qish (standart: default)."""
+    from notifications.models import AppSetting
+    row = AppSetting.objects.filter(key=key.lower()).first()
+    raw = row.value if row is not None else getattr(settings, key.upper(), default)
+    if isinstance(raw, bool):
+        return raw
+    return str(raw).strip().lower() in ('1', 'true', 'yes', 'on')
+

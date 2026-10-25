@@ -351,6 +351,26 @@
             </div>
             {% endfor %}
         </div>
+
+        {% if orders.has_other_pages %}
+        <div class="px-5 py-4 border-t border-gray-100 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+            <div>
+                Sahifa <strong class="text-ink dark:text-white">{{ orders.number }}</strong> / {{ orders.paginator.num_pages }} (Jami {{ orders.paginator.count }} ta buyurtma)
+            </div>
+            <div class="flex items-center gap-2">
+                {% if orders.has_previous %}
+                <a href="?page={{ orders.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline py-1 px-3 text-xs">
+                    ‹ Oldingi
+                </a>
+                {% endif %}
+                {% if orders.has_next %}
+                <a href="?page={{ orders.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline py-1 px-3 text-xs">
+                    Keyingi ›
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% else %}
     <div class="empty">

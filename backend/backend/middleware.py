@@ -104,15 +104,8 @@ class LanguageMiddleware(MiddlewareMixin):
         if not lang:
             lang = request.session.get('language', '')
 
-        # 4. Accept-Language header (fallback)
-        if not lang:
-            accept = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
-            if accept.startswith('ru'):
-                lang = 'ru'
-            elif accept.startswith('en'):
-                lang = 'en'
-
-        # 5. Default
+        # 4. Standart til har doim 'uz' (TZ 5.6: brauzer tilidan qat'i nazar standart uz;
+        # foydalanuvchi UZ/RU/EN tugmasini bossa cookie/?lang orqali saqlanadi).
         if lang not in ('uz', 'ru', 'en'):
             lang = 'uz'
 

@@ -308,7 +308,7 @@
         <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <p class="text-xs opacity-70 font-medium tracking-wide uppercase">{{ shop.name }}</p>
-                <h2 class="text-xl font-bold mt-0.5">Mahsulotlar & 3D Katalog</h2>
+                <h2 class="text-xl font-bold mt-0.5">{% if panel_scope == 'restaurant' %}Menyu & 3D Taomlar{% else %}Mahsulotlar & 3D Katalog{% endif %}</h2>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
                 <button type="button" onclick="document.getElementById('csv-import-modal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition backdrop-blur-sm border border-white/15">
@@ -320,24 +320,33 @@
                         <span>🍲</span> Milliy taomlar
                     </button>
                 </form>
+                {% if panel_scope == 'all' %}
                 <a href="{% url 'seller_ar_web' %}" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition backdrop-blur-sm border border-white/15">
                     <span>🌐</span> 3D Menyu
                 </a>
+                {% endif %}
                 <a href="{% if shop.slug %}/m/{{ shop.slug }}/{% else %}/ar/{% endif %}" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-200 font-semibold text-xs transition backdrop-blur-sm border border-emerald-400/25">
                     <span>🍽️</span> Jonli AR ↗
                 </a>
                 <a href="{% url 'seller_product_create_web' %}" class="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition backdrop-blur-sm shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" d="M12 5v14m7-7H5"/></svg>
-                    Yangi mahsulot
+                    {% if panel_scope == 'restaurant' %}Yangi taom{% else %}Yangi mahsulot{% endif %}
                 </a>
             </div>
         </div>
         <div class="relative z-10 flex gap-2.5 mt-4 flex-wrap">
+            {% if panel_scope == 'restaurant' %}
+            <div class="s-pill"><span class="s-num">{{ available_count|add:stoplist_count }}</span><span class="s-lbl">Jami</span></div>
+            <div class="s-pill"><span class="s-num">{{ available_count|default:"0" }}</span><span class="s-lbl">Sotuvda</span></div>
+            <div class="s-pill"><span class="s-num">{{ stoplist_count|default:"0" }}</span><span class="s-lbl">Stop-list</span></div>
+            <div class="s-pill"><span class="s-num">{{ ar_count|default:"0" }}</span><span class="s-lbl">3D/AR</span></div>
+            {% else %}
             <div class="s-pill"><span class="s-num">{{ products|length }}</span><span class="s-lbl">Jami</span></div>
             <div class="s-pill"><span class="s-num">{{ available_count|default:"0" }}</span><span class="s-lbl">Mavjud</span></div>
             <div class="s-pill"><span class="s-num">{{ flash_count|default:"0" }}</span><span class="s-lbl">Flash</span></div>
             <div class="s-pill"><span class="s-num">{{ hit_count|default:"0" }}</span><span class="s-lbl">Hit</span></div>
             <div class="s-pill"><span class="s-num">{{ ar_count|default:"0" }}</span><span class="s-lbl">3D/AR</span></div>
+            {% endif %}
         </div>
     </div>
 
@@ -345,10 +354,17 @@
     <form method="get" class="flex flex-col sm:flex-row gap-2 mb-5">
         <div class="relative flex-1 min-w-[200px]">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.34-4.34"/></svg>
-            <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="Mahsulot qidirish..." class="s-input">
+            <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="{% if panel_scope == 'restaurant' %}Taom qidirish...{% else %}Mahsulot qidirish...{% endif %}" class="s-input">
         </div>
         <div class="flex gap-1.5 overflow-x-auto pb-0.5" style="scrollbar-width:none">
+            {% if panel_scope == 'restaurant' %}
+            <a href="?{% if search %}search={{ search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}{% endif %}" class="chip {% if not request.GET.available %}on{% endif %}">Barchasi</a>
+            <a href="?available=1{% if search %}&search={{ search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" class="chip {% if request.GET.available == '1' %}on{% endif %}">Sotuvda</a>
+            <a href="?available=0{% if search %}&search={{ search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" class="chip {% if request.GET.available == '0' %}on{% endif %} text-rose-600">Stop-list ({{ stoplist_count }})</a>
+            <div class="w-px h-6 bg-gray-200 dark:bg-neutral-700 self-center mx-1"></div>
+            {% else %}
             <button type="submit" name="category" value="" class="chip {% if not request.GET.category %}on{% endif %}">Barchasi</button>
+            {% endif %}
             {% for c in categories %}
             <button type="submit" name="category" value="{{ c.pk }}" class="chip {% if request.GET.category == c.pk|stringformat:'s' %}on{% endif %}">{{ c.name }}</button>
             {% endfor %}

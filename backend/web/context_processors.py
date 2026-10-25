@@ -36,8 +36,20 @@ def site_context(request):
             except Exception:
                 pass
 
+    from django.conf import settings as django_settings
+    raw_scope = str(settings.get('panel_scope') or getattr(django_settings, 'PANEL_SCOPE', 'restaurant')).strip().lower()
+    panel_scope = raw_scope if raw_scope in ('restaurant', 'all') else 'restaurant'
+
+    raw_ai = settings.get('ai_assistant')
+    if raw_ai is None:
+        raw_ai = getattr(django_settings, 'AI_ASSISTANT', False)
+    ai_assistant = str(raw_ai).strip().lower() in ('1', 'true', 'yes', 'on') if not isinstance(raw_ai, bool) else raw_ai
+
     return {
         'public_settings': settings,
         'cart_count': cart_count,
         'cart_total': cart_total,
+        'panel_scope': panel_scope,
+        'ai_assistant': ai_assistant,
     }
+

@@ -320,7 +320,7 @@
             </a>
             <a href="{{ products_url }}" class="nav-link {% if request.path == products_url or '/ar/' in request.path %}active{% endif %}">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                <span>Mahsulotlar & 3D</span>
+                <span>{% if panel_scope == 'restaurant' %}Menyu{% else %}Mahsulotlar & 3D{% endif %}</span>
             </a>
 
             {% if request.tenant_shop %}
@@ -342,6 +342,7 @@
             </a>
             {% endif %}
 
+            {% if panel_scope == 'all' %}
             <!-- 3. 3D STUDIO (Mahsulot #3) -->
             <div class="pt-3 pb-1 px-3">
                 <span class="text-[10px] font-bold tracking-wider uppercase text-sky-600 dark:text-sky-400">3D Studio (Mahsulot #3)</span>
@@ -350,6 +351,7 @@
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
                 <span>3D Print Navbati</span>
             </a>
+            {% endif %}
 
             <!-- 4. MOLIYA & SOZLAMALAR -->
             <div class="pt-3 pb-1 px-3">
@@ -363,11 +365,24 @@
                 <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.504-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                 <span>Telegram Bot</span>
             </a>
+            <a href="{% url 'seller_customers_web' %}" class="nav-link {% if '/customers/' in request.path %}active{% endif %}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>{% if panel_scope == 'restaurant' %}Mehmonlar{% else %}Mijozlar{% endif %}</span>
+            </a>
+            <a href="{% url 'seller_reviews_web' %}" class="nav-link {% if '/reviews/' in request.path %}active{% endif %}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                <span>Sharhlar</span>
+            </a>
+            <a href="{% url 'seller_analytics_web' %}" class="nav-link {% if '/analytics/' in request.path %}active{% endif %}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Analitika</span>
+            </a>
             <a href="{{ profile_url }}" class="nav-link {% if request.path == profile_url or '/template-' in request.path or '/shop' in request.path %}active{% endif %}">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 <span>Sozlamalar & Do'kon</span>
             </a>
 
+            {% if panel_scope == 'all' %}
             <!-- 4. EKOTIZIM: 3 TA MAHSULOT -->
             <div class="pt-3 pb-1 px-3">
                 <span class="text-[10px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">🌐 3 Ta Mahsulot</span>
@@ -384,6 +399,7 @@
                 <span class="text-base">🖨</span>
                 <span>3. 3D Studio & Servis ↗</span>
             </a>
+            {% endif %}
         </nav>
         <div class="p-3 border-t border-[#E5DFD5] dark:border-[#2D2621]">
             <div class="flex items-center gap-2.5">

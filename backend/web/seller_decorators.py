@@ -32,3 +32,19 @@ def seller_required(view_func):
                 return redirect('waiter_panel_web')
         return view_func(request, *args, **kwargs)
     return _wrapped
+
+
+def restaurant_panel_guard(view_func):
+    """
+    panel_scope == 'restaurant' rejimida bozorga oid yashirilgan sahifalarga
+    to'g'ridan-to'g'ri kirilsa 404 emas, /seller/ ga yo'naltiradi (TZ 2.2).
+    """
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        from backend.app_settings import get_choice
+        scope = get_choice('panel_scope', 'restaurant', ('restaurant', 'all'))
+        if scope == 'restaurant':
+            return redirect('seller_dashboard_web')
+        return view_func(request, *args, **kwargs)
+    return _wrapped
+

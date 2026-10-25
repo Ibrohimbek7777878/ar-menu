@@ -150,7 +150,7 @@
                     <h3 class="font-display font-black text-base text-ink">Do'kon / Restoran Asosiy Sozlamalari</h3>
                     <p class="text-xs text-muted mt-0.5">Mijozlar ko'radigan do'kon ma'lumotlari, ish vaqti va manzili</p>
                 </div>
-                {% if shop %}
+                {% if shop and panel_scope == 'all' %}
                 <a href="{% url 'seller_template_gallery' %}" class="btn btn-outline !py-1.5 !px-3 text-xs font-bold text-primary">
                     🎨 Dizayn Shablonlarini O'zgartirish ↗
                 </a>

@@ -16,12 +16,12 @@
     </div>
     <div class="flex items-center gap-2.5">
         <a href="{% url 'seller_products_web' %}" class="btn btn-outline">
-            <span class="material-icons-outlined text-base">inventory_2</span>
-            Mahsulotlar
+            <span class="material-icons-outlined text-base">{% if panel_scope == 'restaurant' %}restaurant_menu{% else %}inventory_2{% endif %}</span>
+            {% if panel_scope == 'restaurant' %}Menyu{% else %}Mahsulotlar{% endif %}
         </a>
         <a href="{% url 'seller_product_create_web' %}" class="btn btn-primary shadow-soft">
             <span class="material-icons-outlined text-base">add</span>
-            Yangi mahsulot
+            {% if panel_scope == 'restaurant' %}Yangi taom{% else %}Yangi mahsulot{% endif %}
         </a>
     </div>
 </div>
@@ -96,8 +96,138 @@
     }
 </script>
 
-<!-- KPI kartalar -->
-    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+{% if panel_scope == 'restaurant' %}
+<!-- RESTORAN KPI KARTALARI (6 TA) -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4 mb-6">
+    <!-- 1. Bugungi tushum -->
+    <div class="card card-hover p-5 group ring-1 ring-brand-100">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-semibold text-brand-700 truncate">Bugungi tushum</p>
+                <p class="font-display text-xl sm:text-2xl font-bold mt-1.5 text-brand-700 leading-none">{{ stats.today_revenue|uznum }} <span class="text-xs font-normal">so'm</span></p>
+                <div class="text-[11px] text-gray-500 mt-2 flex flex-col gap-0.5">
+                    <span>Naqd: <strong class="text-ink">{{ stats.today_revenue_cash|uznum }}</strong> so'm</span>
+                    <span>Karta: <strong class="text-ink">{{ stats.today_revenue_card|uznum }}</strong> so'm</span>
+                </div>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white shadow-soft transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">payments</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Bugungi buyurtmalar va o'rtacha chek -->
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Bugungi buyurtmalar</p>
+                <p class="font-display text-xl sm:text-2xl font-bold mt-1.5 text-ink leading-none">{{ stats.today_orders }} <span class="text-xs font-normal text-gray-500">ta</span></p>
+                <p class="text-[11px] text-gray-500 mt-2">
+                    O'rtacha chek: <strong class="text-ink">{{ stats.average_check|uznum }}</strong> so'm
+                </p>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange-50 text-orange-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">receipt_long</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Faol buyurtmalar (oshxona) -->
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Faol buyurtmalar</p>
+                <p class="font-display text-xl sm:text-2xl font-bold mt-1.5 text-ink leading-none">{{ stats.active_orders }} <span class="text-xs font-normal text-gray-500">ta</span></p>
+                <a href="{% url 'seller_kds_web' %}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:underline mt-2">
+                    KDS Oshxona ↗
+                </a>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">soup_kitchen</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Stollar bandligi -->
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Stollar holati</p>
+                <p class="font-display text-xl sm:text-2xl font-bold mt-1.5 text-ink leading-none">
+                    {{ stats.tables_occupied }} <span class="text-xs font-normal text-gray-400">/ {{ stats.tables_total }} band</span>
+                </p>
+                <a href="{% url 'seller_tables_web' %}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:underline mt-2">
+                    Stollar xaritasi ↗
+                </a>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">table_restaurant</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Stop-list (tugagan taomlar) -->
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Stop-list (Tugagan)</p>
+                <p class="font-display text-xl sm:text-2xl font-bold mt-1.5 {% if stats.stoplist_count > 0 %}text-red-600{% else %}text-ink{% endif %} leading-none">
+                    {{ stats.stoplist_count }} <span class="text-xs font-normal text-gray-500">ta</span>
+                </p>
+                <a href="{% url 'seller_products_web' %}?available=0" class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:underline mt-2">
+                    Stop-listni ko'rish ↗
+                </a>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">block</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Menyudagi taomlar -->
+    <div class="card card-hover p-5 group">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 truncate">Menyudagi taomlar</p>
+                <p class="font-display text-xl sm:text-2xl font-bold mt-1.5 text-ink leading-none">{{ stats.total_products }} <span class="text-xs font-normal text-gray-500">ta</span></p>
+                <a href="{% url 'seller_products_web' %}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:underline mt-2">
+                    Menyuni boshqarish ↗
+                </a>
+            </div>
+            <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-purple-50 text-purple-600 transition-transform group-hover:scale-105">
+                <span class="material-icons-outlined text-[22px]">restaurant_menu</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bugungi TOP 5 sotilgan taomlar bloki -->
+{% if top_dishes %}
+<div class="card p-5 mb-6">
+    <div class="flex items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-amber-500">local_fire_department</span>
+            <h3 class="font-display text-sm font-semibold text-ink">Bugungi TOP sotilgan taomlar</h3>
+        </div>
+        <span class="text-xs text-gray-400">Kunlik eng ommabop</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {% for dish in top_dishes %}
+        <div class="p-3 rounded-xl bg-gray-50/70 border border-gray-100 flex flex-col justify-between">
+            <div class="font-medium text-xs text-ink truncate" title="{{ dish.product_name }}">{{ forloop.counter }}. {{ dish.product_name }}</div>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-200/60 text-[11px]">
+                <span class="font-bold text-brand-700">{{ dish.qty }} ta</span>
+                <span class="text-gray-500">{{ dish.total|uznum }} so'm</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- ORIGINAL MARKETPLACE KPI KARTALAR (8 TA) -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
 
     <div class="card card-hover p-5 group">
         <div class="flex items-start justify-between gap-3">
@@ -202,6 +332,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Daromad grafigi + Tezkor amallar -->
 <div class="grid gap-4 lg:grid-cols-3 mb-6">

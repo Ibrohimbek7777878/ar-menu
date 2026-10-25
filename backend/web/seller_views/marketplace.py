@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db.models import Avg, Sum, Q, Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from web.seller_decorators import seller_required
+from web.seller_decorators import seller_required, restaurant_panel_guard
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.http import require_POST
 from shops.models import Shop, ShopPage, SHOP_SECTION_TYPES
@@ -16,6 +16,8 @@ from accounts.models import Customer, AdminUser
 from notifications.models import TelegramSubscriber
 from categories.models import Category
 from django.contrib.auth import authenticate, login
+
+
 @seller_required
 def seller_dashboard(request):
     shop = request.tenant_shop
@@ -47,30 +49,75 @@ def seller_dashboard(request):
     from accounts.models import Customer
     from notifications.models import Review
     from finance.services.summary import today_summary
+    from backend.app_settings import get_choice
+    from orders.models import OrderItem
+    from tables_restaurant.models import Table
 
     summary = today_summary(shop)
+
+    # 3. Faol buyurtmalar (oshxonada)
+    active_orders = orders_qs.filter(
+        created_at__gte=today_start,
+        status__in=['pending', 'confirmed', 'preparing']
+    ).count()
+
+    # 4. Stollar statistikasi (band / jami)
+    tables_qs = Table.objects.filter(shop=shop, is_active=True)
+    tables_total = tables_qs.count()
+    tables_occupied = tables_qs.exclude(status__in=['free', 'cleaning']).count()
+
+    # 5. Stop-list (tugagan taomlar)
+    stoplist_count = products_qs.filter(is_available=False).count()
+
+    # 6. Bugungi TOP 5 sotilgan taomlar
+    today_live_order_ids = today_orders.exclude(status__in=['cancelled', 'failed']).values_list('id', flat=True)
+    top_dishes = list(
+        OrderItem.objects.filter(order_id__in=today_live_order_ids)
+        .values('product_name')
+        .annotate(qty=Sum('quantity'), total=Sum('total'))
+        .order_by('-qty')[:5]
+    )
+
+    scope = get_choice('panel_scope', 'restaurant', ('restaurant', 'all'))
+    if scope == 'restaurant':
+        quick_links = [
+            {'url': 'seller_products_web', 'icon': 'restaurant_menu', 'label': 'Menyu'},
+            {'url': 'seller_orders_web', 'icon': 'receipt_long', 'label': 'Buyurtmalar'},
+            {'url': 'seller_kds_web', 'icon': 'soup_kitchen', 'label': 'KDS Oshxona'},
+            {'url': 'seller_tables_web', 'icon': 'table_restaurant', 'label': 'Stollar'},
+        ]
+    else:
+        quick_links = [
+            {'url': 'seller_products_web', 'icon': 'inventory_2', 'label': 'Mahsulotlar'},
+            {'url': 'seller_orders_web', 'icon': 'receipt_long', 'label': 'Buyurtmalar'},
+            {'url': 'seller_template_gallery', 'icon': 'palette', 'label': 'Dizayn'},
+            {'url': 'seller_profile_web', 'icon': 'person', 'label': 'Profil'},
+        ]
 
     ctx = {
         'shop': shop,
         'stats': {
             'total_products': products_qs.count(),
             'total_orders': orders_qs.count(),
-            'today_orders': summary['today_orders_count'],
+            'today_orders': summary['orders_count'],
             'today_revenue': summary['income'],
+            'today_revenue_cash': summary['income_cash'],
+            'today_revenue_card': summary['income_card'],
+            'average_check': summary['average_check'],
+            'active_orders': active_orders,
+            'tables_total': tables_total,
+            'tables_occupied': tables_occupied,
+            'stoplist_count': stoplist_count,
             'week_revenue': live_week.aggregate(s=Sum('final_amount'))['s'] or 0,
             'avg_rating': round(products_qs.aggregate(a=Avg('rating'))['a'] or 0, 1),
             'total_customers': Customer.objects.filter(orders__shop=shop).distinct().count(),
             'views': shop.views,
             'bonus_paid': orders_qs.exclude(status__in=['cancelled', 'failed']).aggregate(s=Sum('bonus_earned'))['s'] or 0,
         },
+        'top_dishes': top_dishes,
         'revenue_series': series,
         'recent_orders': orders_qs.order_by('-created_at')[:5],
-        'quick_links': [
-            {'url': 'seller_products_web', 'icon': 'inventory_2', 'label': 'Mahsulotlar'},
-            {'url': 'seller_orders_web', 'icon': 'receipt_long', 'label': 'Buyurtmalar'},
-            {'url': 'seller_template_gallery', 'icon': 'palette', 'label': 'Dizayn'},
-            {'url': 'seller_profile_web', 'icon': 'person', 'label': 'Profil'},
-        ],
+        'quick_links': quick_links,
         'now': now,
     }
     return render(request, 'seller/dashboard.html', ctx)
@@ -86,6 +133,14 @@ def seller_products(request):
     cat = request.GET.get('category')
     if cat:
         products = products.filter(category_id=cat)
+
+    status_filter = request.GET.get('status', '').strip()
+    available_param = request.GET.get('available')
+    if available_param == '0' or status_filter in ('unavailable', 'off', 'stoplist'):
+        products = products.filter(is_available=False)
+    elif available_param == '1' or status_filter in ('available', 'on'):
+        products = products.filter(is_available=True)
+
     now = timezone.now()
     all_products = Product.objects.filter(shop=shop)
     return render(request, 'seller/products.html', {
@@ -93,19 +148,21 @@ def seller_products(request):
         'search': q, 'categories': Category.objects.all(),
         'category_filter': int(cat) if cat and cat.isdigit() else None,
         'available_count': all_products.filter(is_available=True).count(),
+        'stoplist_count': all_products.filter(is_available=False).count(),
         'flash_count': all_products.filter(flash_price__isnull=False, flash_until__gt=now).count(),
         'hit_count': all_products.filter(is_hit=True).count(),
         'ar_count': all_products.filter(has_3d=True).count(),
+        'status_filter': status_filter or available_param,
     })
 
 
 @seller_required
 def seller_orders(request):
     shop = request.tenant_shop
-    orders = Order.objects.filter(shop=shop).select_related('shop', 'courier').order_by('-created_at')
+    orders_qs = Order.objects.filter(shop=shop).select_related('shop', 'courier').order_by('-created_at')
     status = request.GET.get('status')
     if status:
-        orders = orders.filter(status=status)
+        orders_qs = orders_qs.filter(status=status)
     all_orders = Order.objects.filter(shop=shop)
     status_map = [
         ('pending', 'Kutilmoqda'),
@@ -117,8 +174,14 @@ def seller_orders(request):
         ('cancelled', 'Bekor qilindi'),
     ]
     status_counts = [{'label': lbl, 'count': all_orders.filter(status=code).count()} for code, lbl in status_map]
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(orders_qs, 50)
+    page_number = request.GET.get('page')
+    orders_page = paginator.get_page(page_number)
+
     return render(request, 'seller/orders.html', {
-        'shop': shop, 'orders': orders, 'status_filter': status,
+        'shop': shop, 'orders': orders_page, 'status_filter': status,
         'status_counts': status_counts,
     })
 
@@ -274,6 +337,7 @@ def seller_customers(request):
 
 
 @seller_required
+@restaurant_panel_guard
 def seller_shop_builder(request):
     shop = request.tenant_shop
     # Reuse admin builder logic — faqat o'z do'koni
@@ -409,6 +473,7 @@ def _template_card_context(templates):
 
 
 @seller_required
+@restaurant_panel_guard
 def seller_template_gallery(request):
     """Shablonlar galereyasi — har shablon mahsulot kartochkasi ko'rinishida."""
     from shops.models import ShopTemplate, ShopPage
@@ -439,6 +504,7 @@ def seller_template_gallery(request):
 
 
 @seller_required
+@restaurant_panel_guard
 def seller_template_customize(request, slug):
     """Shablon kartochkasi → detal: jonli preview + moslash paneli."""
     import json
@@ -476,6 +542,7 @@ def seller_template_customize(request, slug):
 
 
 @seller_required
+@restaurant_panel_guard
 def seller_template_save_install(request):
     """'Saqlash va o'rnatish': (1) yangi custom shablon yaratiladi, (2) do'konga qo'llanadi."""
     import json
@@ -560,6 +627,7 @@ def _preview_pages_for(request):
     return [(key, icon, tr.get(f'builder_tab_{key}', key)) for key, icon in PREVIEW_PAGES]
 
 @seller_required
+@restaurant_panel_guard
 def seller_template_draft_save(request):
     """Preview draftini sessionga saqlash (o'rnatmasdan turib real ko'rish uchun)."""
     import json
@@ -593,6 +661,7 @@ def _tpl_draft(request, slug):
 
 
 @seller_required
+@restaurant_panel_guard
 @xframe_options_exempt
 def seller_template_preview(request, slug, page='home'):
     """REAL frontendni draft dizayn bilan ko'rish (o'rnatmasdan). Iframe uchun."""

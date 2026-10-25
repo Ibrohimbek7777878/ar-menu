@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db.models import Avg, Sum, Q, Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from web.seller_decorators import seller_required
+from web.seller_decorators import seller_required, restaurant_panel_guard
 from django.views.decorators.clickjacking import xframe_options_exempt
 from shops.models import Shop, ShopPage, SHOP_SECTION_TYPES
 from products.models import Product
@@ -15,7 +15,10 @@ from accounts.models import Customer, AdminUser
 from notifications.models import TelegramSubscriber
 from categories.models import Category
 from django.contrib.auth import authenticate, login
+
+
 @seller_required
+@restaurant_panel_guard
 def seller_3d_studio(request):
     """
     Mahsulot #3: 3D Studio & Chop Etish Navbati (Print Queue).

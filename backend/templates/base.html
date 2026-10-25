@@ -278,7 +278,9 @@
     window.addEventListener('offline', () => document.body.classList.add('is-offline'));
     if (!navigator.onLine) document.body.classList.add('is-offline');
     </script>
+    {% if ai_assistant %}
     {% include 'components/ai_chat.html' %}
+    {% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

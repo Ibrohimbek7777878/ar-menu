@@ -45,6 +45,10 @@ def seller_login(request):
     return render(request, 'seller/login.html')
 
 
+from web.seller_decorators import restaurant_panel_guard
+
+
+@restaurant_panel_guard
 def seller_register(request):
     """Sotuvchi ro'yxatdan o'tish — yangi do'kon ochish."""
     if request.method == 'POST':
