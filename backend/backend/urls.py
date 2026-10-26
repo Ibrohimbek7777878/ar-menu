@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/restaurant/admin/v1/tables/', include('tables_restaurant.interfaces.api.tables_admin_urls')),
     path('api/restaurant/admin/v1/orders/', include('orders.interfaces.api.orders_admin_urls')),
     path('api/restaurant/admin/v1/staff/', include('accounts.interfaces.api.staff_admin_urls')),
+    path('api/restaurant/admin/v1/finance/', include('finance.interfaces.api.finance_admin_urls')),
     path('api/v1/couriers/', include('couriers.urls')),
     path('api/v1/notifications/', include('notifications.urls')),
     # Flutter API
