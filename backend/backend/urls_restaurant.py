@@ -117,6 +117,7 @@ urlpatterns = [
     path('api/v1/restaurant/', include('orders.interfaces.api.urls')),
     path('api/restaurant/admin/v1/menu/', include('orders.interfaces.api.menu_admin_urls')),
     path('api/restaurant/admin/v1/tables/', include('tables_restaurant.interfaces.api.tables_admin_urls')),
+    path('api/restaurant/admin/v1/orders/', include('orders.interfaces.api.orders_admin_urls')),
 
     # Telegram Bot Webhook
     path('bot/restaurant/webhook/', telegram_webhook.restaurant_webhook, name='bot_restaurant_webhook'),
