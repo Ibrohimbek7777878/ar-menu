@@ -60,6 +60,10 @@ ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver')
 if not DEBUG and not RUNNING_TESTS and ('*' in ALLOWED_HOSTS or not ALLOWED_HOSTS):
     raise ImproperlyConfigured("Production'da ALLOWED_HOSTS aniq domen bo'lishi kerak ('*' mumkin emas).")
 
+# Django Admin (/djangoadmin/) — production restoran serverida xavfsizlik uchun o'chiriladi (TZ 0.3)
+DJANGO_ADMIN_ENABLED = _env_bool('DJANGO_ADMIN_ENABLED', default=(DEBUG or RUNNING_TESTS))
+
+
 # CSRF Trusted Origins: lokal rejimda localhost, production'da faqat .env dagi aniq manzillar
 CSRF_TRUSTED_ORIGINS = _env_list(
     'CSRF_TRUSTED_ORIGINS',
@@ -246,6 +250,9 @@ elif os.environ.get('POSTGRES_DB'):
             'PORT': os.environ.get('POSTGRES_PORT', '6432'),  # PgBouncer transaction pool port
             'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', 0)),  # 0 talab qilinadi (PgBouncer transaction pooling)
             'CONN_HEALTH_CHECKS': True,
+            'OPTIONS': {
+                'options': os.environ.get('PG_OPTIONS', '-c statement_timeout=15000 -c idle_in_transaction_session_timeout=30000'),
+            },
         }
     }
 else:

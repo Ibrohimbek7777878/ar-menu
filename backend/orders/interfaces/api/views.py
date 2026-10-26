@@ -81,20 +81,48 @@ class RestaurantOrderCreateView(RestaurantAPIView):
 class RestaurantOrderListView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/orders/
-    Barcha faol va bugungi restoran buyurtmalari (KDS, Waiter va Admin uchun).
+    Barcha faol va oxirgi 24 soatdagi restoran buyurtmalari (KDS, Waiter va Admin uchun; TZ 0.4).
     Oshpaz mijoz telefonini ko'rmaydi (ruxsat matritsasi: web/restaurant_auth.py CAPABILITIES).
     """
     permission_classes = [capability('kds')]
 
     def get(self, request):
+        from datetime import timedelta
+        from django.core.paginator import Paginator
+        from django.utils import timezone
+
         show_phone = has_capability(request.user, 'pos')
-        # Avval faqat is_pickup=True buyurtmalar chiqardi — mehmonning checkout buyurtmasi (is_pickup=False)
-        # oshxonaga umuman ko'rinmasdi. Endi shu restoranning barcha bekor qilinmagan buyurtmalari.
-        qs = (Order.objects.filter(shop=self.staff_shop())
-              .exclude(status__in=['cancelled', 'failed'])
-              .select_related('table').prefetch_related('items', 'history').order_by('-created_at')[:100])
+        shop = self.staff_shop()
+        since = timezone.now() - timedelta(hours=24)
+
+        status_param = request.GET.get('status')
+        if status_param == 'all':
+            qs = Order.objects.filter(shop=shop).exclude(status__in=['cancelled', 'failed'])
+        elif status_param:
+            statuses = [s.strip() for s in status_param.split(',') if s.strip()]
+            qs = Order.objects.filter(shop=shop, status__in=statuses)
+        else:
+            qs = Order.objects.filter(
+                shop=shop,
+                status__in=['pending', 'confirmed', 'preparing', 'ready'],
+            )
+
+        qs = qs.filter(created_at__gte=since).select_related('table').prefetch_related('items', 'history').order_by('-created_at')
+
+        page_number = request.GET.get('page')
+        page_size = 200
+        try:
+            raw_size = int(request.GET.get('page_size', 200))
+            if 1 <= raw_size <= 200:
+                page_size = raw_size
+        except (ValueError, TypeError):
+            page_size = 200
+
+        paginator = Paginator(qs, page_size)
+        page_obj = paginator.get_page(page_number or 1)
+
         data = []
-        for o in qs:
+        for o in page_obj.object_list:
             ready_rows = [h.created_at for h in o.history.all() if h.status == 'ready']
             ready_at = max(ready_rows) if ready_rows else None
             items_list = [{
@@ -124,7 +152,11 @@ class RestaurantOrderListView(RestaurantAPIView):
                 'final_amount': float(o.final_amount),
                 'items': items_list,
             })
-        return Response(data)
+        response = Response(data)
+        response['X-Total-Count'] = str(paginator.count)
+        response['X-Total-Pages'] = str(paginator.num_pages)
+        response['X-Page'] = str(page_obj.number)
+        return response
 
 
 class KitchenItemToggleView(RestaurantAPIView):

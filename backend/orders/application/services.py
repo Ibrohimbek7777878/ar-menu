@@ -417,57 +417,64 @@ class RestaurantOrderService:
     def get_restaurant_menu(cls) -> Dict[str, Any]:
         """
         3-Modul: Dinamik Menyu va Katalog REST API (Pure SPA fallback).
+        Keshda 30s saqlanadi va mahsulot/kategoriya o'zgarganda darhol yangilanadi (TZ 0.7).
         """
+        from products.menu_cache import get_cached_menu
         shop = cls.get_or_default_shop()
-        # Faqat shu restoranning taomlari (avval barcha do'konlar mahsulotlari aralashardi — TZ R-GST-07)
-        products = Product.objects.filter(
-            shop=shop, is_available=True, is_deleted=False,
-        ).select_related('category', 'shop', 'model3d').order_by('category__sort_order', '-is_featured', 'name')
-        products = list(products)
-        from collections import Counter
-        cat_counts = Counter(p.category_id for p in products)
-        categories = Category.objects.filter(id__in=cat_counts.keys(), is_active=True).order_by('sort_order', 'id')
+        shop_id = getattr(shop, 'id', None)
 
-        cat_data = []
-        for c in categories:
-            count = cat_counts.get(c.id, 0)
-            cat_data.append({
-                'id': c.id,
-                'name': c.name,
-                'icon': getattr(c, 'icon', '🍽️') or '🍽️',
-                'order': c.sort_order,
-                'count': count
-            })
+        def _build():
+            # Faqat shu restoranning taomlari (avval barcha do'konlar mahsulotlari aralashardi — TZ R-GST-07)
+            products = Product.objects.filter(
+                shop=shop, is_available=True, is_deleted=False,
+            ).select_related('category', 'shop', 'model3d').order_by('category__sort_order', '-is_featured', 'name')
+            products = list(products)
+            from collections import Counter
+            cat_counts = Counter(p.category_id for p in products)
+            categories = Category.objects.filter(id__in=cat_counts.keys(), is_active=True).order_by('sort_order', 'id')
 
-        prod_data = []
-        for p in products:
-            spin_frames = p.design_config.get('spin_frames') if isinstance(p.design_config, dict) else []
-            prod_data.append({
-                'id': p.id,
-                'name': p.name,
-                'price': float(p.price),
-                'old_price': float(p.old_price) if p.old_price else None,
-                'category_id': p.category_id,
-                'category_name': p.category.name if p.category else 'Boshqa',
-                # Rasm yoki 3D yo'q bo'lsa — bo'sh (avval osh rasmi va plov.glb qo'yilardi: boshqa taom ko'rsatilardi)
-                'image': p.image.url if p.image else '',
-                'has_3d': bool(p.has_3d and p.ar_model),
-                'ar_model': p.ar_model or '',
-                'model_status': getattr(getattr(p, 'model3d', None), 'status', None) or 'none',
-                'spin_frames': spin_frames,
-                'description': p.description,
-                'unit': p.unit,
-                'is_available': p.is_available,
-                'rating': p.rating,
-                'reviews_count': p.reviews_count,
-            })
+            cat_data = []
+            for c in categories:
+                count = cat_counts.get(c.id, 0)
+                cat_data.append({
+                    'id': c.id,
+                    'name': c.name,
+                    'icon': getattr(c, 'icon', '🍽️') or '🍽️',
+                    'order': c.sort_order,
+                    'count': count
+                })
 
-        return {
-            'status': 'success',
-            'shop': {
-                'id': shop.id if shop else 1,
-                'name': shop.name if shop else 'Guliston'
-            },
-            'categories': cat_data,
-            'products': prod_data
-        }
+            prod_data = []
+            for p in products:
+                spin_frames = p.design_config.get('spin_frames') if isinstance(p.design_config, dict) else []
+                prod_data.append({
+                    'id': p.id,
+                    'name': p.name,
+                    'price': float(p.price),
+                    'old_price': float(p.old_price) if p.old_price else None,
+                    'category_id': p.category_id,
+                    'category_name': p.category.name if p.category else 'Boshqa',
+                    # Rasm yoki 3D yo'q bo'lsa — bo'sh (avval osh rasmi va plov.glb qo'yilardi: boshqa taom ko'rsatilardi)
+                    'image': p.image.url if p.image else '',
+                    'has_3d': bool(p.has_3d and p.ar_model),
+                    'ar_model': p.ar_model or '',
+                    'model_status': getattr(getattr(p, 'model3d', None), 'status', None) or 'none',
+                    'spin_frames': spin_frames,
+                    'description': p.description,
+                    'unit': p.unit,
+                    'is_available': p.is_available,
+                    'rating': p.rating,
+                    'reviews_count': p.reviews_count,
+                })
+
+            return {
+                'status': 'success',
+                'shop': {
+                    'id': shop.id if shop else 1,
+                    'name': shop.name if shop else 'Guliston'
+                },
+                'categories': cat_data,
+                'products': prod_data
+            }
+
+        return get_cached_menu(shop_id, 'spa_menu', _build)

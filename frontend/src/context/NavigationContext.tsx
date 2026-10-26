@@ -5,6 +5,7 @@ import { RouteGuard } from '../core/guards/RouteGuard';
 import { roleService } from '../core/auth/RoleService';
 import { playTones } from '../utils/audio';
 import { SubdomainService } from '../core/routing/SubdomainService';
+import { determinePollNeeds } from '../utils/pollerRoute';
 import type { UserRole } from '../core/auth/types';
 
 export interface OrderItem {
@@ -694,8 +695,12 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Yozuvlar (holat o'zgartirish) bajarilayotganda yangilanish o'tkazib yuboriladi — optimistik holat orqaga qaytmasin.
   const inflightWrites = useRef(0);
   const syncNowRef = useRef<() => void>(() => {});
-
   const financeNowRef = useRef<() => void>(() => {});
+  const currentPathRef = useRef(currentPath);
+  useEffect(() => {
+    currentPathRef.current = currentPath;
+  }, [currentPath]);
+
   const writeThrough = useCallback(<T,>(request: Promise<T>): Promise<T> => {
     inflightWrites.current += 1;
     return request.finally(() => {
@@ -716,16 +721,19 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const run = async () => {
       if (stopped || document.hidden || inflightWrites.current > 0) return;
       try {
-        // Har rol faqat o'ziga ruxsat etilgan ma'lumotni so'raydi (server qolganiga 403 beradi): oshpaz — buyurtmalar,
-        // hostess — stollar, ofitsiant va rahbariyat — hammasi
         const role = roleService.getCurrentRole();
-        const wantsOrders = role === 'admin' || role === 'waiter' || role === 'kitchen';
-        const wantsTables = role === 'admin' || role === 'waiter' || role === 'hostess';
-        const wantsCalls = role === 'admin' || role === 'waiter';
+        const currentLoc = (typeof window !== 'undefined' ? window.location.pathname : '') || currentPathRef.current;
+        const needs = determinePollNeeds(role, currentLoc);
+
+        // Agar joriy sahifada hech qanday ma'lumot so'ralmasa (masalan mehmon sahifasi)
+        if (!needs.wantsOrders && !needs.wantsTables && !needs.wantsCalls && !needs.wantsFinance) {
+          return;
+        }
+
         const [serverOrders, serverTables, serverCalls] = await Promise.all([
-          wantsOrders ? RestaurantAPI.getOrders() : Promise.resolve(null),
-          wantsTables ? RestaurantAPI.getTables() : Promise.resolve(null),
-          wantsCalls ? RestaurantAPI.getServiceCalls() : Promise.resolve(null),
+          needs.wantsOrders ? RestaurantAPI.getOrders() : Promise.resolve(null),
+          needs.wantsTables ? RestaurantAPI.getTables() : Promise.resolve(null),
+          needs.wantsCalls ? RestaurantAPI.getServiceCalls() : Promise.resolve(null),
         ]);
         if (stopped || inflightWrites.current > 0) return;
 
@@ -746,6 +754,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           if (baselineDone && fresh.length > 0) playNotificationSound('call');
           setServiceCalls(list);
         }
+        if (needs.wantsFinance) {
+          await loadFinance();
+        }
         baselineDone = true;
       } catch (e) {
         console.warn('[sync] server sync failed, keeping the last known data', e);
@@ -762,16 +773,18 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
     document.addEventListener('visibilitychange', onVisible);
 
-    // Moliya (faqat rahbariyat uchun; boshqa rolda server 403 beradi): ochilganda va har yozuvdan keyin
+    // Moliya (faqat rahbariyat uchun va faqat moliya sahifasi ochilganda; TZ 0.5)
     const loadFinance = async () => {
-      // Moliya serverda faqat rahbariyatga ochiq: boshqa rolda so'rov yuborilmaydi (har sahifada keraksiz 403 bo'lardi)
+      if (stopped || document.hidden || inflightWrites.current > 0) return;
       if (roleService.getCurrentRole() !== 'admin') return;
+      const currentLoc = (typeof window !== 'undefined' ? window.location.pathname : '') || currentPathRef.current;
+      if (!determinePollNeeds('admin', currentLoc).wantsFinance) return;
+
       const fin = await RestaurantAPI.getFinanceData();
       if (stopped || !fin) return;
       if (Array.isArray(fin.transactions)) {
         setFinanceTransactions(fin.transactions);
         // Bugungi tushum — serverdagi haqiqiy kirimlardan, Toshkent kuni bo'yicha
-        // (avval 3 480 000 so'm deb to'qib qo'yilgan hisoblagich edi)
         const dayKey = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Tashkent' });
         const today = dayKey(new Date());
         setTodayRevenue(
@@ -786,7 +799,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     financeNowRef.current = () => {
       void loadFinance();
     };
-    void loadFinance();
+    const initialNeeds = determinePollNeeds(roleService.getCurrentRole(), (typeof window !== 'undefined' ? window.location.pathname : '') || currentPathRef.current);
+    if (initialNeeds.wantsFinance) {
+      void loadFinance();
+    }
 
     return () => {
       stopped = true;
@@ -794,6 +810,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
+
+  // Marshrut o'zgarganda darhol o'sha sahifa talab qiladigan ma'lumotni so'rash
+  useEffect(() => {
+    syncNowRef.current();
+  }, [currentPath]);
 
   // ─── ROUTE GUARD MIDDLEWARE CHECK (INITIAL LOAD) ───
   useEffect(() => {

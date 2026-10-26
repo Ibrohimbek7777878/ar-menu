@@ -49,6 +49,8 @@ services:
       -c checkpoint_completion_target=0.9
       -c random_page_cost=1.1
       -c log_min_duration_statement=500
+      -c statement_timeout=15s
+      -c idle_in_transaction_session_timeout=30s
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

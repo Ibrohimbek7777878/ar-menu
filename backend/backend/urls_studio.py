@@ -56,7 +56,6 @@ urlpatterns = [
     path('admin', studio_admin_redirect),
     path('admin/', studio_admin_redirect),
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('djangoadmin/', admin.site.urls),
 
     # REST APIs
     path('api/v1/accounts/', include('accounts.urls')),
@@ -85,3 +84,6 @@ urlpatterns += [
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if getattr(settings, 'DJANGO_ADMIN_ENABLED', False):
+    urlpatterns.append(path('djangoadmin/', admin.site.urls))

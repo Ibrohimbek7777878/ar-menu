@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 
 SHOP_SECTION_TYPES = [
@@ -107,6 +108,7 @@ class ShopTemplate(models.Model):
 
 
 class Shop(models.Model):
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, allow_unicode=True)
     description = models.TextField(blank=True)

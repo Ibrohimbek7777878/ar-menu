@@ -132,7 +132,7 @@ urlpatterns = [
     path('admin/logout/', tma_views.restaurant_admin_logout, name='restaurant_admin_logout'),
     path('admin/logout/', tma_views.restaurant_admin_logout, name='web_logout'),
     path('admin/dashboard/', tma_views.restaurant_admin_dashboard, name='admin_dashboard'),
-    path('djangoadmin/', admin.site.urls),
+
 
     # AR3D App URL'lari (3D bosma studiyasi sahifasi boshqa mahsulotniki — menyuga yo'naltiriladi; uning API'lari ishlaydi)
     path('3d-print/', other_product_page, name='print_3d_studio'),
@@ -171,3 +171,7 @@ urlpatterns += [
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if getattr(settings, 'DJANGO_ADMIN_ENABLED', False):
+    urlpatterns.append(path('djangoadmin/', admin.site.urls))
+

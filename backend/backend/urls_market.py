@@ -104,7 +104,6 @@ urlpatterns = [
     path('admin/users/<int:pk>/toggle/', views.admin_user_toggle, name='admin_user_toggle'),
     path('admin', market_admin_redirect),
     path('admin/', market_admin_redirect),
-    path('djangoadmin/', admin.site.urls),
 
     # Mini ERP (Sotuvchilar paneli: Sklad, Mahsulotlar, Buyurtmalar)
     path('seller/', include('web.seller_urls')),
@@ -141,3 +140,6 @@ urlpatterns += [
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if getattr(settings, 'DJANGO_ADMIN_ENABLED', False):
+    urlpatterns.append(path('djangoadmin/', admin.site.urls))

@@ -128,64 +128,84 @@ def tma_home(request):
     from notifications.admin_bot import get_restaurant_shop
     active_shop = table.shop if (table and table.shop) else get_restaurant_shop()
 
-    # Faqat shu restoranning arxivlanmagan taomlari (avval o'chirilganlar ham chiqar, menyu 35 taomda kesilardi)
-    prod_qs = Product.objects.filter(is_available=True, is_deleted=False)
-    if active_shop:
-        prod_qs = prod_qs.filter(shop=active_shop)
-        categories = Category.objects.filter(
-            products__shop=active_shop, products__is_deleted=False, is_active=True,
-        ).distinct().order_by('sort_order', 'name')
-    else:
-        categories = Category.objects.filter(is_active=True).order_by('sort_order')[:12]
+    from products.menu_cache import get_cached_menu
+    active_shop_id = getattr(active_shop, 'id', None)
 
-    featured_products = list(prod_qs.select_related('shop', 'category', 'model3d').order_by('id')[:300])
-    ar_products = [p for p in featured_products if p.has_3d][:12]
+    def _build_tma_menu():
+        # Faqat shu restoranning arxivlanmagan taomlari (avval o'chirilganlar ham chiqar, menyu 35 taomda kesilardi)
+        prod_qs = Product.objects.filter(is_available=True, is_deleted=False)
+        if active_shop:
+            prod_qs = prod_qs.filter(shop=active_shop)
+            categories = list(Category.objects.filter(
+                products__shop=active_shop, products__is_deleted=False, is_active=True,
+            ).distinct().order_by('sort_order', 'name'))
+        else:
+            categories = list(Category.objects.filter(is_active=True).order_by('sort_order')[:12])
 
-    # Menyu toifalari bo'yicha guruhlash (menyuuu uslubidagi klassik ro'yxat uchun)
-    category_groups = []
-    for cat in categories:
-        c_prods = [p for p in featured_products if p.category_id == cat.id]
-        if c_prods:
-            category_groups.append({
-                'category': cat,
-                'products': c_prods,
+        featured_products = list(prod_qs.select_related('shop', 'category', 'model3d').order_by('id')[:300])
+        ar_products = [p for p in featured_products if p.has_3d][:12]
+
+        # Menyu toifalari bo'yicha guruhlash (menyuuu uslubidagi klassik ro'yxat uchun)
+        category_groups = []
+        for cat in categories:
+            c_prods = [p for p in featured_products if p.category_id == cat.id]
+            if c_prods:
+                category_groups.append({
+                    'category': cat,
+                    'products': c_prods,
+                })
+
+        # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
+        react_products = []
+        for p in featured_products:
+            react_products.append({
+                'id': p.id,
+                'name': p.name,
+                'description': p.description or '',
+                'price': float(p.price),
+                'old_price': float(p.old_price) if p.old_price else None,
+                'image': p.image.url if p.image else '',
+                'category_id': p.category_id,
+                'category_name': p.category.name if p.category else '',
+                'has_3d': bool(p.has_3d and p.ar_model),
+                'ar_model': p.ar_model or '',
+                'model_status': _model_status(p),
+                'unit': p.unit or 'dona',
+                'is_halal': bool(p.is_halal),
+                'is_popular': bool(p.is_featured),
             })
 
-    # Savat miqdori
+        from collections import Counter
+        cat_counts = Counter(p.category_id for p in featured_products)
+        react_categories = []
+        for c in categories:
+            react_categories.append({
+                'id': c.id,
+                'name': c.name,
+                'icon': getattr(c, 'icon', '') or '🍽️',
+                'count': cat_counts.get(c.id, 0),
+            })
+
+        return {
+            'categories': categories,
+            'category_groups': category_groups,
+            'featured_products': featured_products,
+            'ar_products': ar_products,
+            'react_categories': react_categories,
+            'react_products': react_products,
+        }
+
+    cached_menu = get_cached_menu(active_shop_id, 'tma', _build_tma_menu)
+    categories = cached_menu['categories']
+    category_groups = cached_menu['category_groups']
+    featured_products = cached_menu['featured_products']
+    ar_products = cached_menu['ar_products']
+    react_categories = cached_menu['react_categories']
+    react_products = cached_menu['react_products']
+
+    # Savat miqdori (sessiyaga bog'liq, keshga kirmaydi)
     cart = request.session.get('cart', {})
     cart_count = _calculate_cart_count(cart)
-
-    # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
-    react_products = []
-    for p in featured_products:
-        react_products.append({
-            'id': p.id,
-            'name': p.name,
-            'description': p.description or '',
-            'price': float(p.price),
-            'old_price': float(p.old_price) if p.old_price else None,
-            'image': p.image.url if p.image else '',
-            'category_id': p.category_id,
-            'category_name': p.category.name if p.category else '',
-            'has_3d': bool(p.has_3d and p.ar_model),
-            'ar_model': p.ar_model or '',
-            'model_status': _model_status(p),
-            'unit': p.unit or 'dona',
-            'is_halal': bool(p.is_halal),
-            'is_popular': bool(p.is_featured),
-        })
-
-    # Kategoriya sonlari — faqat shu menyudagi taomlar bo'yicha (avval barcha do'konlar bo'yicha, har biri alohida so'rov)
-    from collections import Counter
-    cat_counts = Counter(p.category_id for p in featured_products)
-    react_categories = []
-    for c in categories:
-        react_categories.append({
-            'id': c.id,
-            'name': c.name,
-            'icon': getattr(c, 'icon', '') or '🍽️',
-            'count': cat_counts.get(c.id, 0),
-        })
 
     flat_cart = {}
     for s_items in cart.values():
@@ -1531,12 +1551,18 @@ def kds_screen(request):
     """
     KDS Oshxona Ekrani (Kitchen Display System):
     Oshpazlar uchun buyurtmalar kartochkalari, tayyorlash vaqti va taomlar ro'yxati.
+    Oxirgi 24 soatdagi faol buyurtmalar (maks. 200 ta; TZ 0.4).
     """
+    from datetime import timedelta
+    from django.utils import timezone
     from orders.models import Order
     shop = staff_shop(request)
+    since = timezone.now() - timedelta(hours=24)
     active_orders = Order.objects.filter(
-        shop=shop, status__in=['pending', 'confirmed', 'preparing', 'ready']
-    ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')
+        shop=shop,
+        status__in=['pending', 'confirmed', 'preparing', 'ready'],
+        created_at__gte=since,
+    ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')[:200]
 
     serialized_orders = _serialize_kds_orders(active_orders)
 
@@ -1561,16 +1587,42 @@ def kds_screen(request):
 
 @restaurant_staff_required(api=True, capability='kds')
 def kds_orders_api(request):
-    """KDS uchun polling JSON API: har 10 soniyada yangi buyurtmalarni oladi."""
-    from orders.models import Order
+    """KDS uchun polling JSON API: oxirgi 24 soatdagi faol buyurtmalar, sahifalangan (maks 200; TZ 0.4)."""
+    from datetime import timedelta
+    from django.core.paginator import Paginator
     from django.http import JsonResponse
+    from django.utils import timezone
+    from orders.models import Order
+
     shop = staff_shop(request)
+    since = timezone.now() - timedelta(hours=24)
     active_orders = Order.objects.filter(
-        shop=shop, status__in=['pending', 'confirmed', 'preparing', 'ready']
+        shop=shop,
+        status__in=['pending', 'confirmed', 'preparing', 'ready'],
+        created_at__gte=since,
     ).select_related('table', 'table__hall').prefetch_related('items').order_by('created_at')
 
-    serialized_orders = _serialize_kds_orders(active_orders)
-    return JsonResponse({'orders': serialized_orders, 'status': 'ok'})
+    page_number = request.GET.get('page', 1)
+    page_size = 200
+    try:
+        raw_size = int(request.GET.get('page_size', 200))
+        if 1 <= raw_size <= 200:
+            page_size = raw_size
+    except (ValueError, TypeError):
+        page_size = 200
+
+    paginator = Paginator(active_orders, page_size)
+    page_obj = paginator.get_page(page_number)
+
+    serialized_orders = _serialize_kds_orders(page_obj.object_list)
+    return JsonResponse({
+        'orders': serialized_orders,
+        'page': page_obj.number,
+        'total_pages': paginator.num_pages,
+        'total_orders': paginator.count,
+        'has_next': page_obj.has_next(),
+        'status': 'ok',
+    })
 
 
 # Rol bo'yicha o'tkazish mumkin bo'lgan holatlar (R2): oshpaz faqat pishirish bosqichlarini, ofitsiant stolga berish
