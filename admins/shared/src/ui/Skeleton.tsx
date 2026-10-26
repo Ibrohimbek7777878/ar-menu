@@ -1,0 +1,28 @@
+import React from 'react';
+
+export interface SkeletonProps {
+  width?: string | number;
+  height?: string | number;
+  borderRadius?: string;
+  style?: React.CSSProperties;
+}
+
+export const Skeleton: React.FC<SkeletonProps> = ({
+  width = '100%',
+  height = '20px',
+  borderRadius = 'var(--radius-sm)',
+  style,
+}) => {
+  return (
+    <div
+      style={{
+        width,
+        height,
+        borderRadius,
+        backgroundColor: 'var(--bg-elevated)',
+        animation: 'pulse 1.5s ease-in-out infinite',
+        ...style,
+      }}
+    />
+  );
+};

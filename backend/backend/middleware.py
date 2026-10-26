@@ -237,6 +237,9 @@ class RestaurantStaffRBACMiddleware(MiddlewareMixin):
     def process_request(self, request):
         if not request.path.startswith(self.PROTECTED_PREFIXES):
             return None
+        # /api/restaurant/admin/v1/ marshrutlari view darajasida to'g'ri (401/403/200) boshqariladi
+        if request.path.startswith('/api/restaurant/admin/v1/'):
+            return None
         # JWT (Authorization header) bilan kelgan so'rovni DRF permission o'zi tekshiradi
         if request.META.get('HTTP_AUTHORIZATION'):
             return None

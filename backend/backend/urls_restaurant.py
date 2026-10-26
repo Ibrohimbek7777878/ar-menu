@@ -16,7 +16,7 @@ from django.conf.urls.static import static
 from django.shortcuts import redirect
 from django.views.static import serve
 
-from web import views, seller_views, tma_views, telegram_webhook, health
+from web import views, seller_views, tma_views, telegram_webhook, health, resto_admin_views
 
 
 def other_product_page(request, *args, **kwargs):
@@ -134,11 +134,15 @@ urlpatterns = [
     path('admin/dashboard/', tma_views.restaurant_admin_dashboard, name='admin_dashboard'),
 
 
+    # Resto-Admin yangi SPA ilovasi (TZ: 1.1)
+    re_path(r'^ra(?:/.*)?$', resto_admin_views.resto_admin_spa, name='resto_admin_spa'),
+
     # AR3D App URL'lari (3D bosma studiyasi sahifasi boshqa mahsulotniki — menyuga yo'naltiriladi; uning API'lari ishlaydi)
     path('3d-print/', other_product_page, name='print_3d_studio'),
     path('', include('ar3d.urls')),
 
     # REST API endpoints (Stollar, buyurtmalar, to'lov)
+    path('api/restaurant/admin/v1/', include('web.resto_admin_api_urls')),
     path('api/v1/accounts/', include('accounts.urls')),
     path('api/v1/categories/', include('categories.urls')),
     path('api/v1/shops/', include('shops.urls')),
