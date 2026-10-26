@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build --workspace=resto",
     "test": "npm run test --workspace=shared && npm run test --workspace=resto",
+    "check:budget": "node scripts/check_bundle_budget.mjs",
     "lint": "oxlint"
   }
 }
