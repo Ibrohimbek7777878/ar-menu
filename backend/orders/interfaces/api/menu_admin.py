@@ -108,12 +108,19 @@ class MenuProductListCreateView(APIView):
             page_obj = paginator.page(paginator.num_pages) if paginator.num_pages > 0 else []
 
         results = [_serialize_product(p) for p in page_obj]
+        curr_page = int(page_number) if paginator.num_pages > 0 else 1
 
         return Response({
             'count': paginator.count,
             'num_pages': paginator.num_pages,
-            'current_page': int(page_number) if paginator.num_pages > 0 else 1,
+            'current_page': curr_page,
             'results': results,
+            # TZ 3.3 standart formati:
+            'items': results,
+            'page': curr_page,
+            'page_size': page_size,
+            'total': paginator.count,
+            'has_next': curr_page < paginator.num_pages,
         })
 
     def post(self, request):
@@ -439,6 +446,47 @@ class MenuProductFeatureView(APIView):
         product.save(update_fields=['is_featured'])
 
         return Response({'success': True, 'id': product.id, 'is_featured': product.is_featured}, status=status.HTTP_200_OK)
+
+
+class MenuProductAvailabilityView(APIView):
+    """
+    POST /api/restaurant/admin/v1/menu/products/<pk>/availability/
+    Stop-list (TZ 4.3, R5-1): taom tugadi yoki qaytdi.
+    Body: {"available": true|false} (yoki berilmasa toggle)
+    Ruxsat: stoplist yoki menu_admin
+    """
+    authentication_classes = RESTAURANT_API_AUTHENTICATION
+    permission_classes = [capability('stoplist')]
+
+    def post(self, request, pk):
+        shop = staff_shop(request)
+        product = get_object_or_404(Product.all_objects, pk=pk, shop=shop)
+
+        val = request.data.get('available')
+        if val is None:
+            val = not product.is_available
+        elif isinstance(val, str):
+            val = val.strip().lower() in ('true', '1', 'yes', 'ha')
+
+        with transaction.atomic():
+            product.is_available = bool(val)
+            product.save(update_fields=['is_available'])
+
+            log_audit(
+                'stock_change',
+                request=request,
+                actor=request.user,
+                target_type='product',
+                target_id=product.id,
+                new_value={'action': 'stoplist', 'product': product.name, 'is_available': product.is_available},
+            )
+
+        return Response({
+            'success': True,
+            'id': product.id,
+            'name': product.name,
+            'is_available': product.is_available,
+        }, status=status.HTTP_200_OK)
 
 
 class MenuProductRestoreView(APIView):

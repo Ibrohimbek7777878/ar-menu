@@ -324,3 +324,26 @@ class MenuAdminAPITests(TestCase):
         data = res.json()
         self.assertEqual(data['name'], 'Ichimliklar')
         self.assertTrue(data['is_restaurant'])
+
+    def test_product_availability_toggle(self):
+        """TZ 4.3: POST products/<pk>/availability/ stop-list tezkor boshqaruvi."""
+        c = self.client_for(self.owner)
+        url = f'/api/restaurant/admin/v1/menu/products/{self.p1.id}/availability/'
+
+        # O'chirish (stop-listga tushirish)
+        res = c.post(url, data=json.dumps({'available': False}), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.p1.refresh_from_db()
+        self.assertFalse(self.p1.is_available)
+
+        # Qayta yoqish (mavjud qilish)
+        res2 = c.post(url, data=json.dumps({'available': True}), content_type='application/json')
+        self.assertEqual(res2.status_code, 200)
+        self.p1.refresh_from_db()
+        self.assertTrue(self.p1.is_available)
+
+        # Body berilmasa toggle qilish
+        res3 = c.post(url)
+        self.assertEqual(res3.status_code, 200)
+        self.p1.refresh_from_db()
+        self.assertFalse(self.p1.is_available)
