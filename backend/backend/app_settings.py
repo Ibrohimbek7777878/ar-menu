@@ -33,3 +33,14 @@ def get_bool(key, default=False):
         return raw
     return str(raw).strip().lower() in ('1', 'true', 'yes', 'on')
 
+
+def set_setting(key, value):
+    """AppSetting qiymatini saqlash yoki yangilash."""
+    from notifications.models import AppSetting
+    row, _ = AppSetting.objects.update_or_create(
+        key=key.lower(),
+        defaults={'value': str(value)},
+    )
+    return row
+
+

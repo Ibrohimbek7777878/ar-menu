@@ -29,9 +29,13 @@ from notifications.admin_bot import (
 
 def get_base_url_from_request(request):
     """
-    So'rov kelgan public host va scheme ni dinamik aniqlash.
-    Telegram webhook orqali kelganda doim Cloudflare / Ngrok ning joriy aktiv HTTPS domenini beradi.
+    So'rov kelgan public host va scheme ni aniqlash (TZ: Stage 5, T2).
+    Production'da RESTAURANT_PUBLIC_URL ustun — Host sarlavhasi soxtalashtirilishiga yo'l qo'yilmaydi.
     """
+    public_url = getattr(settings, 'RESTAURANT_PUBLIC_URL', '').rstrip('/')
+    if public_url and (public_url.startswith('http://') or public_url.startswith('https://')):
+        return public_url
+
     req_host = request.get_host()
     if req_host and '127.0.0.1' not in req_host and 'localhost' not in req_host:
         is_secure = (
@@ -55,38 +59,55 @@ def get_base_url_from_request(request):
     return f"{scheme}://{domain}".rstrip('/')
 
 
-def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None):
+def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None, table_token=None):
     """
-    Mehmonlar va mijozlar uchun 3D Restoran, 3D Printer Studio, Online Do'kon va Stol tugmalari.
-    Biznes egasi (admin) uchun stollar nazorati tugmasi.
+    Restoran bot klaviaturasi (TZ: Stage 5, T1, T3).
+    bot_scope = 'restaurant' bo'lsa faqat 'Menyuni ochish' va 'Mening stolim & Bron'.
+    bot_scope = 'all' bo'lsa barcha 4 ta tugma.
     """
+    from backend.app_settings import get_choice
+    bot_scope = get_choice('bot_scope', 'restaurant', ('restaurant', 'all'))
     is_https = base_url.startswith('https://')
-    tma_url = f"{base_url}/restaurant/"
-    if table_number:
-        tma_url += f"?table={table_number}"
-    orders_url = f"{base_url}/restaurant/table/"
-    if table_number:
-        orders_url += f"?table={table_number}"
-    studio_url = f"{base_url}/studio/"
-    market_url = f"{base_url}/market/"
+
+    if table_token:
+        tma_url = f"{base_url}/t/{table_token}/"
+        orders_url = f"{base_url}/t/{table_token}/"
+    else:
+        tma_url = f"{base_url}/restaurant/"
+        orders_url = f"{base_url}/restaurant/table/"
+        if table_number:
+            tma_url += f"?table={table_number}"
+            orders_url += f"?table={table_number}"
 
     tma_btn = {"web_app": {"url": tma_url}} if is_https else {"url": tma_url}
     orders_btn = {"web_app": {"url": orders_url}} if is_https else {"url": orders_url}
-    studio_btn = {"web_app": {"url": studio_url}} if is_https else {"url": studio_url}
-    market_btn = {"web_app": {"url": market_url}} if is_https else {"url": market_url}
 
-    keyboard = [
-        [
-            {"text": "🍽 3D Restoran Menyu", **tma_btn}
-        ],
-        [
-            {"text": "🖨 3D Printer Studio", **studio_btn},
-            {"text": "🛍 Online Do'kon", **market_btn}
-        ],
-        [
-            {"text": "📍 Mening stolim & Bron", **orders_btn}
+    if bot_scope == 'restaurant':
+        keyboard = [
+            [
+                {"text": "🍽 Menyuni ochish", **tma_btn}
+            ],
+            [
+                {"text": "📍 Mening stolim & Bron", **orders_btn}
+            ]
         ]
-    ]
+    else:
+        studio_url = f"{base_url}/studio/"
+        market_url = f"{base_url}/market/"
+        studio_btn = {"web_app": {"url": studio_url}} if is_https else {"url": studio_url}
+        market_btn = {"web_app": {"url": market_url}} if is_https else {"url": market_url}
+        keyboard = [
+            [
+                {"text": "🍽 3D Restoran Menyu", **tma_btn}
+            ],
+            [
+                {"text": "🖨 3D Printer Studio", **studio_btn},
+                {"text": "🛍 Online Do'kon", **market_btn}
+            ],
+            [
+                {"text": "📍 Mening stolim & Bron", **orders_btn}
+            ]
+        ]
 
     if is_user_admin:
         shop_id = shop.id if shop else 0
@@ -95,6 +116,7 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None)
         ])
 
     return {"inline_keyboard": keyboard}
+
 
 
 def _forbidden_webhook():
@@ -199,22 +221,36 @@ def _handle_telegram_update(request):
     is_user_admin = is_admin(chat_id, username)
     shop = get_restaurant_shop()
 
-    # Deep link orqali stol raqami aniqlash (/start table_5, /start stol_3, /start 2)
+    # Deep link orqali stolni aniqlash (/start t_<token> yoki demo'da table_5)
     table_num = None
+    table_token = None
     if text_clean.startswith('/start'):
         parts = text_clean.split(maxsplit=1)
         if len(parts) > 1:
-            arg = parts[1].strip().lower()
-            if arg.startswith('table_'):
-                table_num = arg.replace('table_', '')
-            elif arg.startswith('stol_'):
-                table_num = arg.replace('stol_', '')
-            elif arg.startswith('t_'):
-                table_num = arg.replace('t_', '')
-            elif arg.isdigit():
-                table_num = arg
+            arg = parts[1].strip()
+            if arg.lower().startswith('t_'):
+                raw_token = arg[2:].strip()
+                import uuid
+                try:
+                    token_uuid = uuid.UUID(raw_token)
+                    from tables_restaurant.models import Table
+                    table_obj = Table.objects.filter(qr_token=token_uuid, is_active=True).first()
+                    if table_obj:
+                        table_token = str(table_obj.qr_token)
+                        table_num = str(table_obj.number)
+                except Exception:
+                    pass
+            elif getattr(settings, 'DEMO_MODE', False) or getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+                arg_lower = arg.lower()
+                if arg_lower.startswith('table_'):
+                    table_num = arg[6:]
+                elif arg_lower.startswith('stol_'):
+                    table_num = arg[5:]
+                elif arg.isdigit():
+                    table_num = arg
 
-    markup = get_menu_markup(base_url, is_user_admin=is_user_admin, shop=shop, table_number=table_num)
+    markup = get_menu_markup(base_url, is_user_admin=is_user_admin, shop=shop, table_number=table_num, table_token=table_token)
+
 
     if text_clean.startswith('/start') or text_clean in ('/menu', 'menu', 'menyu', 'Menyu', 'boshlash', 'start'):
         if table_num:

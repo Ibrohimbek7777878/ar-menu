@@ -1390,8 +1390,10 @@ def tma_ar_menu(request):
     # ham restoran AR menyusida chiqardi). 3D modelga ega taomlar birinchi, bo'lmasa shu restoranning faol taomlari.
     base = Product.objects.filter(shop=shop, is_available=True, is_deleted=False) if shop else Product.objects.none()
     products = base.filter(has_3d=True).select_related('shop', 'category')
-    if not products.exists():
+    from django.conf import settings
+    if not products.exists() and getattr(settings, 'DEMO_MODE', False):
         products = base.select_related('shop', 'category')
+
 
     cat_ids = products.values_list('category_id', flat=True).distinct()
     categories = Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True)
