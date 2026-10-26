@@ -1,0 +1,3 @@
+"""
+Restoran Sozlamalari API moduli.
+"""
