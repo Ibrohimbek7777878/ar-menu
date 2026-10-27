@@ -304,6 +304,17 @@
             </button>
         </div>
          <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+            <!-- ✨ YANGI RESTO-ADMIN SPA (STRANGLER FIG SWITCH) -->
+            <div class="mb-3 px-1">
+                <a href="/ra/" class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md hover:shadow-lg hover:from-emerald-500 hover:to-teal-500 transition-all font-medium text-xs group">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-2 w-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                        <span class="font-bold tracking-wide">Yangi Resto-Admin SPA</span>
+                    </div>
+                    <span class="px-1.5 py-0.5 text-[10px] bg-white/20 rounded-md font-mono group-hover:translate-x-0.5 transition-transform">Tezkor &rarr;</span>
+                </a>
+            </div>
+
             {% url 'seller_dashboard_web' as dash_url %}
             {% url 'seller_orders_web' as orders_url %}
             {% url 'seller_products_web' as products_url %}

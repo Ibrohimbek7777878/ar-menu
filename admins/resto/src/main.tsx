@@ -27,6 +27,7 @@ import {
   Settings,
   LogOut,
   Store,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 const AppLayout: React.FC = () => {
@@ -127,6 +128,31 @@ const AppLayout: React.FC = () => {
               </NavLink>
             ))}
         </nav>
+
+        {/* Strangler Fig: Klassik boshqaruvga o'tish */}
+        <div style={{ padding: '0 8px 12px 8px' }}>
+          <a
+            href="/seller/tables/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              textDecoration: 'none',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: 'var(--text-dim)',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-subtle)',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <ArrowLeftRight size={14} />
+            <span>Klassik panelga o'tish</span>
+          </a>
+        </div>
 
         {/* Xodim profili va chiqish */}
         <div
