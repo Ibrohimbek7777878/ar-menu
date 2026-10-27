@@ -95,6 +95,31 @@ services:
       retries: 5
       start_period: 60s
 
+  # Xodimlar va ma'muriyat magistrali (TZ 0.6: KDS, POS ofitsiant, Resto-Admin SPA, moliya)
+  web-staff:
+    <<: *app
+    command: ["web"]
+    environment:
+      <<: *app-env
+      WEB_CONCURRENCY: ${STAFF_WEB_CONCURRENCY:-2}
+      GUNICORN_THREADS: ${STAFF_GUNICORN_THREADS:-4}
+    volumes:
+      - media:/app/media
+      - logs:/app/logs
+      - cache:/app/cache
+      - static:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-H", "X-Forwarded-Proto: https", "-H", "Host: ${DOMAIN}", "http://localhost:8000/health/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
   worker:
     <<: *app
     command: ["worker"]
@@ -120,6 +145,8 @@ services:
       - caddy_config:/config
     depends_on:
       web:
+        condition: service_healthy
+      web-staff:
         condition: service_healthy
 
 volumes:

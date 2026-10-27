@@ -73,3 +73,43 @@ class MenuCacheTests(TestCase):
         p2 = next((p for p in products2 if p['id'] == self.product.id), None)
         self.assertIsNotNone(p2)
         self.assertEqual(p2['price'], 22000.0, "Taom narxi o'zgargach kesh darhol yangilanmadi")
+
+    def test_menu_etag_and_conditional_304(self):
+        """TZ 0.7: ETag va 304 Not Modified shartli kesh tekshiruvi."""
+        from django.test import Client
+        c = Client()
+        res = c.get('/api/v1/restaurant/menu/')
+        self.assertEqual(res.status_code, 200)
+        etag = res.headers.get('ETag')
+        self.assertIsNotNone(etag)
+        self.assertIn('max-age=30', res.headers.get('Cache-Control', ''))
+
+        # Xuddi shu ETag bilan qayta so'ralganda 304 Not Modified qaytishi shart
+        res304 = c.get('/api/v1/restaurant/menu/', HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(res304.status_code, 304)
+
+    def test_menu_etag_changes_when_dish_updated(self):
+        """TZ 0.7: Taom o'zgarganda ETag o'zgaradi va eski ETag bilan 200 qaytaradi."""
+        from django.test import Client
+        c = Client()
+        res1 = c.get('/api/v1/restaurant/menu/')
+        etag1 = res1.headers.get('ETag')
+
+        # Narxni o'zgartiramiz
+        self.product.price = Decimal('25000')
+        self.product.save()
+
+        # Eski ETag bilan so'rov yuborilganda kesh eskirgani uchun 200 va yangi ETag qaytadi
+        res2 = c.get('/api/v1/restaurant/menu/', HTTP_IF_NONE_MATCH=etag1)
+        self.assertEqual(res2.status_code, 200)
+        etag2 = res2.headers.get('ETag')
+        self.assertNotEqual(etag1, etag2)
+
+    def test_stoplist_toggle_bumps_version(self):
+        """TZ 0.7: Stop-list orqali taom to'xtatilganda kesh yangilanadi."""
+        v1 = get_menu_version(self.shop.id)
+        self.product.is_available = False
+        self.product.save(update_fields=['is_available'])
+        v2 = get_menu_version(self.shop.id)
+        self.assertGreater(v2, v1)
+

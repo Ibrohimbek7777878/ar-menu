@@ -267,12 +267,26 @@ def tma_catalog(request):
     if q:
         products = products.filter(Q(name__icontains=q) | Q(description__icontains=q))
 
+    from products.menu_cache import get_cached_menu
+
+    if not category_id and not has_3d and not q:
+        def _build_default_catalog():
+            p_list = list(products[:80])
+            c_list = list(categories)
+            return {'products': p_list, 'categories': c_list}
+        catalog_cache = get_cached_menu(getattr(active_shop, 'id', None), 'catalog_default', _build_default_catalog)
+        display_products = catalog_cache['products']
+        display_categories = catalog_cache['categories']
+    else:
+        display_products = products[:80]
+        display_categories = categories
+
     cart = request.session.get('cart', {})
     cart_count = _calculate_cart_count(cart)
 
     context = {
-        'products': products[:80],
-        'categories': categories,
+        'products': display_products,
+        'categories': display_categories,
         'selected_category': int(category_id) if category_id else None,
         'q': q,
         'has_3d': has_3d,
@@ -1406,17 +1420,59 @@ def tma_ar_menu(request):
     table, table_token = _get_tma_table(request)
     shop = table.shop if (table and table.shop) else get_restaurant_shop()
 
-    # Faqat shu restoranning taomlari (avval butun platformadagi — boshqa do'konlarning mahsulotlari va kategoriyalari
-    # ham restoran AR menyusida chiqardi). 3D modelga ega taomlar birinchi, bo'lmasa shu restoranning faol taomlari.
-    base = Product.objects.filter(shop=shop, is_available=True, is_deleted=False) if shop else Product.objects.none()
-    products = base.filter(has_3d=True).select_related('shop', 'category')
-    from django.conf import settings
-    if not products.exists() and getattr(settings, 'DEMO_MODE', False):
-        products = base.select_related('shop', 'category')
+    from products.menu_cache import get_cached_menu
 
+    def _build_ar_cache():
+        base = Product.objects.filter(shop=shop, is_available=True, is_deleted=False) if shop else Product.objects.none()
+        prods = base.filter(has_3d=True).select_related('shop', 'category')
+        from django.conf import settings
+        if not prods.exists() and getattr(settings, 'DEMO_MODE', False):
+            prods = base.select_related('shop', 'category')
 
-    cat_ids = products.values_list('category_id', flat=True).distinct()
-    categories = Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True)
+        cat_ids = prods.values_list('category_id', flat=True).distinct()
+        cats = list(Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True))
+
+        r_prods = []
+        for p in prods:
+            r_prods.append({
+                'id': p.id,
+                'name': p.name,
+                'description': p.description or '',
+                'price': float(p.price),
+                'old_price': float(p.old_price) if p.old_price else None,
+                'image': p.image.url if p.image else '',
+                'category_id': p.category_id,
+                'category_name': p.category.name if p.category else '',
+                'has_3d': True,
+                'ar_model': p.ar_model or '',
+                'unit': p.unit or 'dona',
+                'is_halal': bool(p.is_halal),
+                'is_popular': bool(p.is_featured),
+            })
+
+        from collections import Counter
+        per_category = Counter(p.category_id for p in prods)
+        r_cats = []
+        for c in cats:
+            r_cats.append({
+                'id': c.id,
+                'name': c.name,
+                'icon': getattr(c, 'icon', '') or '✨',
+                'count': per_category.get(c.id, 0),
+            })
+
+        return {
+            'products': list(prods),
+            'categories': cats,
+            'react_products': r_prods,
+            'react_categories': r_cats,
+        }
+
+    ar_data = get_cached_menu(getattr(shop, 'id', None), 'ar_menu', _build_ar_cache)
+    products = ar_data['products']
+    categories = ar_data['categories']
+    react_products = ar_data['react_products']
+    react_categories = ar_data['react_categories']
 
     cart = request.session.get('cart', {})
     cart_count = 0
@@ -1424,35 +1480,6 @@ def tma_ar_menu(request):
         cart_count = sum(int(item.get('quantity', 1)) for items in cart.values() for item in items.values())
     except Exception:
         cart_count = 0
-
-    react_products = []
-    for p in products:
-        react_products.append({
-            'id': p.id,
-            'name': p.name,
-            'description': p.description or '',
-            'price': float(p.price),
-            'old_price': float(p.old_price) if p.old_price else None,
-            'image': p.image.url if p.image else '',
-            'category_id': p.category_id,
-            'category_name': p.category.name if p.category else '',
-            'has_3d': True,
-            'ar_model': p.ar_model or '',
-            'unit': p.unit or 'dona',
-            'is_halal': bool(p.is_halal),
-            'is_popular': bool(p.is_featured),
-        })
-
-    from collections import Counter
-    per_category = Counter(p.category_id for p in products)
-    react_categories = []
-    for c in categories:
-        react_categories.append({
-            'id': c.id,
-            'name': c.name,
-            'icon': getattr(c, 'icon', '') or '✨',
-            'count': per_category.get(c.id, 0),
-        })
 
     flat_cart = {}
     for s_items in cart.values():

@@ -4,7 +4,7 @@
 	encode zstd gzip
 
 	# Fayl nomi hash'li (kontent o'zgarsa nom o'zgaradi) — brauzer abadiy keshlaydi
-	@hashed path_regexp hashed ^/static/react/assets/.+-[A-Za-z0-9_-]{8}\.(js|css)$
+	@hashed path_regexp hashed (^/static/(admins|react)/.+-[A-Za-z0-9_-]{8}\.(js|css)$|^/static/.+\.[0-9a-f]{12}\.(css|js|woff2)$)
 	handle @hashed {
 		root * /srv
 		header Cache-Control "public, max-age=31536000, immutable"
@@ -25,6 +25,13 @@
 		file_server
 	}
 
+	# Xodimlar va ma'muriyat magistrali (TZ 0.6: KDS, POS ofitsiant, Resto-Admin SPA, moliya) -> web-staff
+	@staff path /api/restaurant/admin/* /api/kds/* /api/v1/restaurant/orders* /api/v1/restaurant/tables* /api/v1/restaurant/calls* /api/v1/restaurant/finance* /seller/* /admin/* /kds* /kitchen* /waiter* /arrival* /ra/* /ra
+	handle @staff {
+		reverse_proxy web-staff:8000
+	}
+
+	# Mehmonlar va umumiy oqim (3D menyu, savat, stol, welcome) -> web
 	handle {
 		# Sog'lomlikni Docker (web konteyner health-check) va tashqi healthcheck.sh kuzatadi; Caddy'ning faol tekshiruvi
 		# kerak emas (u Host sarlavhasisiz /health/ ga urilib, Django'dan 400/301 olib, web'ni "nosoz" deb belgilardi)

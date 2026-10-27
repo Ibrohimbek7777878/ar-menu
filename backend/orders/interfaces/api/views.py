@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import AllowAny, SAFE_METHODS
 from rest_framework.throttling import ScopedRateThrottle
+from django.http import HttpResponse
 from django.conf import settings
 from django.utils import timezone
 from orders.models import Order, OrderItem
@@ -535,9 +536,21 @@ class RestaurantMenuView(RestaurantAPIView):
     """
     GET /api/v1/restaurant/menu/
     Dinamik Menyu va Katalog REST API (Pure SPA fallback). Mehmon uchun ochiq.
+    TZ 0.7: ETag va 304 Not Modified shartli kesh bilan ta'minlangan.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
+        from products.menu_cache import is_etag_matched, apply_menu_cache_headers
+        shop = RestaurantOrderService.get_or_default_shop()
+        shop_id = getattr(shop, 'id', None)
+
+        if is_etag_matched(request, shop_id):
+            resp = HttpResponse(status=304)
+            apply_menu_cache_headers(resp, shop_id)
+            return resp
+
         data = RestaurantOrderService.get_restaurant_menu()
-        return Response(data)
+        resp = Response(data)
+        apply_menu_cache_headers(resp, shop_id)
+        return resp
