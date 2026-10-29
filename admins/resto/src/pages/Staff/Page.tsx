@@ -7,6 +7,7 @@ import {
   Skeleton,
   StatCard,
   useToast,
+  formatHumanDateTime,
 } from '@admins/shared';
 import {
   AlertCircle,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import { StaffItem } from './api';
 import { useStaff } from './useStaff';
+import { restoUz, roleLabel } from '../../i18n/uz';
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   shop_owner: {
@@ -288,7 +290,7 @@ export const StaffPage: React.FC = () => {
           icon={<User size={22} color="#0ea5e9" />}
         />
         <StatCard
-          title="Oshpazlar (KDS)"
+          title={restoUz.staffPage.cooksCard}
           value={summary.kitchen}
           icon={<UtensilsCrossed size={22} color="#f59e0b" />}
         />
@@ -505,7 +507,7 @@ export const StaffPage: React.FC = () => {
                           border: `1px solid ${roleCfg.border}`,
                         }}
                       >
-                        {user.role_display}
+                        {roleLabel(user.role)}
                       </span>
 
                       {user.phone && (
@@ -517,7 +519,7 @@ export const StaffPage: React.FC = () => {
 
                     {user.last_login && (
                       <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                        Oxirgi kirish: {new Date(user.last_login).toLocaleString('uz-UZ')}
+                        {restoUz.staffPage.lastLogin}: {formatHumanDateTime(user.last_login)}
                       </div>
                     )}
                   </div>
@@ -682,7 +684,7 @@ export const StaffPage: React.FC = () => {
                 }}
               >
                 <option value="waiter">Ofitsiant (Buyurtmalar, stollar)</option>
-                <option value="kitchen">Oshpaz (KDS oshxona ekrani)</option>
+                <option value="kitchen">{restoUz.staffPage.kitchenRoleOption}</option>
                 <option value="hostess">Hostess (Qabulxona, bronlar)</option>
                 <option value="shop_manager">Menejer (Boshqaruv, hisobotlar)</option>
               </select>

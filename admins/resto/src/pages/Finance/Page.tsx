@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useFinance, type PeriodPreset } from './useFinance';
 import { getExportCsvUrl, type FinanceTransaction, type DebtItem } from './api';
+import { restoUz } from '../../i18n/uz';
 
 function formatSum(n: number | undefined | null): string {
   if (n === undefined || n === null) return '0 so\'m';
@@ -241,7 +242,7 @@ export function FinancePage() {
             Moliya va Kassa
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>
-            Kassa kirim-chiqimlari, sof pul oqimi va nasiyalar balansi
+            {restoUz.financePage.subtitle}
           </p>
         </div>
 
@@ -336,10 +337,10 @@ export function FinancePage() {
               textDecoration: 'none',
               transition: 'all var(--transition-fast)',
             }}
-            title="Excel formatida CSV eksport qilish"
+            title={restoUz.financePage.exportHint}
           >
             <FileSpreadsheet size={16} color="var(--accent-emerald)" />
-            <span>CSV</span>
+            <span>{restoUz.financePage.exportButton}</span>
           </a>
         </div>
       </Card>
@@ -432,7 +433,7 @@ export function FinancePage() {
         <Card hoverable>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-              Sof pul oqimi
+              {restoUz.financePage.profit}
             </span>
             <div
               style={{
@@ -457,7 +458,7 @@ export function FinancePage() {
             {formatSum(summary?.net_cash_flow)}
           </div>
           <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
-            Tushum minus Xarajat
+            {restoUz.financePage.profitHint}
           </p>
         </Card>
 
@@ -557,7 +558,7 @@ export function FinancePage() {
               transition: 'all var(--transition-fast)',
             }}
           >
-            Nasiyalar va Qarzlar Daftari
+            {restoUz.financePage.debtsTab}
           </button>
         </div>
 

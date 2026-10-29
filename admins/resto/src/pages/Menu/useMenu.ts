@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   MenuProduct,
   MenuCategory,
@@ -26,6 +26,16 @@ export function useMenu() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Unmount bo'lgandan keyin va filtr almashgandan keyin eski javob holatni buzmasligi uchun
+  const mountedRef = useRef(true);
+  const activeKeyRef = useRef('');
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Kategoriyalarni yuklash
   const loadCategories = useCallback(async () => {
@@ -38,9 +48,12 @@ export function useMenu() {
   }, []);
 
   // Mahsulotlarni yuklash (SWR kesh bilan)
-  const loadProducts = useCallback(async (silent = false) => {
+  const loadProducts = useCallback(async (silent = false, force = false) => {
     if (!silent) setLoading(true);
     const cacheKey = `resto:menu:${selectedCategory}:${statusFilter}:${searchQuery}`;
+    activeKeyRef.current = cacheKey;
+    // Javob hali ham shu filtrga tegishlimi va sahifa ochiqmi
+    const isCurrent = () => mountedRef.current && activeKeyRef.current === cacheKey;
     try {
       const res = await fetchWithSWR(
         cacheKey,
@@ -50,14 +63,26 @@ export function useMenu() {
             status: statusFilter,
             q: searchQuery || undefined,
           }),
-        { ttlMs: 15000 }
+        {
+          ttlMs: 15000,
+          force,
+          // Eskirgan kesh ko'rsatilgach, fonda kelgan yangi qiymat ekranga chiqadi
+          onUpdate: (fresh) => {
+            if (!isCurrent()) return;
+            setProducts(fresh.results || fresh.items || []);
+            setError(null);
+          },
+        }
       );
+      if (!isCurrent()) return;
       setProducts(res.data.results || res.data.items || []);
       setError(null);
     } catch (err) {
+      // Xatoda eski ro'yxat (products) o'zgarmaydi
+      if (!isCurrent()) return;
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && isCurrent()) setLoading(false);
     }
   }, [selectedCategory, statusFilter, searchQuery]);
 
@@ -185,7 +210,8 @@ export function useMenu() {
     setSearchQuery,
     loading,
     error,
-    refresh: () => loadProducts(false),
+    // "Yangilash" keshni chetlab o'tib, darrov yangi ma'lumot oladi
+    refresh: () => loadProducts(false, true),
     toggleAvailability: handleToggleAvailability,
     toggleFeature: handleToggleFeature,
     duplicate: handleDuplicate,

@@ -7,6 +7,7 @@ import {
   Skeleton,
   StatCard,
   useToast,
+  formatHumanDateTime,
 } from '@admins/shared';
 import {
   AlertCircle,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { OrderDTO } from './api';
 import { useOrders } from './useOrders';
+import { restoUz } from '../../i18n/uz';
 
 const STATUS_CONFIG: Record<
   OrderDTO['status'],
@@ -527,7 +529,7 @@ export const OrdersPage: React.FC = () => {
                     {/* Chekni ko'rish */}
                     <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>
                       <Eye size={14} style={{ marginRight: '4px' }} />
-                      Chek & Tafsilotlar
+                      {restoUz.ordersPage.viewReceipt}
                     </Button>
 
                     {/* Bosqichma-bosqich status o'zgartirish */}
@@ -671,7 +673,7 @@ export const OrdersPage: React.FC = () => {
               <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '1px dashed #9ca3af', paddingBottom: '12px' }}>
                 <div style={{ fontSize: '18px', fontWeight: 700 }}>RESTORAN CHEKI</div>
                 <div>Buyurtma #{selectedOrder.order_number}</div>
-                <div>{new Date(selectedOrder.created_at).toLocaleString('uz-UZ')}</div>
+                <div>{formatHumanDateTime(selectedOrder.created_at, { alwaysTime: true })}</div>
                 {selectedOrder.table && (
                   <div style={{ fontWeight: 700, marginTop: '4px' }}>
                     Stol #{selectedOrder.table.number} ({selectedOrder.table.hall_name})

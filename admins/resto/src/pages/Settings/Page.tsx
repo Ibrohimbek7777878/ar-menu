@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useSettings } from './useSettings';
+import { restoUz } from '../../i18n/uz';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -140,7 +141,7 @@ export function SettingsPage() {
             Restoran Sozlamalari
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>
-            Restoran profili, oshxona (KDS) taymerlari va xizmat haqi parametrlari
+            {restoUz.settingsPage.subtitle}
           </p>
         </div>
 
@@ -222,7 +223,7 @@ export function SettingsPage() {
             </div>
 
             <div>
-              <label style={labelStyle}>Tizimdagi identifikator (Slug)</label>
+              <label style={labelStyle}>{restoUz.settingsPage.menuLink}</label>
               <input
                 type="text"
                 disabled
@@ -482,7 +483,7 @@ export function SettingsPage() {
           </div>
         </Card>
 
-        {/* 4. OSHXONA KDS TAYMERLARI */}
+        {/* 4. OSHXONA EKRANI TAYMERLARI */}
         <Card style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div
             style={{
@@ -497,11 +498,11 @@ export function SettingsPage() {
             }}
           >
             <Timer size={18} color="var(--accent-amber)" />
-            <span>Oshxona (KDS) Taymer Chegaralari</span>
+            <span>{restoUz.settingsPage.kitchenTimersTitle}</span>
           </div>
 
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-            KDS ekranida taomlar tayyorlanish vaqtiga qarab kartochka rangi sariq va qizilga aylanadi:
+            {restoUz.settingsPage.kitchenTimersHint}
           </p>
 
           <div style={gridTwoCol}>

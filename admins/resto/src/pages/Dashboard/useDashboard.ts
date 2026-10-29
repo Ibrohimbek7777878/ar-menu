@@ -10,21 +10,40 @@ export function useDashboard() {
   const [loading, setLoading] = useState<boolean>(!data);
   const [error, setError] = useState<Error | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Unmount bo'lgandan keyin setState qilinmasligi uchun
+  const mountedRef = useRef(true);
+  // loadData barqaror bo'lishi uchun (har data o'zgarganda qayta yaratilmasin)
+  const hasDataRef = useRef(data !== null);
 
-  const loadData = useCallback(async (silent = false) => {
-    if (!silent && !data) setLoading(true);
+  const loadData = useCallback(async (silent = false, force = false) => {
+    if (!silent && !hasDataRef.current) setLoading(true);
     try {
-      const res = await fetchWithSWR(CACHE_KEY, fetchDashboardSummary, { ttlMs: 10000 });
+      const res = await fetchWithSWR(CACHE_KEY, fetchDashboardSummary, {
+        ttlMs: 10000,
+        force,
+        // Eskirgan kesh ko'rsatilgach, fonda kelgan yangi qiymat ekranga chiqadi
+        onUpdate: (fresh) => {
+          if (!mountedRef.current) return;
+          hasDataRef.current = true;
+          setData(fresh);
+          setError(null);
+        },
+      });
+      if (!mountedRef.current) return;
+      hasDataRef.current = true;
       setData(res.data);
       setError(null);
     } catch (err) {
+      // Xatoda eski qiymat (data) o'zgarmaydi
+      if (!mountedRef.current) return;
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && mountedRef.current) setLoading(false);
     }
-  }, [data]);
+  }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     loadData();
 
     const handleVisibilityChange = () => {
@@ -49,6 +68,7 @@ export function useDashboard() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      mountedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -58,6 +78,7 @@ export function useDashboard() {
     data,
     loading,
     error,
-    refresh: () => loadData(false),
+    // "Yangilash" keshni chetlab o'tib, darrov yangi ma'lumot oladi
+    refresh: () => loadData(false, true),
   };
 }

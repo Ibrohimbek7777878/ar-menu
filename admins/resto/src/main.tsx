@@ -15,7 +15,7 @@ import {
   Skeleton,
 } from '@admins/shared';
 import '@admins/shared/ui/tokens.css';
-import { restoUz } from './i18n/uz';
+import { restoUz, roleLabel } from './i18n/uz';
 import { adminRoutes } from './routes';
 import {
   LayoutDashboard,
@@ -178,7 +178,7 @@ const AppLayout: React.FC = () => {
               {session?.user.name}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'capitalize' }}>
-              {session?.user.role}
+              {session ? roleLabel(session.user.role) : ''}
             </div>
           </div>
           <button
