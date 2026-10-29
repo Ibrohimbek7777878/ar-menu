@@ -81,7 +81,7 @@ Yangi matnlar `admins/resto/src/i18n/uz.ts` orqali beriladi (hozir sahifalar mat
 | Matn | pastki burchakda xom `Shop_owner`; Xodimlarda `2026-10-29 13:44:23` xom sana; "KDS", "Slug", "CSV" |
 | Yangi taom formasi | ✅ yaxshi (nom, narx, vaqt, kategoriya, rasm, tavsif). Kamchilik: kategoriya oldindan "Ichimliklar" tanlangan (xato qilish oson), rasm tanlash brauzerning inglizcha "Choose File / No file chosen" tugmasi |
 | Ikonka-tugmalar nomi | ✅ Menyu/Stollar/Xodimlarda `aria-label`/`title` bor (0 ta nomsiz). Sozlamalarda 2 ta nomsiz |
-| Tashqi manba | yangi panel hamon `fonts.googleapis.com` (Playfair, Plus Jakarta) dan shrift oladi; `favicon.svg` 404 |
+| Tashqi manba | *(2026-10-29 tuzatish: avval men buni yangi panelga bog'lagandim, bu xato.)* `/ra/*` sahifalari tashqi domenga so'rov yubormaydi (agent va e2e tasdiqladi). `fonts.googleapis.com` (Playfair, Plus Jakarta) eski `restaurant_admin/login.html` va `dashboard.html` dan keladi; `favicon.svg` 404 yangi panelda tuzatildi |
 
 *Tekshirilmadi:* real telefonlarda barmoq bilan ishlash, sekin internet (3G), ekran o'qish dasturi, rus tili.
 
@@ -240,7 +240,7 @@ Kodga kirmasdan, Sozlamalar → "Qo'shimcha" dan o'zgartiriladi (faqat egasi/sup
 | № | Muammo | Talab |
 |---|---|---|
 | C1 | **TZ 0.1/0.2 bajarilmagan:** Seller `base.html` hamon `cdn.tailwindcss.com`, Alpine (jsdelivr), Google Fonts va Material Icons'dan yuklaydi; ichki CSS/JS shablonda | Tailwind'ni build qilingan CSS ga o'tkazish, Alpine va shriftlarni lokal (self-host), inline `<style>/<script>` ni statik faylga chiqarish. Qabul: sahifa yuklanganda tashqi domenga **0 ta** so'rov |
-| C2 | Yangi panel ham Google Fonts'dan shrift oladi, `favicon.svg` 404 | Shriftlar lokal (woff2, `font-display: swap`), favicon qo'shiladi |
+| C2 | **Tuzatilgan band:** Google Fonts yangi paneldan emas, eski `restaurant_admin/login.html` va `dashboard.html` dan keladi (`/ra/` da tashqi so'rov 0). `favicon.svg` 404 yangi panelda tuzatildi | Eski login/dashboard shriftlari lokal (woff2, `font-display: swap`); e2e'dagi `test.fail` ("login sahifasi tashqi domenga so'rov yubormaydi") shundan keyin oddiy testga aylanadi |
 | C3 | **`scripts/e2e_resto_admin.mjs` soxta:** brauzer ochmaydi, "muvaffaqiyatli" deb yozadi | Haqiqiy Playwright e2e: login → har sahifa → hujjat qayta yuklanmadi (`navigation` so'rovi 1 ta) → T1–T8 bosish soni. CI'da alohida job |
 | C4 | 15 ta `admins` testi deyarli bo'sh (sozlamalar clamp'i testning o'zida qayta yozilgan); hook, `client.ts`, sessiya, guard sinovsiz; CI'da `admins` joyi yo'q | Haqiqiy testlar (haqiqiy funksiyani chaqiradigan), CI'ga `admins` ishi (`npm ci`, `tsc -b`, `oxlint`, `npm test`, build, `check:budget`) |
 | C5 | **Kesh (SWR) buzuq:** `admins/shared/src/api/cache.ts` — fonda yangilangan qiymat hook'ga yetmaydi, "Yangilash" 10–15 soniya yangilamaydi | Fonda kelgan yangi qiymat obunachilarga yetkaziladi. Test: eski → yangi qiymat ekranga chiqadi |
@@ -328,3 +328,31 @@ Har bosqich oxirida: (1) nima o'zgargan (fayllar), (2) qaysi buyruq qanday natij
 ## 10. Qamrovdan tashqari (bu TZ'da qilinmaydi)
 
 Telegram Mini App (alohida branch), mehmon menyusi dizayni, rus tili, 3D modellarni yuklash tarmog'i, VPS/domen sozlash, haqiqiy taom rasmlari (egasi beradi), yuk testi (haqiqiy serverda).
+
+---
+
+## 11. Holat (2026-10-29 kechqurun, Claude tekshiruvi bilan)
+
+| Band | Holat | Commit / izoh |
+|---|---|---|
+| A1–A7, 1b (B1–B3) | ✅ bajarildi va jonli tekshirildi | 4aa4f75 ... 996f855 |
+| B4 (menejer o'z profili, oxirgi ega testi, compose testi PyYAML'siz) | ✅ | 1dfbd9f |
+| 2-bosqich: lug'at, rol nomlari, odam tilidagi sana, SWR kesh, favicon, byudjet skripti, Telegram `start_param` | ✅ | 008612a, 9e682c8 |
+| C2: eski login/dashboard/TMA va mehmon ilovasi shriftlari lokal | ✅ | shu bo'limdagi oxirgi commit |
+| C1: Seller Tailwind/Alpine/Google Fonts/Material Icons CDN'dan lokal (`SELLER_ASSETS=local\|cdn`) | ✅ | 52b9f89; hisoblangan CSS farqi 0 (agent o'lchovi) |
+| C3/C4: haqiqiy e2e (12 test), CI'da `admins` va `e2e` ishlari | ✅ (CI'ning o'zi GitHub'da hali yurmagan) | 9683526 |
+| C6: Caddy `immutable` regex | ✅ | 9683526 |
+| C7, C8, C10 | ✅ | 9e682c8, 008612a |
+| D1–D6 xavfsizlik (Telegram, CSV, kategoriya/banner/aksiya/sharh ruxsatlari, `ar_model`, kiritish xatolari, `telegram_chat_id`) | ✅ | 1dfbd9f |
+| **4-bosqich (soddalashtirish kodi)** | ⏳ maket ma'qullanishini kutyapti | `mockups/admin_oddiy_maket.html` (8190876) |
+| C9 (menyu HTML keshi, ≥5× maqsadi) | ❌ qilinmadi | HTML shell har so'rovda sessiya/tenant/flag mantig'idan o'tadi; mehmon sahifasini to'liq keshlash xavfli (stol tokeni, sessiya). Avval haqiqiy serverda yuk testi (R10-8) kerak |
+
+**Agentlar topgan, hali yopilmagan:**
+- `web/views.py` dagi eski `admin_category_create/edit/delete` faqat `@login_required`: kirgan har qanday xodim global kategoriyani o'zgartira oladi.
+- Eski HTML formalari (`web/views.py`, `web/seller_views/marketplace.py`) `ar_model` ni tekshirmasdan yozadi (API'da tekshiriladi).
+- Telegram `ord_status` tugmasi holat mashinasini va kassa stornosini chetlab o'tadi.
+- Soft-SPA sidebar orqali `/seller/tables/` ga o'tilganda sahifa uslublari (`kds.css`, `tables.css`) qo'llanmaydi (oldindan bor).
+- `/seller/orders/<pk>/` `urls_restaurant` ostida 500 (`NoReverseMatch admin_order_status`).
+- Qolgan tashqi bog'liqliklar: `model-viewer` (ajax.googleapis.com, ~1 MB, AR uchun kerak), `api.qrserver.com` (QR URL uchinchi tomonga ketadi), Leaflet/Sortable/Cinzel (kam ishlatiladigan sahifalar); `telegram.org/js/telegram-web-app.js` Mini App uchun SHART.
+- Seller finance sahifasi 909 KB HTML (sahifalash yo'q, har tranzaksiya ~12 KB; kanban va jadval takroran).
+- Telegram: xodimni `chat_id` ga tasdiqlangan holda bog'lash (bir martalik kod) qilinmagan; admin huquqi hozir `.env` chatlari va do'kon sozlamalaridagi `telegram_chat_id` orqali.
