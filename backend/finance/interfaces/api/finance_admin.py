@@ -293,9 +293,13 @@ class FinanceTransactionCancelView(APIView):
             if tx.debt_id:
                 debt = DebtRecord.objects.select_for_update().get(pk=tx.debt_id, shop=shop)
                 debt.paid_amount = max(Decimal('0'), debt.paid_amount - tx.amount)
-                debt.remaining_amount = debt.initial_amount - debt.paid_amount
-                debt.is_settled = False
-                debt.save(update_fields=['paid_amount', 'remaining_amount', 'is_settled'])
+                if debt.paid_amount == 0:
+                    debt.status = 'pending'
+                elif debt.paid_amount < debt.amount:
+                    debt.status = 'partial'
+                else:
+                    debt.status = 'settled'
+                debt.save(update_fields=['paid_amount', 'status', 'updated_at'])
 
             log_audit(
                 'finance_tx_cancelled',

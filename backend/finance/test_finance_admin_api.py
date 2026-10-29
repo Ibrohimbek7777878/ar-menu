@@ -238,3 +238,47 @@ class FinanceAdminApiTests(TestCase):
             'payment_method': 'cash',
         }, content_type='application/json')
         self.assertEqual(res_pay.status_code, 404)
+
+
+    def test_storno_debt_payment_transaction(self):
+        # 1. Nasiya ochish (500,000 so'm)
+        debt = DebtRecord.objects.create(
+            shop=self.shop,
+            person_name='Nodirbek',
+            amount=Decimal('500000'),
+            paid_amount=Decimal('0'),
+            status='pending',
+        )
+
+        # 2. Qarzga to'lov qilish (200,000 so'm)
+        res_pay = self.client_owner.post(f'{self.API}debts/{debt.id}/pay/', {
+            'amount': '200000',
+            'payment_method': 'cash',
+        }, content_type='application/json')
+        self.assertEqual(res_pay.status_code, 200)
+
+        # Yaratilgan tranzaksiya
+        tx = FinanceTransaction.objects.get(shop=self.shop, debt=debt, is_cancelled=False)
+        self.assertEqual(tx.amount, Decimal('200000'))
+
+        # Qarz hozir 200,000 to'langan, qoldiq 300,000
+        debt.refresh_from_db()
+        self.assertEqual(debt.paid_amount, Decimal('200000'))
+        self.assertEqual(debt.remaining_amount, Decimal('300000'))
+        self.assertEqual(debt.status, 'partial')
+
+        # 3. To'lov tranzaksiyasini storno qilish -> hozir 500 qaytaradi
+        res_cancel = self.client_owner.post(f'{self.API}transactions/{tx.id}/cancel/', {
+            'reason': 'To\'lov adashib kiritilgan',
+        }, content_type='application/json')
+
+        self.assertEqual(res_cancel.status_code, 200)
+
+        # 4. Qoldiq tiklanganini tekshirish
+        debt.refresh_from_db()
+        self.assertEqual(debt.paid_amount, Decimal('0'))
+        self.assertEqual(debt.remaining_amount, Decimal('500000'))
+        self.assertEqual(debt.status, 'pending')
+
+        tx.refresh_from_db()
+        self.assertTrue(tx.is_cancelled)
