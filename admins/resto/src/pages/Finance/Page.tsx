@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import {
+  Card,
+  Button,
+  Modal,
+} from '@admins/shared';
+import {
   TrendingUp,
   TrendingDown,
   Wallet,
@@ -14,7 +19,6 @@ import {
   FileSpreadsheet,
   ArrowUpRight,
   ArrowDownLeft,
-  X,
 } from 'lucide-react';
 import { useFinance, type PeriodPreset } from './useFinance';
 import { getExportCsvUrl, type FinanceTransaction, type DebtItem } from './api';
@@ -23,6 +27,27 @@ function formatSum(n: number | undefined | null): string {
   if (n === undefined || n === null) return '0 so\'m';
   return Math.round(n).toLocaleString('uz-UZ').replace(/,/g, ' ') + ' so\'m';
 }
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 12px',
+  fontSize: '13px',
+  backgroundColor: 'var(--bg-elevated)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: 'var(--radius-md)',
+  color: 'var(--text-main)',
+  outline: 'none',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '12px',
+  fontWeight: 600,
+  color: 'var(--text-muted)',
+  marginBottom: '6px',
+};
 
 export function FinancePage() {
   const {
@@ -208,38 +233,56 @@ export function FinancePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ padding: '24px', maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* 1. Header & Filtrlar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
+      <Card style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             Moliya va Kassa
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>
             Kassa kirim-chiqimlari, sof pul oqimi va nasiyalar balansi
           </p>
         </div>
 
         {/* Davr filtri va Eksport */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--bg-elevated)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
             {(['today', 'week', 'month'] as PeriodPreset[]).map((p) => (
               <button
                 key={p}
                 onClick={() => applyPreset(p)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                  preset === p
-                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                }`}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: preset === p ? 'var(--accent-emerald)' : 'transparent',
+                  color: preset === p ? '#ffffff' : 'var(--text-muted)',
+                  transition: 'all var(--transition-fast)',
+                }}
               >
                 {p === 'today' ? 'Bugun' : p === 'week' ? '7 kun' : '30 kun'}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800/60 px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700">
-            <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              backgroundColor: 'var(--bg-elevated)',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+            }}
+          >
+            <Calendar size={14} color="var(--text-muted)" />
             <input
               type="date"
               value={fromDate}
@@ -247,9 +290,16 @@ export function FinancePage() {
                 applyPreset('custom');
                 setFromDate(e.target.value);
               }}
-              className="bg-transparent border-0 p-0 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: 'var(--text-main)',
+                fontSize: '12px',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
             />
-            <span className="text-neutral-400">—</span>
+            <span style={{ color: 'var(--text-dim)' }}>—</span>
             <input
               type="date"
               value={toDate}
@@ -257,7 +307,14 @@ export function FinancePage() {
                 applyPreset('custom');
                 setToDate(e.target.value);
               }}
-              className="bg-transparent border-0 p-0 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: 'var(--text-main)',
+                fontSize: '12px',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
             />
           </div>
 
@@ -265,275 +322,400 @@ export function FinancePage() {
             href={getExportCsvUrl(fromDate, toDate)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-medium transition-colors"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              fontSize: '12px',
+              fontWeight: 500,
+              textDecoration: 'none',
+              transition: 'all var(--transition-fast)',
+            }}
             title="Excel formatida CSV eksport qilish"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <FileSpreadsheet size={16} color="var(--accent-emerald)" />
             <span>CSV</span>
           </a>
         </div>
-      </div>
+      </Card>
 
       {/* Xatolik xabari */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: 'var(--accent-rose-bg)',
+            border: '1px solid var(--accent-rose)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--accent-rose)',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <span>{error}</span>
-          <button onClick={refresh} className="underline text-xs font-semibold ml-4">
+          <Button variant="ghost" size="sm" onClick={refresh}>
             Qayta yuklash
-          </button>
+          </Button>
         </div>
       )}
 
       {/* 2. StatCards — 5 ta muhim ko'rsatkich */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '16px',
+        }}
+      >
         {/* Kirim */}
-        <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-500 text-xs font-medium">
-            <span>Jami Tushum (Kirim)</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="w-4 h-4" />
+        <Card hoverable>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Jami Tushum (Kirim)
+            </span>
+            <div
+              style={{
+                padding: '8px',
+                backgroundColor: 'var(--accent-emerald-bg)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--accent-emerald)',
+                display: 'flex',
+              }}
+            >
+              <TrendingUp size={16} />
             </div>
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: 'var(--text-main)' }}>
             {formatSum(summary?.income)}
           </div>
-          <div className="flex items-center gap-2 mt-2 text-[11px] text-neutral-500">
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '6px', fontSize: '11px', color: 'var(--text-dim)' }}>
             <span>Naqd: {formatSum(summary?.income_cash)}</span>
             <span>•</span>
             <span>Karta: {formatSum(summary?.income_card)}</span>
           </div>
-        </div>
+        </Card>
 
         {/* Chiqim */}
-        <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-500 text-xs font-medium">
-            <span>Xarajatlar (Chiqim)</span>
-            <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400">
-              <TrendingDown className="w-4 h-4" />
+        <Card hoverable>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Xarajatlar (Chiqim)
+            </span>
+            <div
+              style={{
+                padding: '8px',
+                backgroundColor: 'var(--accent-rose-bg)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--accent-rose)',
+                display: 'flex',
+              }}
+            >
+              <TrendingDown size={16} />
             </div>
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: 'var(--text-main)' }}>
             {formatSum(summary?.expense)}
           </div>
-          <p className="text-[11px] text-neutral-500 mt-2">Kassadan to'langan xarajatlar</p>
-        </div>
+          <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
+            Kassadan to'langan xarajatlar
+          </p>
+        </Card>
 
-        {/* Sof Pul Oqimi (Kirim - Chiqim) */}
-        <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-500 text-xs font-medium">
-            <span>Sof pul oqimi</span>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <Wallet className="w-4 h-4" />
+        {/* Sof Pul Oqimi */}
+        <Card hoverable>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Sof pul oqimi
+            </span>
+            <div
+              style={{
+                padding: '8px',
+                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                borderRadius: 'var(--radius-md)',
+                color: '#3b82f6',
+                display: 'flex',
+              }}
+            >
+              <Wallet size={16} />
             </div>
           </div>
           <div
-            className={`text-xl font-bold mt-2 ${
-              (summary?.net_cash_flow ?? 0) >= 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-rose-600 dark:text-rose-400'
-            }`}
+            style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              marginTop: '8px',
+              color: (summary?.net_cash_flow ?? 0) >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)',
+            }}
           >
             {formatSum(summary?.net_cash_flow)}
           </div>
-          <p className="text-[11px] text-neutral-500 mt-2">Tushum minus Xarajat</p>
-        </div>
+          <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
+            Tushum minus Xarajat
+          </p>
+        </Card>
 
         {/* Kassa Balansi */}
-        <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-500 text-xs font-medium">
-            <span>Kassa qoldig'i</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
-              <Coins className="w-4 h-4" />
+        <Card hoverable>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Kassa qoldig'i
+            </span>
+            <div
+              style={{
+                padding: '8px',
+                backgroundColor: 'var(--accent-amber-bg)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--accent-amber)',
+                display: 'flex',
+              }}
+            >
+              <Coins size={16} />
             </div>
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: 'var(--text-main)' }}>
             {formatSum(summary?.cash_balance)}
           </div>
-          <p className="text-[11px] text-neutral-500 mt-2">Kassadagi jami naqd pul</p>
-        </div>
+          <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
+            Kassadagi jami naqd pul
+          </p>
+        </Card>
 
         {/* O'rtacha Chek */}
-        <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-500 text-xs font-medium">
-            <span>O'rtacha chek</span>
-            <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
-              <Receipt className="w-4 h-4" />
+        <Card hoverable>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              O'rtacha chek
+            </span>
+            <div
+              style={{
+                padding: '8px',
+                backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                borderRadius: 'var(--radius-md)',
+                color: '#a855f7',
+                display: 'flex',
+              }}
+            >
+              <Receipt size={16} />
             </div>
           </div>
-          <div className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">
+          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: 'var(--text-main)' }}>
             {formatSum(summary?.average_check)}
           </div>
-          <p className="text-[11px] text-neutral-500 mt-2">{summary?.orders_count || 0} ta buyurtma asosida</p>
-        </div>
+          <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
+            {summary?.orders_count || 0} ta buyurtma asosida
+          </p>
+        </Card>
       </div>
 
       {/* 3. Tab Navigatsiyasi */}
-      <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800">
-        <div className="flex gap-4">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid var(--border-subtle)',
+          paddingBottom: '2px',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '16px' }}>
           <button
             onClick={() => setActiveTab('transactions')}
-            className={`pb-3 text-sm font-semibold transition-all relative ${
-              activeTab === 'transactions'
-                ? 'text-neutral-900 dark:text-white border-b-2 border-emerald-600'
-                : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300'
-            }`}
+            style={{
+              padding: '10px 4px',
+              fontSize: '14px',
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'transactions' ? '2px solid var(--accent-emerald)' : '2px solid transparent',
+              color: activeTab === 'transactions' ? 'var(--text-main)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
           >
             Kassa Operatsiyalari (Kirim / Chiqim)
           </button>
           <button
             onClick={() => setActiveTab('debts')}
-            className={`pb-3 text-sm font-semibold transition-all relative ${
-              activeTab === 'debts'
-                ? 'text-neutral-900 dark:text-white border-b-2 border-emerald-600'
-                : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300'
-            }`}
+            style={{
+              padding: '10px 4px',
+              fontSize: '14px',
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'debts' ? '2px solid var(--accent-emerald)' : '2px solid transparent',
+              color: activeTab === 'debts' ? 'var(--text-main)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
           >
             Nasiyalar va Qarzlar Daftari
           </button>
         </div>
 
         {activeTab === 'transactions' ? (
-          <button
-            onClick={() => setShowTxModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-medium shadow-sm transition-colors mb-2"
-          >
-            <Plus className="w-4 h-4" />
+          <Button variant="primary" size="sm" onClick={() => setShowTxModal(true)}>
+            <Plus size={16} />
             <span>Kirim / Chiqim qo'shish</span>
-          </button>
+          </Button>
         ) : (
-          <button
-            onClick={() => setShowDebtModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium shadow-sm transition-colors mb-2"
-          >
-            <Plus className="w-4 h-4" />
+          <Button variant="primary" size="sm" onClick={() => setShowDebtModal(true)} style={{ backgroundColor: '#2563eb' }}>
+            <Plus size={16} />
             <span>Yangi Qarz / Nasiya ochish</span>
-          </button>
+          </Button>
         )}
       </div>
 
       {/* TAB 1: KASSA TRANZAKSIYALARI */}
       {activeTab === 'transactions' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Filtrlar va Qidiruv */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               {(['all', 'income', 'expense'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTxType(t)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors ${
-                    txType === t
-                      ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300'
-                  }`}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    cursor: 'pointer',
+                    backgroundColor: txType === t ? 'var(--accent-emerald)' : 'var(--bg-elevated)',
+                    color: txType === t ? '#ffffff' : 'var(--text-muted)',
+                    transition: 'all var(--transition-fast)',
+                  }}
                 >
                   {t === 'all' ? 'Barchasi' : t === 'income' ? 'Faqat Kirim' : 'Faqat Chiqim'}
                 </button>
               ))}
             </div>
 
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <div style={{ position: 'relative', width: '280px' }}>
+              <Search
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-dim)',
+                }}
+              />
               <input
                 type="text"
                 value={txSearch}
                 onChange={(e) => setTxSearch(e.target.value)}
                 placeholder="Mazmuni yoki izohi bo'yicha qidirish..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '34px',
+                }}
               />
             </div>
           </div>
 
           {/* Tranzaksiyalar Jadvali */}
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
+          <Card style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
-              <div className="p-12 text-center text-sm text-neutral-500">Ma'lumotlar yuklanmoqda...</div>
+              <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
+                Ma'lumotlar yuklanmoqda...
+              </div>
             ) : transactions.length === 0 ? (
-              <div className="p-12 text-center text-sm text-neutral-500">
+              <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
                 Ushbu davrda kassa operatsiyalari topilmadi.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-neutral-600 dark:text-neutral-400 uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="py-3 px-4">Sana</th>
-                      <th className="py-3 px-4">Mazmuni</th>
-                      <th className="py-3 px-4">Kategoriya</th>
-                      <th className="py-3 px-4">To'lov Usuli</th>
-                      <th className="py-3 px-4">Summa</th>
-                      <th className="py-3 px-4">Holati</th>
-                      <th className="py-3 px-4 text-right">Amal</th>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Sana</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Mazmuni</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Kategoriya</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>To'lov Usuli</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Summa</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Holati</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  <tbody>
                     {transactions.map((tx) => (
                       <tr
                         key={tx.id}
-                        className={`hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors ${
-                          tx.is_cancelled ? 'opacity-50 line-through bg-neutral-50/30 dark:bg-neutral-900/30' : ''
-                        }`}
+                        style={{
+                          borderBottom: '1px solid var(--border-subtle)',
+                          opacity: tx.is_cancelled ? 0.5 : 1,
+                          textDecoration: tx.is_cancelled ? 'line-through' : 'none',
+                          backgroundColor: tx.is_cancelled ? 'var(--bg-elevated)' : 'transparent',
+                        }}
                       >
-                        <td className="py-3 px-4 text-neutral-500 font-mono whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                           {tx.tx_date}
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-neutral-900 dark:text-neutral-100">{tx.title}</div>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{tx.title}</div>
                           {tx.source_type !== 'manual' && (
-                            <span className="text-[10px] text-neutral-400">
+                            <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
                               {tx.source_type === 'receipt' ? 'Chek tushumi' : 'Qarz to\'lovi'}
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-neutral-600 dark:text-neutral-400">
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
                           {tx.category_name}
                         </td>
-                        <td className="py-3 px-4 text-neutral-600 dark:text-neutral-400">
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
                           {tx.payment_method_display}
                         </td>
-                        <td className="py-3 px-4 font-semibold whitespace-nowrap">
-                          <span
-                            className={
-                              tx.type === 'income'
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-rose-600 dark:text-rose-400'
-                            }
-                          >
+                        <td style={{ padding: '12px 16px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          <span style={{ color: tx.type === 'income' ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
                             {tx.type === 'income' ? '+' : '-'} {formatSum(tx.amount)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                           {tx.is_cancelled ? (
-                            <div className="flex flex-col">
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">
-                                <Ban className="w-3 h-3" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-rose)' }}>
+                                <Ban size={12} />
                                 Bekor qilingan (Storno)
                               </span>
                               {tx.cancel_reason && (
-                                <span className="text-[10px] text-neutral-400 no-underline italic">
+                                <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
                                   Sabab: {tx.cancel_reason}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle2 className="w-3 h-3" />
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
+                              <CheckCircle2 size={12} />
                               Faol
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           {!tx.is_cancelled && (
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => {
                                 setCancellingTx(tx);
                                 setCancelReason('');
                                 setCancelError(null);
                               }}
-                              className="text-[11px] text-neutral-500 hover:text-rose-600 transition-colors font-medium"
+                              style={{ color: 'var(--accent-rose)' }}
                             >
                               Storno qilish
-                            </button>
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -542,48 +724,58 @@ export function FinancePage() {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
 
       {/* TAB 2: NASIYALAR VA QARZLAR */}
       {activeTab === 'debts' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Mini-stat: Ochiq qarzlar balansi */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded-2xl">
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                <span className="flex items-center gap-1.5">
-                  <ArrowDownLeft className="w-4 h-4 text-emerald-600" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <Card style={{ backgroundColor: 'var(--accent-emerald-bg)', borderColor: 'var(--accent-emerald)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
+                  <ArrowDownLeft size={18} />
                   Mijoz Nasiyalari (Bizga to'lanishi kerak)
                 </span>
-                <span className="text-sm font-bold">{formatSum(debtsSummary.open_receivable)}</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-emerald)' }}>
+                  {formatSum(debtsSummary.open_receivable)}
+                </span>
               </div>
-            </div>
+            </Card>
 
-            <div className="p-4 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl">
-              <div className="flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-300">
-                <span className="flex items-center gap-1.5">
-                  <ArrowUpRight className="w-4 h-4 text-amber-600" />
+            <Card style={{ backgroundColor: 'var(--accent-amber-bg)', borderColor: 'var(--accent-amber)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-amber)' }}>
+                  <ArrowUpRight size={18} />
                   Bizning qarzimiz (Yetkazib beruvchilarga)
                 </span>
-                <span className="text-sm font-bold">{formatSum(debtsSummary.open_payable)}</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-amber)' }}>
+                  {formatSum(debtsSummary.open_payable)}
+                </span>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Filtrlar va Qidiruv */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {(['all', 'customer', 'supplier'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setDebtType(t)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors ${
-                    debtType === t
-                      ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300'
-                  }`}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    cursor: 'pointer',
+                    backgroundColor: debtType === t ? 'var(--accent-emerald)' : 'var(--bg-elevated)',
+                    color: debtType === t ? '#ffffff' : 'var(--text-muted)',
+                    transition: 'all var(--transition-fast)',
+                  }}
                 >
                   {t === 'all' ? 'Barcha qarzlar' : t === 'customer' ? 'Mijoz nasiyasi' : 'Yetkazib beruvchi'}
                 </button>
@@ -592,7 +784,11 @@ export function FinancePage() {
               <select
                 value={debtStatus}
                 onChange={(e) => setDebtStatus(e.target.value)}
-                className="px-3 py-1.5 text-xs bg-neutral-100 dark:bg-neutral-800 border-0 rounded-xl text-neutral-700 dark:text-neutral-200 focus:outline-none"
+                style={{
+                  ...inputStyle,
+                  width: 'auto',
+                  padding: '6px 12px',
+                }}
               >
                 <option value="all">Barcha holatlar</option>
                 <option value="open">Ochiq (To'lanmagan)</option>
@@ -600,88 +796,107 @@ export function FinancePage() {
               </select>
             </div>
 
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <div style={{ position: 'relative', width: '280px' }}>
+              <Search
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-dim)',
+                }}
+              />
               <input
                 type="text"
                 value={debtSearch}
                 onChange={(e) => setDebtSearch(e.target.value)}
                 placeholder="Shaxs yoki telefon bo'yicha qidirish..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '34px',
+                }}
               />
             </div>
           </div>
 
           {/* Qarzlar Jadvali */}
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
+          <Card style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
-              <div className="p-12 text-center text-sm text-neutral-500">Qarzlar daftari yuklanmoqda...</div>
+              <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
+                Qarzlar daftari yuklanmoqda...
+              </div>
             ) : debts.length === 0 ? (
-              <div className="p-12 text-center text-sm text-neutral-500">
+              <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
                 Ushbu mezon bo'yicha qarz yoki nasiyalar topilmadi.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-neutral-600 dark:text-neutral-400 uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="py-3 px-4">Shaxs / Tashkilot</th>
-                      <th className="py-3 px-4">Turi</th>
-                      <th className="py-3 px-4">Boshlang'ich Summa</th>
-                      <th className="py-3 px-4">To'langan</th>
-                      <th className="py-3 px-4">Qoldiq</th>
-                      <th className="py-3 px-4">Qaytarish Muddati</th>
-                      <th className="py-3 px-4">Holati</th>
-                      <th className="py-3 px-4 text-right">Amal</th>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Shaxs / Tashkilot</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Turi</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Boshlang'ich Summa</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>To'langan</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Qoldiq</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Qaytarish Muddati</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Holati</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amal</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  <tbody>
                     {debts.map((d) => (
-                      <tr key={d.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-neutral-900 dark:text-neutral-100">{d.person_name}</div>
-                          {d.phone && <div className="text-[11px] text-neutral-400 font-mono">{d.phone}</div>}
-                          {d.notes && <div className="text-[10px] text-neutral-400 italic mt-0.5">{d.notes}</div>}
+                      <tr key={d.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.person_name}</div>
+                          {d.phone && <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>{d.phone}</div>}
+                          {d.notes && <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontStyle: 'italic', marginTop: '2px' }}>{d.notes}</div>}
                         </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                              d.debt_type === 'customer'
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                            }`}
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: 'var(--radius-full)',
+                              fontSize: '10px',
+                              fontWeight: 600,
+                              backgroundColor: d.debt_type === 'customer' ? 'var(--accent-emerald-bg)' : 'var(--accent-amber-bg)',
+                              color: d.debt_type === 'customer' ? 'var(--accent-emerald)' : 'var(--accent-amber)',
+                            }}
                           >
                             {d.debt_type_display}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-mono font-medium text-neutral-700 dark:text-neutral-300">
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
                           {formatSum(d.initial_amount)}
                         </td>
-                        <td className="py-3 px-4 font-mono text-emerald-600 dark:text-emerald-400">
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>
                           {formatSum(d.paid_amount)}
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-main)' }}>
                           {formatSum(d.remaining_amount)}
                         </td>
-                        <td className="py-3 px-4 text-neutral-500 font-mono whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           {d.due_date || '—'}
                         </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                           {d.is_settled ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
+                              <CheckCircle2 size={14} />
                               To'liq yopilgan
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                              <AlertTriangle className="w-3.5 h-3.5" />
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-amber)' }}>
+                              <AlertTriangle size={14} />
                               Ochiq qarz
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           {!d.is_settled && (
-                            <button
+                            <Button
+                              variant="primary"
+                              size="sm"
                               onClick={() => {
                                 setPayingDebt(d);
                                 setPayAmount(String(d.remaining_amount));
@@ -689,10 +904,9 @@ export function FinancePage() {
                                 setPayNote('');
                                 setPayError(null);
                               }}
-                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
                             >
                               To'lov qabul qilish
-                            </button>
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -701,481 +915,377 @@ export function FinancePage() {
                 </table>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
 
       {/* MODAL 1: YANGI TRANZAKSIYA (KIRIM / CHIQIM) */}
-      {showTxModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                Kassaga Kirim / Chiqim kiritish
-              </h3>
+      <Modal
+        isOpen={showTxModal}
+        onClose={() => setShowTxModal(false)}
+        title="Kassaga Kirim / Chiqim kiritish"
+      >
+        <form onSubmit={submitTx} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {txFormError && (
+            <div style={{ padding: '10px 14px', backgroundColor: 'var(--accent-rose-bg)', color: 'var(--accent-rose)', borderRadius: 'var(--radius-md)', fontSize: '12px' }}>
+              {txFormError}
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>Operatsiya turi</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
-                onClick={() => setShowTxModal(false)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                type="button"
+                onClick={() => setNewTxType('income')}
+                style={{
+                  padding: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: 'var(--radius-md)',
+                  border: newTxType === 'income' ? '1px solid var(--accent-emerald)' : '1px solid var(--border-subtle)',
+                  backgroundColor: newTxType === 'income' ? 'var(--accent-emerald-bg)' : 'var(--bg-elevated)',
+                  color: newTxType === 'income' ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
               >
-                <X className="w-5 h-5" />
+                + Kirim (Tushum)
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewTxType('expense')}
+                style={{
+                  padding: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: 'var(--radius-md)',
+                  border: newTxType === 'expense' ? '1px solid var(--accent-rose)' : '1px solid var(--border-subtle)',
+                  backgroundColor: newTxType === 'expense' ? 'var(--accent-rose-bg)' : 'var(--bg-elevated)',
+                  color: newTxType === 'expense' ? 'var(--accent-rose)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
+              >
+                - Chiqim (Xarajat)
               </button>
             </div>
-
-            <form onSubmit={submitTx} className="space-y-4 mt-4">
-              {txFormError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 rounded-xl text-xs">
-                  {txFormError}
-                </div>
-              )}
-
-              {/* Turi */}
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Operatsiya turi
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewTxType('income')}
-                    className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                      newTxType === 'income'
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300'
-                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    + Kirim (Tushum)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewTxType('expense')}
-                    className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                      newTxType === 'expense'
-                        ? 'bg-rose-50 dark:bg-rose-950 border-rose-500 text-rose-700 dark:text-rose-300'
-                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    - Chiqim (Xarajat)
-                  </button>
-                </div>
-              </div>
-
-              {/* Mazmuni */}
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Mazmuni / Sarlavha
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newTxTitle}
-                  onChange={(e) => setNewTxTitle(e.target.value)}
-                  placeholder="Masalan: Bozorlik xaridi, Go'sht, Kassa to'ldirish..."
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-
-              {/* Summa va To'lov usuli */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Summa (so'm)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={newTxAmount}
-                    onChange={(e) => setNewTxAmount(e.target.value)}
-                    placeholder="100 000"
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    To'lov usuli
-                  </label>
-                  <select
-                    value={newTxMethod}
-                    onChange={(e) => setNewTxMethod(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none"
-                  >
-                    <option value="cash">Naqd pul</option>
-                    <option value="card">Plastik / Karta</option>
-                    <option value="bank">Bank hisobi</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Kategoriya */}
-              {categories.length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Kategoriya (Ixtiyoriy)
-                  </label>
-                  <select
-                    value={newTxCatId || ''}
-                    onChange={(e) => setNewTxCatId(e.target.value ? Number(e.target.value) : undefined)}
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none"
-                  >
-                    <option value="">Umumiy</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowTxModal(false)}
-                  className="px-4 py-2 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Saqlanmoqda...' : 'Saqlash'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label style={labelStyle}>Mazmuni / Sarlavha</label>
+            <input
+              type="text"
+              required
+              value={newTxTitle}
+              onChange={(e) => setNewTxTitle(e.target.value)}
+              placeholder="Masalan: Bozorlik xaridi, Go'sht, Kassa to'ldirish..."
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Summa (so'm)</label>
+              <input
+                type="number"
+                required
+                min="1"
+                value={newTxAmount}
+                onChange={(e) => setNewTxAmount(e.target.value)}
+                placeholder="100 000"
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>To'lov usuli</label>
+              <select
+                value={newTxMethod}
+                onChange={(e) => setNewTxMethod(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="cash">Naqd pul</option>
+                <option value="card">Plastik / Karta</option>
+                <option value="bank">Bank hisobi</option>
+              </select>
+            </div>
+          </div>
+
+          {categories.length > 0 && (
+            <div>
+              <label style={labelStyle}>Kategoriya (Ixtiyoriy)</label>
+              <select
+                value={newTxCatId || ''}
+                onChange={(e) => setNewTxCatId(e.target.value ? Number(e.target.value) : undefined)}
+                style={inputStyle}
+              >
+                <option value="">Umumiy</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <Button type="button" variant="ghost" onClick={() => setShowTxModal(false)}>
+              Bekor qilish
+            </Button>
+            <Button type="submit" variant="primary" loading={submitting}>
+              Saqlash
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* MODAL 2: STORNO QILISH (BEKOR QILISH) */}
-      {cancellingTx && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                Tranzaksiyani storno qilish
-              </h3>
-              <button
-                onClick={() => setCancellingTx(null)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <Modal
+        isOpen={!!cancellingTx}
+        onClose={() => setCancellingTx(null)}
+        title="Tranzaksiyani storno qilish"
+      >
+        <form onSubmit={submitCancel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+            Ushbu tranzaksiya o'chirilmaydi. U storno belgisi bilan bekor qilinadi va umumiy hisob-kitobdan
+            chiqariladi. Bekor qilish sababini yozing:
+          </p>
+
+          {cancellingTx && (
+            <div style={{ padding: '12px', backgroundColor: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div><strong>Mazmuni:</strong> {cancellingTx.title}</div>
+              <div><strong>Summa:</strong> {formatSum(cancellingTx.amount)} ({cancellingTx.type_display})</div>
+              <div><strong>Sana:</strong> {cancellingTx.tx_date}</div>
             </div>
+          )}
 
-            <form onSubmit={submitCancel} className="space-y-4 mt-4">
-              <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                Ushbu tranzaksiya o'chirilmaydi. U storno belgisi bilan bekor qilinadi va umumiy hisob-kitobdan
-                chiqariladi. Bekor qilish sababini yozing:
-              </p>
+          {cancelError && (
+            <div style={{ padding: '10px 14px', backgroundColor: 'var(--accent-rose-bg)', color: 'var(--accent-rose)', borderRadius: 'var(--radius-md)', fontSize: '12px' }}>
+              {cancelError}
+            </div>
+          )}
 
-              <div className="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl text-xs space-y-1">
-                <div>
-                  <strong>Mazmuni:</strong> {cancellingTx.title}
-                </div>
-                <div>
-                  <strong>Summa:</strong> {formatSum(cancellingTx.amount)} ({cancellingTx.type_display})
-                </div>
-                <div>
-                  <strong>Sana:</strong> {cancellingTx.tx_date}
-                </div>
-              </div>
-
-              {cancelError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 rounded-xl text-xs">
-                  {cancelError}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Bekor qilish sababi (Majburiy)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Masalan: Adashib noto'g'ri summa kiritilgan..."
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-rose-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setCancellingTx(null)}
-                  className="px-4 py-2 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900"
-                >
-                  Qaytish
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Bekor qilinmoqda...' : 'Tasdiqlayman (Storno)'}
-                </button>
-              </div>
-            </form>
+          <div>
+            <label style={labelStyle}>Bekor qilish sababi (Majburiy)</label>
+            <input
+              type="text"
+              required
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Masalan: Adashib noto'g'ri summa kiritilgan..."
+              style={inputStyle}
+            />
           </div>
-        </div>
-      )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <Button type="button" variant="ghost" onClick={() => setCancellingTx(null)}>
+              Qaytish
+            </Button>
+            <Button type="submit" variant="danger" loading={submitting}>
+              Tasdiqlayman (Storno)
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* MODAL 3: YANGI QARZ / NASIYA */}
-      {showDebtModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                Yangi Qarz / Nasiya ochish
-              </h3>
+      <Modal
+        isOpen={showDebtModal}
+        onClose={() => setShowDebtModal(false)}
+        title="Yangi Qarz / Nasiya ochish"
+      >
+        <form onSubmit={submitDebt} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {debtFormError && (
+            <div style={{ padding: '10px 14px', backgroundColor: 'var(--accent-rose-bg)', color: 'var(--accent-rose)', borderRadius: 'var(--radius-md)', fontSize: '12px' }}>
+              {debtFormError}
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>Qarz yo'nalishi</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
-                onClick={() => setShowDebtModal(false)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                type="button"
+                onClick={() => setNewDebtType('customer')}
+                style={{
+                  padding: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: 'var(--radius-md)',
+                  border: newDebtType === 'customer' ? '1px solid var(--accent-emerald)' : '1px solid var(--border-subtle)',
+                  backgroundColor: newDebtType === 'customer' ? 'var(--accent-emerald-bg)' : 'var(--bg-elevated)',
+                  color: newDebtType === 'customer' ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
               >
-                <X className="w-5 h-5" />
+                Mijoz Nasiyasi (Bizga beradi)
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewDebtType('supplier')}
+                style={{
+                  padding: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  borderRadius: 'var(--radius-md)',
+                  border: newDebtType === 'supplier' ? '1px solid var(--accent-amber)' : '1px solid var(--border-subtle)',
+                  backgroundColor: newDebtType === 'supplier' ? 'var(--accent-amber-bg)' : 'var(--bg-elevated)',
+                  color: newDebtType === 'supplier' ? 'var(--accent-amber)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                }}
+              >
+                Bizning qarzimiz (Yetkazib beruvchiga)
               </button>
             </div>
-
-            <form onSubmit={submitDebt} className="space-y-4 mt-4">
-              {debtFormError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 rounded-xl text-xs">
-                  {debtFormError}
-                </div>
-              )}
-
-              {/* Turi */}
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Qarz turi
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewDebtType('customer')}
-                    className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                      newDebtType === 'customer'
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300'
-                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    Mijoz nasiyasi (Bizga)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewDebtType('supplier')}
-                    className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                      newDebtType === 'supplier'
-                        ? 'bg-amber-50 dark:bg-amber-950 border-amber-500 text-amber-700 dark:text-amber-300'
-                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    Yetkazib beruvchi (Biz)
-                  </button>
-                </div>
-              </div>
-
-              {/* Ismi va Telefoni */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Ismi / Tashkilot
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newDebtPerson}
-                    onChange={(e) => setNewDebtPerson(e.target.value)}
-                    placeholder="Akmal Aka"
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Telefon raqami
-                  </label>
-                  <input
-                    type="text"
-                    value={newDebtPhone}
-                    onChange={(e) => setNewDebtPhone(e.target.value)}
-                    placeholder="+998 90 123 45 67"
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Summa va Muddat */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Qarz summasi (so'm)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={newDebtAmount}
-                    onChange={(e) => setNewDebtAmount(e.target.value)}
-                    placeholder="500 000"
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Qaytarish muddati
-                  </label>
-                  <input
-                    type="date"
-                    value={newDebtDueDate}
-                    onChange={(e) => setNewDebtDueDate(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Izoh */}
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Izoh / Tafsilot
-                </label>
-                <textarea
-                  value={newDebtNotes}
-                  onChange={(e) => setNewDebtNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Ziyofat uchun nasiya..."
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDebtModal(false)}
-                  className="px-4 py-2 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Saqlanmoqda...' : 'Qarzni ochish'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Shaxs / Tashkilot nomi</label>
+              <input
+                type="text"
+                required
+                value={newDebtPerson}
+                onChange={(e) => setNewDebtPerson(e.target.value)}
+                placeholder="Anvar aka, Go'sht do'koni..."
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Telefon raqami (Ixtiyoriy)</label>
+              <input
+                type="text"
+                value={newDebtPhone}
+                onChange={(e) => setNewDebtPhone(e.target.value)}
+                placeholder="+998 90 123 45 67"
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Qarz summasi (so'm)</label>
+              <input
+                type="number"
+                required
+                min="1"
+                value={newDebtAmount}
+                onChange={(e) => setNewDebtAmount(e.target.value)}
+                placeholder="500 000"
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Qaytarish muddati</label>
+              <input
+                type="date"
+                value={newDebtDueDate}
+                onChange={(e) => setNewDebtDueDate(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Izoh / Tafsilot</label>
+            <textarea
+              value={newDebtNotes}
+              onChange={(e) => setNewDebtNotes(e.target.value)}
+              rows={2}
+              placeholder="Ziyofat uchun nasiya..."
+              style={{ ...inputStyle, resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <Button type="button" variant="ghost" onClick={() => setShowDebtModal(false)}>
+              Bekor qilish
+            </Button>
+            <Button type="submit" variant="primary" loading={submitting}>
+              Qarzni ochish
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* MODAL 4: QARZGA TO'LOV QABUL QILISH */}
-      {payingDebt && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                Qarz to'lovini qabul qilish
-              </h3>
-              <button
-                onClick={() => setPayingDebt(null)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <Modal
+        isOpen={!!payingDebt}
+        onClose={() => setPayingDebt(null)}
+        title="Qarz to'lovini qabul qilish"
+      >
+        <form onSubmit={submitPayDebt} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {payingDebt && (
+            <div style={{ padding: '12px', backgroundColor: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div><strong>Mijoz / Shaxs:</strong> {payingDebt.person_name}</div>
+              <div><strong>Jami qarz:</strong> {formatSum(payingDebt.initial_amount)}</div>
+              <div>
+                <strong>Hozirgi qoldiq:</strong>{' '}
+                <span style={{ fontWeight: 700, color: 'var(--accent-emerald)', fontFamily: 'monospace' }}>
+                  {formatSum(payingDebt.remaining_amount)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {payError && (
+            <div style={{ padding: '10px 14px', backgroundColor: 'var(--accent-rose-bg)', color: 'var(--accent-rose)', borderRadius: 'var(--radius-md)', fontSize: '12px' }}>
+              {payError}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>To'lov summasi (so'm)</label>
+              <input
+                type="number"
+                required
+                min="1"
+                max={payingDebt?.remaining_amount}
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
+              />
             </div>
 
-            <form onSubmit={submitPayDebt} className="space-y-4 mt-4">
-              <div className="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl text-xs space-y-1">
-                <div>
-                  <strong>Mijoz / Shaxs:</strong> {payingDebt.person_name}
-                </div>
-                <div>
-                  <strong>Jami qarz:</strong> {formatSum(payingDebt.initial_amount)}
-                </div>
-                <div>
-                  <strong>Hozirgi qoldiq:</strong>{' '}
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {formatSum(payingDebt.remaining_amount)}
-                  </span>
-                </div>
-              </div>
-
-              {payError && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 rounded-xl text-xs">
-                  {payError}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    To'lov summasi (so'm)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max={payingDebt.remaining_amount}
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    To'lov usuli
-                  </label>
-                  <select
-                    value={payMethod}
-                    onChange={(e) => setPayMethod(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none"
-                  >
-                    <option value="cash">Naqd pul</option>
-                    <option value="card">Plastik / Karta</option>
-                    <option value="bank">Bank hisobi</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Izoh (Ixtiyoriy)
-                </label>
-                <input
-                  type="text"
-                  value={payNote}
-                  onChange={(e) => setPayNote(e.target.value)}
-                  placeholder="Qisman to'lov..."
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setPayingDebt(null)}
-                  className="px-4 py-2 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Qabul qilinmoqda...' : 'To\'lovni kiritish'}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label style={labelStyle}>To'lov usuli</label>
+              <select
+                value={payMethod}
+                onChange={(e) => setPayMethod(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="cash">Naqd pul</option>
+                <option value="card">Plastik / Karta</option>
+                <option value="bank">Bank hisobi</option>
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label style={labelStyle}>Izoh (Ixtiyoriy)</label>
+            <input
+              type="text"
+              value={payNote}
+              onChange={(e) => setPayNote(e.target.value)}
+              placeholder="Qisman to'lov..."
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <Button type="button" variant="ghost" onClick={() => setPayingDebt(null)}>
+              Bekor qilish
+            </Button>
+            <Button type="submit" variant="primary" loading={submitting}>
+              To'lovni kiritish
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
