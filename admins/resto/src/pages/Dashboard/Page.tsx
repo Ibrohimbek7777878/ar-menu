@@ -91,12 +91,14 @@ export const DashboardPage: React.FC = () => {
           gap: '16px',
         }}
       >
-        <StatCard
-          title={restoUz.todayRevenue}
-          value={formatSum(data?.today_revenue.total)}
-          subtitle={`${restoUz.cash}: ${formatSum(data?.today_revenue.cash)} | ${restoUz.card}: ${formatSum(data?.today_revenue.card)}`}
-          icon={<DollarSign size={20} />}
-        />
+        {data?.today_revenue && (
+          <StatCard
+            title={restoUz.todayRevenue}
+            value={formatSum(data.today_revenue.total)}
+            subtitle={`${restoUz.cash}: ${formatSum(data.today_revenue.cash)} | ${restoUz.card}: ${formatSum(data.today_revenue.card)}`}
+            icon={<DollarSign size={20} />}
+          />
+        )}
 
         <StatCard
           title={restoUz.activeOrders}
@@ -105,11 +107,13 @@ export const DashboardPage: React.FC = () => {
           icon={<ShoppingBag size={20} />}
         />
 
-        <StatCard
-          title={restoUz.averageCheck}
-          value={formatSum(data?.average_check)}
-          icon={<TrendingUp size={20} />}
-        />
+        {data?.average_check !== undefined && (
+          <StatCard
+            title={restoUz.averageCheck}
+            value={formatSum(data.average_check)}
+            icon={<TrendingUp size={20} />}
+          />
+        )}
 
         <StatCard
           title={restoUz.occupiedTables}
@@ -173,9 +177,11 @@ export const DashboardPage: React.FC = () => {
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
                       {dish.quantity} {restoUz.soldCount}
                     </span>
-                    <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                      {formatSum(dish.total_sum)}
-                    </div>
+                    {dish.total_sum !== undefined && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
+                        {formatSum(dish.total_sum)}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

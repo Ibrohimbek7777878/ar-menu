@@ -204,30 +204,35 @@ def dashboard_summary_api(request):
         .order_by('-total_qty')[:5]
     )
 
-    top_dishes = [
-        {
+    can_view_finance = has_capability(user, 'finance')
+
+    top_dishes = []
+    for row in top_dishes_qs:
+        dish_item = {
             'id': row['product_id'] or 0,
             'name': row['product__name'] or 'Taom',
             'quantity': row['total_qty'] or 0,
-            'total_sum': float(row['total_sum'] or 0),
         }
-        for row in top_dishes_qs
-    ]
+        if can_view_finance:
+            dish_item['total_sum'] = float(row['total_sum'] or 0)
+        top_dishes.append(dish_item)
 
     data = {
-        'today_revenue': {
-            'total': float(summary['income']),
-            'cash': float(summary['income_cash']),
-            'card': float(summary['income_card']),
-        },
         'orders_count': summary['orders_count'],
-        'average_check': float(summary['average_check']),
         'active_orders': active_orders,
         'occupied_tables': occupied_tables,
         'total_tables': total_tables,
         'out_of_stock_count': out_of_stock,
         'top_dishes': top_dishes,
     }
+
+    if can_view_finance:
+        data['today_revenue'] = {
+            'total': float(summary['income']),
+            'cash': float(summary['income_cash']),
+            'card': float(summary['income_card']),
+        }
+        data['average_check'] = float(summary['average_check'])
 
     res = JsonResponse(data)
     res['Cache-Control'] = 'no-store'

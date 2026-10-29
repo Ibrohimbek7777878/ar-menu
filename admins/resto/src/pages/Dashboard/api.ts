@@ -4,17 +4,17 @@ export interface TopDish {
   id: number;
   name: string;
   quantity: number;
-  total_sum: number;
+  total_sum?: number;
 }
 
 export interface DashboardSummary {
-  today_revenue: {
+  today_revenue?: {
     total: number;
     cash: number;
     card: number;
   };
   orders_count: number;
-  average_check: number;
+  average_check?: number;
   active_orders: number;
   occupied_tables: number;
   total_tables: number;

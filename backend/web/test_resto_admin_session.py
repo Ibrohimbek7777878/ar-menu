@@ -150,3 +150,13 @@ class RestoAdminSessionApiTests(TestCase):
         self.assertIn('out_of_stock_count', data)
         self.assertIn('top_dishes', data)
         self.assertIsInstance(data['top_dishes'], list)
+
+    def test_dashboard_summary_api_waiter_cannot_see_money_fields(self):
+        self.client.force_login(self.waiter)
+        res = self.client.get(reverse('resto_admin_dashboard_summary_api'))
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertNotIn('today_revenue', data)
+        self.assertNotIn('average_check', data)
+        for dish in data.get('top_dishes', []):
+            self.assertNotIn('total_sum', dish)
