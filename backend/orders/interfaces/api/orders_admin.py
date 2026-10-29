@@ -19,7 +19,8 @@ from orders.interfaces.api.permissions import (
     capability,
 )
 from orders.models import Order, OrderItem
-from web.restaurant_auth import has_capability, staff_shop
+from orders.state_machine import transition_order
+from web.restaurant_auth import has_capability, staff_shop, user_role
 
 
 STATUS_LABELS = {
@@ -230,7 +231,7 @@ class OrderDetailView(APIView):
 
 class OrderStatusUpdateView(APIView):
     """
-    POST /api/restaurant/admin/v1/orders/<pk>/status/ — Buyurtma holatini yangilash.
+    POST /api/restaurant/admin/v1/orders/<pk>/status/ — Buyurtma holatini yangilash (domen state machine orqali).
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
     permission_classes = [capability('kds')]
@@ -242,31 +243,29 @@ class OrderStatusUpdateView(APIView):
         new_status = request.data.get('status')
         if new_status not in STATUS_LABELS:
             return Response({
-                'error': f'Noto\'g\'ri holat. Mumkin bo\'lganlar: {list(STATUS_LABELS.keys())}'
+                'error': f"Noto'g'ri holat. Mumkin bo'lganlar: {list(STATUS_LABELS.keys())}"
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # Rol bo'yicha cheklov: oshpaz faqat tayyorlash jarayonlarini boshqara oladi
+        role = user_role(request.user)
+        if role == 'kitchen' and new_status not in ('preparing', 'ready'):
+            return Response({
+                'error': "Oshpaz faqat 'preparing' va 'ready' holatlariga o'tkaza oladi."
+            }, status=status.HTTP_403_FORBIDDEN)
+
         old_status = order.status
-        now = timezone.now()
+        cancel_reason = request.data.get('cancel_reason', '').strip()
 
         with transaction.atomic():
-            order.status = new_status
-            update_fields = ['status', 'updated_at']
-
-            if new_status == 'confirmed' and not order.confirmed_at:
-                order.confirmed_at = now
-                update_fields.append('confirmed_at')
-            elif new_status == 'delivered':
-                order.delivered_at = now
-                update_fields.append('delivered_at')
-            elif new_status == 'cancelled':
-                order.cancelled_at = now
-                update_fields.append('cancelled_at')
-                cancel_reason = request.data.get('cancel_reason', '').strip()
-                if cancel_reason:
-                    order.cancel_reason = cancel_reason
-                    update_fields.append('cancel_reason')
-
-            order.save(update_fields=update_fields)
+            ok, msg = transition_order(
+                order,
+                new_status,
+                actor=request.user,
+                reason=cancel_reason,
+                request=request
+            )
+            if not ok:
+                return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
 
             # Agar stol buyurtmasi bo'lsa va stol holatini sinxronlashtirish kerak bo'lsa:
             if order.table:
@@ -297,7 +296,7 @@ class OrderStatusUpdateView(APIView):
 
 class OrderPaymentUpdateView(APIView):
     """
-    POST /api/restaurant/admin/v1/orders/<pk>/payment/ — To'lov holatini o'zgartirish (masalan: naqd/karta to'landi).
+    POST /api/restaurant/admin/v1/orders/<pk>/payment/ — To'lov holatini o'zgartirish (kassa yozuvi bilan).
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
     permission_classes = [capability('pos')]
@@ -309,22 +308,38 @@ class OrderPaymentUpdateView(APIView):
         new_payment = request.data.get('payment_status')
         if new_payment not in PAYMENT_STATUS_LABELS:
             return Response({
-                'error': f'Noto\'g\'ri to\'lov holati. Mumkin bo\'lganlar: {list(PAYMENT_STATUS_LABELS.keys())}'
+                'error': f"Noto'g'ri to'lov holati. Mumkin bo'lganlar: {list(PAYMENT_STATUS_LABELS.keys())}"
             }, status=status.HTTP_400_BAD_REQUEST)
 
         old_payment = order.payment_status
-        order.payment_status = new_payment
-        order.save(update_fields=['payment_status', 'updated_at'])
 
-        log_audit(
-            'order_payment_status_changed',
-            request=request,
-            actor=request.user,
-            target_type='order',
-            target_id=order.id,
-            old_value={'payment_status': old_payment},
-            new_value={'payment_status': new_payment}
-        )
+        # To'lovni bekor qilish yoki qaytarish faqat moliya huquqiga ega xodimga ruxsat etilgan
+        if new_payment != 'paid' and not has_capability(request.user, 'finance'):
+            return Response({
+                'error': "To'lovni bekor qilish yoki qaytarish uchun moliya huquqi talab qilinadi."
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        with transaction.atomic():
+            order.payment_status = new_payment
+            order.save(update_fields=['payment_status', 'updated_at'])
+
+            if new_payment == 'paid':
+                payment_method = request.data.get('payment_method')
+                try:
+                    from finance.services.order_integration import record_order_payment_income
+                    record_order_payment_income(order, payment_method=payment_method, actor=request.user)
+                except Exception:
+                    pass
+
+            log_audit(
+                'order_payment_status_changed',
+                request=request,
+                actor=request.user,
+                target_type='order',
+                target_id=order.id,
+                old_value={'payment_status': old_payment},
+                new_value={'payment_status': new_payment}
+            )
 
         return Response({
             'id': order.id,

@@ -1,3 +1,5 @@
+from finance.models import FinanceTransaction
+from orders.inventory import reserve_stock, StockReservation
 """
 Restoran Buyurtmalar Admin API testlari (Orders Admin API).
 Tenant isolation, RBAC ruxsatlar, status va to'lov o'zgarishlari, AuditLog.
@@ -39,6 +41,18 @@ class OrdersAdminApiTests(TestCase):
 
         self.client_owner = Client()
         self.client_owner.force_login(self.owner)
+        self.waiter = AdminUser.objects.create(
+            username='orders-waiter',
+            role='waiter',
+            shop=self.shop,
+            is_active=True,
+            is_approved=True,
+        )
+        self.waiter.set_password('Parol-Waiter-123')
+        self.waiter.save()
+        self.client_waiter = Client()
+        self.client_waiter.force_login(self.waiter)
+
 
         # Sinov buyurtmasi yaratamiz
         self.order = Order.objects.create(
@@ -193,3 +207,75 @@ class OrdersAdminApiTests(TestCase):
         # O'zgartira olmaydi (404)
         res_patch = self.client_owner.post(f'{self.API}{foreign_order.id}/status/', {'status': 'cancelled'}, content_type='application/json')
         self.assertEqual(res_patch.status_code, 404)
+
+
+    def test_delivered_order_cannot_be_cancelled(self):
+        self.order.status = 'delivered'
+        self.order.save(update_fields=['status'])
+
+        res = self.client_owner.post(
+            f'{self.API}{self.order.id}/status/',
+            {'status': 'cancelled', 'cancel_reason': 'Mijoz fikridan qaytdi'},
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 400)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, 'delivered')
+
+    def test_waiter_cannot_revert_payment(self):
+        self.order.payment_status = 'paid'
+        self.order.save(update_fields=['payment_status'])
+
+        res = self.client_waiter.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'unpaid'},
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 403)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.payment_status, 'paid')
+
+    def test_order_payment_paid_creates_finance_transaction(self):
+        res = self.client_owner.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'paid', 'payment_method': 'cash'},
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200)
+
+        self.assertTrue(
+            FinanceTransaction.objects.filter(
+                order=self.order,
+                tx_type='income',
+                is_cancelled=False
+            ).exists()
+        )
+
+    def test_cancelling_order_releases_stock_reservation(self):
+        product = Product.objects.create(
+            shop=self.shop,
+            name='Test Stock Taom',
+            price=Decimal('25000'),
+            stock=10,
+            is_available=True,
+        )
+        self.item.product_id = product.id
+        self.item.save(update_fields=['product_id'])
+
+        ok, _ = reserve_stock(self.order)
+        self.assertTrue(ok)
+        self.assertEqual(
+            StockReservation.objects.filter(order=self.order, status='active').count(),
+            1
+        )
+
+        res = self.client_owner.post(
+            f'{self.API}{self.order.id}/status/',
+            {'status': 'cancelled', 'cancel_reason': 'Mijoz bekor qildi'},
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            StockReservation.objects.get(order=self.order).status,
+            'released'
+        )
