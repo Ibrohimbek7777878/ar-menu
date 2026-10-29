@@ -284,22 +284,91 @@ class CsvExportP0Tests(TestCase):
         self.assertEqual(len(lines), 2)
         self.assertIn('ORD-999', lines[1])
 
+import os
+
+import os
+import stat
+import subprocess
+import tempfile
+import unittest
 from pathlib import Path
 from django.conf import settings
 
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+
+
 class DockerStartupRaceTests(TestCase):
-    """A7: Sovuq ishga tushishda ikki konteyner bir vaqtda migrate qilmasligi."""
+    """A7/B3: Sovuq ishga tushishda ikki konteyner bir vaqtda migrate qilmasligini amaliy sinash."""
 
-    def test_entrypoint_supports_skip_migrate(self):
-        entrypoint_path = Path(settings.BASE_DIR) / 'docker' / 'entrypoint.sh'
-        self.assertTrue(entrypoint_path.exists())
-        content = entrypoint_path.read_text(encoding='utf-8')
-        self.assertIn('SKIP_MIGRATE', content)
+    def setUp(self):
+        super().setUp()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.bin_dir = Path(self.temp_dir.name) / 'bin'
+        self.bin_dir.mkdir(parents=True, exist_ok=True)
+        self.log_file = Path(self.temp_dir.name) / 'invocations.log'
 
-    def test_docker_compose_web_staff_skips_migrate_and_waits_for_web(self):
+        # Soxta python
+        fake_python = self.bin_dir / 'python'
+        script_py = "#!/bin/sh\necho \"python $@\" >> \"" + str(self.log_file) + "\"\nexit 0\n"
+        fake_python.write_text(script_py, encoding='utf-8')
+        fake_python.chmod(fake_python.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+
+        # Soxta gunicorn
+        fake_gunicorn = self.bin_dir / 'gunicorn'
+        script_gu = "#!/bin/sh\necho \"gunicorn $@\" >> \"" + str(self.log_file) + "\"\nexit 0\n"
+        fake_gunicorn.write_text(script_gu, encoding='utf-8')
+        fake_gunicorn.chmod(fake_gunicorn.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+
+        self.entrypoint_path = Path(settings.BASE_DIR) / 'docker' / 'entrypoint.sh'
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+        super().tearDown()
+
+    def _run_entrypoint(self, env_overrides=None):
+        env = os.environ.copy()
+        env['PATH'] = f"{self.bin_dir}:{env.get('PATH', '')}"
+        if env_overrides:
+            env.update(env_overrides)
+        result = subprocess.run(
+            ['/bin/sh', str(self.entrypoint_path), 'web'],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        return result
+
+    def test_entrypoint_with_skip_migrate_does_not_call_migrate_or_collectstatic(self):
+        """SKIP_MIGRATE=1 bo'lganda migrate va collectstatic chaqirilmasligi, gunicorn chaqirilishi shart."""
+        result = self._run_entrypoint({'SKIP_MIGRATE': '1'})
+        self.assertEqual(result.returncode, 0, f"entrypoint xato bilan tugadi: {result.stderr}")
+        log_content = self.log_file.read_text(encoding='utf-8') if self.log_file.exists() else ''
+
+        self.assertNotIn('migrate', log_content, "SKIP_MIGRATE=1 bo'lganda migrate chaqirilmasligi kerak")
+        self.assertNotIn('collectstatic', log_content, "SKIP_MIGRATE=1 bo'lganda collectstatic chaqirilmasligi kerak")
+        self.assertIn('gunicorn', log_content, "gunicorn ishga tushirilishi kerak")
+
+    def test_entrypoint_without_skip_migrate_calls_migrate_and_collectstatic(self):
+        """SKIP_MIGRATE bo'lmaganda migrate va collectstatic chaqirilishi shart."""
+        result = self._run_entrypoint({'SKIP_MIGRATE': '0'})
+        self.assertEqual(result.returncode, 0, f"entrypoint xato bilan tugadi: {result.stderr}")
+        log_content = self.log_file.read_text(encoding='utf-8') if self.log_file.exists() else ''
+
+        self.assertIn('migrate', log_content, "SKIP_MIGRATE bo'lmaganda migrate chaqirilishi kerak")
+        self.assertIn('collectstatic', log_content, "SKIP_MIGRATE bo'lmaganda collectstatic chaqirilishi kerak")
+        self.assertIn('gunicorn', log_content, "gunicorn ishga tushirilishi kerak")
+
+    @unittest.skipUnless(HAS_YAML, "PyYAML kutubxonasi o'rnatilmagan")
+    def test_docker_compose_web_staff_yaml_config(self):
         compose_path = Path(settings.BASE_DIR).parent / 'deploy' / 'docker-compose.yml'
-        self.assertTrue(compose_path.exists())
-        content = compose_path.read_text(encoding='utf-8')
-
-        # web-staff SKIP_MIGRATE: "1" bo'lishi shart
-        self.assertIn('SKIP_MIGRATE: "1"', content)
+        with open(compose_path, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        services = data.get('services', {})
+        web_staff = services.get('web-staff', {})
+        self.assertEqual(str(web_staff.get('environment', {}).get('SKIP_MIGRATE')), "1")
+        self.assertEqual(web_staff.get('depends_on', {}).get('web', {}).get('condition'), "service_healthy")
