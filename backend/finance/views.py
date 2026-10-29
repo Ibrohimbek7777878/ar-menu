@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db.models import Sum, Q, Prefetch
 from django.views.decorators.http import require_POST
 from web.seller_views import seller_required
+from backend.csv_safety import csv_text
 from finance.models import FinanceCategory, FinanceTransaction, DebtRecord, FinanceMovementHistory, FinanceCustomStage
 from finance.services.defaults import seed_default_categories_for_shop
 from finance.services.ai_copilot import process_finance_ai_query
@@ -910,18 +911,19 @@ def finance_export_excel(request):
         else:
             created_by_name = "Tizim"
 
+        # Matnli ustunlar csv_text() orqali (formula injection); ID va summa raqamligicha qoladi
         writer.writerow([
             t.id,
             t.tx_date.strftime('%d.%m.%Y'),
-            order_num,
-            stage_desc,
+            csv_text(order_num),
+            csv_text(stage_desc),
             tx_type_desc,
-            cat_name,
-            t.title or "",
+            csv_text(cat_name),
+            csv_text(t.title),
             f"{float(t.amount):.2f}",
             t.get_payment_method_display(),
-            t.notes or "",
-            created_by_name,
+            csv_text(t.notes),
+            csv_text(created_by_name),
             moved_status,
         ])
 

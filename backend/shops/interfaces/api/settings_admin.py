@@ -6,8 +6,16 @@ AuditLog, RBAC ('menu_admin'), validatsiya va xavfsizlik to'liq ta'minlangan.
 from decimal import Decimal
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from backend.api_input import (
+    InputError,
+    RestoAdminAPIView,
+    parse_bool,
+    parse_decimal,
+    parse_int,
+    parse_telegram_chat_id,
+    parse_text,
+)
 from orders.audit import log_audit
 from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
@@ -16,7 +24,7 @@ from orders.interfaces.api.permissions import (
 from web.restaurant_auth import staff_shop
 
 
-class SettingsAdminView(APIView):
+class SettingsAdminView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/settings/ — Restoran sozlamalarini olish.
     PATCH /api/restaurant/admin/v1/settings/ — Restoran sozlamalarini yangilash.
@@ -69,87 +77,61 @@ class SettingsAdminView(APIView):
         updated_fields = []
 
         if 'name' in data:
-            name = str(data['name']).strip()
+            name = parse_text(data['name'], 'name', max_length=200)
             if not name:
                 return Response({'error': 'Restoran nomi bo\'sh bo\'lishi mumkin emas', 'field': 'name'}, status=status.HTTP_400_BAD_REQUEST)
             shop.name = name
             updated_fields.append('name')
 
-        if 'description' in data:
-            shop.description = str(data['description']).strip()
-            updated_fields.append('description')
-
-        if 'address' in data:
-            shop.address = str(data['address']).strip()
-            updated_fields.append('address')
-
-        if 'phone' in data:
-            shop.phone = str(data['phone']).strip()
-            updated_fields.append('phone')
-
-        if 'phone2' in data:
-            shop.phone2 = str(data['phone2']).strip()
-            updated_fields.append('phone2')
-
-        if 'working_hours' in data:
-            shop.working_hours = str(data['working_hours']).strip()
-            updated_fields.append('working_hours')
-
-        if 'working_days' in data:
-            shop.working_days = str(data['working_days']).strip()
-            updated_fields.append('working_days')
+        # Matnli maydonlar: (kalit, maksimal uzunlik) — Shop modelidagi ustun uzunliklari (PostgreSQL ularni tekshiradi)
+        for key, limit in (('description', 5000), ('address', 500), ('phone', 20), ('phone2', 20),
+                           ('working_hours', 50), ('working_days', 50), ('instagram_url', 200)):
+            if key in data:
+                setattr(shop, key, parse_text(data[key], key, max_length=limit))
+                updated_fields.append(key)
 
         if 'is_open' in data:
-            shop.is_open = bool(data['is_open'])
+            shop.is_open = parse_bool(data['is_open'], 'is_open')
             updated_fields.append('is_open')
 
         if 'color_primary' in data:
-            color = str(data['color_primary']).strip()
-            if color.startswith('#') and len(color) <= 7:
-                shop.color_primary = color
-                updated_fields.append('color_primary')
-
-        if 'instagram_url' in data:
-            shop.instagram_url = str(data['instagram_url']).strip()
-            updated_fields.append('instagram_url')
+            color = parse_text(data['color_primary'], 'color_primary', max_length=7)
+            if not (color.startswith('#') and len(color) in (4, 7) and all(c in '0123456789abcdefABCDEF' for c in color[1:])):
+                return Response({'error': "Rang #RGB yoki #RRGGBB ko'rinishida bo'lishi kerak", 'field': 'color_primary'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            shop.color_primary = color
+            updated_fields.append('color_primary')
 
         # Business profile ichidagi maxsus restoran sozlamalari
         bp = dict(shop.business_profile or {})
         bp_changed = False
 
         if 'service_fee_percent' in data:
-            try:
-                fee = float(data['service_fee_percent'])
-                if 0 <= fee <= 100:
-                    bp['service_fee_percent'] = round(fee, 2)
-                    bp_changed = True
-            except (ValueError, TypeError):
-                pass
+            bp['service_fee_percent'] = float(parse_decimal(
+                data['service_fee_percent'], 'service_fee_percent', minimum=Decimal('0'), maximum=Decimal('100')))
+            bp_changed = True
 
         if 'kds_warning_minutes' in data:
-            try:
-                w = int(data['kds_warning_minutes'])
-                if 1 <= w <= 180:
-                    bp['kds_warning_minutes'] = w
-                    bp_changed = True
-            except (ValueError, TypeError):
-                pass
+            bp['kds_warning_minutes'] = parse_int(data['kds_warning_minutes'], 'kds_warning_minutes', minimum=1, maximum=180)
+            bp_changed = True
 
         if 'kds_critical_minutes' in data:
-            try:
-                c = int(data['kds_critical_minutes'])
-                if 1 <= c <= 300:
-                    bp['kds_critical_minutes'] = c
-                    bp_changed = True
-            except (ValueError, TypeError):
-                pass
+            bp['kds_critical_minutes'] = parse_int(data['kds_critical_minutes'], 'kds_critical_minutes', minimum=1, maximum=300)
+            bp_changed = True
 
         if 'telegram_chat_id' in data:
-            bp['telegram_chat_id'] = str(data['telegram_chat_id']).strip()
+            chat_id = parse_telegram_chat_id(data['telegram_chat_id'])
+            if chat_id:
+                # Chat ID botda ADMIN huquqini beradi: boshqa egaga tegishli do'konga bog'langan chatni olib bo'lmaydi
+                from notifications.admin_bot import shops_bound_to_chat
+                for other in shops_bound_to_chat(chat_id):
+                    if other.pk != shop.pk and (shop.owner_id is None or other.owner_id != shop.owner_id):
+                        raise InputError("Bu Telegram chat ID boshqa restoranga biriktirilgan", 'telegram_chat_id')
+            bp['telegram_chat_id'] = chat_id
             bp_changed = True
 
         if 'auto_accept_orders' in data:
-            bp['auto_accept_orders'] = bool(data['auto_accept_orders'])
+            bp['auto_accept_orders'] = parse_bool(data['auto_accept_orders'], 'auto_accept_orders')
             bp_changed = True
 
         if bp_changed:

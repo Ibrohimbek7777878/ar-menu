@@ -145,3 +145,6 @@ Pasted image*.png
 deploy/.env
 deploy/backups/
 deploy/.state/
+
+# Django fayl keshi (test va ishlash vaqtida yaratiladi)
+backend/cache/

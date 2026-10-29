@@ -237,3 +237,87 @@ class StaffAdminApiTests(TestCase):
         res = client_super.patch(f'{self.API}{self.owner.id}/', {'role': 'waiter'}, content_type='application/json')
         self.assertEqual(res.status_code, 400)
         self.assertIn("oxirgi", res.json()['error'].lower())
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant')
+class StaffAdminManagerSelfServiceTests(TestCase):
+    """P1 (A2/B4): menejer o'z profilini o'zgartira oladi, lekin rolini ko'tara olmaydi;
+    oxirgi egani bloklash taqiqlanadi; menejer rahbariyat rollarini bera olmaydi."""
+    API = '/api/restaurant/admin/v1/staff/'
+
+    def setUp(self):
+        call_command(
+            'create_restaurant', name='Menejer Resto', slug='mgr-resto', owner='mgr-owner',
+            password='Parol-Mgr-123', tables=1, stdout=io.StringIO(),
+        )
+        self.shop = Shop.objects.get(slug='mgr-resto')
+        self.owner = AdminUser.objects.get(username='mgr-owner')
+        self.owner.is_approved = True
+        self.owner.save(update_fields=['is_approved'])
+        self.manager = AdminUser.objects.create_user(
+            username='mgr-manager', password='Manager-Parol-123', role='shop_manager',
+            shop=self.shop, is_staff=False, is_approved=True,
+        )
+        self.other_manager = AdminUser.objects.create_user(
+            username='mgr-manager-2', password='Manager-Parol-123', role='shop_manager',
+            shop=self.shop, is_staff=False, is_approved=True,
+        )
+        self.client_mgr = Client()
+        self.client_mgr.force_login(self.manager)
+
+    def test_manager_can_edit_own_name_and_phone(self):
+        res = self.client_mgr.patch(f'{self.API}{self.manager.id}/', {
+            'full_name': 'Dilshod Menejerov', 'phone': '+998901234567',
+        }, content_type='application/json')
+        self.assertEqual(res.status_code, 200, res.content)
+        self.assertEqual(res.json()['full_name'], 'Dilshod Menejerov')
+        self.manager.refresh_from_db()
+        self.assertEqual((self.manager.first_name, self.manager.last_name), ('Dilshod', 'Menejerov'))
+        self.assertEqual(self.manager.role, 'shop_manager')
+
+    def test_manager_patch_self_with_unchanged_role_is_ok(self):
+        # Frontend butun profilni yuborishi mumkin (rol o'zgarmagan) — bu rol ko'tarish emas
+        res = self.client_mgr.patch(f'{self.API}{self.manager.id}/', {
+            'role': 'shop_manager', 'full_name': 'Rol O\'zgarmadi',
+        }, content_type='application/json')
+        self.assertEqual(res.status_code, 200, res.content)
+
+    def test_manager_cannot_raise_own_role_and_nothing_is_saved(self):
+        for target in ('shop_owner', 'super_admin'):
+            res = self.client_mgr.patch(f'{self.API}{self.manager.id}/', {
+                'role': target, 'full_name': 'Hacker Ism',
+            }, content_type='application/json')
+            self.assertEqual(res.status_code, 403, target)
+        self.manager.refresh_from_db()
+        self.assertEqual(self.manager.role, 'shop_manager')
+        self.assertNotEqual(self.manager.first_name, 'Hacker')
+
+    def test_manager_still_cannot_edit_other_manager_or_owner(self):
+        for victim in (self.other_manager, self.owner):
+            res = self.client_mgr.patch(f'{self.API}{victim.id}/', {'full_name': 'Boshqa Ism'},
+                                        content_type='application/json')
+            self.assertEqual(res.status_code, 403, victim.username)
+            victim.refresh_from_db()
+            self.assertNotEqual(victim.first_name, 'Boshqa')
+
+    def test_manager_cannot_create_owner_or_manager(self):
+        for role in ('shop_owner', 'shop_manager', 'super_admin'):
+            res = self.client_mgr.post(self.API, {'username': f'yangi-{role}', 'role': role},
+                                       content_type='application/json')
+            self.assertEqual(res.status_code, 403, role)
+            self.assertFalse(AdminUser.objects.filter(username=f'yangi-{role}').exists())
+        # Oddiy rol (ofitsiant) yaratish mumkin
+        ok = self.client_mgr.post(self.API, {'username': 'yangi-ofitsiant', 'role': 'waiter'},
+                                  content_type='application/json')
+        self.assertEqual(ok.status_code, 201, ok.content)
+
+    def test_cannot_block_last_owner(self):
+        super_user = AdminUser.objects.create_superuser(
+            username='mgr-super', password='Super-Parol-123', email='s2@s.uz')
+        client_super = Client()
+        client_super.force_login(super_user)
+        res = client_super.post(f'{self.API}{self.owner.id}/block/')
+        self.assertEqual(res.status_code, 400, res.content)
+        self.assertIn('oxirgi', res.json()['error'].lower())
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.is_active)

@@ -20,7 +20,8 @@ from notifications.telegram_bot import send_message, edit_message_text, answer_c
 from notifications.admin_bot import (
     handle_admin_command,
     handle_table_callback,
-    is_admin,
+    resolve_admin_scope,
+    kassa_report_text,
     get_restaurant_shop,
     build_tables_monitoring_text,
     build_tables_keyboard,
@@ -218,8 +219,10 @@ def _handle_telegram_update(request):
         return JsonResponse({'ok': True})
 
     base_url = get_base_url_from_request(request)
-    is_user_admin = is_admin(chat_id, username)
-    shop = get_restaurant_shop()
+    # Admin huquqi faqat chat_id bo'yicha (username soxtalashtirilishi mumkin); do'kon admini faqat o'z do'konini ko'radi
+    admin_scope = resolve_admin_scope(chat_id)
+    is_user_admin = admin_scope is not None
+    shop = admin_scope.primary_shop() if admin_scope else get_restaurant_shop()
 
     # Deep link orqali stolni aniqlash (/start t_<token> yoki demo'da table_5)
     table_num = None
@@ -291,26 +294,8 @@ def _handle_telegram_update(request):
             bot_msg.response = err_txt
             bot_msg.save(update_fields=['response'])
             return JsonResponse({'ok': True})
-        target_shop = shop or get_restaurant_shop()
-        if target_shop:
-            from finance.services.summary import today_summary
-            summary = today_summary(target_shop)
-            inc = summary['income']
-            exp = summary['expense']
-            net = summary['net_profit']
-            fmt_inc = f"{int(inc):,}".replace(",", " ")
-            fmt_exp = f"{int(exp):,}".replace(",", " ")
-            fmt_net = f"{int(net):,}".replace(",", " ")
-            today_str = summary['today_date'].strftime('%d.%m.%Y')
-            response_text = (
-                f"📊 <b>{target_shop.name} — Bugungi Kassa ({today_str})</b>\n\n"
-                f"🟢 <b>Kirim:</b> {fmt_inc} so'm\n"
-                f"🔴 <b>Chiqim:</b> {fmt_exp} so'm\n"
-                f"💎 <b>Sof kassa:</b> {fmt_net} so'm\n\n"
-                f"Batafsil ma'lumot do'kon moliya panelida."
-            )
-        else:
-            response_text = "Kassa ma'lumotlari topilmadi."
+        # Faqat shu admin doirasidagi do'kon(lar): do'kon admini boshqa do'konlar daromadini ko'rmaydi
+        response_text = kassa_report_text(admin_scope.shops())
         send_message(chat_id, response_text)
         bot_msg.response = response_text
         bot_msg.save(update_fields=['response'])
@@ -327,17 +312,21 @@ def _handle_telegram_update(request):
         if len(parts) > 1:
             order_number = parts[1]
             from orders.models import Order
-            try:
-                order = Order.objects.get(order_number=order_number)
+            # Boshqa do'kon buyurtmasi "topilmadi" deb javob beriladi (mavjudligi ham oshkor bo'lmaydi)
+            orders = Order.objects.select_related('table').filter(order_number=order_number)
+            if not admin_scope.platform:
+                orders = orders.filter(shop_id__in=admin_scope.shop_filter())
+            order = orders.first()
+            if order:
                 status_text = dict(Order.STATUS_CHOICES).get(order.status, order.status)
-                table_str = f" | Stol #{order.table.number}" if order.table else ""
+                table_str = f" | Stol #{esc(order.table.number)}" if order.table else ""
                 response_text = (
-                    f"📦 #{order.order_number}{table_str}\n"
-                    f"👤 {order.customer_name}\n"
+                    f"📦 #{esc(order.order_number)}{table_str}\n"
+                    f"👤 {esc(order.customer_name)}\n"
                     f"💰 {int(order.final_amount):,} so'm\n"
-                    f"📊 Holat: {status_text}"
+                    f"📊 Holat: {esc(status_text)}"
                 )
-            except Order.DoesNotExist:
+            else:
                 response_text = "Buyurtma topilmadi"
             send_message(chat_id, response_text)
             bot_msg.response = response_text

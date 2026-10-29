@@ -10,8 +10,18 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from backend.api_input import (
+    InputError,
+    RestoAdminAPIView,
+    parse_choice,
+    parse_id,
+    parse_int,
+    parse_text,
+    query_flag,
+    query_id,
+    query_text,
+)
 from orders.audit import log_audit
 from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
@@ -70,7 +80,7 @@ def _serialize_hall(h, tables_count=0):
     }
 
 
-class TablesListCreateView(APIView):
+class TablesListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/tables/ — Stollar ro'yxati, zallar va umumiy hisob-kitoblar.
     POST /api/restaurant/admin/v1/tables/ — Yangi stol yaratish.
@@ -87,17 +97,17 @@ class TablesListCreateView(APIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        include_deleted = request.GET.get('include_deleted', 'false').lower() in ('1', 'true')
-        hall_id = request.GET.get('hall_id')
-        table_status = request.GET.get('status')
-        query = request.GET.get('q', '').strip()
+        include_deleted = query_flag(request, 'include_deleted')
+        hall_id = query_id(request, 'hall_id')
+        table_status = query_text(request, 'status', 20)
+        query = query_text(request, 'q', 20)
 
         # Manager tanlovi: o'chirilganlarni ko'rsatish yoki faqat faollar
         qs = Table.all_objects if include_deleted else Table.objects
         tables_qs = qs.select_related('hall').filter(shop=shop)
 
-        if hall_id and hall_id.isdigit():
-            tables_qs = tables_qs.filter(hall_id=int(hall_id))
+        if hall_id:
+            tables_qs = tables_qs.filter(hall_id=hall_id)
 
         if table_status:
             tables_qs = tables_qs.filter(status=table_status)
@@ -155,9 +165,7 @@ class TablesListCreateView(APIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        number = str(request.data.get('number', '')).strip()
-        if not number:
-            return Response({'error': 'Stol raqami kiritilishi shart', 'field': 'number'}, status=status.HTTP_400_BAD_REQUEST)
+        number = parse_text(request.data.get('number'), 'number', max_length=20, required=True)
 
         # Takrorlanmaslik tekshiruvi (shop doirasida)
         existing = Table.all_objects.filter(shop=shop, number=number).first()
@@ -174,25 +182,20 @@ class TablesListCreateView(APIView):
                 'field': 'number'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        hall_id = request.data.get('hall_id')
+        hall_id = parse_id(request.data.get('hall_id'), 'hall_id')
         hall = None
         if hall_id:
             hall = Hall.objects.filter(id=hall_id, shop=shop, is_active=True).first()
-        if not hall:
+            if not hall:
+                raise InputError("Zal topilmadi", 'hall_id')
+        else:
             # Agar zal berilmagan bo'lsa, birinchi faol zal yoki "Asosiy Zal" ni topamiz/yaratamiz
             hall = Hall.objects.filter(shop=shop, is_active=True).first()
             if not hall:
                 hall = Hall.objects.create(shop=shop, name='Asosiy Zal', order=0)
 
-        capacity = request.data.get('capacity', 4)
-        try:
-            capacity = max(1, min(100, int(capacity)))
-        except (ValueError, TypeError):
-            capacity = 4
-
-        shape = request.data.get('shape', 'rect')
-        if shape not in ('rect', 'round'):
-            shape = 'rect'
+        capacity = parse_int(request.data.get('capacity', 4), 'capacity', minimum=1, maximum=100)
+        shape = parse_choice(request.data.get('shape', 'rect'), 'shape', ('rect', 'round'))
 
         with transaction.atomic():
             table = Table.objects.create(
@@ -222,7 +225,7 @@ class TablesListCreateView(APIView):
         return Response(_serialize_table(table, 0, 0, request), status=status.HTTP_201_CREATED)
 
 
-class TableDetailUpdateDeleteView(APIView):
+class TableDetailUpdateDeleteView(RestoAdminAPIView):
     """
     PATCH /api/restaurant/admin/v1/tables/<pk>/ — Stolni yangilash.
     DELETE /api/restaurant/admin/v1/tables/<pk>/ — Stolni arxivlash (Soft delete).
@@ -246,9 +249,7 @@ class TableDetailUpdateDeleteView(APIView):
         update_fields = []
 
         if 'number' in data:
-            new_num = str(data['number']).strip()
-            if not new_num:
-                return Response({'error': 'Stol raqami bo\'sh bo\'lishi mumkin emas'}, status=status.HTTP_400_BAD_REQUEST)
+            new_num = parse_text(data['number'], 'number', max_length=20, required=True)
             if new_num != table.number:
                 if Table.all_objects.filter(shop=shop, number=new_num).exclude(pk=pk).exists():
                     return Response({'error': f'"{new_num}" raqamli stol allaqachon mavjud', 'field': 'number'}, status=status.HTTP_400_BAD_REQUEST)
@@ -256,29 +257,23 @@ class TableDetailUpdateDeleteView(APIView):
                 update_fields.append('number')
 
         if 'hall_id' in data:
-            hall_id = data['hall_id']
-            hall = get_object_or_404(Hall, pk=hall_id, shop=shop, is_active=True)
+            hall = Hall.objects.filter(pk=parse_id(data['hall_id'], 'hall_id', allow_none=False), shop=shop, is_active=True).first()
+            if not hall:
+                raise InputError("Zal topilmadi", 'hall_id')
             table.hall = hall
             update_fields.append('hall')
 
         if 'capacity' in data:
-            try:
-                table.capacity = max(1, min(100, int(data['capacity'])))
-                update_fields.append('capacity')
-            except (ValueError, TypeError):
-                pass
+            table.capacity = parse_int(data['capacity'], 'capacity', minimum=1, maximum=100)
+            update_fields.append('capacity')
 
         if 'shape' in data:
-            shape = data['shape']
-            if shape in ('rect', 'round'):
-                table.shape = shape
-                update_fields.append('shape')
+            table.shape = parse_choice(data['shape'], 'shape', ('rect', 'round'))
+            update_fields.append('shape')
 
         if 'status' in data:
-            new_status = data['status']
-            if new_status in STATUS_LABELS:
-                table.status = new_status
-                update_fields.append('status')
+            table.status = parse_choice(data['status'], 'status', tuple(STATUS_LABELS))
+            update_fields.append('status')
 
         if update_fields:
             table.save(update_fields=update_fields)
@@ -317,7 +312,7 @@ class TableDetailUpdateDeleteView(APIView):
         return Response({'status': 'deleted', 'id': table.id, 'number': table.number})
 
 
-class TableRestoreView(APIView):
+class TableRestoreView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/tables/<pk>/restore/ — Arxivlangan stolni qayta tiklash.
     """
@@ -346,7 +341,7 @@ class TableRestoreView(APIView):
         return Response({'status': 'restored', 'id': table.id, 'number': table.number})
 
 
-class TableStatusUpdateView(APIView):
+class TableStatusUpdateView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/tables/<pk>/status/ — Stol holatini 1-klikda o'zgartirish.
     (Ofitsiant, pos yoki admin darajasida ruxsat beriladi)
@@ -358,11 +353,7 @@ class TableStatusUpdateView(APIView):
         shop = staff_shop(request)
         table = get_object_or_404(Table.objects, pk=pk, shop=shop)
 
-        new_status = request.data.get('status')
-        if new_status not in STATUS_LABELS:
-            return Response({
-                'error': f'Noto\'g\'ri holat. Mumkin bo\'lganlar: {list(STATUS_LABELS.keys())}'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        new_status = parse_choice(request.data.get('status'), 'status', tuple(STATUS_LABELS))
 
         old_status = table.status
         table.status = new_status
@@ -385,7 +376,7 @@ class TableStatusUpdateView(APIView):
         })
 
 
-class TableRotateQrView(APIView):
+class TableRotateQrView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/tables/<pk>/rotate-qr/ — Stol QR tokenini yangilash.
     Eski token 24 soat grace davrida ishlaydi, yangi QR generatsiya bo'ladi.
@@ -420,7 +411,7 @@ class TableRotateQrView(APIView):
         })
 
 
-class TableQrSvgView(APIView):
+class TableQrSvgView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/tables/<pk>/qr.svg — Serverda xavfsiz chizilgan vektorli SVG QR kod.
     Tashqi serverlarga bog'liqlik yo'q (segno).
@@ -441,7 +432,7 @@ class TableQrSvgView(APIView):
         return response
 
 
-class HallListCreateView(APIView):
+class HallListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/tables/halls/ — Zallar ro'yxati.
     POST /api/restaurant/admin/v1/tables/halls/ — Yangi zal yaratish.
@@ -464,15 +455,8 @@ class HallListCreateView(APIView):
 
     def post(self, request):
         shop = staff_shop(request)
-        name = str(request.data.get('name', '')).strip()
-        if not name:
-            return Response({'error': 'Zal nomi kiritilishi shart', 'field': 'name'}, status=status.HTTP_400_BAD_REQUEST)
-
-        order = request.data.get('order', 0)
-        try:
-            order = int(order)
-        except (ValueError, TypeError):
-            order = 0
+        name = parse_text(request.data.get('name'), 'name', max_length=100, required=True)
+        order = parse_int(request.data.get('order', 0), 'order')
 
         hall = Hall.objects.create(
             shop=shop,
@@ -493,7 +477,7 @@ class HallListCreateView(APIView):
         return Response(_serialize_hall(hall, 0), status=status.HTTP_201_CREATED)
 
 
-class HallDetailUpdateDeleteView(APIView):
+class HallDetailUpdateDeleteView(RestoAdminAPIView):
     """
     PATCH /api/restaurant/admin/v1/tables/halls/<pk>/ — Zalni yangilash.
     DELETE /api/restaurant/admin/v1/tables/halls/<pk>/ — Zalni o'chirish (is_active=False).
@@ -507,14 +491,9 @@ class HallDetailUpdateDeleteView(APIView):
 
         data = request.data
         if 'name' in data:
-            name = str(data['name']).strip()
-            if name:
-                hall.name = name
+            hall.name = parse_text(data['name'], 'name', max_length=100, required=True)
         if 'order' in data:
-            try:
-                hall.order = int(data['order'])
-            except (ValueError, TypeError):
-                pass
+            hall.order = parse_int(data['order'], 'order')
 
         hall.save(update_fields=['name', 'order'])
         return Response(_serialize_hall(hall, hall.tables.filter(is_deleted=False).count()))

@@ -13,8 +13,18 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from backend.api_input import (
+    InputError,
+    RestoAdminAPIView,
+    parse_bool,
+    parse_id,
+    parse_int,
+    parse_text,
+    query_id,
+    query_int,
+    query_text,
+)
 from backend.upload_validation import validate_uploaded_file
 from categories.models import Category
 from orders.audit import log_audit
@@ -22,8 +32,83 @@ from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
     capability,
 )
+from products.ar_validation import ArModelError, validate_ar_model_ref
 from products.models import Product
 from web.restaurant_auth import staff_shop
+
+PRICE_MAX = 999_999_999_999        # Product.price: max_digits=12, decimal_places=0
+NAME_MAX = 200                     # Product.name / Category.name uzunligi
+DESCRIPTION_MAX = 5000
+LIST_ITEM_MAX = 50                 # allergen / diet tag uzunligi
+LIST_ITEMS_MAX = 30
+
+
+def _error(message, status_code=status.HTTP_400_BAD_REQUEST, **extra):
+    """Menyu API javobi: frontend `error` ni, eski mijozlar `detail` ni o'qiydi — ikkalasi ham beriladi."""
+    return Response({'error': message, 'detail': message, **extra}, status=status_code)
+
+
+def _visible_categories(shop):
+    """Do'kon ko'ra oladigan va mahsulotga bog'lay oladigan kategoriyalar (global taksonomiya: modelda do'kon maydoni yo'q)."""
+    qs = Category.objects.filter(is_active=True)
+    if shop:
+        return qs.filter(Q(is_restaurant=True) | Q(products__shop=shop)).distinct()
+    return qs.filter(is_restaurant=True)
+
+
+def _clean_category(shop, value, field='category_id'):
+    """Kategoriya id → obyekt; None/''/'null' → None (bog'lanish olib tashlanadi). Ko'rinmaydigan/yo'q kategoriya — 400."""
+    if value is None or (isinstance(value, str) and value.strip().lower() in ('', 'null', 'none')):
+        return None
+    cat_id = parse_id(value, field, allow_none=False)
+    category = _visible_categories(shop).filter(pk=cat_id).first()
+    if category is None:
+        raise InputError("Kategoriya topilmadi yoki sizga ruxsat etilmagan", field)
+    return category
+
+
+def _clean_price(value, field='price', allow_none=False):
+    if allow_none and (value is None or (isinstance(value, str) and not value.strip())):
+        return None
+    try:
+        return parse_int(value, field, minimum=0, maximum=PRICE_MAX)
+    except InputError:
+        raise InputError(f"Narx 0 dan {PRICE_MAX} gacha butun son bo'lishi kerak", field) from None
+
+
+def _clean_minutes(value, field, allow_none=True):
+    if value is None or (isinstance(value, str) and value.strip().lower() in ('', 'null')):
+        if allow_none:
+            return None
+        raise InputError(f"«{field}» kiritilishi shart", field)
+    return parse_int(value, field, minimum=0, maximum=32767)
+
+
+def _clean_tags(value, field):
+    """Vergul bilan ajratilgan matn yoki matnlar ro'yxati → tozalangan ro'yxat."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [part for part in value.split(',')]
+    if not isinstance(value, (list, tuple)):
+        raise InputError(f"«{field}» ro'yxat yoki vergul bilan ajratilgan matn bo'lishi kerak", field)
+    cleaned = []
+    for item in value:
+        text = parse_text(item, field, max_length=LIST_ITEM_MAX)
+        if text and text not in cleaned:
+            cleaned.append(text)
+    if len(cleaned) > LIST_ITEMS_MAX:
+        raise InputError(f"«{field}» da {LIST_ITEMS_MAX} tadan ortiq element bo'lishi mumkin emas", field)
+    return cleaned
+
+
+def _clean_ar_model(value):
+    """3D/AR model manzili: bo'sh → None, aks holda xavfsiz havola (kengaytma, sxema, host, hajm tekshiriladi)."""
+    text = parse_text(value, 'ar_model', max_length=200)
+    try:
+        return validate_ar_model_ref(text)
+    except ArModelError as exc:
+        raise InputError(str(exc), 'ar_model') from None
 
 
 def _serialize_product(p):
@@ -55,7 +140,7 @@ def _serialize_product(p):
     }
 
 
-class MenuProductListCreateView(APIView):
+class MenuProductListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/menu/products/ — Menyu taomlarini olish (filtrlash, qidirish, paginatsiya).
     POST /api/restaurant/admin/v1/menu/products/ — Yangi taom qo'shish (multipart/form-data yoki JSON).
@@ -67,7 +152,7 @@ class MenuProductListCreateView(APIView):
     def get(self, request):
         shop = staff_shop(request)
         if not shop:
-            return Response({'detail': "Do'kon topilmadi."}, status=status.HTTP_400_BAD_REQUEST)
+            return _error("Do'kon topilmadi.")
 
         status_filter = request.GET.get('status', 'all').lower()
         if status_filter == 'hidden':
@@ -81,16 +166,13 @@ class MenuProductListCreateView(APIView):
             elif status_filter == 'nophoto':
                 qs = qs.filter(has_real_photo=False)
 
-        q = request.GET.get('q', '').strip()
+        q = query_text(request, 'q')
         if q:
             qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
 
-        category_id = request.GET.get('category')
+        category_id = query_id(request, 'category')
         if category_id:
-            try:
-                qs = qs.filter(category_id=int(category_id))
-            except (ValueError, TypeError):
-                pass
+            qs = qs.filter(category_id=category_id)
 
         ordering = request.GET.get('ordering', '-id')
         allowed_orderings = ('id', '-id', 'name', '-name', 'price', '-price', 'created_at', '-created_at')
@@ -98,17 +180,17 @@ class MenuProductListCreateView(APIView):
             ordering = '-id'
         qs = qs.select_related('category').order_by(ordering)
 
-        page_number = request.GET.get('page', 1)
-        page_size = min(int(request.GET.get('page_size', 30)), 100)
+        page_number = query_int(request, 'page', 1, 1, 1_000_000)
+        page_size = query_int(request, 'page_size', 30, 1, 100)
         paginator = Paginator(qs, page_size)
 
         try:
             page_obj = paginator.page(page_number)
         except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages) if paginator.num_pages > 0 else []
+            page_obj = paginator.page(paginator.num_pages)
 
         results = [_serialize_product(p) for p in page_obj]
-        curr_page = int(page_number) if paginator.num_pages > 0 else 1
+        curr_page = page_obj.number
 
         return Response({
             'count': paginator.count,
@@ -126,76 +208,33 @@ class MenuProductListCreateView(APIView):
     def post(self, request):
         shop = staff_shop(request)
         if not shop:
-            return Response({'detail': "Do'kon topilmadi."}, status=status.HTTP_400_BAD_REQUEST)
+            return _error("Do'kon topilmadi.")
 
         data = request.data
-        name = (data.get('name') or '').strip()
-        if not name:
-            return Response({'detail': "Taom nomi kiritilishi shart."}, status=status.HTTP_400_BAD_REQUEST)
-
-        raw_price = data.get('price')
-        if raw_price is None or raw_price == '':
-            return Response({'detail': "Taom narxi kiritilishi shart."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            price = int(float(raw_price))
-            if price < 0:
-                raise ValueError
-        except (ValueError, TypeError):
-            return Response({'detail': "Taom narxi musbat butun son bo'lishi kerak."}, status=status.HTTP_400_BAD_REQUEST)
-
-        old_price = None
-        if data.get('old_price'):
-            try:
-                old_price = int(float(data.get('old_price')))
-            except (ValueError, TypeError):
-                pass
-
-        category = None
-        category_id = data.get('category_id') or data.get('category')
-        if category_id:
-            try:
-                category = Category.objects.filter(pk=int(category_id)).first()
-            except (ValueError, TypeError):
-                pass
-
-        prep_minutes = None
-        if data.get('prep_minutes') is not None and str(data.get('prep_minutes')).strip() != '':
-            try:
-                prep_minutes = max(0, int(data.get('prep_minutes')))
-            except (ValueError, TypeError):
-                pass
-
+        name = parse_text(data.get('name'), 'name', max_length=NAME_MAX, required=True)
+        if data.get('price') is None or data.get('price') == '':
+            raise InputError("Taom narxi kiritilishi shart.", 'price')
+        price = _clean_price(data.get('price'))
+        old_price = _clean_price(data.get('old_price'), 'old_price', allow_none=True) if 'old_price' in data else None
+        category = _clean_category(shop, data.get('category_id') if 'category_id' in data else data.get('category'))
+        prep_minutes = _clean_minutes(data.get('prep_minutes'), 'prep_minutes') if 'prep_minutes' in data else None
         cook_min = prep_minutes if prep_minutes is not None else 15
-        if data.get('cook_min') is not None and str(data.get('cook_min')).strip() != '':
-            try:
-                cook_min = max(0, int(data.get('cook_min')))
-            except (ValueError, TypeError):
-                pass
+        if 'cook_min' in data and data.get('cook_min') not in (None, ''):
+            cook_min = _clean_minutes(data.get('cook_min'), 'cook_min', allow_none=False)
+        description = parse_text(data.get('description'), 'description', max_length=DESCRIPTION_MAX)
+        is_available = parse_bool(data.get('is_available'), 'is_available') if 'is_available' in data else True
+        allergens = _clean_tags(data.get('allergens'), 'allergens') if 'allergens' in data else []
+        diet_tags = _clean_tags(data.get('diet_tags'), 'diet_tags') if 'diet_tags' in data else []
+        ar_model = _clean_ar_model(data.get('ar_model')) if 'ar_model' in data else None
+        has_3d = bool(ar_model) or (parse_bool(data.get('has_3d'), 'has_3d') if 'has_3d' in data else False)
 
         has_real_photo = False
         image_file = request.FILES.get('image')
         if image_file:
             err = validate_uploaded_file(image_file)
             if err:
-                return Response({'detail': err}, status=status.HTTP_400_BAD_REQUEST)
+                return _error(err)
             has_real_photo = True
-
-        is_available = True
-        if 'is_available' in data:
-            val = str(data.get('is_available')).lower()
-            is_available = val in ('true', '1', 'yes')
-
-        allergens = data.get('allergens', [])
-        if isinstance(allergens, str):
-            allergens = [a.strip() for a in allergens.split(',') if a.strip()]
-
-        diet_tags = data.get('diet_tags', [])
-        if isinstance(diet_tags, str):
-            diet_tags = [d.strip() for d in diet_tags.split(',') if d.strip()]
-
-        ar_model = (data.get('ar_model') or '').strip() or None
-        has_3d = bool(ar_model or data.get('has_3d'))
 
         with transaction.atomic():
             product = Product(
@@ -204,7 +243,7 @@ class MenuProductListCreateView(APIView):
                 price=price,
                 old_price=old_price,
                 category=category,
-                description=(data.get('description') or '').strip(),
+                description=description,
                 prep_minutes=prep_minutes,
                 cook_min=cook_min,
                 is_available=is_available,
@@ -230,7 +269,7 @@ class MenuProductListCreateView(APIView):
         return Response(_serialize_product(product), status=status.HTTP_201_CREATED)
 
 
-class MenuProductDetailView(APIView):
+class MenuProductDetailView(RestoAdminAPIView):
     """
     PATCH /api/restaurant/admin/v1/menu/products/<pk>/ — Taomni tahrirlash (IDOR himoyasi bilan).
     DELETE /api/restaurant/admin/v1/menu/products/<pk>/ — Taomni yumshoq o'chirish (Soft delete).
@@ -248,104 +287,62 @@ class MenuProductDetailView(APIView):
     def patch(self, request, pk):
         product = self._get_product(request, pk)
         if not product:
-            return Response({'detail': "Taom topilmadi yoki unga ruxsatingiz yo'q."}, status=status.HTTP_404_NOT_FOUND)
+            return _error("Taom topilmadi yoki unga ruxsatingiz yo'q.", status.HTTP_404_NOT_FOUND)
 
         data = request.data
         old_val = {'name': product.name, 'price': int(product.price), 'is_available': product.is_available}
 
+        shop = product.shop
         if 'name' in data:
-            name = (data.get('name') or '').strip()
-            if not name:
-                return Response({'detail': "Taom nomi bo'sh bo'lishi mumkin emas."}, status=status.HTTP_400_BAD_REQUEST)
-            product.name = name
+            product.name = parse_text(data.get('name'), 'name', max_length=NAME_MAX, required=True)
 
         if 'price' in data:
-            try:
-                price = int(float(data.get('price')))
-                if price < 0:
-                    raise ValueError
-                if price != product.price:
-                    product.old_price = product.price
-                    product.price = price
-            except (ValueError, TypeError):
-                return Response({'detail': "Taom narxi musbat butun son bo'lishi kerak."}, status=status.HTTP_400_BAD_REQUEST)
+            price = _clean_price(data.get('price'))
+            if price != product.price:
+                product.old_price = product.price
+                product.price = price
 
         if 'old_price' in data:
-            val = data.get('old_price')
-            if val is None or val == '':
-                product.old_price = None
-            else:
-                try:
-                    product.old_price = int(float(val))
-                except (ValueError, TypeError):
-                    pass
+            product.old_price = _clean_price(data.get('old_price'), 'old_price', allow_none=True)
 
         if 'description' in data:
-            product.description = (data.get('description') or '').strip()
+            product.description = parse_text(data.get('description'), 'description', max_length=DESCRIPTION_MAX)
 
         if 'category_id' in data or 'category' in data:
-            cat_id = data.get('category_id') if 'category_id' in data else data.get('category')
-            if cat_id in (None, '', 'null'):
-                product.category = None
-            else:
-                try:
-                    product.category = Category.objects.filter(pk=int(cat_id)).first()
-                except (ValueError, TypeError):
-                    pass
+            product.category = _clean_category(shop, data.get('category_id') if 'category_id' in data else data.get('category'))
 
         if 'prep_minutes' in data:
-            val = data.get('prep_minutes')
-            if val in (None, '', 'null'):
-                product.prep_minutes = None
-            else:
-                try:
-                    product.prep_minutes = max(0, int(val))
-                except (ValueError, TypeError):
-                    pass
+            product.prep_minutes = _clean_minutes(data.get('prep_minutes'), 'prep_minutes')
 
-        if 'cook_min' in data:
-            val = data.get('cook_min')
-            if val is not None and str(val).strip() != '':
-                try:
-                    product.cook_min = max(0, int(val))
-                except (ValueError, TypeError):
-                    pass
+        if 'cook_min' in data and data.get('cook_min') not in (None, ''):
+            product.cook_min = _clean_minutes(data.get('cook_min'), 'cook_min', allow_none=False)
 
         if 'is_available' in data:
-            val = str(data.get('is_available')).lower()
-            product.is_available = val in ('true', '1', 'yes')
+            product.is_available = parse_bool(data.get('is_available'), 'is_available')
 
         if 'is_featured' in data:
-            val = str(data.get('is_featured')).lower()
-            product.is_featured = val in ('true', '1', 'yes')
+            product.is_featured = parse_bool(data.get('is_featured'), 'is_featured')
 
         if 'allergens' in data:
-            allergens = data.get('allergens')
-            if isinstance(allergens, str):
-                allergens = [a.strip() for a in allergens.split(',') if a.strip()]
-            product.allergens = allergens
+            product.allergens = _clean_tags(data.get('allergens'), 'allergens')
 
         if 'diet_tags' in data:
-            diet_tags = data.get('diet_tags')
-            if isinstance(diet_tags, str):
-                diet_tags = [d.strip() for d in diet_tags.split(',') if d.strip()]
-            product.diet_tags = diet_tags
+            product.diet_tags = _clean_tags(data.get('diet_tags'), 'diet_tags')
 
         if 'ar_model' in data:
-            val = (data.get('ar_model') or '').strip() or None
+            val = _clean_ar_model(data.get('ar_model'))
             product.ar_model = val
             if val:
                 product.has_3d = True
 
         if 'has_3d' in data:
-            val = str(data.get('has_3d')).lower()
-            product.has_3d = val in ('true', '1', 'yes')
+            product.has_3d = parse_bool(data.get('has_3d'), 'has_3d')
 
         image_file = request.FILES.get('image')
         if image_file:
             err = validate_uploaded_file(image_file)
             if err:
-                return Response({'detail': err}, status=status.HTTP_400_BAD_REQUEST)
+                return _error(err)
             product.image = image_file
             product.has_real_photo = True
 
@@ -366,7 +363,7 @@ class MenuProductDetailView(APIView):
     def delete(self, request, pk):
         product = self._get_product(request, pk)
         if not product:
-            return Response({'detail': "Taom topilmadi yoki unga ruxsatingiz yo'q."}, status=status.HTTP_404_NOT_FOUND)
+            return _error("Taom topilmadi yoki unga ruxsatingiz yo'q.", status.HTTP_404_NOT_FOUND)
 
         with transaction.atomic():
             product.delete()  # Soft delete: is_deleted=True, is_available=False
@@ -382,7 +379,7 @@ class MenuProductDetailView(APIView):
         return Response({'success': True, 'message': "Taom o'chirildi (arxivlandi)."}, status=status.HTTP_200_OK)
 
 
-class MenuProductDuplicateView(APIView):
+class MenuProductDuplicateView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/menu/products/<pk>/duplicate/ — Taomdan nusxa olish.
     """
@@ -396,7 +393,7 @@ class MenuProductDuplicateView(APIView):
         with transaction.atomic():
             new_product = Product(
                 shop=shop,
-                name=f"{product.name} (nusxa)",
+                name=f"{product.name[:NAME_MAX - 8]} (nusxa)",
                 price=product.price,
                 old_price=product.old_price,
                 description=product.description,
@@ -428,7 +425,7 @@ class MenuProductDuplicateView(APIView):
         return Response(_serialize_product(new_product), status=status.HTTP_201_CREATED)
 
 
-class MenuProductFeatureView(APIView):
+class MenuProductFeatureView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/menu/products/<pk>/feature/ — Taomni tavsiya etilgan (is_featured) qilish/bekor qilish.
     """
@@ -439,16 +436,13 @@ class MenuProductFeatureView(APIView):
         shop = staff_shop(request)
         product = get_object_or_404(Product.all_objects, pk=pk, shop=shop)
 
-        val = request.data.get('value', True)
-        if isinstance(val, str):
-            val = val.lower() in ('true', '1', 'yes')
-        product.is_featured = bool(val)
+        product.is_featured = parse_bool(request.data.get('value', True), 'value')
         product.save(update_fields=['is_featured'])
 
         return Response({'success': True, 'id': product.id, 'is_featured': product.is_featured}, status=status.HTTP_200_OK)
 
 
-class MenuProductAvailabilityView(APIView):
+class MenuProductAvailabilityView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/menu/products/<pk>/availability/
     Stop-list (TZ 4.3, R5-1): taom tugadi yoki qaytdi.
@@ -465,8 +459,8 @@ class MenuProductAvailabilityView(APIView):
         val = request.data.get('available')
         if val is None:
             val = not product.is_available
-        elif isinstance(val, str):
-            val = val.strip().lower() in ('true', '1', 'yes', 'ha')
+        else:
+            val = parse_bool(val, 'available')
 
         with transaction.atomic():
             product.is_available = bool(val)
@@ -489,7 +483,7 @@ class MenuProductAvailabilityView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class MenuProductRestoreView(APIView):
+class MenuProductRestoreView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/menu/products/<pk>/restore/ — Soft-deleted taomni qayta tiklash.
     """
@@ -517,7 +511,7 @@ class MenuProductRestoreView(APIView):
         return Response({'success': True, 'message': "Taom qayta tiklandi."}, status=status.HTTP_200_OK)
 
 
-class MenuCategoryListCreateView(APIView):
+class MenuCategoryListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/menu/categories/ — Kategoriyalar ro'yxatini olish.
     POST /api/restaurant/admin/v1/menu/categories/ — Yangi restoran kategoriyasi yaratish.
@@ -527,13 +521,7 @@ class MenuCategoryListCreateView(APIView):
 
     def get(self, request):
         shop = staff_shop(request)
-        qs = Category.objects.filter(is_active=True)
-        if shop:
-            qs = qs.filter(Q(is_restaurant=True) | Q(products__shop=shop)).distinct()
-        else:
-            qs = qs.filter(is_restaurant=True)
-
-        categories = qs.order_by('sort_order', 'name')
+        categories = _visible_categories(shop).order_by('sort_order', 'name')
         data = [
             {
                 'id': c.id,
@@ -546,19 +534,15 @@ class MenuCategoryListCreateView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        name = (request.data.get('name') or '').strip()
-        if not name:
-            return Response({'detail': "Kategoriya nomi kiritilishi shart."}, status=status.HTTP_400_BAD_REQUEST)
+        name = parse_text(request.data.get('name'), 'name', max_length=100, required=True)
 
-        category = Category.objects.create(
-            name=name,
-            is_restaurant=True,
-            is_active=True,
-        )
+        # Kategoriya do'konlararo umumiy: bir xil nomli faol restoran kategoriyasi bo'lsa yangisi yaratilmaydi (nom ifloslanmasin)
+        existing = Category.objects.filter(is_active=True, is_restaurant=True, name__iexact=name).order_by('id').first()
+        created = existing is None
+        category = existing or Category.objects.create(name=name, is_restaurant=True, is_active=True)
         return Response({
             'id': category.id,
             'name': category.name,
             'slug': getattr(category, 'slug', None) or f"cat-{category.id}",
             'is_restaurant': category.is_restaurant,
-        }, status=status.HTTP_201_CREATED)
-
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

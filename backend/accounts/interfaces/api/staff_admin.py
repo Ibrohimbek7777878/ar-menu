@@ -9,7 +9,6 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from accounts.models import AdminUser
 from accounts.staff_admin import (
@@ -18,6 +17,7 @@ from accounts.staff_admin import (
     create_staff,
     end_sessions,
 )
+from backend.api_input import RestoAdminAPIView, parse_text
 from orders.audit import log_audit
 from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
@@ -51,7 +51,7 @@ def _serialize_staff(u):
     }
 
 
-class StaffListCreateView(APIView):
+class StaffListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/staff/ — Xodimlar ro'yxati.
     POST /api/restaurant/admin/v1/staff/ — Yangi xodim qo'shish (bir martalik parol bilan).
@@ -75,11 +75,11 @@ class StaffListCreateView(APIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        username = str(request.data.get('username', '')).strip()
-        role = str(request.data.get('role', '')).strip()
-        password = str(request.data.get('password', '')).strip()
-        full_name = str(request.data.get('full_name', '')).strip()
-        phone = str(request.data.get('phone', '')).strip()
+        username = parse_text(request.data.get('username'), 'username', max_length=150)
+        role = parse_text(request.data.get('role'), 'role', max_length=30)
+        password = parse_text(request.data.get('password'), 'password', max_length=128)
+        full_name = parse_text(request.data.get('full_name'), 'full_name', max_length=300)
+        phone = parse_text(request.data.get('phone'), 'phone', max_length=20)
 
         if not username:
             return Response({'error': 'Login kiritilishi shart', 'field': 'username'}, status=status.HTTP_400_BAD_REQUEST)
@@ -122,7 +122,7 @@ class StaffListCreateView(APIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-class StaffDetailUpdateView(APIView):
+class StaffDetailUpdateView(RestoAdminAPIView):
     """
     PATCH /api/restaurant/admin/v1/staff/<pk>/ — Xodim ma'lumotlarini (rol, ism, telefon) tahrirlash.
     """
@@ -134,36 +134,37 @@ class StaffDetailUpdateView(APIView):
         user = get_object_or_404(AdminUser, pk=pk, shop=shop, is_superuser=False)
 
         data = request.data
+        new_role = parse_text(data['role'], 'role', max_length=30, required=True) if 'role' in data else None
 
         # O'z rolingizni o'zgartirishdan himoya
         if user.pk == request.user.pk:
-            if 'role' in data and data['role'] != user.role:
+            if new_role is not None and new_role != user.role:
                 if request.user.role == 'shop_manager':
                     return Response({'error': 'O\'z rolingizni ko\'tara olmaysiz'}, status=status.HTTP_403_FORBIDDEN)
                 return Response({'error': 'O\'z rolingizni o\'zgartira olmaysiz'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Menejer egasi yoki boshqa menejerni o'zgartira olmaydi (403)
+        # Menejer egasi yoki boshqa menejerni o'zgartira olmaydi (403). O'z profilini (ism, telefon) tahrirlashi mumkin:
+        # o'z rolini o'zgartirish yuqorida alohida taqiqlangan, rol o'zgarmasa (frontend butun profilni yuborsa) — xato emas.
         if request.user.role == 'shop_manager':
-            if user.role in ('super_admin', 'shop_owner', 'shop_manager'):
+            if user.pk != request.user.pk and user.role in ('super_admin', 'shop_owner', 'shop_manager'):
                 return Response({'error': 'Menejer egasi yoki boshqa menejerni o\'zgartira olmaydi'}, status=status.HTTP_403_FORBIDDEN)
-            if 'role' in data and data['role'] in ('super_admin', 'shop_owner', 'shop_manager'):
+            if new_role is not None and new_role != user.role and new_role in ('super_admin', 'shop_owner', 'shop_manager'):
                 return Response({'error': 'Menejer egalik yoki menejer rolini bera olmaydi'}, status=status.HTTP_403_FORBIDDEN)
 
         update_fields = []
 
         if 'full_name' in data:
-            full_name = str(data['full_name']).strip()
+            full_name = parse_text(data['full_name'], 'full_name', max_length=300)
             first, _, last = full_name.partition(' ')
             user.first_name = first[:150]
             user.last_name = last[:150]
             update_fields.extend(['first_name', 'last_name'])
 
         if 'phone' in data:
-            user.phone = str(data['phone'])[:20]
+            user.phone = parse_text(data['phone'], 'phone', max_length=20)
             update_fields.append('phone')
 
-        if 'role' in data:
-            new_role = data['role']
+        if new_role is not None:
             if new_role != user.role:
                 allowed_roles = list(CREATABLE_ROLES)
                 if request.user.role in ('shop_owner', 'super_admin'):
@@ -194,7 +195,7 @@ class StaffDetailUpdateView(APIView):
         return Response(_serialize_staff(user))
 
 
-class StaffBlockView(APIView):
+class StaffBlockView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/staff/<pk>/block/ — Xodimni bloklash (barcha sessiyalari darhol tugatiladi).
     """
@@ -240,7 +241,7 @@ class StaffBlockView(APIView):
         })
 
 
-class StaffUnblockView(APIView):
+class StaffUnblockView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/staff/<pk>/unblock/ — Xodimni blokdan chiqarish.
     """
@@ -274,7 +275,7 @@ class StaffUnblockView(APIView):
         })
 
 
-class StaffResetPasswordView(APIView):
+class StaffResetPasswordView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/staff/<pk>/reset-password/ — Parolni yangilash.
     Parol bir marta ko'rsatiladi va xodimning faol sessiyalari tugatiladi.
@@ -294,7 +295,7 @@ class StaffResetPasswordView(APIView):
         if user.role in ('super_admin', 'shop_owner') and user.pk != request.user.pk:
             return Response({'error': 'Rahbariyat parolini bu yerdan o\'zgartirib bo\'lmaydi'}, status=status.HTTP_403_FORBIDDEN)
 
-        password = str(request.data.get('password', '')).strip()
+        password = parse_text(request.data.get('password'), 'password', max_length=128)
         generated = None
         if not password:
             password = generated = secrets.token_urlsafe(9)

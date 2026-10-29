@@ -4,8 +4,7 @@ Faqat restoran egasi va moliya boshqaruvchilari uchun (capability: 'finance').
 Storno-based immutability, range_summary, N+1 optimizatsiyasi va AuditLog to'liq ta'minlanadi.
 """
 import csv
-from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from django.core.paginator import EmptyPage, Paginator
 from django.db import transaction
 from django.db.models import F, Q
@@ -14,8 +13,21 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from backend.api_input import (
+    InputError,
+    RestoAdminAPIView,
+    parse_date,
+    parse_decimal,
+    parse_id,
+    parse_text,
+    query_date,
+    query_flag,
+    query_id,
+    query_int,
+    query_text,
+)
+from backend.csv_safety import csv_text
 from finance.models import DebtRecord, FinanceCategory, FinanceTransaction
 from finance.services.summary import range_summary, today_summary
 from orders.audit import log_audit
@@ -27,7 +39,8 @@ from orders.timeutils import local_today
 from web.restaurant_auth import staff_shop
 
 
-MAX_AMOUNT = Decimal('1000000000000')  # 1 trln so'm xavfsizlik chegarasi
+MAX_AMOUNT = Decimal('999999999999.99')  # DecimalField(max_digits=14, decimal_places=2) chegarasi (~1 trln so'm)
+MIN_AMOUNT = Decimal('0.01')
 
 
 def _serialize_tx(t):
@@ -77,7 +90,7 @@ def _serialize_debt(d):
     }
 
 
-class FinanceSummaryView(APIView):
+class FinanceSummaryView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/finance/summary/?from=&to= — Moliyaviy ko'rsatkichlar va Sof pul oqimi.
     """
@@ -89,18 +102,8 @@ class FinanceSummaryView(APIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        from_param = request.GET.get('from', '').strip()
-        to_param = request.GET.get('to', '').strip()
-
-        from_date = None
-        to_date = None
-        try:
-            if from_param:
-                from_date = date.fromisoformat(from_param)
-            if to_param:
-                to_date = date.fromisoformat(to_param)
-        except ValueError:
-            pass
+        from_date = query_date(request, 'from')       # noto'g'ri sana — 400
+        to_date = query_date(request, 'to')
 
         data = range_summary(shop, from_date, to_date)
 
@@ -119,7 +122,7 @@ class FinanceSummaryView(APIView):
         })
 
 
-class FinanceTransactionsListCreateView(APIView):
+class FinanceTransactionsListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/finance/transactions/ — Tranzaksiyalar ro'yxati (paginatsiya, filtrlash).
     POST /api/restaurant/admin/v1/finance/transactions/ — Yangi kirim yoki chiqim kiritish.
@@ -139,46 +142,40 @@ class FinanceTransactionsListCreateView(APIView):
         )
 
         # 1. Type filter
-        tx_type = request.GET.get('type', '').strip()
+        tx_type = query_text(request, 'type', 20)
         if tx_type in ('income', 'expense'):
             qs = qs.filter(tx_type=tx_type)
 
         # 2. Payment method filter
-        method = request.GET.get('payment_method', '').strip()
+        method = query_text(request, 'payment_method', 20)
         if method in ('cash', 'card', 'bank'):
             qs = qs.filter(payment_method=method)
 
         # 3. Category filter
-        cat_id = request.GET.get('category_id')
-        if cat_id and cat_id.isdigit():
-            qs = qs.filter(category_id=int(cat_id))
+        cat_id = query_id(request, 'category_id')
+        if cat_id:
+            qs = qs.filter(category_id=cat_id)
 
-        # 4. Sana oralig'i
-        from_date = request.GET.get('from', '').strip()
-        to_date = request.GET.get('to', '').strip()
+        # 4. Sana oralig'i (noto'g'ri sana — 400; avval ORM ValidationError → 500)
+        from_date = query_date(request, 'from')
+        to_date = query_date(request, 'to')
         if from_date:
             qs = qs.filter(tx_date__gte=from_date)
         if to_date:
             qs = qs.filter(tx_date__lte=to_date)
 
         # 5. Bekor qilinganlar
-        include_cancelled = request.GET.get('include_cancelled', 'false').lower() in ('1', 'true')
-        if not include_cancelled:
+        if not query_flag(request, 'include_cancelled'):
             qs = qs.filter(is_cancelled=False)
 
         # 6. Qidiruv
-        q = request.GET.get('q', '').strip()
+        q = query_text(request, 'q', 50)
         if q:
             qs = qs.filter(Q(title__icontains=q) | Q(category__name__icontains=q))
 
         # Paginatsiya
-        page = 1
-        page_size = 25
-        try:
-            page = max(1, int(request.GET.get('page', 1)))
-            page_size = min(100, max(5, int(request.GET.get('page_size', 25))))
-        except (ValueError, TypeError):
-            pass
+        page = query_int(request, 'page', 1, 1, 1_000_000)
+        page_size = query_int(request, 'page_size', 25, 5, 100)
 
         paginator = Paginator(qs, page_size)
         try:
@@ -201,10 +198,9 @@ class FinanceTransactionsListCreateView(APIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        title = str(request.data.get('title', '')).strip()
-        tx_type = str(request.data.get('type') or request.data.get('tx_type') or '').strip()
-        payment_method = str(request.data.get('payment_method', 'cash')).strip()
-        category_id = request.data.get('category_id')
+        title = parse_text(request.data.get('title'), 'title', max_length=255)
+        tx_type = parse_text(request.data.get('type') or request.data.get('tx_type'), 'type', max_length=20)
+        payment_method = parse_text(request.data.get('payment_method', 'cash'), 'payment_method', max_length=20)
 
         if not title:
             return Response({'error': 'Tranzaksiya sarlavhasi kiritilishi shart', 'field': 'title'}, status=status.HTTP_400_BAD_REQUEST)
@@ -215,24 +211,16 @@ class FinanceTransactionsListCreateView(APIView):
         if payment_method not in ('cash', 'card', 'bank'):
             payment_method = 'cash'
 
-        try:
-            amount = Decimal(str(request.data.get('amount', '0')).replace(' ', '').replace(',', '.'))
-            if amount <= 0 or amount > MAX_AMOUNT:
-                raise InvalidOperation
-        except (InvalidOperation, TypeError, ValueError):
-            return Response({'error': 'Noto\'g\'ri summa kiritildi', 'field': 'amount'}, status=status.HTTP_400_BAD_REQUEST)
+        amount = parse_decimal(request.data.get('amount', '0'), 'amount', minimum=MIN_AMOUNT, maximum=MAX_AMOUNT)
 
         category = None
+        category_id = parse_id(request.data.get('category_id'), 'category_id')
         if category_id:
             category = FinanceCategory.objects.filter(id=category_id, shop=shop).first()
+            if category is None:
+                raise InputError("Kategoriya topilmadi", 'category_id')
 
-        tx_date_param = request.data.get('tx_date')
-        tx_date = local_today()
-        if tx_date_param:
-            try:
-                tx_date = date.fromisoformat(str(tx_date_param)[:10])
-            except ValueError:
-                pass
+        tx_date = parse_date(request.data.get('tx_date'), 'tx_date') or local_today()
 
         with transaction.atomic():
             tx = FinanceTransaction.objects.create(
@@ -264,7 +252,7 @@ class FinanceTransactionsListCreateView(APIView):
         return Response(_serialize_tx(tx), status=status.HTTP_201_CREATED)
 
 
-class FinanceTransactionCancelView(APIView):
+class FinanceTransactionCancelView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/finance/transactions/<pk>/cancel/ — Tranzaksiyani storno qilish (bekor qilish).
     """
@@ -278,7 +266,7 @@ class FinanceTransactionCancelView(APIView):
         if tx.is_cancelled:
             return Response({'error': 'Tranzaksiya allaqachon bekor qilingan'}, status=status.HTTP_400_BAD_REQUEST)
 
-        reason = str(request.data.get('reason', '')).strip()
+        reason = parse_text(request.data.get('reason'), 'reason', max_length=255)
         if not reason:
             return Response({'error': 'Bekor qilish sababini ko\'rsating', 'field': 'reason'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -289,7 +277,7 @@ class FinanceTransactionCancelView(APIView):
         return Response(_serialize_tx(tx))
 
 
-class FinanceDebtsListCreateView(APIView):
+class FinanceDebtsListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/finance/debts/ — Nasiyalar va qarzlar ro'yxati.
     POST /api/restaurant/admin/v1/finance/debts/ — Yangi nasiya/qarz ochish.
@@ -305,19 +293,19 @@ class FinanceDebtsListCreateView(APIView):
         qs = DebtRecord.objects.filter(shop=shop).order_by('status', '-created_at')
 
         # 1. Type
-        debt_type = request.GET.get('type', '').strip()
+        debt_type = query_text(request, 'type', 20)
         if debt_type in ('customer', 'supplier'):
             qs = qs.filter(debt_type=debt_type)
 
         # 2. Status
-        status_param = request.GET.get('status', '').strip()
+        status_param = query_text(request, 'status', 20)
         if status_param == 'open':
             qs = qs.exclude(status='settled')
         elif status_param == 'settled':
             qs = qs.filter(status='settled')
 
         # 3. Search
-        q = request.GET.get('q', '').strip()
+        q = query_text(request, 'q', 50)
         if q:
             qs = qs.filter(Q(person_name__icontains=q) | Q(phone__icontains=q))
 
@@ -339,10 +327,10 @@ class FinanceDebtsListCreateView(APIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        person_name = str(request.data.get('person_name') or request.data.get('debtor_name') or '').strip()
-        phone = str(request.data.get('phone', '')).strip()
-        debt_type = str(request.data.get('debt_type', 'customer')).strip()
-        notes = str(request.data.get('notes') or request.data.get('note') or '').strip()
+        person_name = parse_text(request.data.get('person_name') or request.data.get('debtor_name'), 'person_name', max_length=150)
+        phone = parse_text(request.data.get('phone'), 'phone', max_length=50)
+        debt_type = parse_text(request.data.get('debt_type', 'customer'), 'debt_type', max_length=20)
+        notes = parse_text(request.data.get('notes') or request.data.get('note'), 'notes', max_length=2000)
 
         if not person_name:
             return Response({'error': 'Shaxs/tashkilot ismi kiritilishi shart', 'field': 'person_name'}, status=status.HTTP_400_BAD_REQUEST)
@@ -351,20 +339,9 @@ class FinanceDebtsListCreateView(APIView):
             debt_type = 'customer'
 
         raw_amt = request.data.get('initial_amount') or request.data.get('total_amount') or request.data.get('amount')
-        try:
-            amount = Decimal(str(raw_amt or '0').replace(' ', '').replace(',', '.'))
-            if amount <= 0 or amount > MAX_AMOUNT:
-                raise InvalidOperation
-        except (InvalidOperation, TypeError, ValueError):
-            return Response({'error': 'Noto\'g\'ri qarz summasi', 'field': 'initial_amount'}, status=status.HTTP_400_BAD_REQUEST)
+        amount = parse_decimal(raw_amt, 'initial_amount', minimum=MIN_AMOUNT, maximum=MAX_AMOUNT)
 
-        due_date = None
-        due_date_param = request.data.get('due_date')
-        if due_date_param:
-            try:
-                due_date = date.fromisoformat(str(due_date_param)[:10])
-            except ValueError:
-                pass
+        due_date = parse_date(request.data.get('due_date'), 'due_date')
 
         with transaction.atomic():
             debt = DebtRecord.objects.create(
@@ -391,7 +368,7 @@ class FinanceDebtsListCreateView(APIView):
         return Response(_serialize_debt(debt), status=status.HTTP_201_CREATED)
 
 
-class FinanceDebtPayView(APIView):
+class FinanceDebtPayView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/finance/debts/<pk>/pay/ — Qarz to'lovini qabul qilish.
     Qator qulfi (select_for_update) orqali race condition himoyalangan.
@@ -401,16 +378,11 @@ class FinanceDebtPayView(APIView):
 
     def post(self, request, pk):
         shop = staff_shop(request)
-        payment_method = str(request.data.get('payment_method', 'cash')).strip()
+        payment_method = parse_text(request.data.get('payment_method', 'cash'), 'payment_method', max_length=20)
         if payment_method not in ('cash', 'card', 'bank'):
             payment_method = 'cash'
 
-        try:
-            pay_amount = Decimal(str(request.data.get('amount', '0')).replace(' ', '').replace(',', '.'))
-            if pay_amount <= 0:
-                raise InvalidOperation
-        except (InvalidOperation, TypeError, ValueError):
-            return Response({'error': 'Noto\'g\'ri to\'lov summasi', 'field': 'amount'}, status=status.HTTP_400_BAD_REQUEST)
+        pay_amount = parse_decimal(request.data.get('amount', '0'), 'amount', minimum=MIN_AMOUNT, maximum=MAX_AMOUNT)
 
         with transaction.atomic():
             debt = get_object_or_404(DebtRecord.objects.select_for_update(), pk=pk, shop=shop)
@@ -460,7 +432,7 @@ class FinanceDebtPayView(APIView):
         return Response(_serialize_debt(debt))
 
 
-class FinanceCategoriesView(APIView):
+class FinanceCategoriesView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/finance/categories/ — Moliya kategoriyalari ro'yxati.
     """
@@ -477,7 +449,7 @@ class FinanceCategoriesView(APIView):
         } for c in cats])
 
 
-class FinanceExportCsvView(APIView):
+class FinanceExportCsvView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/finance/export.csv?from=&to= — Excelda to'g'ri ochiluvchi UTF-8 BOM CSV eksport.
     """
@@ -491,8 +463,8 @@ class FinanceExportCsvView(APIView):
 
         qs = FinanceTransaction.objects.filter(shop=shop).select_related('category').order_by('-tx_date', '-id')
 
-        from_date = request.GET.get('from')
-        to_date = request.GET.get('to')
+        from_date = query_date(request, 'from')
+        to_date = query_date(request, 'to')
         if from_date:
             qs = qs.filter(tx_date__gte=from_date)
         if to_date:
@@ -508,16 +480,17 @@ class FinanceExportCsvView(APIView):
         writer.writerow(['ID', 'Sana', 'Tranzaksiya', 'Turi', 'Kategoriya', 'Summa (so\'m)', 'To\'lov Usuli', 'Holati', 'Bekor Qilish Sababi'])
 
         for t in qs:
+            # Matnli ustunlar csv_text() orqali (formula injection); ID va summa raqamligicha qoladi
             writer.writerow([
                 t.id,
                 t.tx_date.isoformat(),
-                t.title,
+                csv_text(t.title),
                 'Kirim' if t.tx_type == 'income' else 'Chiqim',
-                t.category.name if t.category else 'Umumiy',
+                csv_text(t.category.name if t.category else 'Umumiy'),
                 int(t.amount),
                 'Naqd' if t.payment_method == 'cash' else 'Plastik / Karta',
                 'Bekor qilingan' if t.is_cancelled else 'Faol',
-                t.cancel_reason or '',
+                csv_text(t.cancel_reason),
             ])
 
         return response

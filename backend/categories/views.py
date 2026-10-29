@@ -1,14 +1,16 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from backend.api_permissions import IsPlatformAdminOrReadOnly
 from .models import Category
 from .serializers import CategorySerializer, CategoryListSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """Kategoriya — do'konlararo umumiy taksonomiya: o'qish ochiq, yozish/o'chirish faqat platforma admini."""
     queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsPlatformAdminOrReadOnly]
 
     def get_queryset(self):
         qs = Category.objects.filter(is_active=True, parent=None)

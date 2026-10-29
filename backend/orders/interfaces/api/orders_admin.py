@@ -12,8 +12,16 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from backend.api_input import (
+    RestoAdminAPIView,
+    parse_choice,
+    parse_text,
+    query_date,
+    query_id,
+    query_int,
+    query_text,
+)
 from orders.audit import log_audit
 from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
@@ -93,7 +101,7 @@ def _serialize_order(order, show_phone=True):
     }
 
 
-class OrdersListCreateView(APIView):
+class OrdersListCreateView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/orders/ — Restoran buyurtmalari ro'yxati, filtrlash va paginatsiya.
     POST /api/restaurant/admin/v1/orders/ — Xodim/ofitsiant tomonidan yangi buyurtma ochish.
@@ -116,23 +124,23 @@ class OrdersListCreateView(APIView):
         )
 
         # 1. Holat bo'yicha filtr
-        status_param = request.GET.get('status', '').strip()
+        status_param = query_text(request, 'status', 200)
         if status_param and status_param != 'all':
-            statuses = [s.strip() for s in status_param.split(',') if s.strip()]
+            statuses = [s.strip() for s in status_param.split(',') if s.strip()][:20]
             qs = qs.filter(status__in=statuses)
 
         # 2. To'lov holati bo'yicha filtr
-        payment_param = request.GET.get('payment_status', '').strip()
+        payment_param = query_text(request, 'payment_status', 20)
         if payment_param and payment_param != 'all':
             qs = qs.filter(payment_status=payment_param)
 
         # 3. Stol bo'yicha filtr
-        table_id = request.GET.get('table_id')
-        if table_id and table_id.isdigit():
-            qs = qs.filter(table_id=int(table_id))
+        table_id = query_id(request, 'table_id')
+        if table_id:
+            qs = qs.filter(table_id=table_id)
 
         # 4. Sana bo'yicha filtr (date=today, yesterday yoki from, to)
-        date_param = request.GET.get('date', '').strip()
+        date_param = query_text(request, 'date', 20)
         now = timezone.now()
         if date_param == 'today':
             start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -144,15 +152,15 @@ class OrdersListCreateView(APIView):
         elif date_param == 'last24h':
             qs = qs.filter(created_at__gte=now - timedelta(hours=24))
 
-        from_date = request.GET.get('from')
-        to_date = request.GET.get('to')
+        from_date = query_date(request, 'from')       # noto'g'ri sana — 400 (avval ORM xatosi → 500)
+        to_date = query_date(request, 'to')
         if from_date:
             qs = qs.filter(created_at__date__gte=from_date)
         if to_date:
             qs = qs.filter(created_at__date__lte=to_date)
 
         # 5. Qidiruv (buyurtma raqami, stol raqami yoki mijoz ismi)
-        query = request.GET.get('q', '').strip()
+        query = query_text(request, 'q', 50)
         if query:
             qs = qs.filter(
                 Q(order_number__icontains=query) |
@@ -184,13 +192,8 @@ class OrdersListCreateView(APIView):
                 counts[st_name] = cnt
 
         # 7. Paginatsiya
-        page = 1
-        page_size = 20
-        try:
-            page = max(1, int(request.GET.get('page', 1)))
-            page_size = min(100, max(5, int(request.GET.get('page_size', 20))))
-        except (ValueError, TypeError):
-            pass
+        page = query_int(request, 'page', 1, 1, 1_000_000)
+        page_size = query_int(request, 'page_size', 20, 5, 100)
 
         paginator = Paginator(qs, page_size)
         try:
@@ -212,7 +215,7 @@ class OrdersListCreateView(APIView):
         })
 
 
-class OrderDetailView(APIView):
+class OrderDetailView(RestoAdminAPIView):
     """
     GET /api/restaurant/admin/v1/orders/<pk>/ — Buyurtma to'liq tafsilotlari.
     """
@@ -230,7 +233,7 @@ class OrderDetailView(APIView):
         return Response(_serialize_order(order, show_phone=show_phone))
 
 
-class OrderStatusUpdateView(APIView):
+class OrderStatusUpdateView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/orders/<pk>/status/ — Buyurtma holatini yangilash (domen state machine orqali).
     """
@@ -241,11 +244,7 @@ class OrderStatusUpdateView(APIView):
         shop = staff_shop(request)
         order = get_object_or_404(Order.objects.select_related('table'), pk=pk, shop=shop)
 
-        new_status = request.data.get('status')
-        if new_status not in STATUS_LABELS:
-            return Response({
-                'error': f"Noto'g'ri holat. Mumkin bo'lganlar: {list(STATUS_LABELS.keys())}"
-            }, status=status.HTTP_400_BAD_REQUEST)
+        new_status = parse_choice(request.data.get('status'), 'status', tuple(STATUS_LABELS))
 
         # Rol bo'yicha cheklov: oshpaz faqat tayyorlash jarayonlarini boshqara oladi
         role = user_role(request.user)
@@ -255,7 +254,7 @@ class OrderStatusUpdateView(APIView):
             }, status=status.HTTP_403_FORBIDDEN)
 
         old_status = order.status
-        cancel_reason = request.data.get('cancel_reason', '').strip()
+        cancel_reason = parse_text(request.data.get('cancel_reason'), 'cancel_reason', max_length=1000)
 
         with transaction.atomic():
             ok, msg = transition_order(
@@ -295,7 +294,7 @@ class OrderStatusUpdateView(APIView):
         })
 
 
-class OrderPaymentUpdateView(APIView):
+class OrderPaymentUpdateView(RestoAdminAPIView):
     """
     POST /api/restaurant/admin/v1/orders/<pk>/payment/ — To'lov holatini o'zgartirish (kassa yozuvi bilan).
     """
@@ -306,11 +305,7 @@ class OrderPaymentUpdateView(APIView):
         shop = staff_shop(request)
         order = get_object_or_404(Order.objects.select_related('table'), pk=pk, shop=shop)
 
-        new_payment = request.data.get('payment_status')
-        if new_payment not in PAYMENT_STATUS_LABELS:
-            return Response({
-                'error': f"Noto'g'ri to'lov holati. Mumkin bo'lganlar: {list(PAYMENT_STATUS_LABELS.keys())}"
-            }, status=status.HTTP_400_BAD_REQUEST)
+        new_payment = parse_choice(request.data.get('payment_status'), 'payment_status', tuple(PAYMENT_STATUS_LABELS))
 
         old_payment = order.payment_status
 
@@ -325,7 +320,7 @@ class OrderPaymentUpdateView(APIView):
             order.save(update_fields=['payment_status', 'updated_at'])
 
             if new_payment == 'paid':
-                payment_method = request.data.get('payment_method')
+                payment_method = parse_text(request.data.get('payment_method'), 'payment_method', max_length=20) or None
                 from finance.services.order_integration import record_order_payment_income
                 record_order_payment_income(order, payment_method=payment_method, actor=request.user)
 

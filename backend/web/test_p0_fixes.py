@@ -290,15 +290,35 @@ import os
 import stat
 import subprocess
 import tempfile
-import unittest
 from pathlib import Path
 from django.conf import settings
 
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
+import re
+
+
+def _yaml_block(lines, key, indent):
+    """
+    PyYAML'siz (CI faqat requirements.txt ni o'rnatadi, PyYAML production rasmiga kerak emas) docker-compose.yml'dan
+    `indent` bo'shliqli `key:` qatorining ichki (chuqurroq) qatorlarini qaytaradi. Topilmasa — None.
+    Faqat shu faylning oddiy tuzilmasi uchun mo'ljallangan (ankor/birlashtirish `<<:` ni yechmaydi — kerak ham emas).
+    """
+    head = re.compile(r'^ {%d}%s:\s*(#.*)?$' % (indent, re.escape(key)))
+    for i, line in enumerate(lines):
+        if not head.match(line):
+            continue
+        body = []
+        for nxt in lines[i + 1:]:
+            stripped = nxt.strip()
+            if stripped and not stripped.startswith('#') and (len(nxt) - len(nxt.lstrip(' '))) <= indent:
+                break
+            body.append(nxt)
+        return body
+    return None
+
+
+def _compose_service(text, service):
+    services = _yaml_block(text.splitlines(), 'services', 0)
+    return None if services is None else _yaml_block(services, service, 2)
 
 
 class DockerStartupRaceTests(TestCase):
@@ -363,12 +383,39 @@ class DockerStartupRaceTests(TestCase):
         self.assertIn('collectstatic', log_content, "SKIP_MIGRATE bo'lmaganda collectstatic chaqirilishi kerak")
         self.assertIn('gunicorn', log_content, "gunicorn ishga tushirilishi kerak")
 
-    @unittest.skipUnless(HAS_YAML, "PyYAML kutubxonasi o'rnatilmagan")
     def test_docker_compose_web_staff_yaml_config(self):
+        """web-staff: migrate'ni `web` ga qoldiradi (SKIP_MIGRATE=1) va `web` sog'lom bo'lgach ishga tushadi."""
         compose_path = Path(settings.BASE_DIR).parent / 'deploy' / 'docker-compose.yml'
-        with open(compose_path, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f)
-        services = data.get('services', {})
-        web_staff = services.get('web-staff', {})
-        self.assertEqual(str(web_staff.get('environment', {}).get('SKIP_MIGRATE')), "1")
-        self.assertEqual(web_staff.get('depends_on', {}).get('web', {}).get('condition'), "service_healthy")
+        text = compose_path.read_text(encoding='utf-8')
+        web_staff = _compose_service(text, 'web-staff')
+        self.assertIsNotNone(web_staff, "deploy/docker-compose.yml da web-staff xizmati topilmadi")
+
+        env = _yaml_block(web_staff, 'environment', 4)
+        self.assertIsNotNone(env, "web-staff da environment bloki yo'q")
+        self.assertTrue(
+            any(re.match(r'^\s+SKIP_MIGRATE:\s*["\']?1["\']?\s*(#.*)?$', ln) for ln in env),
+            "web-staff da SKIP_MIGRATE: \"1\" bo'lishi shart (ikki konteyner bir vaqtda migrate qilmasin)",
+        )
+
+        depends = _yaml_block(web_staff, 'depends_on', 4)
+        self.assertIsNotNone(depends, "web-staff da depends_on bloki yo'q")
+        web_dep = _yaml_block(depends, 'web', 6)
+        self.assertIsNotNone(web_dep, "web-staff `web` xizmatiga bog'lanmagan")
+        self.assertTrue(
+            any(re.match(r'^\s+condition:\s*service_healthy\s*(#.*)?$', ln) for ln in web_dep),
+            "web-staff `web` ning service_healthy holatini kutishi shart",
+        )
+
+    def test_compose_parser_is_not_vacuous(self):
+        """Yuqoridagi tekshiruv "doim yashil" bo'lib qolmasin: buzilgan compose matnini haqiqatan rad etadi."""
+        compose_path = Path(settings.BASE_DIR).parent / 'deploy' / 'docker-compose.yml'
+        text = compose_path.read_text(encoding='utf-8')
+        broken = text.replace('SKIP_MIGRATE: "1"', 'SKIP_MIGRATE: "0"')
+        env = _yaml_block(_compose_service(broken, 'web-staff'), 'environment', 4)
+        self.assertFalse(any(re.search(r'SKIP_MIGRATE:\s*["\']?1', ln) for ln in env))
+        # Mavjud bo'lmagan xizmat None qaytaradi (ichki xizmat nomi bilan adashmaydi)
+        self.assertIsNone(_compose_service(text, 'web-staff-yoq'))
+        # `web` xizmati `web-staff` bilan aralashib ketmaydi
+        web = _compose_service(text, 'web')
+        self.assertIsNotNone(web)
+        self.assertFalse(any('web-staff' in ln and ln.strip().endswith(':') for ln in web))

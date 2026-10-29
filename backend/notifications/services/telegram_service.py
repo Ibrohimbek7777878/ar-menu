@@ -430,11 +430,15 @@ def handle_webhook(update):
         # 3D Buyurtma holatini o'zgartirish (Usta tomonidan)
         if cb_data.startswith('3d_status:'):
             from ar3d.models import Print3DOrder
+            from notifications.admin_bot import resolve_admin_scope
             from notifications.services.print3d_notification_service import notify_customer_3d_order_ready
             parts = cb_data.split(':')
-            if len(parts) >= 3:
+            scope = resolve_admin_scope(cb_chat_id)
+            # 3D studiya buyurtmasi holatini faqat platforma admini o'zgartiradi; holat ro'yxatdagi qiymat bo'lishi shart
+            if (scope and scope.platform and len(parts) >= 3 and parts[2].isdigit()
+                    and parts[1] in dict(Print3DOrder.STATUS_CHOICES)):
                 new_status = parts[1]
-                order_id = parts[2]
+                order_id = int(parts[2])
                 order = Print3DOrder.objects.filter(id=order_id).first()
                 if order:
                     order.status = new_status
@@ -512,12 +516,15 @@ def handle_webhook(update):
         if len(parts) > 1:
             order_number = parts[1]
             from orders.models import Order
-            from notifications.admin_bot import is_admin
+            from notifications.admin_bot import resolve_admin_scope
             # Buyurtma raqami taxmin qilinadi (GLS-YYYYMMDD-NNNN): ism va summani faqat buyurtma egasi (shu Telegram
-            # akkaunt bog'langan mijoz) yoki admin ko'ra oladi; boshqalarga "topilmadi" (mavjudligi ham oshkor bo'lmaydi)
+            # akkaunt bog'langan mijoz) yoki o'sha do'kon admini (chat_id bo'yicha) ko'ra oladi; boshqalarga "topilmadi"
+            # (mavjudligi ham oshkor bo'lmaydi). Username e'tiborga olinmaydi, boshqa do'kon admini ham ko'rmaydi.
             order = Order.objects.select_related('customer').filter(order_number=order_number).first()
             owner_chat = str(getattr(getattr(order, 'customer', None), 'telegram_chat_id', '') or '')
-            if order and (owner_chat == str(chat_id) or is_admin(chat_id, user.get('username', ''))):
+            scope = resolve_admin_scope(chat_id)
+            is_shop_admin = bool(order and scope and scope.allows_shop(order.shop_id))
+            if order and (owner_chat == str(chat_id) or is_shop_admin):
                 status_text = dict(Order.STATUS_CHOICES).get(order.status, order.status)
                 response_text = (
                     f"📦 #{esc(order.order_number)}\n"
@@ -589,26 +596,12 @@ def handle_webhook(update):
         _send_message(chat_id, response_text, reply_markup=markup)
 
     elif text == '/kassa' or text.startswith('/kassa'):
-        from notifications.admin_bot import get_restaurant_shop, is_admin
-        # Kassa — moliyaviy ma'lumot: avval istalgan Telegram foydalanuvchiga "birinchi do'kon" kassasi ko'rsatilardi
-        shop = get_restaurant_shop() if is_admin(chat_id, user.get('username', '')) else None
-        if shop:
-            from finance.services.summary import today_summary
-            summary = today_summary(shop)
-            inc = summary['income']
-            exp = summary['expense']
-            net = summary['net_profit']
-            fmt_inc = f"{int(inc):,}".replace(",", " ")
-            fmt_exp = f"{int(exp):,}".replace(",", " ")
-            fmt_net = f"{int(net):,}".replace(",", " ")
-            today_str = summary['today_date'].strftime('%d.%m.%Y')
-            response_text = (
-                f"📊 <b>{esc(shop.name)} — Bugungi Kassa ({today_str})</b>\n\n"
-                f"🟢 <b>Kirim:</b> {fmt_inc} so'm\n"
-                f"🔴 <b>Chiqim:</b> {fmt_exp} so'm\n"
-                f"💎 <b>Sof kassa:</b> {fmt_net} so'm\n\n"
-                f"Batafsil ma'lumot do'kon moliya panelida."
-            )
+        from notifications.admin_bot import resolve_admin_scope, kassa_report_text
+        # Kassa — moliyaviy ma'lumot: faqat chat_id bo'yicha tasdiqlangan admin, va faqat o'z do'koni kassasi
+        # (avval istalgan foydalanuvchiga, keyin username bo'yicha "admin"ga BOSHQA do'kon kassasi ko'rsatilardi)
+        scope = resolve_admin_scope(chat_id)
+        if scope:
+            response_text = kassa_report_text(scope.shops())
         else:
             response_text = "Kassa ma'lumotlari faqat adminlar uchun."
         _send_message(chat_id, response_text)
