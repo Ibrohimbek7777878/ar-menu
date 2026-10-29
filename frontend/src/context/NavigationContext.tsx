@@ -6,6 +6,13 @@ import { roleService } from '../core/auth/RoleService';
 import { playTones } from '../utils/audio';
 import { SubdomainService } from '../core/routing/SubdomainService';
 import { determinePollNeeds } from '../utils/pollerRoute';
+import {
+  REVENUE_REFRESH_MS,
+  fetchTodayRevenue,
+  readInjectedTodayRevenue,
+  shouldRefreshRevenue,
+  sumTodayIncome,
+} from '../utils/todayRevenue';
 import type { UserRole } from '../core/auth/types';
 
 export interface OrderItem {
@@ -586,11 +593,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Today Revenue
   const [todayRevenue, setTodayRevenue] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('guliston_today_revenue');
-      if (saved) return Number(saved);
-    } catch {}
-    return 3480000;
+    // 1) Server sahifa bilan yuborgan haqiqiy bugungi tushum (P7: avval brauzer xotirasidagi eski/demo
+    //    qiymat — 3 480 000 — to'g'ri qiymat o'rniga ko'rinib qolardi)
+    const injected = readInjectedTodayRevenue(typeof window !== 'undefined' ? window : null);
+    if (injected !== null) return injected;
+    // 2) Faqat demo rejimda: oxirgi saqlangan yoki namunaviy qiymat. Productionda noma'lum qiymat 0,
+    //    dashboard ochilishi bilan summary so'rovi uni server qiymati bilan almashtiradi.
+    if (roleService.isDemo()) {
+      try {
+        const saved = localStorage.getItem('guliston_today_revenue');
+        if (saved) return Number(saved);
+      } catch {}
+      return 3480000;
+    }
+    return 0;
   });
 
   // Sobir Tog'a Moliya Tizimi (Transactions & Debts)
@@ -696,6 +712,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const inflightWrites = useRef(0);
   const syncNowRef = useRef<() => void>(() => {});
   const financeNowRef = useRef<() => void>(() => {});
+  const revenueNowRef = useRef<() => void>(() => {});
   const currentPathRef = useRef(currentPath);
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -707,6 +724,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       inflightWrites.current -= 1;
       syncNowRef.current();     // server holatini qayta o'qish: xato bo'lsa lokal taxmin to'g'rilanadi
       financeNowRef.current();  // kassa (stol yopilganda kirim) ham serverdan qayta o'qiladi
+      revenueNowRef.current();  // dashboarddagi "Bugungi tushum" ham darrov yangilanadi
     });
   }, []);
   useEffect(() => {
@@ -718,6 +736,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const knownOrderIds = new Set<string>();
     const knownCallIds = new Set<string>();
 
+    // Admin dashboardidagi "Bugungi tushum": yengil summary so'rovi (butun moliya ro'yxati emas), ~15 soniyada bir.
+    // Xatoda oxirgi ma'lum qiymat saqlanadi. (`run` dan oldin e'lon qilingan: undan chaqiriladi.)
+    let lastRevenueAt = 0;
+    const refreshRevenue = async (force = false) => {
+      if (stopped || document.hidden) return;
+      if (roleService.getCurrentRole() !== 'admin') return;
+      const now = Date.now();
+      if (!force && !shouldRefreshRevenue(lastRevenueAt, now, REVENUE_REFRESH_MS)) return;
+      lastRevenueAt = now;
+      const value = await fetchTodayRevenue();
+      if (stopped || value === null) return;
+      setTodayRevenue(value);
+    };
+
     const run = async () => {
       if (stopped || document.hidden || inflightWrites.current > 0) return;
       try {
@@ -726,7 +758,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const needs = determinePollNeeds(role, currentLoc);
 
         // Agar joriy sahifada hech qanday ma'lumot so'ralmasa (masalan mehmon sahifasi)
-        if (!needs.wantsOrders && !needs.wantsTables && !needs.wantsCalls && !needs.wantsFinance) {
+        if (!needs.wantsOrders && !needs.wantsTables && !needs.wantsCalls && !needs.wantsFinance && !needs.wantsRevenue) {
           return;
         }
 
@@ -757,6 +789,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (needs.wantsFinance) {
           await loadFinance();
         }
+        if (needs.wantsRevenue) {
+          await refreshRevenue();
+        }
         baselineDone = true;
       } catch (e) {
         console.warn('[sync] server sync failed, keeping the last known data', e);
@@ -784,20 +819,18 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (stopped || !fin) return;
       if (Array.isArray(fin.transactions)) {
         setFinanceTransactions(fin.transactions);
-        // Bugungi tushum — serverdagi haqiqiy kirimlardan, Toshkent kuni bo'yicha
-        const dayKey = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Tashkent' });
-        const today = dayKey(new Date());
-        setTodayRevenue(
-          fin.transactions
-            .filter((t: FinanceTransaction & { is_cancelled?: boolean }) =>
-              t.type === 'income' && !t.is_cancelled && dayKey(new Date(t.created_at)) === today)
-            .reduce((sum: number, t: FinanceTransaction) => sum + Number(t.amount || 0), 0)
-        );
+        // Bugungi tushum — serverdagi haqiqiy kirimlardan, Toshkent kuni bo'yicha (utils/todayRevenue.ts)
+        setTodayRevenue(sumTodayIncome(fin.transactions));
       }
       if (Array.isArray(fin.debts)) setFinanceDebts(fin.debts);
     };
     financeNowRef.current = () => {
       void loadFinance();
+    };
+    revenueNowRef.current = () => {
+      if (determinePollNeeds(roleService.getCurrentRole(), (typeof window !== 'undefined' ? window.location.pathname : '') || currentPathRef.current).wantsRevenue) {
+        void refreshRevenue(true);
+      }
     };
     const initialNeeds = determinePollNeeds(roleService.getCurrentRole(), (typeof window !== 'undefined' ? window.location.pathname : '') || currentPathRef.current);
     if (initialNeeds.wantsFinance) {

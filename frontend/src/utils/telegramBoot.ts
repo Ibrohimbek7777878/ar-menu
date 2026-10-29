@@ -8,6 +8,35 @@
  * - BackButton boshqaruvi
  */
 
+const HEX32 = /^[0-9a-f]{32}$/;
+const UUID_DASHED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/**
+ * Stol QR tokenini backend marshruti kutadigan shaklga keltiradi.
+ *
+ * Backend `t/<uuid:token>/` (Django `uuid` konvertori) faqat KICHIK harfli TIRELI
+ * UUID (8-4-4-4-12) ni qabul qiladi. Telegram `startapp` esa 32 belgili tiresiz hex
+ * yuboradi (`t_<qr_token_hex>`, TZ T3), shuning uchun:
+ *   - 32 belgili tiresiz hex  -> tireli UUID ga aylantiriladi
+ *   - allaqachon tireli UUID  -> o'zgarmaydi (faqat kichik harfga o'tkaziladi)
+ *   - boshqa har qanday qiymat -> null (yo'naltirilmaydi)
+ */
+export function normalizeTableToken(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const value = raw.trim().toLowerCase();
+  if (HEX32.test(value)) {
+    return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+  }
+  if (UUID_DASHED.test(value)) return value;
+  return null;
+}
+
+/** `t_<token>` ko'rinishidagi start_param dan tekshirilgan stol tokenini ajratadi (aks holda null). */
+export function parseTableStartParam(startParam: unknown): string | null {
+  if (typeof startParam !== 'string' || !startParam.startsWith('t_')) return null;
+  return normalizeTableToken(startParam.slice(2));
+}
+
 declare global {
   interface Window {
     Telegram?: {
@@ -64,11 +93,14 @@ export function initTelegramWebApp(): void {
     }
 
     // start_param orqali stol QR tokenini aniqlash (t_<token>)
-    const startParam = tg.initDataUnsafe?.start_param;
-    if (startParam && startParam.startsWith('t_')) {
-      const token = startParam.slice(2).trim();
+    // Faqat tekshirilgan (UUID) token bilan yo'naltiriladi; yaroqsiz bo'lsa hech narsa qilinmaydi.
+    const token = parseTableStartParam(tg.initDataUnsafe?.start_param);
+    if (token) {
       const currentPath = window.location.pathname;
-      if (!currentPath.includes(`/t/${token}`)) {
+      const tableParam = new URLSearchParams(window.location.search ?? '').get('table');
+      // Allaqachon /t/<token>/ da yoki /menu/?table=<token> ga yo'naltirilgan bo'lsa, qayta yo'naltirmaymiz (sikl yo'q)
+      const alreadyThere = currentPath.includes(`/t/${token}`) || normalizeTableToken(tableParam) === token;
+      if (!alreadyThere) {
         window.location.replace(`/t/${token}/`);
         return;
       }

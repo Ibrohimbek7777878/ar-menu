@@ -69,3 +69,24 @@ test('determinePollNeeds: mehmon sahifalarida (/menu, /cart, /ar) xodim polling 
     assert.equal(guestNeeds.wantsFinance, false);
   }
 });
+
+// ── P7: admin dashboarddagi "Bugungi tushum" server qiymatida turishi uchun yengil summary so'rovi ──
+
+test('determinePollNeeds: admin boshqaruv markazida wantsRevenue=true, lekin butun moliya (wantsFinance) hamon false', () => {
+  for (const path of ['/admin', '/admin/', '/admin/dashboard', '/admin/dashboard/', '/menu/admin']) {
+    const needs = determinePollNeeds('admin', path);
+    assert.equal(needs.wantsRevenue, true, `${path}: tushum yangilanishi kerak`);
+    assert.equal(needs.wantsFinance, false, `${path}: moliya ro'yxati so'ralmasligi shart (TZ 0.5)`);
+  }
+});
+
+test('determinePollNeeds: wantsRevenue faqat admin roli va faqat boshqaruv markazi uchun', () => {
+  // admin bo'lmagan rol hech qachon tushum so'ramaydi
+  for (const role of ['waiter', 'kitchen', 'hostess', 'guest']) {
+    assert.equal(determinePollNeeds(role, '/admin').wantsRevenue, false, `${role}`);
+  }
+  // admin boshqa sahifalarda ham so'ramaydi (moliya sahifasi o'zining ro'yxatidan hisoblaydi)
+  for (const path of ['/finance', '/menu/finance', '/kds', '/waiter', '/arrival', '/menu', '/cart']) {
+    assert.equal(determinePollNeeds('admin', path).wantsRevenue, false, `${path}`);
+  }
+});
