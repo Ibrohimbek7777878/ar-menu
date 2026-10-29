@@ -279,3 +279,94 @@ class OrdersAdminApiTests(TestCase):
             StockReservation.objects.get(order=self.order).status,
             'released'
         )
+
+    def test_reverting_payment_stornos_finance_income(self):
+        # 1. To'lovni paid qilish
+        res_pay = self.client_owner.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'paid', 'payment_method': 'cash'},
+            content_type='application/json'
+        )
+        self.assertEqual(res_pay.status_code, 200)
+        tx = FinanceTransaction.objects.get(order=self.order, tx_type='income')
+        self.assertFalse(tx.is_cancelled)
+
+        # 2. To'lovni unpaid qilish -> kirim storno qilinishi kerak
+        res_unpay = self.client_owner.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'unpaid'},
+            content_type='application/json'
+        )
+        self.assertEqual(res_unpay.status_code, 200)
+
+        tx.refresh_from_db()
+        self.assertTrue(tx.is_cancelled, "To'lov bekor qilinganda kassa kirimi is_cancelled=True bo'lishi shart")
+        self.assertEqual(tx.cancel_reason, "To'lov qaytarildi")
+
+        # finance summary da faol kirim yo'qligini tekshirish
+        from finance.services.summary import today_summary
+        summary = today_summary(self.shop)
+        self.assertEqual(summary['income'], Decimal('0'))
+
+    def test_re_paying_order_restores_single_active_income(self):
+        # 1. Paid
+        self.client_owner.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'paid', 'payment_method': 'cash'},
+            content_type='application/json'
+        )
+        # 2. Unpaid
+        self.client_owner.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'unpaid'},
+            content_type='application/json'
+        )
+        # 3. Qayta paid
+        res_repay = self.client_owner.post(
+            f'{self.API}{self.order.id}/payment/',
+            {'payment_status': 'paid', 'payment_method': 'card'},
+            content_type='application/json'
+        )
+        self.assertEqual(res_repay.status_code, 200)
+
+        # Faol kirim aynan 1 ta bo'lishi shart
+        active_incomes = FinanceTransaction.objects.filter(order=self.order, tx_type='income', is_cancelled=False)
+        self.assertEqual(active_incomes.count(), 1)
+        self.assertEqual(active_incomes.first().amount, self.order.final_amount)
+
+        # Jami tranzaksiyalar 2 ta (1 ta bekor qilingan, 1 ta faol)
+        self.assertEqual(FinanceTransaction.objects.filter(order=self.order, tx_type='income').count(), 2)
+
+    def test_zero_amount_order_paid_does_not_fail(self):
+        zero_order = Order.objects.create(
+            shop=self.shop,
+            order_number='ORD-ZERO-001',
+            status='pending',
+            payment_status='unpaid',
+            total_amount=Decimal('0'),
+            delivery_fee=Decimal('0'),
+            final_amount=Decimal('0'),
+        )
+        res = self.client_owner.post(
+            f'{self.API}{zero_order.id}/payment/',
+            {'payment_status': 'paid'},
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200)
+        zero_order.refresh_from_db()
+        self.assertEqual(zero_order.payment_status, 'paid')
+
+    def test_failed_finance_income_creation_rolls_back_payment_status(self):
+        from unittest.mock import patch
+        with patch('finance.services.order_integration.record_order_payment_income', return_value=None):
+            res = self.client_owner.post(
+                f'{self.API}{self.order.id}/payment/',
+                {'payment_status': 'paid'},
+                content_type='application/json'
+            )
+            # Kassa yozuvi yaratilmaganda 409 Conflict qaytishi va tranzaksiya orqaga qaytishi shart
+            self.assertEqual(res.status_code, 409)
+            self.assertIn('Kassa yozuvi yaratilmadi', res.json().get('error', ''))
+
+            self.order.refresh_from_db()
+            self.assertNotEqual(self.order.payment_status, 'paid')

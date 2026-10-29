@@ -4,6 +4,7 @@ Faqat vakolatli restoran xodimlari uchun (kds / pos / menu_admin).
 Tenant isolation (IDOR himoyasi), N+1 optimizatsiyasi va AuditLog to'liq ta'minlanadi.
 """
 from datetime import timedelta
+from decimal import Decimal
 from django.core.paginator import EmptyPage, Paginator
 from django.db import transaction
 from django.db.models import Count, Q
@@ -325,11 +326,25 @@ class OrderPaymentUpdateView(APIView):
 
             if new_payment == 'paid':
                 payment_method = request.data.get('payment_method')
-                try:
-                    from finance.services.order_integration import record_order_payment_income
-                    record_order_payment_income(order, payment_method=payment_method, actor=request.user)
-                except Exception:
-                    pass
+                from finance.services.order_integration import record_order_payment_income
+                record_order_payment_income(order, payment_method=payment_method, actor=request.user)
+
+                amount = getattr(order, 'final_amount', None) or getattr(order, 'total_amount', Decimal('0'))
+                if amount > 0:
+                    from finance.models import FinanceTransaction
+                    active_tx_exists = FinanceTransaction.objects.filter(
+                        order=order,
+                        tx_type='income',
+                        is_cancelled=False
+                    ).exists()
+                    if not active_tx_exists:
+                        transaction.set_rollback(True)
+                        return Response({
+                            'error': "Kassa yozuvi yaratilmadi"
+                        }, status=status.HTTP_409_CONFLICT)
+            else:
+                from finance.services.order_integration import cancel_order_income_transactions
+                cancel_order_income_transactions(order, reason="To'lov qaytarildi", actor=request.user, request=request)
 
             log_audit(
                 'order_payment_status_changed',

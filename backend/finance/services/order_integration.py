@@ -94,3 +94,57 @@ def record_order_payment_income(order, payment_method=None, actor=None):
     except Exception:
         logger.exception("Buyurtma %s kirimini yozib bo'lmadi", getattr(order, 'order_number', '?'))
         return None
+
+
+def cancel_finance_transaction(tx, reason: str, actor=None, request=None):
+    """
+    Tranzaksiyani storno qilish (bekor qilish).
+    Bog'langan qarz mavjud bo'lsa qoldiqni tiklaydi va audit qaydini yozadi.
+    """
+    from django.utils import timezone
+    from orders.audit import log_audit
+
+    with transaction.atomic():
+        tx.is_cancelled = True
+        tx.cancel_reason = reason
+        tx.cancelled_at = timezone.now()
+        tx.cancelled_by = actor if getattr(actor, 'pk', None) else None
+        tx.save(update_fields=['is_cancelled', 'cancel_reason', 'cancelled_at', 'cancelled_by'])
+
+        if tx.debt_id:
+            from finance.models import DebtRecord
+            debt = DebtRecord.objects.select_for_update().get(pk=tx.debt_id, shop=tx.shop)
+            debt.paid_amount = max(Decimal('0'), debt.paid_amount - tx.amount)
+            if debt.paid_amount == 0:
+                debt.status = 'pending'
+            elif debt.paid_amount < debt.amount:
+                debt.status = 'partial'
+            else:
+                debt.status = 'settled'
+            debt.save(update_fields=['paid_amount', 'status', 'updated_at'])
+
+        log_audit(
+            'finance_tx_cancelled',
+            request=request,
+            actor=actor,
+            target_type='finance_transaction',
+            target_id=tx.id,
+            new_value={'is_cancelled': True, 'cancel_reason': reason}
+        )
+        return tx
+
+
+def cancel_order_income_transactions(order, reason: str = "To'lov qaytarildi", actor=None, request=None):
+    """
+    Buyurtmaga tegishli barcha faol kirim tranzaksiyalarini storno qiladi.
+    """
+    active_incomes = list(FinanceTransaction.objects.filter(
+        order=order,
+        tx_type='income',
+        is_cancelled=False,
+    ))
+    cancelled = []
+    for tx in active_incomes:
+        cancel_finance_transaction(tx, reason=reason, actor=actor, request=request)
+        cancelled.append(tx)
+    return cancelled

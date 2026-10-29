@@ -75,7 +75,7 @@ def today_summary(shop):
     all_orders_count = today_orders_qs.count()
     active_orders = today_orders_qs.exclude(status__in=['cancelled', 'failed'])
     orders_count = active_orders.count()
-    orders_revenue = active_orders.aggregate(s=Sum('final_amount'))['s'] or Decimal('0')
+    orders_revenue = active_orders.filter(payment_status='paid').aggregate(s=Sum('final_amount'))['s'] or Decimal('0')
 
     # Tushum: agar FinanceTransaction'da kirim bo'lsa, u kassa tushumidir;
     # agar buyurtmalar to'langan bo'lib moliya yozuvi yozilgan bo'lsa tx_income buyurtmalar tushumini o'z ichiga oladi.
@@ -164,7 +164,7 @@ def range_summary(shop, from_date=None, to_date=None):
     ).exclude(status__in=['cancelled', 'failed'])
 
     orders_count = orders_qs.count()
-    orders_revenue = orders_qs.aggregate(s=Sum('final_amount'))['s'] or Decimal('0')
+    orders_revenue = orders_qs.filter(payment_status='paid').aggregate(s=Sum('final_amount'))['s'] or Decimal('0')
 
     if tx_income > 0:
         income = tx_income
