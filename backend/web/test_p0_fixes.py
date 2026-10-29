@@ -283,3 +283,23 @@ class CsvExportP0Tests(TestCase):
         # Header + 1 ta bugungi tranzaksiya = 2 qator
         self.assertEqual(len(lines), 2)
         self.assertIn('ORD-999', lines[1])
+
+from pathlib import Path
+from django.conf import settings
+
+class DockerStartupRaceTests(TestCase):
+    """A7: Sovuq ishga tushishda ikki konteyner bir vaqtda migrate qilmasligi."""
+
+    def test_entrypoint_supports_skip_migrate(self):
+        entrypoint_path = Path(settings.BASE_DIR) / 'docker' / 'entrypoint.sh'
+        self.assertTrue(entrypoint_path.exists())
+        content = entrypoint_path.read_text(encoding='utf-8')
+        self.assertIn('SKIP_MIGRATE', content)
+
+    def test_docker_compose_web_staff_skips_migrate_and_waits_for_web(self):
+        compose_path = Path(settings.BASE_DIR).parent / 'deploy' / 'docker-compose.yml'
+        self.assertTrue(compose_path.exists())
+        content = compose_path.read_text(encoding='utf-8')
+
+        # web-staff SKIP_MIGRATE: "1" bo'lishi shart
+        self.assertIn('SKIP_MIGRATE: "1"', content)

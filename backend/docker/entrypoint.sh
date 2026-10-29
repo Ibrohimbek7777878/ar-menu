@@ -25,8 +25,10 @@ PY
 case "$role" in
     web)
         wait_for_db
-        python manage.py migrate --noinput
-        python manage.py collectstatic --noinput
+        if [ "${SKIP_MIGRATE:-0}" != "1" ]; then
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+        fi
         exec gunicorn -c gunicorn.conf.py backend.wsgi:application
         ;;
     worker)
