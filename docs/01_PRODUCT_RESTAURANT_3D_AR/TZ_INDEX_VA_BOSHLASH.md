@@ -8,6 +8,7 @@ Yangilangan: 2026-10-26 · Repo: `/home/ibrohim/Desktop/client_baza/online store
 |---|---|---|
 | 1 | `TZ_ADMIN_AR_MENYU_VA_TELEGRAM_MINI_APP_2026-10-24.md` | P0 xatolar, Seller tozalash, Menyu modeli/API, AR/3D, **Telegram Mini App** |
 | 2 | `TZ_ADMIN_ARXITEKTURA_ALOHIDA_ILOVALAR_2026-10-26.md` | Tezlashtirish (0-bosqich), **alohida resto-admin ilovasi**, har sahifa o'z URL va API'si, keyingi bosqichlar rejasi |
+| 3 | `TZ_TUZATISH_VA_SODDALASHTIRISH_2026-10-29.md` | **Eng birinchi o'qiladigan.** 2026-10-29 tekshiruvida topilgan to'sib turuvchi xatolar (A1–A7), "sodda va qulay" panel talablari (B), soxta/bajarilmagan bandlar (C), xavfsizlik (D). **Holat: egasi tasdiqlaguncha kod yozilmaydi.** Quyidagi "Bajarish tartibi" shu TZ tasdiqlangach shu hujjatning 7.1 jadvali bilan almashadi |
 
 **Diqqat:** birinchi hujjatning 4-bosqichi (React «Menyu» tabi) **bekor**, u ikkinchi hujjatda qilinadi. Bu birinchi hujjat boshidagi izohda ham yozilgan.
 
