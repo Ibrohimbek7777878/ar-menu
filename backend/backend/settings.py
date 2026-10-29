@@ -444,6 +444,13 @@ else:
     except OSError:
         pass   # log papkasi yozilmasa ham server ishga tushadi (faqat konsol)
 
+# Klassik Seller/Admin paneli aktivlari manbasi: 'local' (standart — Tailwind CSS, Alpine.js, shriftlar va ikonkalar o'z
+# serverimizdan, backend/static/seller + backend/static/vendor) yoki 'cdn' (eski xatti-harakat, zaxira: cdn.tailwindcss.com,
+# jsdelivr, Google Fonts). Admin paneldagi AppSetting 'seller_assets' bu qiymatdan ustun turadi (kodni o'zgartirmasdan almashtirish).
+SELLER_ASSETS = os.environ.get('SELLER_ASSETS', 'local').strip().lower()
+if SELLER_ASSETS not in ('local', 'cdn'):
+    SELLER_ASSETS = 'local'
+
 # Static files
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'

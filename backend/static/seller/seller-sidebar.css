@@ -1,0 +1,54 @@
+/* Seller sidebar (o'zgarmas tartib) — oldin seller/base_seller.html {% block body %} ichidagi inline <style> edi (mazmuni o'zgarmagan). */
+    /* ─── IMMUTABLE SIDEBAR LAYOUT (Immune to any page overrides) ─── */
+    .nav-link {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        padding: 0.5rem 0.75rem !important;
+        border-radius: 0.75rem !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        color: #6b6055 !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    .dark .nav-link { color: #a99f93 !important; }
+    .nav-link:hover {
+        background: rgba(235, 227, 216, 0.7) !important;
+        color: #1f1a16 !important;
+        transform: translateX(2px) !important;
+    }
+    .dark .nav-link:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        transform: translateX(2px) !important;
+    }
+    .nav-link.active {
+        background: rgba(22, 163, 74, 0.12) !important;
+        color: #16a34a !important;
+        font-weight: 700 !important;
+        border-left: 3px solid #16a34a !important;
+    }
+    .dark .nav-link.active {
+        background: rgba(22, 163, 74, 0.2) !important;
+        color: #4ade80 !important;
+        border-left: 3px solid #4ade80 !important;
+    }
+    .nav-link svg {
+        flex-shrink: 0 !important;
+        width: 1rem !important;
+        height: 1rem !important;
+        display: inline-block !important;
+    }
+    .nav-link span {
+        display: inline-block !important;
+        line-height: 1.25 !important;
+    }
+    .nav-link > div {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }

@@ -1,10 +1,14 @@
-{% load uznum %}
+{% load uznum static seller_assets %}
+{% seller_assets_mode as assets_mode %}
 <!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
     <title>Moliya Hisoboti - {{ shop.name }} ({{ period_title }})</title>
+    {% if assets_mode == 'cdn' %}
+    {# SELLER_ASSETS=cdn — eski (zaxira) yo'l #}
     <script src="https://cdn.tailwindcss.com"></script>
+    {% endif %}
     <style>
         @page {
             size: A4;
@@ -16,6 +20,10 @@
             .page-break { page-break-after: always; }
         }
     </style>
+    {% if assets_mode != 'cdn' %}
+    {# Standart Tailwind (maxsus sozlamasiz) — seller.css dan alohida, chunki bu sahifa boshqa dizayn tokenlaridan foydalanadi #}
+    <link rel="stylesheet" href="{% static 'seller/finance_pdf.css' %}">
+    {% endif %}
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans p-4 sm:p-8">
 

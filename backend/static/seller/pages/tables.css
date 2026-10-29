@@ -1,0 +1,63 @@
+/* Stollar va zallar uslublari — oldin seller/tables.html ichidagi inline <style> edi (mazmuni o'zgarmagan). */
+    .hall-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 1.25rem;
+        padding: 1.25rem;
+        transition: all 0.25s ease;
+    }
+    .table-seat-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 9999px;
+        background: var(--sand);
+        color: var(--muted);
+    }
+    .table-tile {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s;
+    }
+    .table-tile:hover {
+        transform: translateY(-2.5px);
+        box-shadow: 0 10px 24px -4px rgba(70, 45, 20, 0.08);
+        border-color: rgba(199, 91, 57, 0.4);
+    }
+    .dark .hall-card {
+        background: rgba(28, 24, 21, 0.82);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    .dark .table-seat-badge {
+        background: rgba(36, 31, 27, 0.85);
+        color: #A39789;
+    }
+    .dark .table-tile {
+        background: rgba(28, 24, 21, 0.82);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    .dark .table-tile:hover {
+        box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 0 16px rgba(199, 91, 57, 0.2);
+    }
+
+    /* Modal Backdrop */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .modal-overlay.show {
+        display: flex;
+    }

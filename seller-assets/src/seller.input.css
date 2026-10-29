@@ -1,0 +1,4 @@
+/* Tailwind kirish fayli: CDN (Play) rejimida ham aynan shu uch qatlam (preflight + utilities) yaratilgan. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

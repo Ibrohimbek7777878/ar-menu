@@ -1,4 +1,5 @@
-{% load static uznum i18n_tags %}
+{% load static uznum i18n_tags seller_assets %}
+{% seller_assets_mode as assets_mode %}
 <!DOCTYPE html>
 <html lang="{{ language|default:'uz' }}">
 <head>
@@ -23,6 +24,8 @@
       // Tailwind CDN ogohlantirishini yashirish (dev da CDN ishlatiladi, production da build qilinadi)
       (function(){var w=console.warn;console.warn=function(){var m=arguments[0];if(typeof m==='string'&&m.indexOf('cdn.tailwindcss.com')!==-1)return;return w.apply(console,arguments);};})();
     </script>
+    {% if assets_mode == 'cdn' %}
+    {# SELLER_ASSETS=cdn — ESKI (zaxira) yo'l: Tailwind brauzerda JIT, Alpine/shriftlar tashqi CDN'dan. Hech narsa o'chirilmagan. #}
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,6 +71,13 @@
             }
         }
     </script>
+    {% else %}
+    {# SELLER_ASSETS=local (standart) — hammasi o'z serverimizdan: oldindan qurilgan Tailwind CSS (HEAD oxirida), Alpine, shriftlar #}
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'vendor/fonts/inter-latin-wght-normal.woff2' %}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'vendor/fonts/fraunces-latin-opsz-normal.woff2' %}">
+    <link rel="stylesheet" href="{% static 'vendor/fonts/fonts.css' %}">
+    <script defer src="{% static 'vendor/alpine/alpine-3.17.5.min.js' %}"></script>
+    {% endif %}
     <script>
         // Kun/tun rejimi: sahifa chizilishidan OLDIN qo'llanadi (miltilash bo'lmasligi uchun)
         (function(){try{var t=localStorage.getItem('guliston-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();
@@ -265,6 +275,10 @@
     </style>
     {% block extra_head %}{% endblock %}
     {% block extra_css %}{% endblock %}
+    {% if assets_mode != 'cdn' %}
+    {# Tailwind CDN o'z <style> ini aynan <head> OXIRIGA qo'shar edi (inline uslublardan keyin) — kaskad tartibi o'zgarmasligi uchun lokal CSS ham shu yerda #}
+    <link rel="stylesheet" href="{% static 'seller/seller.css' %}">
+    {% endif %}
 </head>
 <body class="min-h-screen antialiased">
     <div class="offline-banner">⚡ Internetga ulanish yo'q — offline rejimda ishlayapti</div>

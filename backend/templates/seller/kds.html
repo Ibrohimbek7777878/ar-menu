@@ -1,99 +1,10 @@
 {% extends "seller/base_seller.html" %}
-{% load i18n_tags uznum %}
+{% load i18n_tags uznum static %}
 {% block title %}KDS Oshxona Ekrani — {{ shop.name }}{% endblock %}
 {% block page_title %}Oshxona Ekrani (Kitchen Display System){% endblock %}
 
 {% block seller_css %}
-<style>
-    /* ─── PROFESSIONAL KDS (KITCHEN DISPLAY SYSTEM) STYLES ─── */
-    .kds-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-    }
-
-    /* KDS Chek Kartochkalari */
-    .kds-ticket {
-        background: var(--card);
-        border: 2px solid var(--border);
-        border-radius: 1.25rem;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        position: relative;
-    }
-    .kds-ticket:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.25);
-    }
-
-    /* Kechikish / Vaqt indikatorlari */
-    .timer-badge {
-        font-family: monospace;
-        font-size: 0.85rem;
-        font-weight: 800;
-        padding: 0.25rem 0.65rem;
-        border-radius: 9999px;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-    .timer-normal {
-        background: rgba(22, 163, 74, 0.15);
-        color: #16a34a;
-        border: 1px solid rgba(22, 163, 74, 0.3);
-    }
-    .timer-warning {
-        background: rgba(217, 119, 6, 0.18);
-        color: #d97706;
-        border: 1px solid rgba(217, 119, 6, 0.4);
-    }
-    .timer-alert {
-        background: rgba(220, 38, 38, 0.2);
-        color: #ef4444;
-        border: 1px solid #ef4444;
-        animation: kdsPulse 1.2s infinite ease-in-out;
-    }
-
-    @keyframes kdsPulse {
-        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-        50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-    }
-
-    /* Oshpaz checklist qatori */
-    .kds-item-row {
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.15s ease, opacity 0.15s ease;
-    }
-    .kds-item-row:hover {
-        background: rgba(22, 163, 74, 0.08);
-    }
-    .kds-item-row.is-done {
-        text-decoration: line-through;
-        opacity: 0.45;
-        background: rgba(22, 163, 74, 0.05);
-    }
-
-    /* Katta qulay bosiladigan oshpaz tugmalari */
-    .kds-action-btn {
-        min-height: 48px;
-        font-size: 0.95rem;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        border-radius: 0.875rem;
-        transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    .kds-action-btn:active {
-        transform: scale(0.97);
-    }
-</style>
+<link rel="stylesheet" href="{% static 'seller/pages/kds.css' %}">
 {% endblock %}
 
 {% block content %}
