@@ -1,5 +1,4 @@
-# Generated for Shop.public_id 3-step migration (Step 1: add null=True)
-import uuid
+# Generated for Shop.public_id 3-step migration (Step 1: add null=True without default)
 from django.db import migrations, models
 
 
@@ -13,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='shop',
             name='public_id',
-            field=models.UUIDField(default=uuid.uuid4, null=True, editable=False),
+            field=models.UUIDField(null=True, editable=False),
         ),
     ]
