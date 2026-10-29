@@ -129,6 +129,35 @@ Bular hal bo'lmaguncha na push, na pilot mumkin. Har biri uchun **avval xatoni t
 - **Tuzatish:** migratsiyani faqat `init`/bitta servis qiladi; `web-staff` `migrate`ni o'tkazib yuboradi (`SKIP_MIGRATE=1` yoki alohida buyruq) va `web` sog'lom bo'lgach ishga tushadi (`depends_on: condition`).
 - **Qabul:** `docker compose down -v && up` — hech bir konteyner qayta ishga tushmaydi (`docker compose ps` da `restarts=0`).
 
+### 3.1 A bosqich qo'shimcha (1b): Claude tekshiruvida topilgan kamchiliklar
+
+Gemini A1–A7 ni topshirgach (2026-10-29, 7 commit) Claude jonli tekshirdi: 550 test SQLite va PostgreSQL 16'da yashil, A2/A3/A5/A7 jonli tasdiqlandi. Quyidagilar **to'liq yopilmagan**. Hammasi 1b da, **2-bosqichga o'tishdan oldin**. Har band: avval qizil test, keyin tuzatish, alohida commit.
+
+**B1. A1 to'liq yopilmagan: eski 0015 qo'llangan bazada migratsiya hamon yiqiladi.**
+- *Takrorlash (Claude qildi):* haqiqiy bazaning nusxasida eski `0015` (default=uuid4) qo'llanadi, so'ng yangi kod bilan `migrate`: `0016` "OK" (faqat `public_id IS NULL` qatorlarni to'ldiradi, takroriylarni tegmaydi), `0017` → `IntegrityError`.
+- *Tuzatish:* `0016_populate_shop_public_id.py` da `public_id` bo'sh **yoki takrorlangan** qatorlarga yangi `uuid4()` beriladi (birinchi uchragan qator o'z qiymatini saqlaydi). Migratsiya fayllarining nomlari o'zgarmaydi.
+- *Qabul:* yangi test: `0015` holatida 3 ta do'kon **bir xil** `public_id` bilan yaratiladi → `0017` ga migratsiya → 3 ta noyob qiymat. SQLite va PostgreSQL'da.
+- *Izoh (hujjatga yozing):* `0016` allaqachon qo'llangan, `0017` yiqilgan dev bazalari uchun: `python manage.py migrate shops 0015` (0016 teskarisi no-op) va keyin `migrate`. Buni `deploy/README.md` yoki migratsiya fayli sarlavhasiga yozing.
+
+**B2. A5: to'lovni qaytarish kassani to'g'rilamaydi.**
+- *Takrorlash (jonli):* ega `paid → unpaid` qildi (200), moliyada "Jami tushum" **300 000 bo'lib qoldi** (o'zgarmadi). Buyurtma to'lanmagan, pul esa hisoblanyapti.
+- *Tuzatish (`orders_admin.py`, `OrderPaymentUpdateView`):*
+  1. `paid` dan boshqa holatga o'tganda buyurtmaning faol kirim yozuvi(lari) (`FinanceTransaction`, `tx_type='income'`, `is_cancelled=False`) **storno qilinadi**: `FinanceTransactionCancelView` dagi mantiq bilan (kerak bo'lsa umumiy servis funksiyaga chiqaring, nusxa ko'chirmang), sabab "To'lov qaytarildi", `log_audit` bilan. Hammasi bitta `transaction.atomic()` ichida.
+  2. Qayta `paid` qilinsa yangi kirim yoziladi (bitta buyurtmaga bitta faol kirim cheklovi buzilmasligi kerak).
+  3. `except Exception: pass` olib tashlanadi (`record_order_payment_income` xatoni o'zi yutadi). O'rniga: `paid` qilingandan keyin `final_amount > 0` bo'lsa faol kirim mavjudligi tekshiriladi, yo'q bo'lsa tranzaksiya **orqaga qaytariladi** va `409` "Kassa yozuvi yaratilmadi" qaytariladi.
+- *Qabul:* testlar: (a) `paid → unpaid` dan keyin `finance/summary` da tushum buyurtma summasiga kamayadi, kirim yozuvi `is_cancelled=True`; (b) qayta `paid` → tushum qaytadi, faol kirim aynan 1 ta; (c) `final_amount=0` buyurtma `paid` bo'lsa xato bermaydi; (d) kirim yaratib bo'lmasa (mock bilan) to'lov `paid` bo'lib qolmaydi.
+
+**B3. A7 testi soxta (faqat matn qidiradi).**
+- *Muammo:* `DockerStartupRaceTests` fayl ichida "SKIP_MIGRATE" so'zi borligini tekshiradi; xatti-harakatni sinamaydi.
+- *Tuzatish:* (a) `entrypoint.sh` ni `subprocess` bilan ishga tushiradigan test: soxta `python` va `gunicorn` (vaqtinchalik papkada, `PATH` boshiga qo'yiladi), `SKIP_MIGRATE=1` bo'lganda `migrate` va `collectstatic` **chaqirilmaydi**, bo'lmaganda **chaqiriladi**; (b) `docker-compose.yml` ni YAML sifatida o'qib: `web-staff.environment.SKIP_MIGRATE == "1"`, `web-staff.depends_on.web.condition == "service_healthy"` (PyYAML bo'lmasa `skipUnless`, sababi bilan).
+- *Qabul:* `SKIP_MIGRATE` qatori vaqtincha olib tashlansa test **yiqiladi**. Claude Docker'da cold start tekshiruvini o'zi qayta o'tkazadi (`restarts=0`).
+
+**B4. A2 kichik tuzatishlar (ixtiyoriy, 30 daqiqadan oshmasa).**
+- Menejer o'z profilini (ism va h.k., **rolsiz**) o'zgartira olsin; hozir 403 (qoida o'zini ham "boshqa menejer" deb hisoblaydi). Rol o'zgartirish, o'zini bloklash taqiqi o'zgarmaydi.
+- Yetishmayotgan testlar: oxirgi egani **bloklash** (400); menejer `POST` bilan `shop_owner`/`shop_manager` yaratsa 403.
+
+**1b chiqish sharti:** 7.3 dagi barcha buyruqlar (SQLite) + PostgreSQL 16'da to'liq test to'plami, test soni **550 dan kam emas**. PG uchun: `backend/.env` `DATABASE_URL` ni bosib qoladi, shuning uchun `DJANGO_SKIP_DOTENV=1 DEBUG=True DATABASE_URL=postgres://... backend/venv/bin/python manage.py test --noinput` ishlating va natija `vendor=postgresql` ekanini ko'rsating. Hisobotda "to'liq muvofiq" deb yozmang, bajarilmagan/tekshirilmaganini ro'yxat qiling.
+
 ---
 
 ## 4. B BOSQICH: soddalashtirish (asosiy maqsad)
@@ -238,7 +267,8 @@ Tartib: **har bir band uchun avval takrorlovchi test yozing.** Takrorlansa — t
 
 | Bosqich | Ish | Maket kerakmi | Chiqish sharti |
 |---|---|---|---|
-| **1** | A1–A7 (to'sib turuvchi xatolar) | yo'q (A4 faqat mavjud uslublar) | 7.3 |
+| **1** | A1–A7 (to'sib turuvchi xatolar): **topshirildi, Claude tekshirdi** | yo'q (A4 faqat mavjud uslublar) | 7.3 |
+| **1b** | 3.1 bo'limi: B1–B4 (A1/A5/A7 to'liq yopilmagan qismlari) | yo'q | 3.1 chiqish sharti |
 | **2** | Matn lug'ati (1.1) + C2 + C5 + C6 + C7 + C8 | yo'q | 7.3 |
 | **3** | **Maket** (4.0) → egasi ma'qullaydi | ha | egasining yozma "maqul" javobi |
 | **4** | 4.1–4.4 (telefon navigatsiya, sahifalar, holatlar, ustasi) + 4.5 bayroqlar | maket asosida | 7.3 + 7.2 |
