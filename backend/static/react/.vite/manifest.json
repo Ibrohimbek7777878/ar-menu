@@ -32,7 +32,29 @@
       "src/showcase/ComponentShowcase.tsx",
       "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
       "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx"
+    ],
+    "assets": [
+      "assets/outfit-latin-ext-wght-normal-DdQaqQDo.woff2",
+      "assets/outfit-latin-wght-normal-Bc-8i84L.woff2",
+      "assets/plus-jakarta-sans-latin-ext-wght-normal-DmpS2jIq.woff2",
+      "assets/plus-jakarta-sans-latin-wght-normal-eXO_dkmS.woff2"
     ]
+  },
+  "node_modules/@fontsource-variable/outfit/files/outfit-latin-ext-wght-normal.woff2": {
+    "file": "assets/outfit-latin-ext-wght-normal-DdQaqQDo.woff2",
+    "src": "node_modules/@fontsource-variable/outfit/files/outfit-latin-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2": {
+    "file": "assets/outfit-latin-wght-normal-Bc-8i84L.woff2",
+    "src": "node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-wght-normal.woff2": {
+    "file": "assets/plus-jakarta-sans-latin-ext-wght-normal-DmpS2jIq.woff2",
+    "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2": {
+    "file": "assets/plus-jakarta-sans-latin-wght-normal-eXO_dkmS.woff2",
+    "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
     "file": "assets/model-viewer-BMp_yYrV.js",
@@ -181,7 +203,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-hQv6WcD-.css",
+    "file": "assets/style-BsPBkRxW.css",
     "src": "style.css"
   }
 }

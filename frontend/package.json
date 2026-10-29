@@ -11,6 +11,8 @@
     "test": "node --test tests/*.test.ts"
   },
   "dependencies": {
+    "@fontsource-variable/outfit": "5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "5.3.0",
     "@google/model-viewer": "3.5.0",
     "@types/qrcode": "^1.5.6",
     "lucide-react": "^1.52.0",

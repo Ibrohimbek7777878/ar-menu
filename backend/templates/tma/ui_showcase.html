@@ -1,4 +1,4 @@
-{% load react_assets %}<!DOCTYPE html>
+{% load react_assets %}{% load static seller_assets %}<!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
@@ -6,9 +6,15 @@
     <title>React UI Component Library — Guliston</title>
     <!-- Google model-viewer 3D kutubxonasi -->
 <!-- <model-viewer> endi React ilovasi ichida, 3D oyna ochilganda npm paketidan yuklanadi (frontend/src/utils/modelViewer.ts); CDN'dan (SRI'siz) har sahifada yuklash olib tashlandi -->
+    {% seller_assets_mode as assets_mode %}
+    {% if assets_mode == 'cdn' %}
+    {# SELLER_ASSETS=cdn — eski (zaxira) yo'l: Google Fonts. Hech narsa o'chirilmagan. #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% else %}
+    <link rel="stylesheet" href="{% static 'vendor/fonts/fonts-resto.css' %}">
+    {% endif %}
     
     <!-- React Component System CSS -->
     {% react_css %}

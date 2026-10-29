@@ -1,13 +1,19 @@
-{% load react_assets %}{% load json_tags %}<!DOCTYPE html>
+{% load react_assets %}{% load json_tags %}{% load static seller_assets %}<!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
     {% gulistan_session %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KDS Oshxona Ekrani — {{ shop.name|default:"Guliston Restoran" }}</title>
+    {% seller_assets_mode as assets_mode %}
+    {% if assets_mode == 'cdn' %}
+    {# SELLER_ASSETS=cdn — eski (zaxira) yo'l: Google Fonts. Hech narsa o'chirilmagan. #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% else %}
+    <link rel="stylesheet" href="{% static 'vendor/fonts/fonts-resto.css' %}">
+    {% endif %}
     
     <!-- React Bundle CSS -->
     {% react_css %}

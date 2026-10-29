@@ -18,11 +18,8 @@ test('noto\'g\'ri parol bilan kirib bo\'lmaydi', async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/login\//);
 });
 
-// KUTILGAN XATO (test.fail): backend/templates/restaurant_admin/login.html Google Fonts (fonts.googleapis.com) so'raydi —
-// tashqi domen, offline/cheklangan tarmoqda login sahifasi sekin ochiladi va maxfiylik uchun ham yomon. Shablon boshqa
-// agent/egasi zimmasida. Tuzatilgach bu test "kutilgan xato, lekin o'tdi" deb yiqiladi — shunda `test.fail` ni olib tashlang.
+// Eski restoran login sahifasi shriftlari endi lokal (backend/static/vendor/fonts/fonts-resto.css); oldin Google Fonts so'rardi.
 test('login sahifasi tashqi domenga so\'rov yubormaydi', async ({ page, monitor }) => {
-  test.fail(true, 'restaurant_admin/login.html Google Fonts so\'raydi (fonts.googleapis.com)');
   await page.goto('/admin/login/');
   await expect(page.locator('input[name="username"]')).toBeVisible();
   expect(monitor.external).toEqual([]);

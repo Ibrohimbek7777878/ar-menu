@@ -36,11 +36,22 @@ const copies = [
   ['@fontsource-variable/fraunces', 'files/fraunces-latin-ext-opsz-normal.woff2'],
   ['material-icons', 'iconfont/material-icons.woff2'],
   ['material-icons', 'iconfont/material-icons-outlined.woff2'],
+  // Eski restoran login/dashboard sahifalari (restaurant_admin/*.html): Playfair Display va Plus Jakarta Sans
+  ['@fontsource-variable/playfair-display', 'files/playfair-display-latin-wght-normal.woff2'],
+  ['@fontsource-variable/playfair-display', 'files/playfair-display-latin-ext-wght-normal.woff2'],
+  ['@fontsource-variable/playfair-display', 'files/playfair-display-cyrillic-wght-normal.woff2'],
+  ['@fontsource-variable/playfair-display', 'files/playfair-display-latin-wght-italic.woff2'],
+  ['@fontsource-variable/playfair-display', 'files/playfair-display-latin-ext-wght-italic.woff2'],
+  ['@fontsource-variable/plus-jakarta-sans', 'files/plus-jakarta-sans-latin-wght-normal.woff2'],
+  ['@fontsource-variable/plus-jakarta-sans', 'files/plus-jakarta-sans-latin-ext-wght-normal.woff2'],
+  ['@fontsource-variable/plus-jakarta-sans', 'files/plus-jakarta-sans-cyrillic-ext-wght-normal.woff2'],
 ]
 for (const [pkg, rel] of copies) fs.copyFileSync(path.join(nm, pkg, rel), path.join(fontsOut, path.basename(rel)))
 fs.copyFileSync(path.join(nm, '@fontsource-variable/inter', 'LICENSE'), path.join(fontsOut, 'LICENSE-inter-OFL.txt'))
 fs.copyFileSync(path.join(nm, '@fontsource-variable/fraunces', 'LICENSE'), path.join(fontsOut, 'LICENSE-fraunces-OFL.txt'))
 fs.copyFileSync(path.join(nm, 'material-icons', 'LICENSE'), path.join(fontsOut, 'LICENSE-material-icons-Apache2.txt'))
+fs.copyFileSync(path.join(nm, '@fontsource-variable/playfair-display', 'LICENSE'), path.join(fontsOut, 'LICENSE-playfair-display-OFL.txt'))
+fs.copyFileSync(path.join(nm, '@fontsource-variable/plus-jakarta-sans', 'LICENSE'), path.join(fontsOut, 'LICENSE-plus-jakarta-sans-OFL.txt'))
 
 // 3) fonts.css — e'lonlar Google Fonts CSS'idan (unicode-range'lar ham) olingan
 const R = {
@@ -65,4 +76,16 @@ const iconClass = (cls, fam) =>
   `.${cls}{font-family:'${fam}';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased}`
 css += iconClass('material-icons', 'Material Icons') + '\n' + iconClass('material-icons-outlined', 'Material Icons Outlined') + '\n'
 fs.writeFileSync(path.join(fontsOut, 'fonts.css'), css)
-console.log(`vendor tayyor: alpine ${alpineVer}, fonts.css (${css.length} bayt)`)
+
+// 4) fonts-resto.css — eski restaurant_admin/login.html va dashboard.html (ular Playfair Display 600/700 + italic 600 va
+// Plus Jakarta Sans 400-800 ni Google Fonts'dan olardi). O'zgaruvchan (variable) fayllar: har og'irlik bitta faylda.
+const rface = (family, weight, style, file, range) =>
+  `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};font-display:swap;src:url(${file}) format('woff2');unicode-range:${range}}`
+let rcss = `/* Eski restoran login/dashboard sahifalari uchun lokal shriftlar. scripts/copy-vendor.mjs yaratadi — qo'lda tahrirlamang. */\n`
+rcss += `/* Playfair Display ${pkgVersion('@fontsource-variable/playfair-display')} (wght 400-900, normal va italic) */\n`
+for (const sub of ['cyrillic', 'latin-ext', 'latin']) rcss += rface('Playfair Display', '400 900', 'normal', `playfair-display-${sub}-wght-normal.woff2`, R[sub]) + '\n'
+for (const sub of ['latin-ext', 'latin']) rcss += rface('Playfair Display', '400 900', 'italic', `playfair-display-${sub}-wght-italic.woff2`, R[sub]) + '\n'
+rcss += `/* Plus Jakarta Sans ${pkgVersion('@fontsource-variable/plus-jakarta-sans')} (wght 200-800) */\n`
+for (const sub of ['cyrillic-ext', 'latin-ext', 'latin']) rcss += rface('Plus Jakarta Sans', '200 800', 'normal', `plus-jakarta-sans-${sub}-wght-normal.woff2`, R[sub]) + '\n'
+fs.writeFileSync(path.join(fontsOut, 'fonts-resto.css'), rcss)
+console.log(`vendor tayyor: alpine ${alpineVer}, fonts.css (${css.length} bayt), fonts-resto.css (${rcss.length} bayt)`)
