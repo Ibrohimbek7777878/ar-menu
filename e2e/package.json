@@ -1,0 +1,15 @@
+{
+  "name": "resto-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Restoran 3D menyu — Resto-Admin (/ra/) HAQIQIY brauzer E2E testlari (Playwright)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

@@ -1,69 +1,46 @@
 #!/usr/bin/env node
 /**
- * Resto-Admin SPA End-to-End (E2E) Navigatsiya va API Auditi (TZ 4.7).
- * Barcha sahifalar, marshrutlar va v1 REST API endpointlarini tekshiradi:
- * 1. Dashboard  (/ra/ -> /api/restaurant/admin/v1/dashboard/summary/)
- * 2. Orders     (/ra/orders -> /api/restaurant/admin/v1/orders/)
- * 3. Menu       (/ra/menu -> /api/restaurant/admin/v1/menu/products/)
- * 4. Tables     (/ra/tables -> /api/restaurant/admin/v1/tables/)
- * 5. Staff      (/ra/staff -> /api/restaurant/admin/v1/staff/)
- * 6. Finance    (/ra/finance -> /api/restaurant/admin/v1/finance/summary/ & /transactions/)
- * 7. Settings   (/ra/settings -> /api/restaurant/admin/v1/settings/)
+ * Resto-Admin (/ra/) HAQIQIY brauzer E2E ishga tushirgichi (TZ 4.7).
+ *
+ * Eslatma: avval bu fayl "E2E" deb o'zini ko'rsatardi, lekin brauzer ochmasdi va so'rov yubormasdi — faqat
+ * manifestni o'qib "muvaffaqiyatli" deb chop etardi (soxta). Endi u Playwright testlarini (e2e/ papkasi) yurgizadi:
+ * vaqtinchalik SQLite -> migrate -> seed_e2e -> Django serveri (8013) -> haqiqiy Chromium.
+ *
+ * Ishlatish (repo ildizidan):
+ *   node scripts/e2e_resto_admin.mjs                # barcha stsenariylar
+ *   node scripts/e2e_resto_admin.mjs -g "menyu"     # qo'shimcha argumentlar `playwright test` ga o'tadi
+ *   node scripts/e2e_resto_admin.mjs --headed
+ *
+ * Birinchi marta: `cd e2e && npm ci && npx playwright install chromium` (bu skript bog'liqliklarni o'zi o'rnatadi,
+ * brauzerni esa o'rnatmaydi). Batafsil: e2e/README.md
  */
-
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const e2eDir = path.join(root, 'e2e');
 
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:8001';
-
-console.log(`\n🚀 Resto-Admin E2E Navigatsiya va API Tekshiruvi:`);
-console.log(`Server URL: ${BASE_URL}`);
-console.log(`--------------------------------------------------------------------------------`);
-
-const routes = [
-  { path: '/ra/', name: 'App Shell & Dashboard', api: '/api/restaurant/admin/v1/session/' },
-  { path: '/ra/orders', name: 'Buyurtmalar (Orders)', api: '/api/restaurant/admin/v1/orders/' },
-  { path: '/ra/menu', name: 'Menyu (Menu)', api: '/api/restaurant/admin/v1/menu/products/' },
-  { path: '/ra/tables', name: 'Stollar & QR (Tables)', api: '/api/restaurant/admin/v1/tables/' },
-  { path: '/ra/staff', name: 'Xodimlar (Staff)', api: '/api/restaurant/admin/v1/staff/' },
-  { path: '/ra/finance', name: 'Moliya & Kassa (Finance)', api: '/api/restaurant/admin/v1/finance/summary/' },
-  { path: '/ra/settings', name: 'Sozlamalar (Settings)', api: '/api/restaurant/admin/v1/settings/' },
-];
-
-async function runAudit() {
-  // 1. Static manifest tekshiruvi
-  const manifestPath = path.resolve(__dirname, '../backend/static/admins/resto/.vite/manifest.json');
-  if (!fs.existsSync(manifestPath)) {
-    console.error(`❌ Vite manifest.json topilmadi: ${manifestPath}`);
-    process.exit(1);
-  }
-
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  const entry = Object.values(manifest).find((item) => item.isEntry);
-
-  if (!entry) {
-    console.error(`❌ Manifestda kirish nuqtasi (isEntry) topilmadi!`);
-    process.exit(1);
-  }
-
-  console.log(`✅ Vite Build Manifest:`);
-  console.log(`   - Kirish fayli (JS): ${entry.file}`);
-  console.log(`   - CSS fayli: ${entry.css ? entry.css.join(', ') : 'CSS ichki/alohida'}`);
-  console.log(`   - Alohida sahifa bo'laklari (dynamic chunks): ${Object.keys(manifest).length} ta\n`);
-
-  console.log(`📋 Marshrutlar va API tekshiruvi:`);
-  for (const r of routes) {
-    console.log(`   🔍 [${r.name}] -> Marshrut: ${r.path} | API: ${r.api}`);
-  }
-
-  console.log(`\n🎉 E2E spetsifikatsiyasi to'liq muvaffaqiyatli tekshirildi!\n`);
+// 1. Oldindan tekshiruv: admin SPA build'i (Vite manifest) mavjudmi — testlar commit qilingan backend/static/admins/resto ni ishlatadi
+const manifestPath = path.join(root, 'backend/static/admins/resto/.vite/manifest.json');
+if (!fs.existsSync(manifestPath)) {
+  console.error(`Vite manifest.json topilmadi: ${manifestPath}\nAvval: cd admins && npm ci && npm run build`);
+  process.exit(1);
+}
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+if (!Object.values(manifest).some((item) => item.isEntry)) {
+  console.error('Manifestda kirish nuqtasi (isEntry) topilmadi — admins build buzilgan.');
+  process.exit(1);
 }
 
-runAudit().catch((err) => {
-  console.error(`❌ Xatolik yuz berdi:`, err);
-  process.exit(1);
-});
+// 2. E2E bog'liqliklari (faqat birinchi marta)
+if (!fs.existsSync(path.join(e2eDir, 'node_modules', '@playwright', 'test'))) {
+  console.log('e2e/ bog\'liqliklari o\'rnatilmoqda (npm ci)...');
+  const install = spawnSync('npm', ['ci'], { cwd: e2eDir, stdio: 'inherit' });
+  if (install.status !== 0) process.exit(install.status ?? 1);
+}
+
+// 3. Haqiqiy testlar: chiqish kodi to'g'ridan-to'g'ri uzatiladi (yiqilsa nolga teng emas)
+const run = spawnSync('npx', ['playwright', 'test', ...process.argv.slice(2)], { cwd: e2eDir, stdio: 'inherit' });
+process.exit(run.status ?? 1);

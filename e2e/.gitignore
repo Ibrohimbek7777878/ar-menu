@@ -1,0 +1,6 @@
+# Playwright natijalari (yiqilganda skrinshot, trace, HTML hisobot) va vaqtinchalik server bazasi
+artifacts/
+test-results/
+playwright-report/
+.tmp/
+node_modules/

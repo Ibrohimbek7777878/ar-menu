@@ -1,5 +1,5 @@
 # CI (TZ: R10-1). PR yashil bo'lmasa birlashtirilmaydi: GitHub'da `main` uchun "Require status checks" ni yoqing
-# (Settings → Branches), tekshiruvlar: backend, frontend, deploy.
+# (Settings → Branches), tekshiruvlar: backend, frontend, admins, deploy, e2e.
 name: CI
 
 on:
@@ -90,6 +90,41 @@ jobs:
           test -f ../backend/static/react/.vite/manifest.json
           ls ../backend/static/react/assets | grep -E '\-[A-Za-z0-9_-]{8}\.js$' >/dev/null
 
+  # Resto-Admin SPA (/ra/): admins/ npm workspace (shared + resto). Build natijasi git'da (backend/static/admins/resto —
+  # Docker rasmi va E2E shuni ishlatadi), shuning uchun build manbadan farq qilsa PR yiqiladi: `cd admins && npm run build`
+  # qilib, backend/static/admins ni ham commit qiling.
+  admins:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: admins
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: admins/package-lock.json
+      - run: npm ci
+      - name: oxlint
+        # node_modules ni lintlamaslik uchun yo'llar aniq beriladi
+        run: npx oxlint resto/src shared/src shared/tests scripts
+      - name: Testlar
+        run: npm test
+      - name: Build (tsc + vite -> backend/static/admins/resto)
+        run: npm run build
+      - name: Bundle budjeti (har sahifa chunk gzip <= 60 KB)
+        run: npm run check:budget
+      - name: Commit qilingan build manbadan hosil bo'lgan build bilan bir xil
+        working-directory: .
+        run: |
+          git add -N backend/static/admins        # yangi (kuzatilmagan) fayllar ham diff'da ko'rinsin
+          if ! git diff --exit-code --stat -- backend/static/admins; then
+            echo "::error::backend/static/admins eskirgan. Lokal: cd admins && npm ci && npm run build, so'ng backend/static/admins ni commit qiling."
+            exit 1
+          fi
+
   deploy:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -97,6 +132,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Skriptlar sintaksisi
         run: for f in deploy/scripts/*.sh backend/docker/entrypoint.sh; do bash -n "$f" && echo "ok $f"; done
+      - name: Caddyfile sintaksisi (caddy validate)
+        run: docker run --rm -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" -e DOMAIN=localhost caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+      - name: Caddy immutable-kesh regex'i (haqiqiy fayl nomlari + haqiqiy Caddy konteyneri)
+        env:
+          CADDY_LIVE_REQUIRED: "1"     # docker bo'lmasa o'tkazib yubormaydi, yiqiladi
+        run: python3 deploy/scripts/test_caddy_regex.py -v
       - name: Compose sozlamasi to'g'ri
         working-directory: deploy
         run: |
@@ -105,3 +146,45 @@ jobs:
           docker compose config -q
       - name: Docker rasmi quriladi
         run: docker build -f backend/Dockerfile -t guliston-app:ci .
+
+  # Haqiqiy brauzer E2E (Playwright, e2e/): vaqtinchalik SQLite + seed_e2e + Django serveri + Chromium. Git'dagi
+  # backend/static (admins/react build) bilan ishlaydi; uning manbaga mosligini `admins` ishi tekshiradi.
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DJANGO_SKIP_DOTENV: "1"          # hech qachon .env ga tayanmaydi
+      E2E_PYTHON: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Backend paketlari
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: E2E bog'liqliklari
+        working-directory: e2e
+        run: npm ci
+      - name: Chromium (+ tizim kutubxonalari)
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: E2E testlari (/ra/ haqiqiy brauzerda)
+        working-directory: e2e
+        run: npx playwright test
+      - name: Yiqilgan testlar artefaktlari (skrinshot, trace, hisobot)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: e2e/artifacts
+          retention-days: 7
+          if-no-files-found: ignore
