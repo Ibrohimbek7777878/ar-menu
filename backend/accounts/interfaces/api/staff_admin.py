@@ -15,7 +15,6 @@ from accounts.models import AdminUser
 from accounts.staff_admin import (
     CREATABLE_ROLES,
     StaffError,
-    block_staff,
     create_staff,
     end_sessions,
 )
@@ -85,6 +84,10 @@ class StaffListCreateView(APIView):
         if not username:
             return Response({'error': 'Login kiritilishi shart', 'field': 'username'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Menejer egalik (shop_owner) va menejer rolini bera olmaydi (403)
+        if request.user.role == 'shop_manager' and role in ('super_admin', 'shop_owner', 'shop_manager'):
+            return Response({'error': 'Menejer egalik yoki menejer rolini bera olmaydi', 'field': 'role'}, status=status.HTTP_403_FORBIDDEN)
+
         if role not in CREATABLE_ROLES:
             return Response({
                 'error': f'Noto\'g\'ri rol. Mumkin bo\'lganlar: {list(CREATABLE_ROLES)}',
@@ -131,6 +134,21 @@ class StaffDetailUpdateView(APIView):
         user = get_object_or_404(AdminUser, pk=pk, shop=shop, is_superuser=False)
 
         data = request.data
+
+        # O'z rolingizni o'zgartirishdan himoya
+        if user.pk == request.user.pk:
+            if 'role' in data and data['role'] != user.role:
+                if request.user.role == 'shop_manager':
+                    return Response({'error': 'O\'z rolingizni ko\'tara olmaysiz'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'error': 'O\'z rolingizni o\'zgartira olmaysiz'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Menejer egasi yoki boshqa menejerni o'zgartira olmaydi (403)
+        if request.user.role == 'shop_manager':
+            if user.role in ('super_admin', 'shop_owner', 'shop_manager'):
+                return Response({'error': 'Menejer egasi yoki boshqa menejerni o\'zgartira olmaydi'}, status=status.HTTP_403_FORBIDDEN)
+            if 'role' in data and data['role'] in ('super_admin', 'shop_owner', 'shop_manager'):
+                return Response({'error': 'Menejer egalik yoki menejer rolini bera olmaydi'}, status=status.HTTP_403_FORBIDDEN)
+
         update_fields = []
 
         if 'full_name' in data:
@@ -147,11 +165,18 @@ class StaffDetailUpdateView(APIView):
         if 'role' in data:
             new_role = data['role']
             if new_role != user.role:
-                # O'z rolingizni pasaytirib yuborishdan himoya
-                if user.pk == request.user.pk:
-                    return Response({'error': 'O\'z rolingizni o\'zgartira olmaysiz'}, status=status.HTTP_400_BAD_REQUEST)
-                if new_role not in CREATABLE_ROLES:
-                    return Response({'error': f'Noto\'g\'ri rol. Mumkin bo\'lganlar: {list(CREATABLE_ROLES)}'}, status=status.HTTP_400_BAD_REQUEST)
+                allowed_roles = list(CREATABLE_ROLES)
+                if request.user.role in ('shop_owner', 'super_admin'):
+                    allowed_roles.append('shop_owner')
+                if new_role not in allowed_roles:
+                    return Response({'error': f'Noto\'g\'ri rol. Mumkin bo\'lganlar: {allowed_roles}'}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Oxirgi egani tushirish taqiqlanadi
+                if user.role == 'shop_owner' and new_role != 'shop_owner':
+                    active_owners = AdminUser.objects.filter(shop=shop, role='shop_owner', is_active=True).count()
+                    if active_owners <= 1:
+                        return Response({'error': 'Do\'konning oxirgi egasini tushirish mumkin emas'}, status=status.HTTP_400_BAD_REQUEST)
+
                 user.role = new_role
                 update_fields.append('role')
 
@@ -184,9 +209,15 @@ class StaffBlockView(APIView):
         if user.pk == request.user.pk:
             return Response({'error': 'O\'z akkauntingizni bloklay olmaysiz'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Egasi akkauntini bloklash taqiqlanadi
+        # Menejer egasi yoki boshqa menejerni bloklay olmaydi (403)
+        if request.user.role == 'shop_manager' and user.role in ('super_admin', 'shop_owner', 'shop_manager'):
+            return Response({'error': 'Menejer egasi yoki boshqa menejerni bloklay olmaydi'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Do'konning oxirgi egasini bloklash taqiqlanadi (400)
         if user.role in ('super_admin', 'shop_owner'):
-            return Response({'error': 'Restoran egasini bloklab bo\'lmaydi'}, status=status.HTTP_400_BAD_REQUEST)
+            active_owners = AdminUser.objects.filter(shop=shop, role='shop_owner', is_active=True).count()
+            if active_owners <= 1:
+                return Response({'error': 'Do\'konning oxirgi egasini bloklab bo\'lmaydi'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.is_active = False
         user.save(update_fields=['is_active'])
@@ -220,6 +251,10 @@ class StaffUnblockView(APIView):
         shop = staff_shop(request)
         user = get_object_or_404(AdminUser, pk=pk, shop=shop, is_superuser=False)
 
+        # Menejer egasi yoki boshqa menejerni blokdan chiqara olmaydi (403)
+        if request.user.role == 'shop_manager' and user.role in ('super_admin', 'shop_owner', 'shop_manager'):
+            return Response({'error': 'Menejer egasi yoki boshqa menejerni blokdan chiqara olmaydi'}, status=status.HTTP_403_FORBIDDEN)
+
         user.is_active = True
         user.save(update_fields=['is_active'])
 
@@ -251,9 +286,13 @@ class StaffResetPasswordView(APIView):
         shop = staff_shop(request)
         user = get_object_or_404(AdminUser, pk=pk, shop=shop, is_superuser=False)
 
-        # Boshqa restoran egasining parolini o'zgartirish taqiqlanadi
+        # Menejer egasi yoki boshqa menejer parolini tiklay olmaydi (403)
+        if request.user.role == 'shop_manager' and user.role in ('super_admin', 'shop_owner', 'shop_manager'):
+            return Response({'error': 'Menejer egasi yoki boshqa menejer parolini tiklay olmaydi'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Boshqa restoran egasining parolini o'zgartirish taqiqlanadi (403)
         if user.role in ('super_admin', 'shop_owner') and user.pk != request.user.pk:
-            return Response({'error': 'Rahbariyat parolini bu yerdan o\'zgartirib bo\'lmaydi'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Rahbariyat parolini bu yerdan o\'zgartirib bo\'lmaydi'}, status=status.HTTP_403_FORBIDDEN)
 
         password = str(request.data.get('password', '')).strip()
         generated = None
@@ -275,12 +314,12 @@ class StaffResetPasswordView(APIView):
             actor=request.user,
             target_type='admin_user',
             target_id=user.id,
-            new_value={'username': user.username}
+            new_value={'status': 'password_reset'}
         )
 
         return Response({
             'status': 'password_reset',
             'id': user.id,
             'username': user.username,
-            'generated_password': generated or password,
+            'generated_password': generated or password
         })

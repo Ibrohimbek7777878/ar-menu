@@ -185,3 +185,55 @@ class StaffAdminApiTests(TestCase):
         # Bloklay olmaslik (404)
         res_block = self.client_owner.post(f'{self.API}{foreign_waiter.id}/block/')
         self.assertEqual(res_block.status_code, 404)
+
+    def test_manager_cannot_modify_or_demote_or_reset_owner(self):
+        manager = AdminUser.objects.create_user(
+            username='staff-manager-1',
+            password='Manager-Parol-123',
+            role='shop_manager',
+            shop=self.shop,
+            is_staff=False,
+            is_approved=True,
+        )
+        client_mgr = Client()
+        client_mgr.force_login(manager)
+
+        # 1. Menejer egani o'zgartira olmaydi (403)
+        res_patch = client_mgr.patch(f'{self.API}{self.owner.id}/', {'role': 'waiter'}, content_type='application/json')
+        self.assertEqual(res_patch.status_code, 403)
+
+        # 2. Menejer egani bloklay olmaydi (403)
+        res_block = client_mgr.post(f'{self.API}{self.owner.id}/block/')
+        self.assertEqual(res_block.status_code, 403)
+
+        # 3. Menejer eganing parolini tiklay olmaydi (403)
+        res_reset = client_mgr.post(f'{self.API}{self.owner.id}/reset-password/')
+        self.assertEqual(res_reset.status_code, 403)
+
+    def test_manager_cannot_promote_self(self):
+        manager = AdminUser.objects.create_user(
+            username='staff-manager-2',
+            password='Manager-Parol-123',
+            role='shop_manager',
+            shop=self.shop,
+            is_staff=False,
+            is_approved=True,
+        )
+        client_mgr = Client()
+        client_mgr.force_login(manager)
+
+        # Menejer o'z rolini ko'tara olmaydi (403)
+        res = client_mgr.patch(f'{self.API}{manager.id}/', {'role': 'shop_owner'}, content_type='application/json')
+        self.assertEqual(res.status_code, 403)
+
+    def test_cannot_demote_or_block_last_owner(self):
+        # Do'konning oxirgi egasini tushirish 400
+        super_user = AdminUser.objects.create_superuser(
+            username='admin-super', password='Super-Parol-123', email='s@s.uz'
+        )
+        client_super = Client()
+        client_super.force_login(super_user)
+        # Superuser oxirgi egani tushirmoqchi bo'lsa -> 400
+        res = client_super.patch(f'{self.API}{self.owner.id}/', {'role': 'waiter'}, content_type='application/json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("oxirgi", res.json()['error'].lower())
