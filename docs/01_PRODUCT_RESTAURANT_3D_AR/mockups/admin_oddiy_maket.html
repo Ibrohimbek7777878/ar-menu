@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin panel: sodda va qulay maket</title>
+<!-- MAKET (kod emas): ma'qullash uchun. Ranglar va shakllar yangi panelning mavjud dizayn tizimidan (admins/shared/src/ui/tokens.css) olingan, yangi vizual til yo'q.
+     O'zgargani: telefon navigatsiyasi, kartalardagi asosiy amal, stol plitkalari, Moliya 3 raqami, Sozlamalardagi kun/vaqt tanlagichlari. Hamma matn o'zbekcha, texnik so'zsiz. -->
+<style>
+  :root {
+    --bg-primary:#0b132b; --bg-surface:#1c2541; --bg-surface-hover:#243056; --bg-elevated:#212d52;
+    --border-subtle:#2d3b66; --border-strong:#3e5088;
+    --text-main:#f8fafc; --text-muted:#94a3b8; --text-dim:#64748b;
+    --emerald:#10b981; --emerald-bg:rgba(16,185,129,.12);
+    --amber:#f59e0b; --amber-bg:rgba(245,158,11,.14);
+    --rose:#f43f5e; --rose-bg:rgba(244,63,94,.12);
+    --indigo:#6366f1; --indigo-bg:rgba(99,102,241,.14);
+    --r-sm:6px; --r-md:10px; --r-lg:16px; --r-full:9999px;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#060b1d;color:var(--text-main);-webkit-font-smoothing:antialiased;padding:0 0 60px}
+  .note{background:#111a38;border-bottom:1px solid var(--border-subtle);padding:14px 20px;font-size:14px;line-height:1.55;color:var(--text-muted)}
+  .note b{color:var(--text-main)}
+  main{max-width:1500px;margin:0 auto;padding:0 20px}
+  h1{font-size:24px;margin:26px 0 6px}
+  h2{font-size:18px;margin:38px 0 4px;color:var(--text-main)}
+  .sub{color:var(--text-muted);font-size:14px;margin-bottom:16px;max-width:1000px;line-height:1.5}
+  .grid{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+  figure{display:flex;flex-direction:column;gap:8px}
+  figcaption{font-size:13px;color:var(--text-muted);max-width:390px;line-height:1.45}
+  figcaption b{color:var(--text-main)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:var(--r-full);background:var(--indigo-bg);color:#a5b4fc;margin-right:4px}
+
+  /* ---- Telefon ramkasi ---- */
+  .phone{width:390px;height:800px;border:1px solid var(--border-strong);border-radius:30px;background:var(--bg-primary);overflow:hidden;position:relative;box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}
+  .scr{height:100%;overflow:hidden;padding:14px 16px 84px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .top .name{font-weight:700;font-size:15px}
+  .top .name small{display:block;font-weight:500;font-size:11px;color:var(--text-dim)}
+  h3{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .row{display:flex;align-items:center;gap:10px}
+  .sp{flex:1}
+  .muted{color:var(--text-muted)}
+  .dim{color:var(--text-dim)}
+  svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+  /* tugmalar: kamida 44 px balandlik */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--r-md);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-main);font:600 14px/1 inherit;font-family:inherit}
+  .btn.main{background:var(--emerald);border-color:var(--emerald);color:#04241a}
+  .btn.block{width:100%}
+  .btn.ghost{background:transparent;color:var(--text-muted)}
+  .btn.danger{color:var(--rose);border-color:rgba(244,63,94,.4)}
+  .iconbtn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-md);color:var(--text-muted);background:transparent;border:0}
+
+  /* almashtirgich (switch) */
+  .sw{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:13px;font-weight:700}
+  .sw i{width:46px;height:26px;border-radius:var(--r-full);background:var(--border-strong);position:relative;flex:none}
+  .sw i:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on{color:var(--emerald)} .sw.on i{background:var(--emerald)} .sw.on i:after{left:23px}
+  .sw.off{color:var(--text-muted)}
+
+  .card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:14px}
+  .chips{display:flex;gap:8px;overflow:hidden;margin:10px 0}
+  .chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:var(--r-full);border:1px solid var(--border-subtle);background:var(--bg-surface);font-size:13px;font-weight:600;color:var(--text-muted);white-space:nowrap}
+  .chip.on{background:var(--emerald);border-color:var(--emerald);color:#04241a}
+  .input{width:100%;min-height:46px;border-radius:var(--r-md);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-main);padding:0 14px;font:500 15px inherit;font-family:inherit;display:flex;align-items:center}
+  .input.ph{color:var(--text-dim)}
+  label.l{display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin:12px 0 6px}
+
+  /* pastki tab-bar */
+  .tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:rgba(17,26,56,.97);border-top:1px solid var(--border-subtle);display:flex;padding:6px 6px 10px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--text-dim);border-radius:var(--r-md);position:relative}
+  .tab.on{color:var(--emerald);background:var(--emerald-bg)}
+  .tab .badge{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:var(--r-full);background:var(--rose);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+
+  /* pastdan chiqadigan oyna */
+  .dim-layer{position:absolute;inset:0;background:rgba(2,6,23,.62)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg-elevated);border-top:1px solid var(--border-strong);border-radius:22px 22px 0 0;padding:10px 16px 18px}
+  .sheet .grab{width:40px;height:4px;border-radius:4px;background:var(--border-strong);margin:0 auto 12px}
+  .sheet .item{display:flex;align-items:center;gap:12px;min-height:52px;font-size:15px;font-weight:600;border-bottom:1px solid var(--border-subtle)}
+  .sheet .item:last-child{border-bottom:0}
+  .toast{position:absolute;left:12px;right:12px;bottom:80px;background:#0f1a3a;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+  .toast b{color:var(--emerald);margin-left:auto}
+
+  /* Bugun */
+  .hero{background:linear-gradient(180deg,#14305a,#1c2541);border:1px solid var(--border-strong);border-radius:var(--r-lg);padding:18px}
+  .hero .big{font-size:38px;font-weight:800;letter-spacing:-.02em;margin:4px 0}
+  .todo{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 14px;border-radius:var(--r-md);background:var(--bg-surface);border:1px solid var(--border-subtle);margin-top:8px}
+  .todo .dot{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .stat b{display:block;font-size:22px;margin-top:2px}
+
+  /* Menyu */
+  .dish{display:flex;align-items:center;gap:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:10px;margin-top:10px;position:relative}
+  .dish .ph{width:60px;height:60px;border-radius:12px;flex:none;background:linear-gradient(135deg,#d97706,#92400e)}
+  .dish .t{font-weight:700;font-size:15px;line-height:1.2}
+  .dish .pr{font-size:13px;color:var(--emerald);font-weight:700;margin-top:3px}
+  .dish.out{opacity:.78} .dish.out .pr{color:var(--text-muted)}
+  .pop{position:absolute;right:8px;top:62px;z-index:3;background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:var(--r-md);padding:4px;width:190px;box-shadow:0 14px 28px rgba(0,0,0,.55)}
+  .pop div{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;font-size:14px;font-weight:600;border-radius:8px}
+  .pop div.warn{color:var(--rose)}
+
+  /* Stollar */
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+  .tile{height:84px;border-radius:var(--r-md);border:1.5px solid var(--border-subtle);background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .tile b{font-size:22px} .tile small{font-size:11px;font-weight:700}
+  .tile.free{border-color:rgba(16,185,129,.55);color:var(--emerald);background:var(--emerald-bg)}
+  .tile.busy{border-color:rgba(245,158,11,.6);color:var(--amber);background:var(--amber-bg)}
+  .tile.bill{border-color:rgba(99,102,241,.7);color:#a5b4fc;background:var(--indigo-bg)}
+  .tile.clean{border-color:rgba(244,63,94,.6);color:#fb7185;background:var(--rose-bg)}
+  .tile.sel{outline:3px solid #fff;outline-offset:2px}
+  .legend{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin:8px 0 2px;flex-wrap:wrap}
+  .legend span:before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:currentColor}
+  .state4{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 6px}
+
+  /* Moliya */
+  .num{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .tri{display:grid;grid-template-columns:1fr;gap:10px}
+  .li{display:flex;align-items:center;gap:12px;min-height:60px;border-bottom:1px solid var(--border-subtle)}
+  .seg{display:flex;background:var(--bg-surface);border-radius:var(--r-md);padding:4px;margin:14px 0 4px}
+  .seg div{flex:1;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-muted);border-radius:8px}
+  .seg div.on{background:var(--bg-elevated);color:var(--text-main)}
+
+  /* Sozlamalar */
+  .acc{border:1px solid var(--border-subtle);background:var(--bg-surface);border-radius:var(--r-lg);margin-top:10px;overflow:hidden}
+  .acc .h{display:flex;align-items:center;gap:10px;min-height:54px;padding:0 14px;font-weight:700;font-size:15px}
+  .acc .b{padding:0 14px 14px}
+  .days{display:flex;gap:6px}
+  .day{flex:1;min-height:44px;border-radius:var(--r-md);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-muted)}
+  .day.on{background:var(--emerald-bg);border-color:var(--emerald);color:var(--emerald)}
+  .savebar{position:absolute;left:0;right:0;bottom:68px;background:#101a3b;border-top:1px solid var(--border-strong);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+  .help{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.4}
+
+  /* ---- Kompyuter ramkasi (kichraytirilgan) ---- */
+  .deskwrap{width:864px;height:540px;position:relative;overflow:hidden;border:1px solid var(--border-strong);border-radius:12px}
+  .desk{width:1440px;height:900px;transform:scale(.6);transform-origin:0 0;background:var(--bg-primary);display:flex;position:absolute;left:0;top:0}
+  .side{width:240px;background:#162040;border-right:1px solid var(--border-subtle);padding:16px 10px;display:flex;flex-direction:column;gap:4px}
+  .side .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;padding:4px 8px 16px;border-bottom:1px solid var(--border-subtle);margin-bottom:10px}
+  .side .nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:var(--r-md);font-size:14px;font-weight:600;color:var(--text-muted)}
+  .side .nav.on{background:var(--emerald-bg);color:var(--emerald)}
+  .dmain{flex:1;padding:26px 28px}
+  .dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+  .dcard{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:14px}
+  .dcard .ph{height:120px;border-radius:12px;background:linear-gradient(135deg,#d97706,#92400e);margin-bottom:10px}
+  table{width:100%;border-collapse:collapse}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+  <symbol id="bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+  <symbol id="menu" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
+  <symbol id="grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v1M14 20h1M18 20h3v1"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="filter" viewBox="0 0 24 24"><path d="M3 5h18M6 12h12M10 19h4"/></symbol>
+  <symbol id="edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+  <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+  <symbol id="coin" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+  <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="print" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="swap" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+  <symbol id="warn" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+</svg>
+
+<div class="note">
+  <b>MAKET (kod emas), ma'qullash uchun.</b> Ranglar, shakllar va soyalar yangi panelning <b>mavjud</b> dizayn tizimidan olingan; yangi vizual til yo'q. O'zgargan narsalar: telefonda pastki tab-bar, kartalardagi asosiy amal ("Bor / Tugadi"), stol plitkalari, Moliyaning 3 raqami, Sozlamalardagi kun/vaqt tanlagichlari, o'chirish o'rniga "Arxivlash + Qaytarish". <b>Kompyuterda mavjud chap sidebar o'zgarmaydi.</b> Telefon ramkalari 390 px, kompyuter ramkalari 1440 px (kichraytirib ko'rsatilgan).
+</div>
+
+<main>
+<h1>Telefon (390 px): egasi/menejer ko'zi bilan</h1>
+<p class="sub">Maqsad: eng ko'p ishlatiladigan 8 ta vazifa 0–3 bosishda (TZ 1-bo'lim, T1–T8). Pastdagi tab-bar bosh barmoq yetadigan joyda, 5 tadan oshmaydi; rolga ko'rinmaydigan bo'limlar ko'rsatilmaydi (ofitsiant: Bugun · Buyurtmalar · Stollar).</p>
+
+<div class="grid">
+
+<!-- 1. BUGUN -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top">
+      <div class="name">Registon Restorani<small>Restoran egasi</small></div>
+      <div class="sw on"><span>Ochiq</span><i></i></div>
+    </div>
+    <div class="hero">
+      <div class="muted" style="font-size:13px;font-weight:600">Bugungi tushum</div>
+      <div class="big">300 000 so'm</div>
+      <div class="muted" style="font-size:13px">Naqd 106 000 · Karta 194 000</div>
+    </div>
+    <div style="font-size:13px;font-weight:800;margin:18px 0 0;color:var(--text-muted)">DIQQAT TALAB QILADI</div>
+    <div class="todo"><div class="dot" style="background:var(--amber-bg);color:var(--amber)"><svg class="i"><use href="#bag"/></svg></div><div><b>2 ta buyurtma</b><div class="dim" style="font-size:12px">tayyorlanishini kutmoqda</div></div><span class="sp"></span><svg class="i dim"><use href="#more"/></svg></div>
+    <div class="todo"><div class="dot" style="background:var(--rose-bg);color:var(--rose)"><svg class="i"><use href="#menu"/></svg></div><div><b>4 ta taom tugagan</b><div class="dim" style="font-size:12px">menyuda "Tugadi" deb turibdi</div></div><span class="sp"></span><svg class="i dim"><use href="#more"/></svg></div>
+    <div class="two">
+      <div class="card stat"><span class="muted" style="font-size:12px">Band stollar</span><b>0 / 11</b></div>
+      <div class="card stat"><span class="muted" style="font-size:12px">O'rtacha chek</span><b>60 000</b></div>
+    </div>
+    <div style="font-size:13px;font-weight:800;margin:18px 0 4px;color:var(--text-muted)">ENG KO'P SOTILGAN</div>
+    <div class="li"><b style="width:22px;color:var(--text-dim)">1</b><span style="font-weight:600">Medovik (Asalli tort)</span><span class="sp"></span><span class="muted" style="font-size:13px">3 ta</span></div>
+    <div class="li"><b style="width:22px;color:var(--text-dim)">2</b><span style="font-weight:600">Sezar Salati</span><span class="sp"></span><span class="muted" style="font-size:13px">2 ta</span></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar<span class="badge">2</span></div>
+    <div class="tab"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><span class="tag">T1</span><span class="tag">T5</span><b>Bugun.</b> Tushum birinchi ekranda (0 bosish). "Ochiq/Yopiq" almashtirgichi tepada: 1 bosish. "Diqqat talab qiladi" ro'yxati kerakli sahifaga olib boradi.</figcaption>
+</figure>
+
+<!-- 2. MENYU -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><h3>Menyu</h3><button class="btn main"><svg class="i"><use href="#plus"/></svg>Taom</button></div>
+    <div class="input ph"><svg class="i" style="margin-right:8px"><use href="#search"/></svg>Taom nomini qidirish…</div>
+    <div class="chips"><span class="chip on">Hammasi</span><span class="chip">Ichimliklar</span><span class="chip">Kaboblar</span><span class="chip">Salatlar</span><span class="chip">Shirinliklar</span></div>
+    <div class="dish"><div class="ph"></div><div><div class="t">Medovik (Asalli tort)</div><div class="pr">26 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div></div>
+    <div class="dish" style="z-index:2"><div class="ph" style="background:linear-gradient(135deg,#ea580c,#7c2d12)"></div><div><div class="t">Muzdek Limonad</div><div class="pr">20 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim" style="margin-left:-4px"><use href="#more"/></svg>
+      <div class="pop"><div><svg class="i"><use href="#edit"/></svg>Tahrirlash</div><div><svg class="i"><use href="#copy"/></svg>Nusxalash</div><div class="warn"><svg class="i"><use href="#archive"/></svg>Arxivlash</div></div></div>
+    <div class="dish out"><div class="ph" style="background:linear-gradient(135deg,#65a30d,#365314)"></div><div><div class="t">Sezar Salati</div><div class="pr">Tugadi</div></div><span class="sp"></span><div class="sw off"><span>Tugadi</span><i></i></div></div>
+    <div class="dish"><div class="ph" style="background:linear-gradient(135deg,#b45309,#78350f)"></div><div><div class="t">Dimlama (Go'sht va sabzavotlar)</div><div class="pr">48 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div></div>
+    <div class="toast"><svg class="i" style="color:var(--emerald)"><use href="#archive"/></svg>Taom arxivlandi<b>Qaytarish</b></div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab on"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><span class="tag">T2</span><span class="tag">T3</span><b>Menyu.</b> Har kartada bitta asosiy amal: "Bor / Tugadi" (1 bosish, darrov saqlanadi). Kartaga bosish = tahrirlash. Nusxalash va arxivlash "⋯" ichida, <b>matn bilan</b>. Qizil o'chirish tugmasi kartadan olib tashlangan; arxivlansa 8 soniya "Qaytarish" chiqadi.</figcaption>
+</figure>
+
+<!-- 3. YANGI TAOM -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><h3>Yangi taom</h3><svg class="i dim"><use href="#more"/></svg></div>
+    <label class="l" style="margin-top:0">Taom nomi *</label>
+    <div class="input">To'y oshi</div>
+    <label class="l">Narxi (so'm) *</label>
+    <div class="input">35 000</div>
+    <label class="l">Kategoriya *</label>
+    <div class="input ph" style="justify-content:space-between">Kategoriyani tanlang<svg class="i"><use href="#filter"/></svg></div>
+    <div class="acc" style="margin-top:16px"><div class="h"><svg class="i"><use href="#plus"/></svg>Qo'shimcha (rasm, tavsif, vaqt)<span class="sp"></span><span class="dim" style="font-size:12px">ixtiyoriy</span></div></div>
+    <div class="help">Faqat nom, narx va kategoriya majburiy. Qolganini keyin ham qo'shish mumkin.</div>
+    <div style="position:absolute;left:16px;right:16px;bottom:84px;display:flex;gap:10px"><button class="btn ghost" style="flex:1">Bekor qilish</button><button class="btn main" style="flex:2">Saqlash</button></div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab on"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><span class="tag">T4</span><b>Yangi taom.</b> 3 majburiy maydon. Kategoriya <b>oldindan tanlanmaydi</b> (xato bo'lmasin). Rasm, tavsif, tayyorlanish vaqti "Qo'shimcha" ichida (hozirgi forma o'chirilmaydi, shu yerga kiradi). Rasm tanlashda o'zbekcha "Rasm tanlash" tugmasi va avtomatik kichraytirish.</figcaption>
+</figure>
+
+<!-- 4. STOLLAR -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><h3>Stollar</h3><div class="row"><button class="btn"><svg class="i"><use href="#plus"/></svg>Ko'p stol</button><button class="btn main"><svg class="i"><use href="#plus"/></svg>Stol</button></div></div>
+    <div class="chips"><span class="chip on">1-qavat</span><span class="chip">Yozgi ayvon</span><span class="chip">Hammasi</span></div>
+    <div class="legend"><span style="color:var(--emerald)">Bo'sh</span><span style="color:var(--amber)">Band</span><span style="color:#a5b4fc">Hisob so'ralgan</span><span style="color:#fb7185">Tozalanmoqda</span></div>
+    <div class="tiles">
+      <div class="tile free"><b>1</b><small>Bo'sh</small></div><div class="tile busy"><b>2</b><small>Band</small></div><div class="tile free"><b>3</b><small>Bo'sh</small></div>
+      <div class="tile bill"><b>4</b><small>Hisob</small></div><div class="tile free"><b>5</b><small>Bo'sh</small></div><div class="tile clean"><b>6</b><small>Tozalash</small></div>
+      <div class="tile free"><b>7</b><small>Bo'sh</small></div><div class="tile busy"><b>8</b><small>Band</small></div><div class="tile free"><b>9</b><small>Bo'sh</small></div>
+      <div class="tile free"><b>10</b><small>Bo'sh</small></div><div class="tile free"><b>11</b><small>Bo'sh</small></div><div class="tile free"><b>12</b><small>Bo'sh</small></div>
+    </div>
+    <button class="btn block" style="margin-top:16px"><svg class="i"><use href="#print"/></svg>Barcha QR kodlarni chop etish</button>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab on"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><span class="tag">T6</span><b>Stollar.</b> Har stolda alohida tanlagich o'rniga rangli plitka: zalning holati bir qarashda ko'rinadi. "Barcha QR kodlarni chop etish" sahifa tepasida (2 bosish). "Ko'p stol" 1–50 ta stolni bir marta qo'shadi.</figcaption>
+</figure>
+
+<!-- 5. STOL HOLATI OYNASI -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><h3>Stollar</h3><div class="row"><button class="btn"><svg class="i"><use href="#plus"/></svg>Ko'p stol</button><button class="btn main"><svg class="i"><use href="#plus"/></svg>Stol</button></div></div>
+    <div class="chips"><span class="chip on">1-qavat</span><span class="chip">Yozgi ayvon</span><span class="chip">Hammasi</span></div>
+    <div class="tiles">
+      <div class="tile free"><b>1</b><small>Bo'sh</small></div><div class="tile busy"><b>2</b><small>Band</small></div><div class="tile free"><b>3</b><small>Bo'sh</small></div>
+      <div class="tile bill sel"><b>4</b><small>Hisob</small></div><div class="tile free"><b>5</b><small>Bo'sh</small></div><div class="tile clean"><b>6</b><small>Tozalash</small></div>
+    </div>
+    <div class="dim-layer"></div>
+    <div class="sheet" style="bottom:68px">
+      <div class="grab"></div>
+      <div class="row" style="margin-bottom:4px"><b style="font-size:18px">Stol 4</b><span class="dim" style="font-size:13px">· 4 kishi · 3 955 500 so'm hisob</span></div>
+      <div class="state4">
+        <button class="btn" style="border-color:rgba(16,185,129,.6);color:var(--emerald)">Bo'sh</button><button class="btn" style="border-color:rgba(245,158,11,.6);color:var(--amber)">Band</button>
+        <button class="btn" style="border-color:#6366f1;color:#a5b4fc;background:var(--indigo-bg)">Hisob so'ralgan</button><button class="btn" style="border-color:rgba(244,63,94,.6);color:#fb7185">Tozalanmoqda</button>
+      </div>
+      <div class="item"><svg class="i"><use href="#grid"/></svg>QR kodni ko'rish va chop etish</div>
+      <div class="item"><svg class="i"><use href="#edit"/></svg>Stolni tahrirlash</div>
+      <div class="item" style="color:var(--rose)"><svg class="i"><use href="#archive"/></svg>Arxivlash</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab on"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><b>Stolni bosganda.</b> Pastdan oyna chiqadi: holatni 1 bosishda o'zgartirish, QR, tahrirlash, arxivlash. Kartadagi 11 ta "Holat" tanlagichi va yonma-yon turgan qizil tugma yo'qoladi.</figcaption>
+</figure>
+
+<!-- 6. MOLIYA -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><h3>Moliya</h3><button class="btn main"><svg class="i"><use href="#plus"/></svg>Kirim / Chiqim</button></div>
+    <div class="chips"><span class="chip on">Bugun</span><span class="chip">Kecha</span><span class="chip">7 kun</span><span class="chip">30 kun</span><span class="chip">Boshqa</span></div>
+    <div class="tri">
+      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Tushum</span><div class="num" style="color:var(--emerald)">300 000 so'm</div><div class="dim" style="font-size:12px">Naqd 106 000 · Karta 194 000</div></div>
+      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Xarajat</span><div class="num">530 000 so'm</div></div>
+      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Foyda (tushum − xarajat)</span><div class="num" style="color:#fb7185">−230 000 so'm</div><div class="dim" style="font-size:12px">Kassada qoldi: 984 000 so'm</div></div>
+    </div>
+    <div class="seg"><div class="on">Operatsiyalar</div><div>Qarzlar</div></div>
+    <div class="li"><div><b style="font-size:14px">Savdo: Stol #VIP-1</b><div class="dim" style="font-size:12px">bugun 13:40 · Karta</div></div><span class="sp"></span><b style="color:var(--emerald)">+75 000</b></div>
+    <div class="li"><div><b style="font-size:14px">Sabzavot va mevalar</b><div class="dim" style="font-size:12px">bugun 09:15 · Naqd</div></div><span class="sp"></span><b style="color:#fb7185">−350 000</b></div>
+    <div style="margin-top:12px"><button class="btn ghost"><svg class="i"><use href="#down"/></svg>Excel uchun yuklab olish</button></div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab on"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><b>Moliya.</b> Birinchi ekranda 3 ta raqam: Tushum · Xarajat · Foyda. Davr tugmalari: Bugun / Kecha / 7 kun / 30 kun (brauzerning inglizcha sana maydoni "Boshqa" ichida). "Kirim / Chiqim" tepada katta tugma. Qarzlar va qolgan hisobotlar tab ostida; "CSV" o'rniga "Excel uchun yuklab olish".</figcaption>
+</figure>
+
+<!-- 7. SOZLAMALAR -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><h3>Sozlamalar</h3></div>
+    <div class="acc"><div class="h"><svg class="i"><use href="#home"/></svg>Restoran ma'lumoti<span class="sp"></span><span class="dim">›</span></div></div>
+    <div class="acc"><div class="h"><svg class="i" style="color:var(--indigo)"><use href="#clock"/></svg>Ish vaqti<span class="sp"></span><span class="dim">⌄</span></div>
+      <div class="b">
+        <div class="sw on" style="width:100%;justify-content:space-between;background:var(--emerald-bg);border:1px solid rgba(16,185,129,.4);border-radius:var(--r-md);padding:0 12px;min-height:52px"><span>Restoran hozir ochiq<div class="help" style="margin:0;font-weight:500;color:var(--text-muted)">Yopiq bo'lsa mehmonlar buyurtma bera olmaydi</div></span><i></i></div>
+        <label class="l">Ish kunlari</label>
+        <div class="days"><div class="day on">Du</div><div class="day on">Se</div><div class="day on">Ch</div><div class="day on">Pa</div><div class="day on">Ju</div><div class="day on">Sh</div><div class="day">Ya</div></div>
+        <label class="l">Ish vaqti</label>
+        <div class="row"><div class="input" style="justify-content:center">08:00</div><span class="dim">—</span><div class="input" style="justify-content:center">22:00</div></div>
+      </div></div>
+    <div class="acc"><div class="h"><svg class="i" style="color:var(--amber)"><use href="#coin"/></svg>Xizmat haqi<span class="sp"></span><span class="dim">›</span></div></div>
+    <div class="acc"><div class="h"><svg class="i" style="color:var(--rose)"><use href="#gear"/></svg>Qo'shimcha (oshxona ekrani va boshqalar)<span class="sp"></span><span class="dim">›</span></div></div>
+    <div class="savebar"><span>O'zgarishlar bor</span><span class="sp"></span><button class="btn ghost" style="min-height:40px">Bekor qilish</button><button class="btn main" style="min-height:40px">Saqlash</button></div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab on"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><b>Sozlamalar.</b> 4 yig'iladigan bo'lim; kam kerak bo'ladiganlar "Qo'shimcha" ostida (o'chirilmaydi, standart qiymatlar bilan). Erkin matn "Dush-Shan" va "08:00-22:00" o'rniga kun tugmalari va vaqt tanlagich. Pastda bitta "O'zgarishlar bor: Saqlash / Bekor qilish" paneli, saqlanmay chiqilsa ogohlantirish.</figcaption>
+</figure>
+
+<!-- 8. YANA -->
+<figure>
+  <div class="phone"><div class="scr">
+    <div class="top"><div class="name">Registon Restorani<small>Restoran egasi</small></div><div class="sw on"><span>Ochiq</span><i></i></div></div>
+    <div class="hero" style="opacity:.5"><div class="muted" style="font-size:13px">Bugungi tushum</div><div class="big">300 000 so'm</div></div>
+    <div class="dim-layer"></div>
+    <div class="sheet" style="bottom:68px">
+      <div class="grab"></div>
+      <div class="item"><svg class="i"><use href="#users"/></svg>Xodimlar</div>
+      <div class="item"><svg class="i"><use href="#coin"/></svg>Moliya</div>
+      <div class="item"><svg class="i"><use href="#gear"/></svg>Sozlamalar</div>
+      <div class="item"><svg class="i"><use href="#swap"/></svg>Klassik panelga o'tish</div>
+      <div class="item" style="color:var(--rose)"><svg class="i"><use href="#out"/></svg>Chiqish<span class="sp"></span><span class="dim" style="font-size:12px">demo-ega</span></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
+    <div class="tab"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div>
+    <div class="tab"><svg class="i"><use href="#menu"/></svg>Menyu</div>
+    <div class="tab"><svg class="i"><use href="#grid"/></svg>Stollar</div>
+    <div class="tab on"><svg class="i"><use href="#more"/></svg>Yana</div>
+  </div></div>
+  <figcaption><span class="tag">T7</span><b>"Yana".</b> Kam ishlatiladigan bo'limlar bir joyda: Xodimlar, Moliya, Sozlamalar, klassik panelga o'tish (saqlanadi, o'chirilmaydi), chiqish. Rol "Restoran egasi" deb yoziladi (hozir xom <i>Shop_owner</i>).</figcaption>
+</figure>
+
+</div>
+
+<h2>Kompyuter (1440 px): chap sidebar saqlanadi</h2>
+<p class="sub">Katta ekranda hozirgi tuzilma o'zgarmaydi. Farq faqat kartalardagi asosiy amal va texnik so'zlarning almashtirilishi.</p>
+<div class="grid">
+
+<figure>
+  <div class="deskwrap"><div class="desk">
+    <div class="side"><div class="brand"><svg class="i" style="color:var(--emerald)"><use href="#home"/></svg>Registon Restorani</div>
+      <div class="nav on"><svg class="i"><use href="#home"/></svg>Bugun</div><div class="nav"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div><div class="nav"><svg class="i"><use href="#menu"/></svg>Menyu</div><div class="nav"><svg class="i"><use href="#grid"/></svg>Stollar</div><div class="nav"><svg class="i"><use href="#users"/></svg>Xodimlar</div><div class="nav"><svg class="i"><use href="#coin"/></svg>Moliya</div><div class="nav"><svg class="i"><use href="#gear"/></svg>Sozlamalar</div>
+      <span class="sp"></span><div class="nav"><svg class="i"><use href="#swap"/></svg>Klassik panelga o'tish</div><div class="nav" style="border-top:1px solid var(--border-subtle);margin-top:6px;padding-top:12px;display:block"><b style="color:var(--text-main)">demo-ega</b><div class="dim" style="font-size:12px">Restoran egasi</div></div>
+    </div>
+    <div class="dmain">
+      <div class="row"><h3 style="font-size:30px">Bugun</h3><span class="sp"></span><div class="sw on" style="font-size:15px"><span>Restoran ochiq</span><i></i></div></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:16px;margin-top:20px">
+        <div class="hero"><div class="muted" style="font-size:14px">Bugungi tushum</div><div class="big" style="font-size:46px">300 000 so'm</div><div class="muted">Naqd 106 000 · Karta 194 000</div></div>
+        <div class="card"><span class="muted">Faol buyurtmalar</span><b style="display:block;font-size:34px;margin-top:6px">2</b></div>
+        <div class="card"><span class="muted">O'rtacha chek</span><b style="display:block;font-size:34px;margin-top:6px">60 000</b></div>
+        <div class="card"><span class="muted">Band stollar</span><b style="display:block;font-size:34px;margin-top:6px">0 / 11</b></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+        <div class="card"><b style="font-size:16px">Diqqat talab qiladi</b>
+          <div class="todo"><div class="dot" style="background:var(--amber-bg);color:var(--amber)"><svg class="i"><use href="#bag"/></svg></div><div><b>2 ta buyurtma</b> tayyorlanishini kutmoqda</div></div>
+          <div class="todo"><div class="dot" style="background:var(--rose-bg);color:var(--rose)"><svg class="i"><use href="#menu"/></svg></div><div><b>4 ta taom tugagan</b></div></div></div>
+        <div class="card"><b style="font-size:16px">Eng ko'p sotilgan 5 taom</b>
+          <div class="li"><b style="width:22px;color:var(--text-dim)">1</b>Medovik (Asalli tort)<span class="sp"></span><span class="muted">3 ta sotildi</span></div>
+          <div class="li"><b style="width:22px;color:var(--text-dim)">2</b>Sezar Salati<span class="sp"></span><span class="muted">2 ta sotildi</span></div></div>
+      </div>
+    </div>
+  </div></div>
+  <figcaption style="max-width:864px"><b>Bugun (kompyuter).</b> Sidebar o'zgarmagan. Qo'shilgan: "Restoran ochiq" almashtirgichi, "Diqqat talab qiladi" bloki, rol nomi "Restoran egasi".</figcaption>
+</figure>
+
+<figure>
+  <div class="deskwrap"><div class="desk">
+    <div class="side"><div class="brand"><svg class="i" style="color:var(--emerald)"><use href="#home"/></svg>Registon Restorani</div>
+      <div class="nav"><svg class="i"><use href="#home"/></svg>Bugun</div><div class="nav"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div><div class="nav on"><svg class="i"><use href="#menu"/></svg>Menyu</div><div class="nav"><svg class="i"><use href="#grid"/></svg>Stollar</div><div class="nav"><svg class="i"><use href="#users"/></svg>Xodimlar</div><div class="nav"><svg class="i"><use href="#coin"/></svg>Moliya</div><div class="nav"><svg class="i"><use href="#gear"/></svg>Sozlamalar</div>
+    </div>
+    <div class="dmain">
+      <div class="row"><h3 style="font-size:30px">Menyu</h3><span class="sp"></span><button class="btn main"><svg class="i"><use href="#plus"/></svg>Taom qo'shish</button></div>
+      <div class="row" style="margin-top:14px"><div class="input ph" style="width:420px"><svg class="i" style="margin-right:8px"><use href="#search"/></svg>Taom nomini qidirish…</div><span class="chip on">Hammasi</span><span class="chip">Ichimliklar</span><span class="chip">Kaboblar</span><span class="chip">Salatlar</span><span class="sp"></span><button class="btn"><svg class="i"><use href="#filter"/></svg>Filtr</button></div>
+      <div class="dgrid">
+        <div class="dcard"><div class="ph"></div><b>Medovik (Asalli tort)</b><div class="row" style="margin-top:8px"><span style="color:var(--emerald);font-weight:700">26 000 so'm</span><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
+        <div class="dcard"><div class="ph" style="background:linear-gradient(135deg,#ea580c,#7c2d12)"></div><b>Muzdek Limonad</b><div class="row" style="margin-top:8px"><span style="color:var(--emerald);font-weight:700">20 000 so'm</span><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
+        <div class="dcard" style="opacity:.78"><div class="ph" style="background:linear-gradient(135deg,#65a30d,#365314)"></div><b>Sezar Salati</b><div class="row" style="margin-top:8px"><span class="muted" style="font-weight:700">Tugadi</span><span class="sp"></span><div class="sw off"><span>Tugadi</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
+      </div>
+    </div>
+  </div></div>
+  <figcaption style="max-width:864px"><b>Menyu (kompyuter).</b> Kartada 3 ta ikonka-tugma o'rniga bitta almashtirgich va "⋯". Elementlar soni taxminan 175 dan 60 ga tushadi.</figcaption>
+</figure>
+
+</div>
+
+<h2>Ma'qullash</h2>
+<p class="sub"><b>"Maqul"</b> desangiz, 4-bosqichni shu maket asosida kodlayman. O'zgartirish kerak bo'lsa, qaysi ekranda nima o'zgarishini yozing. Ayniqsa quyidagilarni ko'rib chiqing: (1) pastki tab-bar (5 ta: Bugun · Buyurtmalar · Menyu · Stollar · Yana); (2) menyuda "Bor/Tugadi" almashtirgichi; (3) stollar plitka ko'rinishi; (4) Sozlamalarda kun tugmalari va vaqt tanlagich; (5) tepadagi "Ochiq/Yopiq" almashtirgichi.</p>
+</main>
+</body>
+</html>
