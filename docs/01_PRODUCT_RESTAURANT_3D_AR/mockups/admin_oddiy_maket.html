@@ -4,144 +4,175 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin panel: sodda va qulay maket</title>
-<!-- MAKET (kod emas): ma'qullash uchun. Ranglar va shakllar yangi panelning mavjud dizayn tizimidan (admins/shared/src/ui/tokens.css) olingan, yangi vizual til yo'q.
-     O'zgargani: telefon navigatsiyasi, kartalardagi asosiy amal, stol plitkalari, Moliya 3 raqami, Sozlamalardagi kun/vaqt tanlagichlari. Hamma matn o'zbekcha, texnik so'zsiz. -->
+<!-- MAKET (kod emas): ma'qullash uchun. BITTA dizayn tili: ASOSIY SAYT (mehmon ilovasi), frontend/src/index.css tokenlari (iliq och fon, apelsin #EA580C, anor-qizil #E11D48, yashil #16A34A) va Outfit + Plus Jakarta Sans shriftlari. Yangi rang/soya/burchak qo'shilmagan. O'zgarmagani: joylashuv (telefon tab-bar, stol plitkalari, Moliya 3 raqami, Sozlama tanlagichlari). Hamma matn o'zbekcha, texnik so'zsiz. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Lokal shriftlar (internet bo'lmasa ham): loyihadagi mavjud fayllar */
+  @font-face{font-family:'Outfit';font-weight:100 900;font-display:swap;src:url('../../../backend/static/react/assets/outfit-latin-wght-normal-Bc-8i84L.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-weight:200 800;font-display:swap;src:url('../../../backend/static/vendor/fonts/plus-jakarta-sans-latin-wght-normal.woff2') format('woff2')}
+
   :root {
-    --bg-primary:#0b132b; --bg-surface:#1c2541; --bg-surface-hover:#243056; --bg-elevated:#212d52;
-    --border-subtle:#2d3b66; --border-strong:#3e5088;
-    --text-main:#f8fafc; --text-muted:#94a3b8; --text-dim:#64748b;
-    --emerald:#10b981; --emerald-bg:rgba(16,185,129,.12);
-    --amber:#f59e0b; --amber-bg:rgba(245,158,11,.14);
-    --rose:#f43f5e; --rose-bg:rgba(244,63,94,.12);
-    --indigo:#6366f1; --indigo-bg:rgba(99,102,241,.14);
-    --r-sm:6px; --r-md:10px; --r-lg:16px; --r-full:9999px;
+    /* frontend/src/index.css dan AYNAN shu nom va qiymatlar. Boshqa rang ishlatilmaydi. */
+    --bg-primary:#FAF8F5; --bg-surface:#FFFFFF; --bg-surface-subtle:#F5EFEA; --bg-surface-dark:#181513;
+    --border-subtle:#EFE9E2; --border-strong:#DDD4C8;
+    --text-primary:#181513; --text-secondary:#4A443E; --text-muted:#7A7269; --text-inverse:#FFFFFF;
+    --brand-primary:#EA580C; --brand-primary-hover:#C2410C; --brand-primary-light:#FFF7ED; --brand-primary-subtle:#FFEDD5;
+    --brand-accent:#E11D48; --brand-accent-light:#FFF1F2; --brand-accent-subtle:#FFE4E6;
+    --status-success:#16A34A; --status-success-light:#F0FDF4; --status-danger:#DC2626;
+    --shadow-sm:0 1px 3px rgba(24,21,19,.04);
+    --shadow-card:0 2px 10px -2px rgba(24,21,19,.06),0 1px 3px rgba(24,21,19,.03);
+    --shadow-hover:0 10px 25px -4px rgba(234,88,12,.12),0 4px 10px -2px rgba(24,21,19,.05);
+    --shadow-modal:0 25px 50px -12px rgba(24,21,19,.25);
+    --radius-sm:8px; --radius-md:14px; --radius-lg:20px; --radius-full:9999px;
+    --font-head:'Outfit','Plus Jakarta Sans',system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0}
-  body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#060b1d;color:var(--text-main);-webkit-font-smoothing:antialiased;padding:0 0 60px}
-  .note{background:#111a38;border-bottom:1px solid var(--border-subtle);padding:14px 20px;font-size:14px;line-height:1.55;color:var(--text-muted)}
-  .note b{color:var(--text-main)}
+  body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg-surface-subtle);color:var(--text-primary);-webkit-font-smoothing:antialiased;padding:0 0 60px;line-height:1.5}
+  h1,h2,h3,.big,.num,.tile b,.stat b,.pr{font-family:var(--font-head);letter-spacing:-.02em}
+  .note{background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);padding:14px 20px;font-size:14px;line-height:1.55;color:var(--text-secondary)}
+  .note b{color:var(--text-primary)}
   main{max-width:1500px;margin:0 auto;padding:0 20px}
-  h1{font-size:24px;margin:26px 0 6px}
-  h2{font-size:18px;margin:38px 0 4px;color:var(--text-main)}
-  .sub{color:var(--text-muted);font-size:14px;margin-bottom:16px;max-width:1000px;line-height:1.5}
+  h1{font-size:26px;font-weight:800;margin:26px 0 6px}
+  h2{font-size:20px;font-weight:800;margin:38px 0 4px}
+  .sub{color:var(--text-secondary);font-size:14px;margin-bottom:16px;max-width:1000px;line-height:1.5}
   .grid{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
   figure{display:flex;flex-direction:column;gap:8px}
-  figcaption{font-size:13px;color:var(--text-muted);max-width:390px;line-height:1.45}
-  figcaption b{color:var(--text-main)}
-  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:var(--r-full);background:var(--indigo-bg);color:#a5b4fc;margin-right:4px}
+  figcaption{font-size:13px;color:var(--text-secondary);max-width:390px;line-height:1.45}
+  figcaption b{color:var(--text-primary)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--radius-full);background:var(--brand-primary-subtle);color:var(--brand-primary-hover);margin-right:4px}
+
+  /* ---- Dizayn tili (taqqoslash uchun) ---- */
+  .ds{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:18px;margin:22px 0 0;box-shadow:var(--shadow-card)}
+  .ds .sw-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+  .ds .sq{width:132px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden;font-size:12px;background:var(--bg-surface)}
+  .ds .sq i{display:block;height:44px}
+  .ds .sq span{display:block;padding:7px 9px;color:var(--text-secondary);line-height:1.3}
+  .ds .sq span b{color:var(--text-primary);display:block}
+  .ds .fonts{display:flex;flex-wrap:wrap;gap:24px;margin-top:14px;align-items:baseline}
+  .ds code{font-size:12px;background:var(--bg-surface-subtle);padding:1px 5px;border-radius:var(--radius-sm)}
 
   /* ---- Telefon ramkasi ---- */
-  .phone{width:390px;height:800px;border:1px solid var(--border-strong);border-radius:30px;background:var(--bg-primary);overflow:hidden;position:relative;box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}
+  .phone{width:390px;height:800px;border:1px solid var(--border-strong);border-radius:30px;background:var(--bg-primary);overflow:hidden;position:relative;box-shadow:var(--shadow-modal)}
   .scr{height:100%;overflow:hidden;padding:14px 16px 84px}
   .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-  .top .name{font-weight:700;font-size:15px}
-  .top .name small{display:block;font-weight:500;font-size:11px;color:var(--text-dim)}
-  h3{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .top .name{font-weight:700;font-size:15px;font-family:var(--font-head)}
+  .top .name small{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;font-size:11px;color:var(--text-muted)}
+  h3{font-size:24px;font-weight:800}
   .row{display:flex;align-items:center;gap:10px}
   .sp{flex:1}
-  .muted{color:var(--text-muted)}
-  .dim{color:var(--text-dim)}
-  svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .muted{color:var(--text-secondary)}
+  .dim{color:var(--text-muted)}
+  svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-  /* tugmalar: kamida 44 px balandlik */
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--r-md);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-main);font:600 14px/1 inherit;font-family:inherit}
-  .btn.main{background:var(--emerald);border-color:var(--emerald);color:#04241a}
+  /* tugmalar: kamida 44 px balandlik (saytdagi --tap-target-min) */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--bg-surface);color:var(--text-primary);font:700 14px/1 inherit;font-family:inherit}
+  .btn.main{background:var(--brand-primary);border-color:var(--brand-primary);color:var(--text-inverse);box-shadow:var(--shadow-hover)}
   .btn.block{width:100%}
-  .btn.ghost{background:transparent;color:var(--text-muted)}
-  .btn.danger{color:var(--rose);border-color:rgba(244,63,94,.4)}
-  .iconbtn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-md);color:var(--text-muted);background:transparent;border:0}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--text-secondary)}
+  .btn.danger{color:var(--status-danger);border-color:var(--status-danger)}
+  .iconbtn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-md);color:var(--text-secondary);background:transparent;border:0}
 
-  /* almashtirgich (switch) */
+  /* almashtirgich (switch): yoqilgan = yashil + yozuv "Bor/Ochiq"; o'chiq = kulrang + "Tugadi" */
   .sw{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:13px;font-weight:700}
-  .sw i{width:46px;height:26px;border-radius:var(--r-full);background:var(--border-strong);position:relative;flex:none}
-  .sw i:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
-  .sw.on{color:var(--emerald)} .sw.on i{background:var(--emerald)} .sw.on i:after{left:23px}
-  .sw.off{color:var(--text-muted)}
+  .sw i{width:46px;height:26px;border-radius:var(--radius-full);background:var(--text-muted);position:relative;flex:none}
+  .sw i:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--bg-surface);box-shadow:var(--shadow-sm);transition:.2s}
+  .sw.on{color:var(--text-primary)} .sw.on i{background:var(--status-success)} .sw.on i:after{left:23px}
+  .sw.off{color:var(--text-secondary)}
 
-  .card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:14px}
+  .card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow-card)}
   .chips{display:flex;gap:8px;overflow:hidden;margin:10px 0}
-  .chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:var(--r-full);border:1px solid var(--border-subtle);background:var(--bg-surface);font-size:13px;font-weight:600;color:var(--text-muted);white-space:nowrap}
-  .chip.on{background:var(--emerald);border-color:var(--emerald);color:#04241a}
-  .input{width:100%;min-height:46px;border-radius:var(--r-md);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-main);padding:0 14px;font:500 15px inherit;font-family:inherit;display:flex;align-items:center}
-  .input.ph{color:var(--text-dim)}
-  label.l{display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin:12px 0 6px}
+  .chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:var(--radius-full);border:1px solid var(--border-strong);background:var(--bg-surface);font-size:13px;font-weight:600;color:var(--text-secondary);white-space:nowrap}
+  .chip.on{background:var(--brand-primary-subtle);border-color:var(--brand-primary);color:var(--brand-primary-hover);font-weight:700}
+  .input{width:100%;min-height:46px;border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--bg-surface);color:var(--text-primary);padding:0 14px;font:500 15px inherit;font-family:inherit;display:flex;align-items:center}
+  .input.ph{color:var(--text-muted)}
+  label.l{display:block;font-size:12px;font-weight:700;color:var(--text-secondary);margin:12px 0 6px}
 
-  /* pastki tab-bar */
-  .tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:rgba(17,26,56,.97);border-top:1px solid var(--border-subtle);display:flex;padding:6px 6px 10px}
-  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--text-dim);border-radius:var(--r-md);position:relative}
-  .tab.on{color:var(--emerald);background:var(--emerald-bg)}
-  .tab .badge{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:var(--r-full);background:var(--rose);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+  /* pastki tab-bar: saytdagi sarlavha bilan bir xil (oq 85%, blur 12px) */
+  .tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--border-subtle);display:flex;padding:6px 6px 10px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--text-secondary);border-radius:var(--radius-md);position:relative}
+  .tab.on{color:var(--brand-primary-hover);background:var(--brand-primary-light);font-weight:700}
+  .tab .badge{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:var(--radius-full);background:var(--brand-accent);color:var(--text-inverse);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
 
   /* pastdan chiqadigan oyna */
-  .dim-layer{position:absolute;inset:0;background:rgba(2,6,23,.62)}
-  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg-elevated);border-top:1px solid var(--border-strong);border-radius:22px 22px 0 0;padding:10px 16px 18px}
+  .dim-layer{position:absolute;inset:0;background:rgba(24,21,19,.45)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border-subtle);border-radius:24px 24px 0 0;padding:10px 16px 18px;box-shadow:var(--shadow-modal)}
   .sheet .grab{width:40px;height:4px;border-radius:4px;background:var(--border-strong);margin:0 auto 12px}
   .sheet .item{display:flex;align-items:center;gap:12px;min-height:52px;font-size:15px;font-weight:600;border-bottom:1px solid var(--border-subtle)}
   .sheet .item:last-child{border-bottom:0}
-  .toast{position:absolute;left:12px;right:12px;bottom:80px;background:#0f1a3a;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;box-shadow:0 10px 24px rgba(0,0,0,.5)}
-  .toast b{color:var(--emerald);margin-left:auto}
+  .toast{position:absolute;left:12px;right:12px;bottom:80px;background:var(--bg-surface-dark);color:var(--text-inverse);border-radius:var(--radius-md);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;box-shadow:var(--shadow-modal)}
+  .toast b{color:var(--brand-primary-subtle);margin-left:auto}
 
   /* Bugun */
-  .hero{background:linear-gradient(180deg,#14305a,#1c2541);border:1px solid var(--border-strong);border-radius:var(--r-lg);padding:18px}
-  .hero .big{font-size:38px;font-weight:800;letter-spacing:-.02em;margin:4px 0}
-  .todo{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 14px;border-radius:var(--r-md);background:var(--bg-surface);border:1px solid var(--border-subtle);margin-top:8px}
+  .hero{background:linear-gradient(135deg,var(--brand-primary-light),var(--brand-primary-subtle));border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-card)}
+  .hero .big{font-size:38px;font-weight:800;margin:4px 0}
+  .todo{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 14px;border-radius:var(--radius-md);background:var(--bg-surface);border:1px solid var(--border-subtle);box-shadow:var(--shadow-card);margin-top:8px}
   .todo .dot{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .stat b{display:block;font-size:22px;margin-top:2px}
+  .stat b{display:block;font-size:24px;font-weight:800;margin-top:2px}
 
-  /* Menyu */
-  .dish{display:flex;align-items:center;gap:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:10px;margin-top:10px;position:relative}
-  .dish .ph{width:60px;height:60px;border-radius:12px;flex:none;background:linear-gradient(135deg,#d97706,#92400e)}
-  .dish .t{font-weight:700;font-size:15px;line-height:1.2}
-  .dish .pr{font-size:13px;color:var(--emerald);font-weight:700;margin-top:3px}
-  .dish.out{opacity:.78} .dish.out .pr{color:var(--text-muted)}
-  .pop{position:absolute;right:8px;top:62px;z-index:3;background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:var(--r-md);padding:4px;width:190px;box-shadow:0 14px 28px rgba(0,0,0,.55)}
-  .pop div{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;font-size:14px;font-weight:600;border-radius:8px}
-  .pop div.warn{color:var(--rose)}
+  /* Menyu: taom rasmi yo'q bo'lsa saytdagi "rasmi yo'q" ko'rinishi (iliq fon + bosh harf) */
+  .dish{display:flex;align-items:center;gap:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:10px;margin-top:10px;position:relative;box-shadow:var(--shadow-card)}
+  .ph[data-letter],.dish .ph{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFEDD5,#FED7AA 60%,#FDBA74)}
+  .ph[data-letter]::before{content:attr(data-letter);font:800 26px var(--font-head);color:var(--brand-primary);opacity:.55}
+  .dish .ph{width:60px;height:60px;border-radius:var(--radius-md);flex:none}
+  .dish .t{font-weight:700;font-size:15px;line-height:1.2;font-family:var(--font-head);letter-spacing:-.01em}
+  .dish .pr{font-size:15px;color:var(--brand-primary-hover);font-weight:800;margin-top:3px}
+  .dish.out{opacity:.8} .dish.out .pr{color:var(--text-muted)}
+  .pop{position:absolute;right:8px;top:62px;z-index:3;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:4px;width:190px;box-shadow:var(--shadow-modal)}
+  .pop div{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;font-size:14px;font-weight:600;border-radius:10px}
+  .pop div.warn{color:var(--status-danger)}
 
-  /* Stollar */
+  /* Stollar: holat = rang + nuqta + yozuv (rangsiz ham tushunarli). Matn doim to'q (kontrast). */
   .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-  .tile{height:84px;border-radius:var(--r-md);border:1.5px solid var(--border-subtle);background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-  .tile b{font-size:22px} .tile small{font-size:11px;font-weight:700}
-  .tile.free{border-color:rgba(16,185,129,.55);color:var(--emerald);background:var(--emerald-bg)}
-  .tile.busy{border-color:rgba(245,158,11,.6);color:var(--amber);background:var(--amber-bg)}
-  .tile.bill{border-color:rgba(99,102,241,.7);color:#a5b4fc;background:var(--indigo-bg)}
-  .tile.clean{border-color:rgba(244,63,94,.6);color:#fb7185;background:var(--rose-bg)}
-  .tile.sel{outline:3px solid #fff;outline-offset:2px}
-  .legend{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin:8px 0 2px;flex-wrap:wrap}
-  .legend span:before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:currentColor}
+  .tile{height:84px;border-radius:var(--radius-md);border:1.5px solid var(--border-subtle);background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--text-primary)}
+  .tile b{font-size:24px;font-weight:800} .tile small{font-size:11px;font-weight:700;color:var(--text-secondary);display:inline-flex;align-items:center;gap:5px}
+  .tile small::before,.legend span::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--dot)}
+  .free{--dot:var(--status-success)} .busy{--dot:var(--brand-primary)} .bill{--dot:var(--brand-accent)} .clean{--dot:var(--text-muted)}
+  .tile.free,.st.free{border-color:var(--status-success);background:var(--status-success-light)}
+  .tile.busy,.st.busy{border-color:var(--brand-primary);background:var(--brand-primary-light)}
+  .tile.bill,.st.bill{border-color:var(--brand-accent);background:var(--brand-accent-light)}
+  .tile.clean,.st.clean{border:1.5px dashed var(--text-muted);background:var(--bg-surface-subtle)}
+  .st{gap:6px} .st::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--dot);flex:none}
+  .st.cur{border-style:solid;border-width:2px;border-color:var(--text-primary)}
+  .tile.sel{outline:3px solid var(--text-primary);outline-offset:2px}
+  .legend{display:flex;gap:12px;font-size:11px;font-weight:600;color:var(--text-secondary);margin:8px 0 2px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
   .state4{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 6px}
 
   /* Moliya */
-  .num{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .num{font-size:30px;font-weight:800}
   .tri{display:grid;grid-template-columns:1fr;gap:10px}
   .li{display:flex;align-items:center;gap:12px;min-height:60px;border-bottom:1px solid var(--border-subtle)}
-  .seg{display:flex;background:var(--bg-surface);border-radius:var(--r-md);padding:4px;margin:14px 0 4px}
-  .seg div{flex:1;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-muted);border-radius:8px}
-  .seg div.on{background:var(--bg-elevated);color:var(--text-main)}
+  .seg{display:flex;background:var(--bg-surface-subtle);border-radius:var(--radius-md);padding:4px;margin:14px 0 4px}
+  .seg div{flex:1;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-secondary);border-radius:10px}
+  .seg div.on{background:var(--bg-surface);color:var(--text-primary);box-shadow:var(--shadow-card)}
 
   /* Sozlamalar */
-  .acc{border:1px solid var(--border-subtle);background:var(--bg-surface);border-radius:var(--r-lg);margin-top:10px;overflow:hidden}
+  .acc{border:1px solid var(--border-subtle);background:var(--bg-surface);border-radius:var(--radius-lg);margin-top:10px;overflow:hidden;box-shadow:var(--shadow-card)}
   .acc .h{display:flex;align-items:center;gap:10px;min-height:54px;padding:0 14px;font-weight:700;font-size:15px}
   .acc .b{padding:0 14px 14px}
   .days{display:flex;gap:6px}
-  .day{flex:1;min-height:44px;border-radius:var(--r-md);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-muted)}
-  .day.on{background:var(--emerald-bg);border-color:var(--emerald);color:var(--emerald)}
-  .savebar{position:absolute;left:0;right:0;bottom:68px;background:#101a3b;border-top:1px solid var(--border-strong);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
-  .help{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.4}
+  .day{flex:1;min-height:44px;border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-secondary)}
+  .day.on{background:var(--brand-primary-subtle);border-color:var(--brand-primary);color:var(--brand-primary-hover)}
+  .openbox{width:100%;justify-content:space-between;background:var(--status-success-light);border:1px solid var(--status-success);border-radius:var(--radius-md);padding:0 12px;min-height:52px}
+  .savebar{position:absolute;left:0;right:0;bottom:68px;background:var(--bg-surface);border-top:1px solid var(--border-strong);box-shadow:var(--shadow-modal);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700}
+  .help{font-size:12px;color:var(--text-secondary);margin-top:6px;line-height:1.4}
 
   /* ---- Kompyuter ramkasi (kichraytirilgan) ---- */
-  .deskwrap{width:864px;height:540px;position:relative;overflow:hidden;border:1px solid var(--border-strong);border-radius:12px}
+  .deskwrap{width:864px;height:540px;position:relative;overflow:hidden;border:1px solid var(--border-strong);border-radius:var(--radius-md);box-shadow:var(--shadow-modal)}
   .desk{width:1440px;height:900px;transform:scale(.6);transform-origin:0 0;background:var(--bg-primary);display:flex;position:absolute;left:0;top:0}
-  .side{width:240px;background:#162040;border-right:1px solid var(--border-subtle);padding:16px 10px;display:flex;flex-direction:column;gap:4px}
-  .side .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;padding:4px 8px 16px;border-bottom:1px solid var(--border-subtle);margin-bottom:10px}
-  .side .nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:var(--r-md);font-size:14px;font-weight:600;color:var(--text-muted)}
-  .side .nav.on{background:var(--emerald-bg);color:var(--emerald)}
+  .side{width:240px;background:var(--bg-surface);border-right:1px solid var(--border-subtle);padding:16px 10px;display:flex;flex-direction:column;gap:4px}
+  .side .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;font-family:var(--font-head);letter-spacing:-.01em;padding:4px 8px 16px;border-bottom:1px solid var(--border-subtle);margin-bottom:10px}
+  .crest{width:34px;height:34px;border-radius:10px;background:var(--brand-primary);color:var(--text-inverse);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:18px;flex:none}
+  .side .nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:var(--radius-md);font-size:14px;font-weight:600;color:var(--text-secondary)}
+  .side .nav.on{background:var(--brand-primary-subtle);color:var(--brand-primary-hover);font-weight:700}
   .dmain{flex:1;padding:26px 28px}
   .dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
-  .dcard{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--r-lg);padding:14px}
-  .dcard .ph{height:120px;border-radius:12px;background:linear-gradient(135deg,#d97706,#92400e);margin-bottom:10px}
+  .dcard{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow-card)}
+  .dcard .ph{height:120px;border-radius:var(--radius-md);margin-bottom:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFEDD5,#FED7AA 60%,#FDBA74)}
+  .dcard .ph::before{font-size:54px}
+  .dcard .pr{font-size:16px;color:var(--brand-primary-hover);font-weight:800}
   table{width:100%;border-collapse:collapse}
 </style>
 </head>
@@ -170,10 +201,31 @@
 </svg>
 
 <div class="note">
-  <b>MAKET (kod emas), ma'qullash uchun.</b> Ranglar, shakllar va soyalar yangi panelning <b>mavjud</b> dizayn tizimidan olingan; yangi vizual til yo'q. O'zgargan narsalar: telefonda pastki tab-bar, kartalardagi asosiy amal ("Bor / Tugadi"), stol plitkalari, Moliyaning 3 raqami, Sozlamalardagi kun/vaqt tanlagichlari, o'chirish o'rniga "Arxivlash + Qaytarish". <b>Kompyuterda mavjud chap sidebar o'zgarmaydi.</b> Telefon ramkalari 390 px, kompyuter ramkalari 1440 px (kichraytirib ko'rsatilgan).
+  <b>MAKET (kod emas), ma'qullash uchun.</b> <b>Bitta dizayn tili:</b> asosiy saytdagi (mehmon ilovasi) ranglar, shriftlar, burchaklar va soyalar. Yangi rang yoki uslub qo'shilmagan. O'zgargan narsalar: telefonda pastki tab-bar, kartalardagi asosiy amal ("Bor / Tugadi"), stol plitkalari, Moliyaning 3 raqami, Sozlamalardagi kun/vaqt tanlagichlari, o'chirish o'rniga "Arxivlash + Qaytarish". <b>Kompyuterda mavjud chap sidebar o'zgarmaydi.</b> Telefon ramkalari 390 px, kompyuter ramkalari 1440 px (kichraytirib ko'rsatilgan).
 </div>
 
 <main>
+<section class="ds">
+  <b style="font-size:15px;font-family:var(--font-head)">Dizayn tili: asosiy sayt bilan aynan bir xil</b>
+  <div class="help" style="margin-top:4px">Maketdagi har bir rang mehmon ilovasidagi <code>frontend/src/index.css</code> dan. Yangi rang yo'q. Hozirgi /ra/ panelning to'q-ko'k ko'rinishi (<code>admins/shared/src/ui/tokens.css</code>) shu bilan almashtiriladi.</div>
+  <div class="sw-row">
+    <div class="sq"><i style="background:var(--bg-primary);border-bottom:1px solid var(--border-subtle)"></i><span><b>Fon</b>#FAF8F5</span></div>
+    <div class="sq"><i style="background:var(--bg-surface);border-bottom:1px solid var(--border-subtle)"></i><span><b>Karta</b>#FFFFFF</span></div>
+    <div class="sq"><i style="background:var(--brand-primary)"></i><span><b>Asosiy (apelsin)</b>#EA580C</span></div>
+    <div class="sq"><i style="background:var(--brand-primary-hover)"></i><span><b>Asosiy, to'q (matn)</b>#C2410C</span></div>
+    <div class="sq"><i style="background:var(--brand-primary-subtle)"></i><span><b>Asosiy, och</b>#FFEDD5</span></div>
+    <div class="sq"><i style="background:var(--status-success)"></i><span><b>Yashil (bor, ochiq)</b>#16A34A</span></div>
+    <div class="sq"><i style="background:var(--brand-accent)"></i><span><b>Anor-qizil (diqqat)</b>#E11D48</span></div>
+    <div class="sq"><i style="background:var(--status-danger)"></i><span><b>Xato / o'chirish</b>#DC2626</span></div>
+    <div class="sq"><i style="background:var(--text-primary)"></i><span><b>Matn</b>#181513</span></div>
+  </div>
+  <div class="fonts">
+    <span style="font-family:var(--font-head);font-weight:800;font-size:26px;letter-spacing:-.02em">Outfit 800: sarlavha, raqam, narx</span>
+    <span style="font-size:15px;font-weight:500">Plus Jakarta Sans: oddiy matn va tugmalar</span>
+  </div>
+  <div class="help">Stol holati (bo'sh, band, hisob, tozalash) faqat rangga tayanmaydi: nuqta va yozuv ham bor, matn doim to'q rangda.</div>
+</section>
+
 <h1>Telefon (390 px): egasi/menejer ko'zi bilan</h1>
 <p class="sub">Maqsad: eng ko'p ishlatiladigan 8 ta vazifa 0–3 bosishda (TZ 1-bo'lim, T1–T8). Pastdagi tab-bar bosh barmoq yetadigan joyda, 5 tadan oshmaydi; rolga ko'rinmaydigan bo'limlar ko'rsatilmaydi (ofitsiant: Bugun · Buyurtmalar · Stollar).</p>
 
@@ -192,15 +244,15 @@
       <div class="muted" style="font-size:13px">Naqd 106 000 · Karta 194 000</div>
     </div>
     <div style="font-size:13px;font-weight:800;margin:18px 0 0;color:var(--text-muted)">DIQQAT TALAB QILADI</div>
-    <div class="todo"><div class="dot" style="background:var(--amber-bg);color:var(--amber)"><svg class="i"><use href="#bag"/></svg></div><div><b>2 ta buyurtma</b><div class="dim" style="font-size:12px">tayyorlanishini kutmoqda</div></div><span class="sp"></span><svg class="i dim"><use href="#more"/></svg></div>
-    <div class="todo"><div class="dot" style="background:var(--rose-bg);color:var(--rose)"><svg class="i"><use href="#menu"/></svg></div><div><b>4 ta taom tugagan</b><div class="dim" style="font-size:12px">menyuda "Tugadi" deb turibdi</div></div><span class="sp"></span><svg class="i dim"><use href="#more"/></svg></div>
+    <div class="todo"><div class="dot" style="background:var(--brand-primary-subtle);color:var(--brand-primary-hover)"><svg class="i"><use href="#bag"/></svg></div><div><b>2 ta buyurtma</b><div class="dim" style="font-size:12px">tayyorlanishini kutmoqda</div></div><span class="sp"></span><svg class="i dim"><use href="#more"/></svg></div>
+    <div class="todo"><div class="dot" style="background:var(--brand-accent-light);color:var(--brand-accent)"><svg class="i"><use href="#menu"/></svg></div><div><b>4 ta taom tugagan</b><div class="dim" style="font-size:12px">menyuda "Tugadi" deb turibdi</div></div><span class="sp"></span><svg class="i dim"><use href="#more"/></svg></div>
     <div class="two">
       <div class="card stat"><span class="muted" style="font-size:12px">Band stollar</span><b>0 / 11</b></div>
       <div class="card stat"><span class="muted" style="font-size:12px">O'rtacha chek</span><b>60 000</b></div>
     </div>
     <div style="font-size:13px;font-weight:800;margin:18px 0 4px;color:var(--text-muted)">ENG KO'P SOTILGAN</div>
-    <div class="li"><b style="width:22px;color:var(--text-dim)">1</b><span style="font-weight:600">Medovik (Asalli tort)</span><span class="sp"></span><span class="muted" style="font-size:13px">3 ta</span></div>
-    <div class="li"><b style="width:22px;color:var(--text-dim)">2</b><span style="font-weight:600">Sezar Salati</span><span class="sp"></span><span class="muted" style="font-size:13px">2 ta</span></div>
+    <div class="li"><b style="width:22px;color:var(--text-muted)">1</b><span style="font-weight:600">Medovik (Asalli tort)</span><span class="sp"></span><span class="muted" style="font-size:13px">3 ta</span></div>
+    <div class="li"><b style="width:22px;color:var(--text-muted)">2</b><span style="font-weight:600">Sezar Salati</span><span class="sp"></span><span class="muted" style="font-size:13px">2 ta</span></div>
   </div>
   <div class="tabs">
     <div class="tab on"><svg class="i"><use href="#home"/></svg>Bugun</div>
@@ -218,12 +270,12 @@
     <div class="top"><h3>Menyu</h3><button class="btn main"><svg class="i"><use href="#plus"/></svg>Taom</button></div>
     <div class="input ph"><svg class="i" style="margin-right:8px"><use href="#search"/></svg>Taom nomini qidirish…</div>
     <div class="chips"><span class="chip on">Hammasi</span><span class="chip">Ichimliklar</span><span class="chip">Kaboblar</span><span class="chip">Salatlar</span><span class="chip">Shirinliklar</span></div>
-    <div class="dish"><div class="ph"></div><div><div class="t">Medovik (Asalli tort)</div><div class="pr">26 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div></div>
-    <div class="dish" style="z-index:2"><div class="ph" style="background:linear-gradient(135deg,#ea580c,#7c2d12)"></div><div><div class="t">Muzdek Limonad</div><div class="pr">20 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim" style="margin-left:-4px"><use href="#more"/></svg>
+    <div class="dish"><div class="ph" data-letter="M"></div><div><div class="t">Medovik (Asalli tort)</div><div class="pr">26 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div></div>
+    <div class="dish" style="z-index:2"><div class="ph" data-letter="M"></div><div><div class="t">Muzdek Limonad</div><div class="pr">20 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim" style="margin-left:-4px"><use href="#more"/></svg>
       <div class="pop"><div><svg class="i"><use href="#edit"/></svg>Tahrirlash</div><div><svg class="i"><use href="#copy"/></svg>Nusxalash</div><div class="warn"><svg class="i"><use href="#archive"/></svg>Arxivlash</div></div></div>
-    <div class="dish out"><div class="ph" style="background:linear-gradient(135deg,#65a30d,#365314)"></div><div><div class="t">Sezar Salati</div><div class="pr">Tugadi</div></div><span class="sp"></span><div class="sw off"><span>Tugadi</span><i></i></div></div>
-    <div class="dish"><div class="ph" style="background:linear-gradient(135deg,#b45309,#78350f)"></div><div><div class="t">Dimlama (Go'sht va sabzavotlar)</div><div class="pr">48 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div></div>
-    <div class="toast"><svg class="i" style="color:var(--emerald)"><use href="#archive"/></svg>Taom arxivlandi<b>Qaytarish</b></div>
+    <div class="dish out"><div class="ph" data-letter="S"></div><div><div class="t">Sezar Salati</div><div class="pr">Tugadi</div></div><span class="sp"></span><div class="sw off"><span>Tugadi</span><i></i></div></div>
+    <div class="dish"><div class="ph" data-letter="D"></div><div><div class="t">Dimlama (Go'sht va sabzavotlar)</div><div class="pr">48 000 so'm</div></div><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div></div>
+    <div class="toast"><svg class="i" style="color:var(--brand-primary-subtle)"><use href="#archive"/></svg>Taom arxivlandi<b>Qaytarish</b></div>
   </div>
   <div class="tabs">
     <div class="tab"><svg class="i"><use href="#home"/></svg>Bugun</div>
@@ -264,7 +316,7 @@
   <div class="phone"><div class="scr">
     <div class="top"><h3>Stollar</h3><div class="row"><button class="btn"><svg class="i"><use href="#plus"/></svg>Ko'p stol</button><button class="btn main"><svg class="i"><use href="#plus"/></svg>Stol</button></div></div>
     <div class="chips"><span class="chip on">1-qavat</span><span class="chip">Yozgi ayvon</span><span class="chip">Hammasi</span></div>
-    <div class="legend"><span style="color:var(--emerald)">Bo'sh</span><span style="color:var(--amber)">Band</span><span style="color:#a5b4fc">Hisob so'ralgan</span><span style="color:#fb7185">Tozalanmoqda</span></div>
+    <div class="legend"><span class="free">Bo'sh</span><span class="busy">Band</span><span class="bill">Hisob so'ralgan</span><span class="clean">Tozalanmoqda</span></div>
     <div class="tiles">
       <div class="tile free"><b>1</b><small>Bo'sh</small></div><div class="tile busy"><b>2</b><small>Band</small></div><div class="tile free"><b>3</b><small>Bo'sh</small></div>
       <div class="tile bill"><b>4</b><small>Hisob</small></div><div class="tile free"><b>5</b><small>Bo'sh</small></div><div class="tile clean"><b>6</b><small>Tozalash</small></div>
@@ -297,12 +349,12 @@
       <div class="grab"></div>
       <div class="row" style="margin-bottom:4px"><b style="font-size:18px">Stol 4</b><span class="dim" style="font-size:13px">· 4 kishi · 3 955 500 so'm hisob</span></div>
       <div class="state4">
-        <button class="btn" style="border-color:rgba(16,185,129,.6);color:var(--emerald)">Bo'sh</button><button class="btn" style="border-color:rgba(245,158,11,.6);color:var(--amber)">Band</button>
-        <button class="btn" style="border-color:#6366f1;color:#a5b4fc;background:var(--indigo-bg)">Hisob so'ralgan</button><button class="btn" style="border-color:rgba(244,63,94,.6);color:#fb7185">Tozalanmoqda</button>
+        <button class="btn st free">Bo'sh</button><button class="btn st busy">Band</button>
+        <button class="btn st bill cur">Hisob so'ralgan</button><button class="btn st clean">Tozalanmoqda</button>
       </div>
       <div class="item"><svg class="i"><use href="#grid"/></svg>QR kodni ko'rish va chop etish</div>
       <div class="item"><svg class="i"><use href="#edit"/></svg>Stolni tahrirlash</div>
-      <div class="item" style="color:var(--rose)"><svg class="i"><use href="#archive"/></svg>Arxivlash</div>
+      <div class="item" style="color:var(--status-danger)"><svg class="i"><use href="#archive"/></svg>Arxivlash</div>
     </div>
   </div>
   <div class="tabs">
@@ -321,13 +373,13 @@
     <div class="top"><h3>Moliya</h3><button class="btn main"><svg class="i"><use href="#plus"/></svg>Kirim / Chiqim</button></div>
     <div class="chips"><span class="chip on">Bugun</span><span class="chip">Kecha</span><span class="chip">7 kun</span><span class="chip">30 kun</span><span class="chip">Boshqa</span></div>
     <div class="tri">
-      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Tushum</span><div class="num" style="color:var(--emerald)">300 000 so'm</div><div class="dim" style="font-size:12px">Naqd 106 000 · Karta 194 000</div></div>
+      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Tushum</span><div class="num" style="color:var(--status-success)">300 000 so'm</div><div class="dim" style="font-size:12px">Naqd 106 000 · Karta 194 000</div></div>
       <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Xarajat</span><div class="num">530 000 so'm</div></div>
-      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Foyda (tushum − xarajat)</span><div class="num" style="color:#fb7185">−230 000 so'm</div><div class="dim" style="font-size:12px">Kassada qoldi: 984 000 so'm</div></div>
+      <div class="card"><span class="muted" style="font-size:13px;font-weight:600">Foyda (tushum − xarajat)</span><div class="num" style="color:var(--status-danger)">−230 000 so'm</div><div class="dim" style="font-size:12px">Kassada qoldi: 984 000 so'm</div></div>
     </div>
     <div class="seg"><div class="on">Operatsiyalar</div><div>Qarzlar</div></div>
-    <div class="li"><div><b style="font-size:14px">Savdo: Stol #VIP-1</b><div class="dim" style="font-size:12px">bugun 13:40 · Karta</div></div><span class="sp"></span><b style="color:var(--emerald)">+75 000</b></div>
-    <div class="li"><div><b style="font-size:14px">Sabzavot va mevalar</b><div class="dim" style="font-size:12px">bugun 09:15 · Naqd</div></div><span class="sp"></span><b style="color:#fb7185">−350 000</b></div>
+    <div class="li"><div><b style="font-size:14px">Savdo: Stol #VIP-1</b><div class="dim" style="font-size:12px">bugun 13:40 · Karta</div></div><span class="sp"></span><b>+75 000</b></div>
+    <div class="li"><div><b style="font-size:14px">Sabzavot va mevalar</b><div class="dim" style="font-size:12px">bugun 09:15 · Naqd</div></div><span class="sp"></span><b>−350 000</b></div>
     <div style="margin-top:12px"><button class="btn ghost"><svg class="i"><use href="#down"/></svg>Excel uchun yuklab olish</button></div>
   </div>
   <div class="tabs">
@@ -345,16 +397,16 @@
   <div class="phone"><div class="scr">
     <div class="top"><h3>Sozlamalar</h3></div>
     <div class="acc"><div class="h"><svg class="i"><use href="#home"/></svg>Restoran ma'lumoti<span class="sp"></span><span class="dim">›</span></div></div>
-    <div class="acc"><div class="h"><svg class="i" style="color:var(--indigo)"><use href="#clock"/></svg>Ish vaqti<span class="sp"></span><span class="dim">⌄</span></div>
+    <div class="acc"><div class="h"><svg class="i" style="color:var(--brand-primary-hover)"><use href="#clock"/></svg>Ish vaqti<span class="sp"></span><span class="dim">⌄</span></div>
       <div class="b">
-        <div class="sw on" style="width:100%;justify-content:space-between;background:var(--emerald-bg);border:1px solid rgba(16,185,129,.4);border-radius:var(--r-md);padding:0 12px;min-height:52px"><span>Restoran hozir ochiq<div class="help" style="margin:0;font-weight:500;color:var(--text-muted)">Yopiq bo'lsa mehmonlar buyurtma bera olmaydi</div></span><i></i></div>
+        <div class="sw on openbox"><span>Restoran hozir ochiq<div class="help" style="margin:0;font-weight:500;color:var(--text-muted)">Yopiq bo'lsa mehmonlar buyurtma bera olmaydi</div></span><i></i></div>
         <label class="l">Ish kunlari</label>
         <div class="days"><div class="day on">Du</div><div class="day on">Se</div><div class="day on">Ch</div><div class="day on">Pa</div><div class="day on">Ju</div><div class="day on">Sh</div><div class="day">Ya</div></div>
         <label class="l">Ish vaqti</label>
         <div class="row"><div class="input" style="justify-content:center">08:00</div><span class="dim">—</span><div class="input" style="justify-content:center">22:00</div></div>
       </div></div>
-    <div class="acc"><div class="h"><svg class="i" style="color:var(--amber)"><use href="#coin"/></svg>Xizmat haqi<span class="sp"></span><span class="dim">›</span></div></div>
-    <div class="acc"><div class="h"><svg class="i" style="color:var(--rose)"><use href="#gear"/></svg>Qo'shimcha (oshxona ekrani va boshqalar)<span class="sp"></span><span class="dim">›</span></div></div>
+    <div class="acc"><div class="h"><svg class="i" style="color:var(--brand-primary-hover)"><use href="#coin"/></svg>Xizmat haqi<span class="sp"></span><span class="dim">›</span></div></div>
+    <div class="acc"><div class="h"><svg class="i" style="color:var(--brand-primary-hover)"><use href="#gear"/></svg>Qo'shimcha (oshxona ekrani va boshqalar)<span class="sp"></span><span class="dim">›</span></div></div>
     <div class="savebar"><span>O'zgarishlar bor</span><span class="sp"></span><button class="btn ghost" style="min-height:40px">Bekor qilish</button><button class="btn main" style="min-height:40px">Saqlash</button></div>
   </div>
   <div class="tabs">
@@ -379,7 +431,7 @@
       <div class="item"><svg class="i"><use href="#coin"/></svg>Moliya</div>
       <div class="item"><svg class="i"><use href="#gear"/></svg>Sozlamalar</div>
       <div class="item"><svg class="i"><use href="#swap"/></svg>Klassik panelga o'tish</div>
-      <div class="item" style="color:var(--rose)"><svg class="i"><use href="#out"/></svg>Chiqish<span class="sp"></span><span class="dim" style="font-size:12px">demo-ega</span></div>
+      <div class="item" style="color:var(--status-danger)"><svg class="i"><use href="#out"/></svg>Chiqish<span class="sp"></span><span class="dim" style="font-size:12px">demo-ega</span></div>
     </div>
   </div>
   <div class="tabs">
@@ -400,9 +452,9 @@
 
 <figure>
   <div class="deskwrap"><div class="desk">
-    <div class="side"><div class="brand"><svg class="i" style="color:var(--emerald)"><use href="#home"/></svg>Registon Restorani</div>
+    <div class="side"><div class="brand"><span class="crest">R</span>Registon Restorani</div>
       <div class="nav on"><svg class="i"><use href="#home"/></svg>Bugun</div><div class="nav"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div><div class="nav"><svg class="i"><use href="#menu"/></svg>Menyu</div><div class="nav"><svg class="i"><use href="#grid"/></svg>Stollar</div><div class="nav"><svg class="i"><use href="#users"/></svg>Xodimlar</div><div class="nav"><svg class="i"><use href="#coin"/></svg>Moliya</div><div class="nav"><svg class="i"><use href="#gear"/></svg>Sozlamalar</div>
-      <span class="sp"></span><div class="nav"><svg class="i"><use href="#swap"/></svg>Klassik panelga o'tish</div><div class="nav" style="border-top:1px solid var(--border-subtle);margin-top:6px;padding-top:12px;display:block"><b style="color:var(--text-main)">demo-ega</b><div class="dim" style="font-size:12px">Restoran egasi</div></div>
+      <span class="sp"></span><div class="nav"><svg class="i"><use href="#swap"/></svg>Klassik panelga o'tish</div><div class="nav" style="border-top:1px solid var(--border-subtle);margin-top:6px;padding-top:12px;display:block"><b style="color:var(--text-primary)">demo-ega</b><div class="dim" style="font-size:12px">Restoran egasi</div></div>
     </div>
     <div class="dmain">
       <div class="row"><h3 style="font-size:30px">Bugun</h3><span class="sp"></span><div class="sw on" style="font-size:15px"><span>Restoran ochiq</span><i></i></div></div>
@@ -414,11 +466,11 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
         <div class="card"><b style="font-size:16px">Diqqat talab qiladi</b>
-          <div class="todo"><div class="dot" style="background:var(--amber-bg);color:var(--amber)"><svg class="i"><use href="#bag"/></svg></div><div><b>2 ta buyurtma</b> tayyorlanishini kutmoqda</div></div>
-          <div class="todo"><div class="dot" style="background:var(--rose-bg);color:var(--rose)"><svg class="i"><use href="#menu"/></svg></div><div><b>4 ta taom tugagan</b></div></div></div>
+          <div class="todo"><div class="dot" style="background:var(--brand-primary-subtle);color:var(--brand-primary-hover)"><svg class="i"><use href="#bag"/></svg></div><div><b>2 ta buyurtma</b> tayyorlanishini kutmoqda</div></div>
+          <div class="todo"><div class="dot" style="background:var(--brand-accent-light);color:var(--brand-accent)"><svg class="i"><use href="#menu"/></svg></div><div><b>4 ta taom tugagan</b></div></div></div>
         <div class="card"><b style="font-size:16px">Eng ko'p sotilgan 5 taom</b>
-          <div class="li"><b style="width:22px;color:var(--text-dim)">1</b>Medovik (Asalli tort)<span class="sp"></span><span class="muted">3 ta sotildi</span></div>
-          <div class="li"><b style="width:22px;color:var(--text-dim)">2</b>Sezar Salati<span class="sp"></span><span class="muted">2 ta sotildi</span></div></div>
+          <div class="li"><b style="width:22px;color:var(--text-muted)">1</b>Medovik (Asalli tort)<span class="sp"></span><span class="muted">3 ta sotildi</span></div>
+          <div class="li"><b style="width:22px;color:var(--text-muted)">2</b>Sezar Salati<span class="sp"></span><span class="muted">2 ta sotildi</span></div></div>
       </div>
     </div>
   </div></div>
@@ -427,16 +479,16 @@
 
 <figure>
   <div class="deskwrap"><div class="desk">
-    <div class="side"><div class="brand"><svg class="i" style="color:var(--emerald)"><use href="#home"/></svg>Registon Restorani</div>
+    <div class="side"><div class="brand"><span class="crest">R</span>Registon Restorani</div>
       <div class="nav"><svg class="i"><use href="#home"/></svg>Bugun</div><div class="nav"><svg class="i"><use href="#bag"/></svg>Buyurtmalar</div><div class="nav on"><svg class="i"><use href="#menu"/></svg>Menyu</div><div class="nav"><svg class="i"><use href="#grid"/></svg>Stollar</div><div class="nav"><svg class="i"><use href="#users"/></svg>Xodimlar</div><div class="nav"><svg class="i"><use href="#coin"/></svg>Moliya</div><div class="nav"><svg class="i"><use href="#gear"/></svg>Sozlamalar</div>
     </div>
     <div class="dmain">
       <div class="row"><h3 style="font-size:30px">Menyu</h3><span class="sp"></span><button class="btn main"><svg class="i"><use href="#plus"/></svg>Taom qo'shish</button></div>
       <div class="row" style="margin-top:14px"><div class="input ph" style="width:420px"><svg class="i" style="margin-right:8px"><use href="#search"/></svg>Taom nomini qidirish…</div><span class="chip on">Hammasi</span><span class="chip">Ichimliklar</span><span class="chip">Kaboblar</span><span class="chip">Salatlar</span><span class="sp"></span><button class="btn"><svg class="i"><use href="#filter"/></svg>Filtr</button></div>
       <div class="dgrid">
-        <div class="dcard"><div class="ph"></div><b>Medovik (Asalli tort)</b><div class="row" style="margin-top:8px"><span style="color:var(--emerald);font-weight:700">26 000 so'm</span><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
-        <div class="dcard"><div class="ph" style="background:linear-gradient(135deg,#ea580c,#7c2d12)"></div><b>Muzdek Limonad</b><div class="row" style="margin-top:8px"><span style="color:var(--emerald);font-weight:700">20 000 so'm</span><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
-        <div class="dcard" style="opacity:.78"><div class="ph" style="background:linear-gradient(135deg,#65a30d,#365314)"></div><b>Sezar Salati</b><div class="row" style="margin-top:8px"><span class="muted" style="font-weight:700">Tugadi</span><span class="sp"></span><div class="sw off"><span>Tugadi</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
+        <div class="dcard"><div class="ph" data-letter="M"></div><b>Medovik (Asalli tort)</b><div class="row" style="margin-top:8px"><span class="pr">26 000 so'm</span><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
+        <div class="dcard"><div class="ph" data-letter="M"></div><b>Muzdek Limonad</b><div class="row" style="margin-top:8px"><span class="pr">20 000 so'm</span><span class="sp"></span><div class="sw on"><span>Bor</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
+        <div class="dcard" style="opacity:.78"><div class="ph" data-letter="S"></div><b>Sezar Salati</b><div class="row" style="margin-top:8px"><span class="pr" style="color:var(--text-muted)">Tugadi</span><span class="sp"></span><div class="sw off"><span>Tugadi</span><i></i></div><svg class="i dim"><use href="#more"/></svg></div></div>
       </div>
     </div>
   </div></div>
@@ -446,7 +498,7 @@
 </div>
 
 <h2>Ma'qullash</h2>
-<p class="sub"><b>"Maqul"</b> desangiz, 4-bosqichni shu maket asosida kodlayman. O'zgartirish kerak bo'lsa, qaysi ekranda nima o'zgarishini yozing. Ayniqsa quyidagilarni ko'rib chiqing: (1) pastki tab-bar (5 ta: Bugun · Buyurtmalar · Menyu · Stollar · Yana); (2) menyuda "Bor/Tugadi" almashtirgichi; (3) stollar plitka ko'rinishi; (4) Sozlamalarda kun tugmalari va vaqt tanlagich; (5) tepadagi "Ochiq/Yopiq" almashtirgichi.</p>
+<p class="sub"><b>"Maqul"</b> desangiz, 4-bosqichni shu maket asosida kodlayman. Eslatma: butun /ra/ paneli (hozir to'q-ko'k) shu och, iliq ko'rinishga o'tadi, faqat yangi sahifalar emas. O'zgartirish kerak bo'lsa, qaysi ekranda nima o'zgarishini yozing. Ayniqsa quyidagilarni ko'rib chiqing: (1) pastki tab-bar (5 ta: Bugun · Buyurtmalar · Menyu · Stollar · Yana); (2) menyuda "Bor/Tugadi" almashtirgichi; (3) stollar plitka ko'rinishi; (4) Sozlamalarda kun tugmalari va vaqt tanlagich; (5) tepadagi "Ochiq/Yopiq" almashtirgichi.</p>
 </main>
 </body>
 </html>
