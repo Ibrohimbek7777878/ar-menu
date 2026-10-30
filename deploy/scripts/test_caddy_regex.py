@@ -38,7 +38,10 @@ REAL_BUILDS = {
     '/static/admins/resto/assets/': REPO / 'backend' / 'static' / 'admins' / 'resto' / 'assets',
     '/static/react/assets/': REPO / 'backend' / 'static' / 'react' / 'assets',
 }
-HASHED_EXTENSIONS = ('.js', '.css')
+# Vite `assets/` ichidagi hamma fayl hash oladi (js, css, shriftlar, rasmlar); Caddyfile regex'i ham shularni qamraydi.
+# (Avval faqat js/css edi: lokal shriftlar `.woff2` bilan `react/assets` ga tushgach test hash'li shriftni "hash'siz" deb hisoblab yiqilgan.)
+HASHED_EXTENSIONS = ('.js', '.mjs', '.css', '.woff', '.woff2', '.ttf', '.otf', '.eot', '.svg', '.png', '.jpg', '.jpeg',
+                     '.gif', '.webp', '.avif', '.ico')
 
 # Hash'li, `immutable` OLISHI SHART bo'lgan yo'llar. Birinchi guruh — bevosita haqiqiy build'dan olingan nomlar
 # (printer.BnhYhF-O.js: hash ichida `-`; Page.Bb_65GFr.js: hash ichida `_`; style-hQv6WcD-.css: hash `-` bilan tugaydi).
@@ -182,8 +185,12 @@ class RegexTest(unittest.TestCase):
             if not folder.is_dir():
                 continue
             for item in folder.rglob('*'):
-                if item.is_file() and item.suffix not in HASHED_EXTENSIONS:
-                    url = prefix + item.relative_to(folder).as_posix()
+                relative = item.relative_to(folder)
+                # `assets/` ichidagi hash'li kengaytmali fayllar positiv testda tekshiriladi; qolgani (manifest, index.html,
+                # `assets/` dan tashqaridagi rasm/svg) hech qachon `immutable` olmasligi kerak
+                hashed_asset = relative.parts[0] == 'assets' and item.suffix in HASHED_EXTENSIONS
+                if item.is_file() and not hashed_asset:
+                    url = prefix + relative.as_posix()
                     with self.subTest(path=url):
                         self.assertFalse(self.matches(url), f"hash'siz fayl `immutable` olmasligi kerak: {url}")
 
