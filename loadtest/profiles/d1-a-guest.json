@@ -1,0 +1,15 @@
+{
+  "name": "d1-a-guest",
+  "description": "Q1 (TZ §7): 1000 bir vaqtdagi mehmon, o'ylash 10-30 s, 30 daqiqa. ~10% mehmon buyurtma beradi (≈ 90 buyurtma/daqiqa). Haqiqiy stekda (PG + Caddy) yurgiziladi.",
+  "durationSec": 1800,
+  "scenarios": [
+    { "type": "guest", "users": 1000, "rampSec": 120, "thinkMin": 10, "thinkMax": 30, "browseMin": 2, "browseMax": 4, "orderRatio": 0.1, "welcomeRatio": 0.5 }
+  ],
+  "slo": {
+    "minDurationSec": 1800,
+    "maxErrorRate": 0.001,
+    "noDuplicateOrders": true,
+    "maxOrderFailures": 0,
+    "steps": { "menu": { "p95Ms": 500 }, "welcome": { "p95Ms": 500 }, "order": { "p95Ms": 800 } }
+  }
+}

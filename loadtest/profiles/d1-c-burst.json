@@ -1,0 +1,7 @@
+{
+  "name": "d1-c-burst",
+  "description": "Q2 (TZ §7): portlash, 1000 mehmon 10 soniyada menyuni ochadi. CDN bilan p95 < 1 s; CDN'siz server qotmasligi va navbat 30 s ichida bo'shashi kerak.",
+  "durationSec": 120,
+  "scenarios": [{ "type": "burst", "users": 1000, "windowSec": 10 }],
+  "slo": { "maxErrorRate": 0.01, "maxDrainSec": 30, "steps": { "menu": { "p95Ms": 1000 } } }
+}

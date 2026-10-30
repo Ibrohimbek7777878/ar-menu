@@ -1,0 +1,12 @@
+{
+  "name": "guliston-loadtest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Restoran menyu yuk testi (S0-1): haqiqiy xulqli stsenariylar, tashqi paketsiz (Node >= 20)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test",
+    "smoke": "node run.mjs profiles/smoke.json --no-report"
+  }
+}

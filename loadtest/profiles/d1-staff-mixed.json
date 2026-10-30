@@ -1,0 +1,17 @@
+{
+  "name": "d1-staff-mixed",
+  "description": "Q4 (TZ §7): 20 xodim ekrani (5 s polling) + 100 buyurtma/daqiqa + 1000 mehmon o'qishi. Xodim yo'li mehmon yukida sekinlashmasligi kerak (pool ajratish isboti). LT_STAFF_USER/LT_STAFF_PASS kerak.",
+  "durationSec": 1800,
+  "scenarios": [
+    { "type": "staff", "screens": 20, "waiterShare": 0.5, "pollMs": 5000 },
+    { "type": "orders", "ratePerMin": 100 },
+    { "type": "guest", "users": 1000, "rampSec": 120, "orderRatio": 0 }
+  ],
+  "slo": {
+    "minDurationSec": 1800,
+    "maxErrorRate": 0.001,
+    "noDuplicateOrders": true,
+    "maxOrderFailures": 0,
+    "steps": { "kds-orders": { "p95Ms": 300 }, "waiter-orders": { "p95Ms": 300 }, "waiter-tables": { "p95Ms": 300 }, "order": { "p95Ms": 800 }, "menu": { "p95Ms": 500 } }
+  }
+}

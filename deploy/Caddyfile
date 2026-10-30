@@ -41,14 +41,19 @@
 	# Xodimlar va ma'muriyat magistrali (TZ 0.6: KDS, POS ofitsiant, Resto-Admin SPA, moliya) -> web-staff
 	@staff path /api/restaurant/admin/* /api/kds/* /api/v1/restaurant/orders* /api/v1/restaurant/tables* /api/v1/restaurant/calls* /api/v1/restaurant/finance* /seller/* /admin/* /kds* /kitchen* /waiter* /arrival* /ra/* /ra
 	handle @staff {
-		reverse_proxy web-staff:8000
+		reverse_proxy web-staff:8000 {
+			# S0-4: har so'rovga noyob id (mijoz yuborganini ustidan yozadi); gunicorn jurnalida ko'rinadi
+			header_up X-Request-Id {http.request.uuid}
+		}
 	}
 
 	# Mehmonlar va umumiy oqim (3D menyu, savat, stol, welcome) -> web
 	handle {
 		# Sog'lomlikni Docker (web konteyner health-check) va tashqi healthcheck.sh kuzatadi; Caddy'ning faol tekshiruvi
 		# kerak emas (u Host sarlavhasisiz /health/ ga urilib, Django'dan 400/301 olib, web'ni "nosoz" deb belgilardi)
-		reverse_proxy web:8000
+		reverse_proxy web:8000 {
+			header_up X-Request-Id {http.request.uuid}
+		}
 	}
 
 	header {

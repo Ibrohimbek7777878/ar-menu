@@ -1,0 +1,7 @@
+{
+  "name": "stress-menu",
+  "description": "B (TZ 1.2): stress, o'ylash vaqtisiz uzluksiz so'rov. Faqat chegara va oldin/keyin solishtirish uchun, isbot emas. --users bilan ulanishlar soni o'zgartiriladi.",
+  "durationSec": 10,
+  "scenarios": [{ "type": "stress", "users": 100, "paths": ["/menu/"] }],
+  "slo": { "maxErrorRate": 0.05 }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "d1-write",
+  "description": "Q3 (TZ §7): 100 buyurtma/daqiqa, 30 daqiqa. p95 < 800 ms, takroriy raqam yo'q. Qoldiq va kassa to'g'riligi DB tekshiruvi bilan alohida (README).",
+  "durationSec": 1800,
+  "scenarios": [{ "type": "orders", "ratePerMin": 100 }],
+  "slo": { "minDurationSec": 1800, "maxErrorRate": 0.001, "noDuplicateOrders": true, "maxOrderFailures": 0, "steps": { "order": { "p95Ms": 800 } } }
+}

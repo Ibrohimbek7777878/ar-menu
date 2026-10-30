@@ -1,0 +1,10 @@
+{
+  "name": "smoke",
+  "description": "Tezkor tekshiruv (20 s): mehmon + buyurtma. Generatorning o'zini va serverning asosiy yo'llarini sinash uchun, isbot emas.",
+  "durationSec": 20,
+  "scenarios": [
+    { "type": "guest", "users": 20, "rampSec": 5, "thinkMin": 1, "thinkMax": 3, "browseMin": 1, "browseMax": 2, "orderRatio": 0.3 },
+    { "type": "orders", "ratePerMin": 30 }
+  ],
+  "slo": { "maxErrorRate": 0.01, "noDuplicateOrders": true, "maxOrderFailures": 0, "steps": { "menu": { "p95Ms": 1500 } } }
+}

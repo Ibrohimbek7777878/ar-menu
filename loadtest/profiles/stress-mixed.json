@@ -1,0 +1,7 @@
+{
+  "name": "stress-mixed",
+  "description": "B (TZ 1.2): stress, mehmonning asosiy yo'llari (/menu/, /, menyu API) bir vaqtda. Oldin/keyin solishtirish uchun.",
+  "durationSec": 10,
+  "scenarios": [{ "type": "stress", "users": 99, "paths": ["/menu/", "/", "/api/v1/restaurant/menu/"] }],
+  "slo": { "maxErrorRate": 0.05 }
+}
