@@ -2,7 +2,7 @@
 
 **Hujjat kodi:** `TZ_MASSHTAB_VA_ISHONCHLILIK_2026-10-30`
 **Yangilangan:** 2026-10-30 · Repo: `/home/ibrohim/Desktop/client_baza/online store_guliston` · Branch: `feature/admin-menu-telegram`
-**Holat: TASDIQLASH KUTILMOQDA. Egasi tasdiqlab ruxsat bermaguncha kod yozilmaydi** (AGENTS.md, 1-qoida).
+**Holat: TASDIQLANDI (egasi 2026-10-30 "boshla" dedi). S0 bajarilmoqda.** 10-bo'limdagi K1-K10 uchun standartlar qabul qilingan deb olinadi; K2 (VPS), K3 (CDN), K5 (zaxira hisobi) S2/S3/S5 boshlanishidan oldin kerak bo'ladi. Har faza tugagach to'xtab hisobot beriladi (§12).
 **Yo'l xaritasi (ketma-ketlik, vazifalar, muddat):** `ROADMAP_MASSHTAB_VA_ISHGA_TUSHIRISH_2026-10-30.md`
 **Bog'liq hujjatlar:** `TZ_TUZATISH_VA_SODDALASHTIRISH_2026-10-29.md` (4-bosqich va qoldiq xatolar), `TZ_MENU_CACHE_AND_DEPLOY_POOLS_2026-10-27.md` (menyu keshi, pool ajratish: kodi bor), `TZ_ROADMAP_QOLGAN_ISHLAR_2026-10-21.md` (R9-9 Redis, R10-8 yuk testi, R11, R12: shu hujjat ularni aniqlashtiradi va almashtiradi).
 
@@ -68,7 +68,7 @@ Xatolar: har yurishda 0–16 ta uzilgan ulanish (≤ 0.3%). Server **qotmadi**, 
 
 | № | Topilma | Dalil | Ta'siri |
 |---|---|---|---|
-| T1 | **Har Python so'rovi kamida ~7 ms**, hatto bo'sh 304 ham (~560 req/s / 4 ishchi). Sabab (taxminiy, profil kerak): 16 ta middleware, shundan 6 tasi o'zimizniki (`MultiProductHostPortMiddleware`, `UploadValidationMiddleware`, `SellerTenantMiddleware`, `LanguageMiddleware`, `SecurityHeadersMiddleware`, `RestaurantStaffRBACMiddleware`) | `settings.py: MIDDLEWARE`; 304 o'lchovi | Mehmon sahifasi uchun ham to'liq stek ishlaydi. Profil kerak |
+| T1 | **Menyu keshiga Django model NUSXALARI saqlanadi (pickle)**: `_build_tma_menu` keshga `featured_products`, `category_groups`, `categories`, `ar_products` (ORM ob'ektlari) yozadi; har `/menu/` so'rovida ~384 ta model qayta tiklanadi (`_pickle.loads`, `Model.__setstate__`, `uuid.__setstate__`) | S0-3 profili (DEBUG=False): `/menu/` **12 ms/so'rov**, shundan ~6 ms shu pickle; `web/tma_views.py:138-200`, `products/menu_cache.py:57` | Eng katta bitta xarajat. Oddiy ma'lumot (dict/JSON) keshlansa taxminan yarmiga tushadi (S1-1). Redis'ga o'tganda ham pickle qoladi, shuning uchun keshlanadigan narsa o'zgarishi shart |
 | T2 | `/menu/` bitta so'rovda **3 marta `app_settings` ni** keshsiz o'qiydi + 1 `shops` (jami 4 SQL) | `CaptureQueriesContext` | Ortiqcha DB yuki, oson tuzatiladi |
 | T3 | `/menu/` va `/` javobida **`Cache-Control` yo'q** (`Vary: Accept-Language, Cookie, origin`) | sarlavhalar tekshiruvi | Brauzer va CDN keshlay olmaydi. `/api/v1/restaurant/menu/` da bor (`max-age=30`, ETag) |
 | T4 | `ProductListSerializer` da `shop.name` uchun `select_related` yo'q: 20 elementli sahifada 22 SQL | so'rov hisobi | Faqat zaxira yo'lda; ikkinchi darajali |
@@ -81,6 +81,12 @@ Xatolar: har yurishda 0–16 ta uzilgan ulanish (≤ 0.3%). Server **qotmadi**, 
 | T11 | **Rasm va 3D (GLB 0.6–2.5 MB) VPS'ning o'zidan Caddy orqali beriladi** | `Caddyfile: handle /media/*` | Tez-tez CPU emas, **chiquvchi trafik** va VPS'ning kanal/kvotasi tiqilinch bo'ladi: 1000 mehmon × 1–3 MB = 1–3 GB bir necha daqiqada |
 | T12 | Bitta VPS, bitta DB: **nol uzilish (zero downtime) kafolatlanmaydi**. `deploy.sh` `docker compose up -d` bilan konteynerni **qayta yaratadi** (rolling emas): har deployda bir necha soniya uzilish bo'ladi; VPS yoki DB yiqilsa hammasi to'xtaydi. (Rolling faqat `systemd` yo'lida: `systemctl reload` gunicorn ishchilarini birma-bir almashtiradi) | `deploy/scripts/deploy.sh:29`, arxitektura | 99.9% va yuqori mavjudlik D2 da; D1 da deploy tunda/kam yuk paytida. S5 da qisqartirish yo'li ko'riladi |
 | T13 | Xodim polling'i har 5 s, ETag/304 va yashirin tabda to'xtash yo'q | `NavigationContext.tsx:399,805` | Platformada yuk (1.3 qarang) |
+| T14 | **Kutilmagan server xatosi mijozga HTTP 400 bo'lib qaytadi**: `RestaurantOrderCreateView.post` dagi `except Exception` -> `400 "Buyurtmani qabul qilib bo'lmadi"`. Yuk testida SQLite `database is locked` shu tarzda 400 ga aylandi (19 buyurtmadan 1 tasi). PostgreSQL'da deadlock yoki ulanish uzilishi ham xuddi shunday bo'ladi | `orders/interfaces/api/views.py:79`; yuk testi jurnali | Sentry va monitoring buni xato deb ko'rmaydi (400), mijoz "so'rovim noto'g'ri" deb qayta urinmaydi, yo'qolgan buyurtma kuzatilmaydi. S4-1: kutilmagan/vaqtinchalik xatoda 503 + `Retry-After`, 400 faqat haqiqiy mijoz xatosida |
+| T15 | **304 yo'li ham 2 ta SQL qiladi** (`app_settings` + `shops`, faqat ETag hisoblash uchun): in-process 2.1 ms. Gunicorn ostida o'lchangan ~560 req/s esa 4 ishchi uchun ideal (~1900 req/s) dan 3-4 baravar past: vaqtning katta qismi Django ko'rinishidan **tashqarida** (gunicorn gthread, GIL, generator va server bir noutbukda, swap) | S0-3 profili va 2.2 jadvali | Ilova kodini noutbukdagi raqamga qarab haddan ortiq sayqallamaslik kerak; qolgan farq S2 da haqiqiy VPS'da ajratiladi |
+
+**Rad etilgan faraz (S0-3 profili).** Bu TZ'ning birinchi variantida "har so'rov ~7 ms: 16 ta middleware aybdor" deb taxmin qilingan edi. Profil buni **rad etdi**: har middleware'ning o'z vaqti ≈ 0.003-0.007 ms (jami < 0.2 ms). Shuning uchun middleware yengillashtirish rejadan **olib tashlandi** (ROADMAP S1). Xulosa dalilga tayanadi: profil bo'lmasa noto'g'ri joyni optimizatsiya qilgan bo'lardik.
+
+**In-process o'lchov (S0-3, `loadtest/profile_django.py`, DEBUG=False, SQLite nusxa, 127 taom, bitta oqim, tarmoq yo'q):** `/menu/` 11.96 ms (4 SQL: `app_settings` ×3, `shops` ×1) · `/api/v1/restaurant/menu/` 4.45 ms (4 SQL) · ETag bilan 304: 2.14 ms (2 SQL).
 
 ### 2.4 Allaqachon bor va to'g'ri ishlaydigan narsalar
 
@@ -95,7 +101,7 @@ Hammasi bitta qoidaga bo'ysunadi: **har optimizatsiyadan oldin va keyin o'lchana
 | Faza | Mazmuni | Hal qiladi |
 |---|---|---|
 | **S0. O'lchash poydevori** | Takrorlanadigan yuk testi (haqiqiy xulq: o'ylash vaqti bilan), profil, so'rov vaqti jurnali, SLO jadvali | Ko'r-ko'rona ishlashni to'xtatadi |
-| **S1. Arzon ilova tezlatmalari** | `AppSetting` keshi, middleware profili va yengillashtirish, `/menu/` va `/` uchun shartli GET (ETag/304, `Cache-Control`), `/health/` ikkiga ajratish, zaxira yo'lda `select_related` | T1–T5 |
+| **S1. Arzon ilova tezlatmalari** | Keshga oddiy ma'lumot (model nusxasi emas), `AppSetting` keshi, ETag/304 yo'lini DB'siz qilish, `/menu/` va `/` uchun shartli GET (ETag, `Cache-Control: private`), `/health/` ikkiga ajratish, zaxira yo'lda `select_related` | T1-T5, T15 (T1 ro'yxati profil bilan o'zgardi) |
 | **S2. Haqiqiy server bazasi** | VPS (egasi), `deploy.sh` bilan joylash, S0 testini **haqiqiy stekda** (PG + Caddy) yurgizish, `WEB_CONCURRENCY`/oqimlarni o'lchab tanlash, PG sozlash | T6, 2.1 cheklovlari |
 | **S3. Mehmon sahifasini "holatsiz" qilish va CDN** | Mehmon sahifasi hamma uchun bir xil (restoran, til, dizayn, `menu_version` bo'yicha), stol konteksti brauzer tomonida; CDN keshi; `menu_version` o'zgarganda tozalash | T3, T11, portlash holati (C) |
 | **S4. Yozuv yo'li va xodim yuki** | Buyurtma yaratish idempotentligi, PG'da `EXPLAIN` va indekslar, sahifalash (Seller moliya 909 KB), xodim polling'ini ETag/304 va to'xtash bilan yengillashtirish | T13, buyurtma yo'qolmasligi |
@@ -132,7 +138,7 @@ Keshlash noto'g'ri qilinsa **bir mehmonning ma'lumoti boshqasiga ko'rinadi**. Sh
 2. Keshlanadigan javobda `Set-Cookie` yo'q (hozirgi `/menu/` da yo'q; test bilan qotiriladi).
 3. Xodim va to'lov yo'llari (`/ra/`, `/seller/`, `/admin/`, `/api/restaurant/admin/`, `/api/kds/`, buyurtma/stol/qo'ng'iroq/moliya API'lari) hech qachon keshlanmaydi: `Cache-Control: private, no-store`, CDN qoidasida istisno.
 4. Majburiy testlar: (a) ikki xil restoran/til keshlari aralashmaydi; (b) stol-A javobida stol-B tokeni yo'q; (c) `Set-Cookie` bor javob keshlanmaydi; (d) taom narxi o'zgargach eski narx `menu_version` ko'tarilgach ko'rinmaydi.
-5. Tozalash (purge) muvaffaqiyatsiz bo'lsa ham eskirgan menyu **uzog'i bilan `s-maxage` (30 s)** turadi: biznes jihatdan qabul qilinadi (narx o'zgarishi 30 s ichida). Buning sharti: buyurtma yaratishda narx **serverda bazadagi taom narxidan** hisoblanadi, mijoz yuborgan narxga ishonilmaydi. Bu **hozir tasdiqlanmagan** (kodda `product.price` ishlatilishi ko'rindi, lekin buyurtma yaratish yo'lida to'liq tekshirilmadi): S3 boshlanmasdan oldin test bilan isbotlanadi, isbotlanmasa tuzatiladi.
+5. Tozalash (purge) muvaffaqiyatsiz bo'lsa ham eskirgan menyu **uzog'i bilan `s-maxage` (30 s)** turadi: biznes jihatdan qabul qilinadi (narx o'zgarishi 30 s ichida). Buning sharti: buyurtma yaratishda narx **serverda bazadagi taom narxidan** hisoblanadi, mijoz yuborgan narxga ishonilmaydi. Bu **kodda tasdiqlangan** (`RestaurantOrderService.resolve_menu_item`: "narx va nom FAQAT serverdagi mahsulotdan olinadi (R-SEC-07), mijoz yuborgan `price` e'tiborsiz"); S3 da regressiya testi bilan qotiriladi.
 6. Tezlik cheklovi: restoran Wi-Fi'sida yuzlab mehmon **bitta IP'dan** keladi. IP bo'yicha qattiq cheklov haqiqiy mehmonni bloklaydi; chegara (`guest_write 240/min`) yuk testida shu holat uchun tekshiriladi.
 7. Maxfiy ma'lumot: Sentry'ga shaxsiy ma'lumot yuborilmaydi (R9-6 da tekshirilgan, S5 da yoqilganda qayta tekshiriladi). `.env` fayllarga tegilmaydi.
 

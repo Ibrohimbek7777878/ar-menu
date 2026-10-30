@@ -1,6 +1,6 @@
 # ROADMAP: Masshtab, ishonchlilik va ishga tushirish (D1 darajasiga chiqish)
 
-**Yangilangan:** 2026-10-30 · **Holat: TASDIQLASH KUTILMOQDA** (egasi "boshla" demaguncha kod yozilmaydi)
+**Yangilangan:** 2026-10-30 · **Holat: TASDIQLANDI, S0 bajarilmoqda** (egasi 2026-10-30 "boshla" dedi; S1 dan oldin G0 hisoboti va ruxsat)
 **Asos:** `TZ_MASSHTAB_VA_ISHONCHLILIK_2026-10-30.md` (maqsad, o'lchov, qabul mezonlari Q1–Q9, savollar). Bu fayl faqat **ketma-ketlik va vazifalar**.
 **Belgilar:** 👤 egasi qarori/ishi kerak · 🎨 maket ma'qullanishi kerak · S/M/L/XL = ≈ ≤0.5 / 1–2 / 3–5 / >5 ish kuni (taxmin, ±50%) · "Kim" ustunida **C** = Claude (kod va tekshiruv), **E** = egasi.
 
@@ -31,23 +31,26 @@ Har faza oxirida **to'xtab hisobot** beriladi va keyingisiga ruxsat so'raladi. F
 
 | ID | Ish | Qabul | Kim |
 |---|---|---|---|
-| S0-1 | `loadtest/` papkasi: haqiqiy xulqli stsenariylar (A: mehmon yo'li o'ylash vaqti bilan; C: portlash; yozuv: buyurtma; xodim: 5 s polling). Vosita: k6 (Docker rasmi) yoki shu sessiyada yozilgan Node generator | Bitta buyruq bilan yuradi; natija JSON + qisqa `load_reports/YYYY-MM-DD_*.md` | C |
+| S0-1 | `loadtest/` papkasi: haqiqiy xulqli stsenariylar (A: mehmon yo'li o'ylash vaqti bilan; C: portlash; yozuv: buyurtma; xodim: 5 s polling). Vosita: k6 (Docker rasmi) yoki shu sessiyada yozilgan Node generator | Bitta buyruq bilan yuradi; natija JSON + qisqa `load_reports/YYYY-MM-DD_*.md` | C · ✅ bajarildi: `loadtest/` (14 o'z testi yashil) |
 | S0-2 | `seed_load` buyrug'i: hajmli sinov bazasi (masalan 5 restoran, 150 taom/restoran, 1M buyurtma qatori) | Idempotent, faqat `DEBUG`/aniq ruxsat bilan, tarmoqsiz, haqiqiy bazaga yozmaydi | C |
-| S0-3 | Profil: `/menu/` va 304 yo'lida vaqt qayerga ketishini o'lchash (middleware bo'yicha, `py-spy`/`cProfile`) | Top-10 xarajat jadvali (hisobotda) | C |
-| S0-4 | So'rov vaqti jurnali (`gunicorn %(D)s`, `X-Request-Id`), kesh sarlavhalari (`X-Cache`) | Jurnaldan p50/p95/p99 hisoblanadi | C |
+| S0-3 | Profil: `/menu/` va 304 yo'lida vaqt qayerga ketishini o'lchash (`cProfile`, `loadtest/profile_django.py`) | Top xarajat jadvali (hisobotda) | C · ✅ bajarildi: bo'g'z = keshdagi model nusxalari (pickle); middleware **emas** (TZ 2.3) |
+| S0-4 | So'rov vaqti jurnali (`gunicorn %(D)s`, `X-Request-Id`), kesh sarlavhalari (`X-Cache`) | Jurnaldan p50/p95/p99 hisoblanadi | C · ✅ bajarildi: gunicorn jurnali `%(D)s` + Caddy `X-Request-Id`, `loadtest/parse_access_log.mjs` |
 | S0-5 | Bazaviy o'lchov: PG (Docker) + Caddy bilan **noutbukda** qayta o'lchash (SQLite emas) | Hisobot; 2.2-jadval yangilanadi | C |
 
 **G0 (darvoza):** bazaviy hisobot hujjatlashtirilgan; profil natijalari S1 ni belgilaydi (S1 ro'yxati o'zgarishi mumkin).
 
 ### S1. Arzon ilova tezlatmalari (M) · oldin/keyin o'lchov majburiy · hammasi bayroq ortida
 
+> **G0 dan keyin qayta yozildi (profil dalili).** Birinchi variantdagi "middleware yengillashtirish" bandi **olib tashlandi**: profil har middleware'ning o'z vaqtini ≈ 0.007 ms deb ko'rsatdi. Haqiqiy bo'g'z: keshdagi model nusxalari (S1-1).
+
 | ID | Ish | Qabul | Kim |
 |---|---|---|---|
-| S1-1 | `AppSetting` o'qishini keshlash (jarayon ichida qisqa TTL + admin o'zgartirganda darhol bekor qilish). Bayroq `APPSETTING_CACHE` | `/menu/` SQL 4 → ≤1; sozlama o'zgargach ≤5 s (admindan o'zgarganda darhol) yangilanadi; test | C |
-| S1-2 | Middleware yengillashtirish **profil natijasi bo'yicha** (mehmon ommaviy yo'llarida keraksiz ishni o'tkazib yuborish). Xodim yo'llari himoyasi o'zgarmaydi | 304 yo'li ≥1.5× tez; RBAC va fuzz testlari (`test_resto_admin_fuzz.py` va h.k.) yashil; xodim yo'llari anonimga yopiq (smoke) | C |
-| S1-3 | `/menu/`, `/`: ETag + shartli GET, **`Cache-Control: private, max-age=0, must-revalidate`** (hali umumiy kesh emas: S3 dan oldin) | Qayta tashrifda 304; boshqa mehmonga sizish yo'q (test) | C |
-| S1-4 | `/health/` yengillashtirish: `live` (DB'siz) va `ready` (1 SQL); eski `/health/` moslik uchun qoladi, compose/Caddy healthcheck'lari yangilanadi | ≤1 SQL; deploy sinovi yashil | C |
-| S1-5 | `ProductListSerializer`: `select_related('shop')` (zaxira yo'l) | 20 elementda 22 → ≤4 SQL (`test_query_budget` uslubi) | C |
+| S1-1 | **Keshga oddiy ma'lumot** (dict/JSON), Django model nusxasi emas: `_build_tma_menu` (`web/tma_views.py`) va `RestaurantOrderService` menyu keshi. Klassik dizayn yo'li o'chirilmaydi: shablon uchun kerakli maydonlar oddiy ko'rinishda keshlanadi. Bayroq bilan | `/menu/` in-process ≥ 2× tez (12 → ≤ 6 ms); HTML **ikkala dizayn (`new` va `classic`) uchun oldin/keyin bir xil** (farq 0); menyu o'zgarsa `menu_version` bilan yangilanadi (mavjud test + yangi) | C |
+| S1-2 | `AppSetting` o'qishini keshlash (jarayon ichida qisqa TTL + admin o'zgartirganda darhol bekor qilish) va faol restoran (`shops`) qidiruvini keshlash. Bayroq `APPSETTING_CACHE` | `/menu/` SQL 4 → ≤ 1; sozlama o'zgargach ko'rinadi (≤ 5 s, adminda darhol); test | C |
+| S1-3 | ETag/304 yo'lini **DB'siz** qilish (do'kon va `menu_version` ni jarayon ichida ushlash) | 304 in-process 2.1 → < 0.5 ms; ETag mantig'i o'zgarmaydi (mavjud ETag testlari yashil) | C |
+| S1-4 | `/menu/`, `/`: ETag + shartli GET, **`Cache-Control: private, max-age=0, must-revalidate`** (hali umumiy kesh emas: S3 dan oldin) | Qayta tashrifda 304; boshqa mehmonga sizish yo'q (test) | C |
+| S1-5 | `/health/` yengillashtirish: `live` (DB'siz) va `ready` (1 SQL); eski `/health/` moslik uchun qoladi, compose/Caddy healthcheck'lari yangilanadi | ≤ 1 SQL; deploy sinovi yashil | C |
+| S1-6 | `ProductListSerializer`: `select_related('shop')` (zaxira yo'l, ikkinchi darajali) | 20 elementda 22 → ≤ 4 SQL (`test_query_budget` uslubi) | C |
 
 **G1:** oldin/keyin hisobot; barcha testlar yashil (SQLite **va** PG), e2e 12/12, mehmon sahifalari piksel-piksel bir xil.
 
@@ -80,7 +83,7 @@ Har faza oxirida **to'xtab hisobot** beriladi va keyingisiga ruxsat so'raladi. F
 
 | ID | Ish | Qabul | Kim |
 |---|---|---|---|
-| S4-1 | Buyurtma yaratish **idempotent** (mijoz kalitli qayta yuborish xavfsiz) | 20 parallel bir xil so'rov → 1 buyurtma, 1 kassa yozuvi, zaxira 1 marta kamayadi | C |
+| S4-1 | Buyurtma yaratish **idempotent** (mijoz kalitli qayta yuborish xavfsiz) **va xato kodlari to'g'ri**: kutilmagan/vaqtinchalik xato (DB qulf, deadlock, uzilish) `400` emas, `503` + `Retry-After` va Sentry'ga tushadi; `400` faqat haqiqiy mijoz xatosida (TZ T14) | 20 parallel bir xil so'rov → 1 buyurtma, 1 kassa yozuvi, zaxira 1 marta kamayadi; DB xatosi simulyatsiyasida 503 (400 emas) va guest ilovasi qayta urinadi | C |
 | S4-2 | PG'da `EXPLAIN (ANALYZE)` hajmli bazada (S0-2): KDS ro'yxati, stollar, moliya summary; kerakli indekslar (migratsiya, orqaga mos) | Har issiq so'rov < 50 ms 1M qatorda; migratsiya orqaga qaytariladi | C |
 | S4-3 | Sahifalash: Seller moliya (909 KB), buyurtmalar tarixi. "Hammasi" rejimi yashirin bayroq bilan qoladi (o'chirilmaydi) | Sahifa ≤ 100 KB; eski rejim sozlama bilan | C |
 | S4-4 | Xodim polling: ETag/304 (versiya bo'yicha), yashirin tabda to'xtash, xatoda backoff, interval sozlamadan (`staff_poll_ms`, standart 5000) | Bo'sh o'zgarishda 304; platforma yuki ≥3× kamayadi (o'lchanadi) | C |
@@ -174,7 +177,7 @@ Faza tugagach (G0–G6) **to'xtab** quyidagini beraman: (1) nima o'zgardi (fayll
 |---|---|
 | Menyu ma'lumoti keshi, `menu_version`, ETag/304 (`/api/v1/restaurant/menu/`), `web`/`web-staff` ajratish, Caddy `immutable` | ✅ bor (kod va testlar) |
 | Bazaviy o'lchov (noutbuk, SQLite, Caddy'siz) | ✅ 2026-10-30, TZ 2.2 (taxminiy) |
-| PG/Caddy/haqiqiy server o'lchovi, yozuv va xodim yuk testlari | ❌ hali yo'q |
+| PG/Caddy/haqiqiy server o'lchovi, yozuv va xodim yuk testlari | ❌ hali yo'q (generator tayyor: S0-1; mashinada xotira tanqis, S0-5 PG bazaviy o'lchovi xotira bo'shagach) |
 | S0–S7 | ⏳ tasdiq kutilmoqda |
 | P1 (maket qayta chizildi, ma'qullanish kutilmoqda), P2–P7 | ⏳ |
 | 5 ta egasi qarori (VPS, CDN, Redis, zaxira joyi, ketma-ketlik) | ⏳ TZ 10-bo'lim (K1–K10) |
