@@ -76,3 +76,18 @@ def validate_ar_model_ref(value):
             if os.path.isfile(disk) and os.path.getsize(disk) > limit:
                 raise ArModelError(f"3D model fayli {limit // (1024 * 1024)} MB dan oshmasligi kerak")
     return text
+
+
+def validate_ar_model_form_value(raw, current=None):
+    """
+    HTML formalar (eski admin va sotuvchi paneli) uchun: forma yuborgan `ar_model` ni tekshiradi va saqlanadigan qiymatni
+    (bo'sh bo'lsa None) qaytaradi; yaroqsiz bo'lsa ArModelError (o'zbekcha xabar) — API bilan AYNAN bir xil qoida.
+
+    Mahsulotda allaqachon saqlangan (`current`) qiymat O'ZGARTIRILMAGAN bo'lsa qayta tekshirilmaydi: forma har safar butun
+    maydonlar to'plamini yuboradi, eski (hozirgi qoidaga mos kelmaydigan) manzil bo'lsa ham narx yoki nomni tahrirlash
+    to'silib qolmasligi kerak. Yangi yozilgan har qanday qiymat to'liq tekshiriladi.
+    """
+    text = raw.strip() if isinstance(raw, str) else ''
+    if text and text == (current or '').strip():
+        return text
+    return validate_ar_model_ref(text)

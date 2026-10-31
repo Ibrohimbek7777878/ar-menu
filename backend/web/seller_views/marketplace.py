@@ -15,6 +15,7 @@ from orders.models import Order, OrderItem
 from accounts.models import Customer, AdminUser
 from notifications.models import TelegramSubscriber
 from categories.models import Category
+from products.ar_validation import ArModelError, validate_ar_model_form_value
 from django.contrib.auth import authenticate, login
 
 
@@ -192,6 +193,28 @@ def seller_order_detail(request, pk):
     order = get_object_or_404(Order.objects.prefetch_related('items'), pk=pk, shop=shop)
     items = order.items.all()
     return render(request, 'seller/order_detail.html', {'shop': shop, 'order': order, 'items': items})
+
+
+@seller_required
+@require_POST
+def seller_order_status(request, pk):
+    """
+    Buyurtma tafsilotidagi "holatni o'zgartirish" formasi (restoran URLConf'ida `admin_order_status` nomi bilan ulangan).
+    Eski umumiy `views.admin_order_status` dan farqi: faqat O'Z do'koni buyurtmasi (IDOR yo'q) va holat FAQAT holat mashinasi
+    (`transition_order`) orqali o'zgaradi — ruxsat etilmagan o'tish rad etiladi, tarix yoziladi, kassa/ombor/xabar ishlaydi.
+    """
+    from orders.state_machine import transition_order
+    order = get_object_or_404(Order, pk=pk, shop=request.tenant_shop)
+    new_status = request.POST.get('status', '')
+    if new_status not in dict(Order.STATUS_CHOICES):
+        messages.error(request, "Noto'g'ri holat")
+    elif new_status == order.status:
+        messages.info(request, "Holat o'zgarmadi")
+    else:
+        ok, msg = transition_order(order, new_status, actor=request.user, reason='Sotuvchi paneli', request=request)
+        if not ok:
+            messages.error(request, msg)
+    return redirect('seller_order_detail_web', pk=order.pk)
 
 
 @seller_required
@@ -717,7 +740,7 @@ def seller_template_preview(request, slug, page='home'):
 
 def seller_product_edit(request, pk):
     """Mahsulotni to'liq tahrirlash: rasmlar, VIDEO, AR model, narx..."""
-    from products.models import Product
+    from products.models import Product, PRODUCT_DESIGN_TEMPLATES
     product = get_object_or_404(Product, pk=pk, shop=request.tenant_shop)
     from categories.models import Category
     categories = Category.objects.filter(is_active=True)
@@ -729,7 +752,15 @@ def seller_product_edit(request, pk):
         product.unit = f.get('unit', product.unit)
         product.stock = int(f.get('stock', product.stock) or 0)
         product.description = f.get('description', product.description or '')
-        product.ar_model = f.get('ar_model', product.ar_model) or None
+        # 3D model manzili API'dagi bilan bir xil qoida bo'yicha tekshiriladi; yaroqsiz bo'lsa hech narsa saqlanmaydi
+        # (forma kalitisiz kelsa, saqlangan qiymat tegilmaydi va qayta tekshirilmaydi)
+        raw_ar_model = f.get('ar_model', product.ar_model)
+        ar_error = None
+        try:
+            product.ar_model = validate_ar_model_form_value(raw_ar_model, product.ar_model)
+        except ArModelError as exc:
+            ar_error = str(exc)
+            product.ar_model = (raw_ar_model or '').strip() or None   # forma yozilgan qiymat bilan qayta ko'rsatiladi
         product.has_3d = bool(product.ar_model)
         product.is_available = f.get('is_available') == 'on'
         # Flash aksiya (S5-1) — muddatli chegirma
@@ -800,6 +831,11 @@ def seller_product_edit(request, pk):
             uploaded = request.FILES.get(field)
             if uploaded:
                 setattr(product, field, uploaded)
+        if ar_error:
+            messages.error(request, ar_error)
+            return render(request, 'seller/product_form.html', {
+                'product': product, 'categories': categories, 'design_templates': PRODUCT_DESIGN_TEMPLATES,
+            })
         product.save()
         if request.FILES.get('image'):
             from ar3d.pipeline import on_product_image_saved
@@ -807,7 +843,6 @@ def seller_product_edit(request, pk):
                 messages.info(request, "🧊 Yangi rasm bo'yicha 3D model qayta tayyorlanmoqda.")
         messages.success(request, f"'{product.name}' saqlandi.")
         return redirect('seller_products_web')
-    from products.models import PRODUCT_DESIGN_TEMPLATES
     return render(request, 'seller/product_form.html', {
         'product': product, 'categories': categories, 'design_templates': PRODUCT_DESIGN_TEMPLATES,
     })
@@ -821,6 +856,14 @@ def seller_product_create(request):
     categories = Category.objects.filter(is_active=True)
     if request.method == 'POST':
         f = request.POST
+        # 3D model manzili API'dagi bilan bir xil qoida bo'yicha tekshiriladi: yaroqsiz bo'lsa mahsulot yaratilmaydi
+        try:
+            ar_model = validate_ar_model_form_value(f.get('ar_model'))
+        except ArModelError as exc:
+            messages.error(request, str(exc))
+            return render(request, 'seller/product_form.html', {
+                'product': None, 'categories': categories, 'design_templates': PRODUCT_DESIGN_TEMPLATES,
+            })
         from django.utils.text import slugify
         import uuid as _uuid
         slug = f"{slugify(f.get('name', ''), allow_unicode=True) or 'mahsulot'}-{str(_uuid.uuid4())[:6]}"
@@ -832,7 +875,7 @@ def seller_product_create(request):
             unit=f.get('unit', 'dona'),
             stock=int(f.get('stock', 0) or 0),
             description=f.get('description', ''),
-            ar_model=f.get('ar_model') or None,
+            ar_model=ar_model,
             is_available=f.get('is_available') == 'on',
             category_id=f.get('category') or None,
             design_template=f.get('design_template', 'default') or 'default',

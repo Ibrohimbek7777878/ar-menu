@@ -687,42 +687,48 @@ def handle_table_callback(data, chat_id, message_id=None, cq_id=None, username='
                 order = Order.objects.select_related('table', 'shop').get(id=order_id)
                 if not scope.allows_shop(order.shop_id):
                     raise Order.DoesNotExist   # boshqa do'kon buyurtmasi: mavjudligi ham oshkor bo'lmaydi
-                old_status = order.status
-                if old_status != new_status:
-                    order.status = new_status
-                    if new_status == 'delivered':
-                        order.delivered_at = timezone.now()
-                        if order.table:
-                            order.table.status = 'occupied'
-                            order.table.save(update_fields=['status'])
-                    elif new_status == 'preparing':
-                        if order.table:
-                            order.table.status = 'ordering'
-                            order.table.save(update_fields=['status'])
-                    elif new_status == 'ready':
-                        if order.table:
-                            order.table.status = 'ready'
-                            order.table.save(update_fields=['status'])
-                    order.save(update_fields=['status', 'delivered_at', 'updated_at'])
-
-                    try:
-                        from notifications.services.telegram_service import send_status_updated
-                        send_status_updated(order, old_status, new_status)
-                    except Exception as ex:
-                        logger.error(f"send_status_updated xatolik: {ex}")
-
-                status_name = dict(Order.STATUS_CHOICES).get(new_status, new_status)
-                if cq_id:
-                    answer_callback_query(cq_id, f"Buyurtma #{order.order_number}: {status_name} ✅", show_alert=False)
-
-                kb = build_order_keyboard(order)
-                if message_id:
-                    edit_message_reply_markup(chat_id, message_id, reply_markup=kb)
-                return True
             except Order.DoesNotExist:
                 if cq_id:
                     answer_callback_query(cq_id, "Buyurtma topilmadi", show_alert=True)
                 return True
+
+            old_status = order.status
+            if old_status != new_status:
+                # Holat FAQAT holat mashinasi orqali o'zgaradi (admin API `OrderStatusUpdateView` bilan bir xil qoidalar):
+                # ruxsat etilmagan o'tish rad etiladi; tarix, yetkazilganda to'lov/kassa kirimi va ombor, bekor qilishda zaxira
+                # bo'shatish, mijoz/xodimga xabar (outbox navbati orqali) shu yerda bajariladi. Avval bu tugma `order.status`
+                # ni to'g'ridan-to'g'ri yozib, bularning hammasini chetlab o'tardi.
+                from django.db import transaction
+                from orders.audit import log_audit
+                from orders.state_machine import transition_order
+                with transaction.atomic():
+                    # KDS bilan bir xil (web/tma_views.py): stol klaviaturasida "Tasdiqlash" tugmasi yo'q, shuning uchun kutilayotgan
+                    # buyurtma tayyorlashga/tayyorga o'tganda avval 'confirmed' qilinadi (tarixda ikkala qadam ham yoziladi).
+                    # Aks holda Telegram'dan yangi stol buyurtmasini oldinga siljitib bo'lmay qolardi.
+                    if order.status == 'pending' and new_status in ('preparing', 'ready'):
+                        transition_order(order, 'confirmed', reason='Telegram: qabul qilindi')
+                        order.refresh_from_db()
+                    ok, msg = transition_order(order, new_status, reason='Telegram orqali')
+                    if ok:
+                        if order.table:
+                            table_status = {'delivered': 'occupied', 'preparing': 'ordering', 'ready': 'ready'}.get(new_status)
+                            if table_status:
+                                order.table.status = table_status
+                                order.table.save(update_fields=['status'])
+                        log_audit('order_status_changed', target_type='order', target_id=order.id,
+                                  old_value={'status': old_status},
+                                  new_value={'status': new_status, 'source': 'telegram', 'chat_id': str(chat_id)})
+                if not ok:
+                    return _deny_callback(cq_id, f"⚠️ {msg}")
+
+            status_name = dict(Order.STATUS_CHOICES).get(new_status, new_status)
+            if cq_id:
+                answer_callback_query(cq_id, f"Buyurtma #{order.order_number}: {status_name} ✅", show_alert=False)
+
+            kb = build_order_keyboard(order)
+            if message_id:
+                edit_message_reply_markup(chat_id, message_id, reply_markup=kb)
+            return True
 
     elif data.startswith('3d_status:'):
         from ar3d.models import Print3DOrder

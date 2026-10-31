@@ -111,6 +111,12 @@ urlpatterns = [
     # Mini ERP (Restoran Boshqaruvi: Stollar, KDS, Ofitsiant)
     path('seller/reviews/<int:pk>/delete/', seller_views.seller_review_delete, name='admin_review_delete'),
     path('seller/', include('web.seller_urls')),
+    # `seller/order_detail.html` shabloni eski umumiy admin URL nomlarini teskari qidiradi (`admin_order_status`, `admin_orders`);
+    # ular faqat default/market URLConf'ida bor edi -> restoranda /seller/orders/<pk>/ NoReverseMatch bilan 500 berardi.
+    # Nomlar bu yerda do'konga bog'langan ko'rinishlarga ulanadi (eski umumiy ko'rinish — do'kon tekshiruvisiz — ulanmaydi).
+    # `admin_orders` include'dan KEYIN turadi: /seller/orders/ ni baribir `seller_orders_web` hal qiladi.
+    path('seller/orders/<int:pk>/status/', seller_views.seller_order_status, name='admin_order_status'),
+    path('seller/orders/', seller_views.seller_orders, name='admin_orders'),
 
     # Restoran REST API (React xodim panellari va mehmon menyusi). Avval faqat backend/urls.py da edi —
     # 8001-portda barcha /api/v1/restaurant/... so'rovlari 404 qaytarardi (TZ: R-GST-03)

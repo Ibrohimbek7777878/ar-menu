@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.db import transaction
 from django.db.models import Sum, Count, Q, Avg, F
 from django.utils import timezone
@@ -18,8 +18,10 @@ from django.conf import settings as django_settings
 from datetime import timedelta, datetime
 
 from accounts.models import AdminUser, Customer
+from backend.api_permissions import is_platform_admin
 from categories.models import Category
 from shops.models import Shop, ShopPage, SHOP_SECTION_TYPES
+from products.ar_validation import ArModelError, validate_ar_model_form_value
 from products.models import Product, ThreeDAsset, WishlistItem
 from ai.marketing_service import generate_marketing_post
 from notifications.telegram_bot import notify_new_product, send_message
@@ -58,6 +60,20 @@ def _save_cart(request, cart):
 def _order_number():
     from orders.numbering import next_order_number
     return next_order_number()
+
+
+def platform_admin_required(view_func):
+    """
+    Umumiy (do'konlararo) resursni o'zgartiradigan eski HTML ko'rinishlar uchun: faqat platforma admini.
+    Qoida kategoriya API'sidagi (`IsPlatformAdminOrReadOnly`) bilan AYNAN bir xil — `is_platform_admin`.
+    `@login_required` dan keyin turadi: anonim — login sahifasiga, kirgan lekin ruxsatsiz xodim — 403.
+    """
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not is_platform_admin(request.user):
+            return HttpResponseForbidden("Umumiy kategoriyani faqat platforma administratori o'zgartira oladi")
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 
 def courier_required(view_func):
@@ -1339,7 +1355,12 @@ def admin_product_create(request):
         product.brand = request.POST.get('brand', '')
         product.barcode = request.POST.get('barcode', '')
         product.tags = request.POST.get('tags', '')
-        product.ar_model = request.POST.get('ar_model', '').strip() or None
+        # 3D model manzili API'dagi bilan bir xil qoida bo'yicha tekshiriladi (javascript:/data:/ichki manzil/noto'g'ri fayl rad etiladi)
+        ar_error = None
+        try:
+            product.ar_model = validate_ar_model_form_value(request.POST.get('ar_model'))
+        except ArModelError as exc:
+            ar_error = str(exc)
         product.is_available = request.POST.get('is_available') == 'on'
         product.is_organic = request.POST.get('is_organic') == 'on'
         product.is_halal = request.POST.get('is_halal') == 'on'
@@ -1354,6 +1375,8 @@ def admin_product_create(request):
             messages.error(request, 'Do\'konni tanlang')
         elif not product.name:
             messages.error(request, 'Mahsulot nomini kiriting')
+        elif ar_error:
+            messages.error(request, ar_error)
         elif Product.all_objects.filter(slug=product.slug).exists():
             messages.error(request, 'Bunday nomli mahsulot allaqachon mavjud')
         else:
@@ -1407,7 +1430,13 @@ def admin_product_edit(request, pk):
         product.brand = request.POST.get('brand', '')
         product.barcode = request.POST.get('barcode', '')
         product.tags = request.POST.get('tags', '')
-        product.ar_model = request.POST.get('ar_model', '').strip() or None
+        # 3D model manzili API'dagi bilan bir xil qoida bo'yicha tekshiriladi; yaroqsiz bo'lsa hech narsa saqlanmaydi
+        ar_error = None
+        try:
+            product.ar_model = validate_ar_model_form_value(request.POST.get('ar_model'), product.ar_model)
+        except ArModelError as exc:
+            ar_error = str(exc)
+            product.ar_model = (request.POST.get('ar_model') or '').strip() or None   # forma yozilgan qiymat bilan qayta ko'rsatiladi
         product.is_available = request.POST.get('is_available') == 'on'
         product.is_organic = request.POST.get('is_organic') == 'on'
         product.is_halal = request.POST.get('is_halal') == 'on'
@@ -1418,10 +1447,13 @@ def admin_product_edit(request, pk):
             product.image2 = request.FILES['image2']
         if request.FILES.get('image3'):
             product.image3 = request.FILES['image3']
-        product.save()
-        _handle_asset_3d(product, request)
-        messages.success(request, 'Mahsulot yangilandi')
-        return redirect('admin_products')
+        if ar_error:
+            messages.error(request, ar_error)
+        else:
+            product.save()
+            _handle_asset_3d(product, request)
+            messages.success(request, 'Mahsulot yangilandi')
+            return redirect('admin_products')
     ctx = {'product': product, 'shops': allowed_shops, 'categories': Category.objects.all()}
     return render(request, 'admin/product_form.html', ctx)
 
@@ -1709,6 +1741,7 @@ def admin_categories(request):
 
 
 @login_required(login_url='web_login')
+@platform_admin_required
 def admin_category_create(request):
     if request.method == 'POST':
         category = Category()
@@ -1731,6 +1764,7 @@ def admin_category_create(request):
 
 
 @login_required(login_url='web_login')
+@platform_admin_required
 def admin_category_edit(request, pk):
     category = get_object_or_404(Category, pk=pk)
     if request.method == 'POST':
@@ -1752,6 +1786,7 @@ def admin_category_edit(request, pk):
 
 
 @login_required(login_url='web_login')
+@platform_admin_required
 def admin_category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
     category.is_active = False
