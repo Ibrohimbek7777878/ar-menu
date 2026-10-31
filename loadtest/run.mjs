@@ -36,6 +36,7 @@ function applyOverrides(profile, args) {
   const p = structuredClone(profile);
   for (const sc of p.scenarios) {
     if (args.users && ['guest', 'burst', 'stress'].includes(sc.type)) sc.users = Number(args.users);
+    if (args.window && sc.type === 'burst') sc.windowSec = Number(args.window);
     if (args.paths && sc.type === 'stress') sc.paths = String(args.paths).split(',');
     if (args.conditional && sc.type === 'stress') sc.conditional = true;
     if (args.rate && sc.type === 'orders') sc.ratePerMin = Number(args.rate);
@@ -59,7 +60,7 @@ export async function runProfile(profileIn, opts = {}) {
 
   const recorder = new Recorder();
   const totalUsers = profile.scenarios.reduce((n, s) => n + (s.users ?? s.screens ?? 50), 0);
-  const client = new Client({ base, recorder, maxSockets: totalUsers + 512, timeoutMs: Number(args.timeout ?? 15000) });
+  const client = new Client({ base, recorder, maxSockets: totalUsers + 512, timeoutMs: Number(args.timeout ?? 15000), acceptEncoding: String(args['accept-encoding'] ?? 'identity') });
   const ctx = createContext({ client, recorder, durationSec, timeScale, seed });
 
   const health = await client.request('setup-health', 'GET', '/health/');

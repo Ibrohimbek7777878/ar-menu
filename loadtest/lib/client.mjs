@@ -4,6 +4,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import { performance } from 'node:perf_hooks';
+import zlib from 'node:zlib';
 
 export class Recorder {
   constructor() {
@@ -16,6 +17,18 @@ export class Recorder {
   }
   add(sample) {
     this.samples.push(sample);
+  }
+}
+
+
+// Javob tanasi kerak bo'lganda (menyu JSON'i) siqilgan bo'lsa ochamiz; faqat drain qilinadigan javoblar ochilmaydi
+function decodeBody(buf, encoding) {
+  switch ((encoding || '').toLowerCase()) {
+    case 'gzip': return zlib.gunzipSync(buf);
+    case 'br': return zlib.brotliDecompressSync(buf);
+    case 'deflate': return zlib.inflateSync(buf);
+    case '': case 'identity': return buf;
+    default: throw new Error(`qo'llab-quvvatlanmaydigan content-encoding: ${encoding}`);
   }
 }
 
@@ -40,7 +53,8 @@ function storeCookies(user, setCookie) {
 }
 
 export class Client {
-  constructor({ base, recorder, maxSockets = 4096, timeoutMs = 15000 }) {
+  constructor({ base, recorder, maxSockets = 4096, timeoutMs = 15000, acceptEncoding = 'identity' }) {
+    this.acceptEncoding = acceptEncoding; // 'gzip': brauzer kabi siqilgan javob so'raydi (Caddy siqish xarajati hisobga kiradi); javob ochilmaydi, faqat hajmi sanaladi
     this.url = new URL(base);
     this.mod = this.url.protocol === 'https:' ? https : http;
     this.agent = new this.mod.Agent({ keepAlive: true, maxSockets, maxFreeSockets: Math.min(maxSockets, 1024) });
@@ -58,7 +72,7 @@ export class Client {
 
   _attempt(method, path, { user, headers, body, wantBody }) {
     return new Promise((resolve) => {
-      const h = { 'accept-encoding': 'identity', 'user-agent': 'guliston-loadtest/0.1', ...headers };
+      const h = { 'accept-encoding': this.acceptEncoding, 'user-agent': 'guliston-loadtest/0.1', ...headers };
       if (user && user.cookies.size) h.cookie = [...user.cookies].map(([k, v]) => `${k}=${v}`).join('; ');
       if (body !== undefined) h['content-length'] = Buffer.byteLength(body);
       let done = false;
@@ -81,7 +95,15 @@ export class Client {
           });
           res.on('end', () => {
             storeCookies(user, res.headers['set-cookie']);
-            finish({ status: res.statusCode, headers: res.headers, bytes, body: wantBody ? Buffer.concat(chunks).toString('utf8') : '' });
+            let body = '';
+            if (wantBody) {
+              try {
+                body = decodeBody(Buffer.concat(chunks), res.headers['content-encoding']).toString('utf8');
+              } catch {
+                return finish({ err: 'decode', gotResponse: true }); // siqilgan javob ochilmadi
+              }
+            }
+            finish({ status: res.statusCode, headers: res.headers, bytes, body });
           });
           res.on('error', (e) => finish({ err: classify(e), gotResponse: true }));
           res.on('aborted', () => finish({ err: 'aborted', gotResponse: true }));

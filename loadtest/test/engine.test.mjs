@@ -1,6 +1,7 @@
 // Yuk generatorining o'z testlari (mock server bilan, tashqi tarmoqsiz): node --test test/
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import zlib from 'node:zlib';
 import { after, before, describe, test } from 'node:test';
 import { Client, Recorder } from '../lib/client.mjs';
 import { collectProductIds } from '../lib/context.mjs';
@@ -27,7 +28,12 @@ before(async () => {
       return res.end('<html>menyu</html>');
     }
     if (url === '/api/v1/restaurant/menu/') {
-      return json(200, { categories: [{ name: 'c', products: [{ id: 1, name: 'a', price: 1000, is_available: true }, { id: 2, name: 'b', price: 2000, is_available: true }, { id: 3, name: 'x', price: 1, is_available: false }] }] });
+      const menu = { categories: [{ name: 'c', products: [{ id: 1, name: 'a', price: 1000, is_available: true }, { id: 2, name: 'b', price: 2000, is_available: true }, { id: 3, name: 'x', price: 1, is_available: false }] }] };
+      if (String(req.headers['accept-encoding']).includes('gzip')) { // Caddy kabi: so'ralsa siqilgan beradi
+        res.writeHead(200, { 'content-type': 'application/json', 'content-encoding': 'gzip' });
+        return res.end(zlib.gzipSync(JSON.stringify(menu)));
+      }
+      return json(200, menu);
     }
     if (url === '/api/v1/restaurant/orders/create/' && req.method === 'POST') {
       let body = '';
@@ -174,6 +180,15 @@ describe('stsenariylar', () => {
     const report = await runProfile(loadProfile('stress-mixed'), quick({ users: '6', duration: '1', 'time-scale': '1' }));
     assert.ok(report.steps['/menu/'].count > 0 && report.steps['/'].count > 0);
     assert.equal(report.totals.errors, 0);
+  });
+
+  test('siqilgan (gzip) menyu javobi ochiladi: --accept-encoding gzip bilan stsenariy ishlaydi', async () => {
+    orderSeq = 0;
+    dupMode = false;
+    const report = await runProfile(loadProfile('smoke'), quick({ 'accept-encoding': 'gzip' }));
+    assert.ok(report.steps.menu.count > 0);
+    assert.ok(report.totals.orders.created > 0, report.notes.join('|'));
+    assert.equal(report.scenarioResults.every((r) => r.ok), true, JSON.stringify(report.scenarioResults));
   });
 
   test('begona manzilga yuk berilmaydi', async () => {

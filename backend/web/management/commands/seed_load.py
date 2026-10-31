@@ -146,7 +146,9 @@ class Command(BaseCommand):
         parser.add_argument('--tables-per-shop', type=int, default=20, help="Har restorandagi stollar (1..200, standart: 20)")
         parser.add_argument('--orders', type=int, default=1_000_000, help="JAMI buyurtmalar (barcha load- restoranlar bo'yicha, standart: 1 000 000)")
         parser.add_argument('--days', type=int, default=365, help="Buyurtmalar so'nggi necha kunga yoyiladi (standart: 365)")
-        parser.add_argument('--paid-ratio', type=float, default=0.8, help="Jami buyurtmalarning to'langan ulushi 0..1 (standart: 0.8)")
+        parser.add_argument('--paid-ratio', type=float, default=0.94,
+                            help="Jami buyurtmalarning to'langan ulushi 0..1 (standart: 0.94: bekor qilinmagan va faol bo'lmagan deyarli "
+                                 "hamma buyurtma to'langan; real restoranda hisob yopiladi, ochiq hisob faqat hozirgi stollarda bo'ladi)")
         parser.add_argument('--batch', type=int, default=5000, help="Bir partiyadagi buyurtmalar (standart: 5000; xotira shunga bog'liq)")
         parser.add_argument('--seed', type=int, default=42, help="Tasodifiy sonlar urug'i (deterministik, standart: 42)")
         parser.add_argument('--allow-existing', action='store_true',

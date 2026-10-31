@@ -34,7 +34,7 @@ Har profilda `slo` bo'limi bor: yurish oxirida har mezon PASS/FAIL, natija `PASS
 
 ## Sozlash
 
-`--base URL` · `--duration S` · `--users N` · `--rate N` (buyurtma/daq) · `--screens N` · `--paths a,b` (stress) · `--conditional` (ETag/If-None-Match) · `--assets /media/x.glb,...` · `--time-scale 0.01` (faqat test: o'ylashni qisqartiradi) · `--seed N` · `--label oldin|keyin` · `--stack "pg+caddy 4vCPU"` (hisobotga qo'lda yoziladi) · `--out DIR` · `--no-report` · `--fail-on-slo` (FAIL bo'lsa chiqish kodi 2).
+`--base URL` · `--duration S` · `--users N` · `--rate N` (buyurtma/daq) · `--screens N` · `--paths a,b` (stress) · `--conditional` (ETag/If-None-Match) · `--accept-encoding gzip` (brauzer kabi siqilgan javob; Caddy siqish xarajati hisobga kiradi) · `--window S` (portlash oynasi) · `--assets /media/x.glb,...` · `--time-scale 0.01` (faqat test: o'ylashni qisqartiradi) · `--seed N` · `--label oldin|keyin` · `--stack "pg+caddy 4vCPU"` (hisobotga qo'lda yoziladi) · `--out DIR` · `--no-report` · `--fail-on-slo` (FAIL bo'lsa chiqish kodi 2).
 
 Xodim stsenariysi uchun: `LT_STAFF_USER` va `LT_STAFF_PASS` muhit o'zgaruvchilari (kodga yozilmaydi). Demo/e2e bazada: `seed_e2e` yaratgan xodim va parol.
 
