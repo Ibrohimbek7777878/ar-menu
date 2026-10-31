@@ -230,3 +230,17 @@ class MenuQueryBudgetTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertNotEqual(resp['ETag'], etag)
         self.assertEqual([p['name'] for p in resp.json()['products']], ['Yangi'])
+
+
+class DefaultShopIdDisabledCacheTests(TestCase):
+    """TTL=0: asosiy restoran ID si eski yo'ldagi SQL sonidan ortiq so'rov qilmaydi (slug bir marta o'qiladi)."""
+
+    def test_disabled_cache_reads_slug_once(self):
+        owner = AdminUser.objects.create_user(username='rc_owner4', password='x12345678', role='shop_owner', is_approved=True)
+        Shop.objects.create(name='Z', slug='rc-z', owner=owner, address='x', latitude=40.4, longitude=68.7, is_open=True, phone='+998901112266')
+        set_setting('restaurant_default_shop', 'rc-z')
+        self.assertFalse(runtime_cache.runtime_cache_enabled())
+        with CaptureQueriesContext(connection) as ctx:
+            self.assertIsNotNone(default_restaurant_shop_id())
+        self.assertEqual(len(_settings_queries(ctx.captured_queries)), 1)
+        self.assertEqual(len(ctx.captured_queries), 2)  # app_settings + shops (aynan eski yo'ldagi kabi)

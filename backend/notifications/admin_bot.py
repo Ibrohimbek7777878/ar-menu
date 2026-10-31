@@ -219,12 +219,14 @@ def default_restaurant_shop_id():
     Asosiy restoran ID si (jarayon ichida APPSETTING_CACHE_TTL soniya saqlanadi; TTL=0 da har safar DB).
     DB'siz yo'llar (304, S1-3) uchun: Shop nusxasi kerak bo'lmasa shuni ishlating.
     """
-    from backend.runtime_cache import cached_default_shop_id
+    from backend.runtime_cache import cached_default_shop_id, runtime_cache_enabled
 
     def _resolve():
         shop = _resolve_default_restaurant_shop()
         return shop.id if shop else None
 
+    if not runtime_cache_enabled():
+        return _resolve()  # kesh o'chiq: eski xatti-harakat, ortiqcha SQL yo'q (slug kalit uchun ikkinchi marta o'qilmaydi)
     return cached_default_shop_id(default_restaurant_slug(), _resolve)
 
 
