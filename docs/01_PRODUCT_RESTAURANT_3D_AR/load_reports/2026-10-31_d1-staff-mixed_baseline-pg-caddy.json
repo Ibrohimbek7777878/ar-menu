@@ -1,0 +1,384 @@
+{
+  "meta": {
+    "profile": "d1-staff-mixed",
+    "label": "baseline-pg-caddy",
+    "date": "2026-10-31T05:04:09.630Z",
+    "base": "http://127.0.0.1:8080",
+    "remote": false,
+    "stack": "noutbuk 8 yadro/7.7GB (swap ishlatilgan), gunicorn 4x4 (BITTA havza: web-staff ajratilmagan), PostgreSQL 16 (Docker, 768MB), Caddy (Docker, gzip), generator shu mashinada",
+    "notes": "180 s; xodim va mehmon BIR gunicorn havzasida (production'da web/web-staff ajratilgan); realistik seed (--paid-ratio 0.94, stol boshiga ~4 ochiq buyurtma)",
+    "node": "v24.19.0",
+    "cpus": 8,
+    "memGB": 7.5,
+    "loadavgStart": [
+      2.68,
+      3.3,
+      3.24
+    ],
+    "loadavgEnd": [
+      1.43,
+      2.51,
+      2.94
+    ],
+    "gitSha": "5a640ec",
+    "timeScale": 1,
+    "seed": 42,
+    "durationSec": 180,
+    "actualSec": 180.1,
+    "scenarios": [
+      {
+        "type": "staff",
+        "screens": 20,
+        "waiterShare": 0.5,
+        "pollMs": 5000
+      },
+      {
+        "type": "orders",
+        "ratePerMin": 100
+      },
+      {
+        "type": "guest",
+        "users": 1000,
+        "rampSec": 120,
+        "orderRatio": 0
+      }
+    ]
+  },
+  "totals": {
+    "requests": 5211,
+    "errors": 0,
+    "errorRate": 0,
+    "retried": 0,
+    "rps": 28.941311191640096,
+    "p50": 25.008247000005213,
+    "p95": 109.83914200001163,
+    "p99": 142.66560599999502,
+    "max": 265.36587699999995,
+    "orders": {
+      "created": 263,
+      "duplicates": 0,
+      "failures": 0
+    }
+  },
+  "steps": {
+    "menu": {
+      "count": 2344,
+      "rps": 13.018313842487888,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 28.297083758959108,
+      "p50": 20.266197000004468,
+      "p95": 73.97181799999817,
+      "p99": 105.4401480000015,
+      "max": 265.36587699999995,
+      "status": {
+        "200": 2344
+      }
+    },
+    "welcome": {
+      "count": 1222,
+      "rps": 6.786851329146843,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 20.20130203355151,
+      "p50": 15.744027999986429,
+      "p95": 40.140741000010166,
+      "p99": 66.00629999999364,
+      "max": 133.21294399999897,
+      "status": {
+        "200": 1222
+      }
+    },
+    "order": {
+      "count": 263,
+      "rps": 1.4606725855692468,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 37.939521209126426,
+      "p50": 30.086310000000594,
+      "p95": 74.60521099998732,
+      "p99": 132.48932200000854,
+      "max": 141.0670339999997,
+      "status": {
+        "201": 263
+      }
+    },
+    "waiter-orders": {
+      "count": 346,
+      "rps": 1.9216453026880584,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 69.42424045953813,
+      "p50": 62.97341299999971,
+      "p95": 134.41280400000687,
+      "p99": 158.1614430000045,
+      "max": 168.7763500000001,
+      "status": {
+        "200": 346
+      }
+    },
+    "waiter-tables": {
+      "count": 346,
+      "rps": 1.9216453026880584,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 115.22222116184919,
+      "p50": 108.58349200000157,
+      "p95": 167.08960700000034,
+      "p99": 199.69864200000302,
+      "max": 215.9281159999955,
+      "status": {
+        "200": 346
+      }
+    },
+    "waiter-calls": {
+      "count": 346,
+      "rps": 1.9216453026880584,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 6.8318174768786095,
+      "p50": 6.309202999997069,
+      "p95": 9.366162999998778,
+      "p99": 13.445988999999827,
+      "max": 24.255169000010937,
+      "status": {
+        "200": 346
+      }
+    },
+    "kds-orders": {
+      "count": 344,
+      "rps": 1.9105375263719426,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 70.25849563953548,
+      "p50": 61.86163900000247,
+      "p95": 135.54005300000426,
+      "p99": 169.50824000000284,
+      "max": 187.31776499999978,
+      "status": {
+        "200": 344
+      }
+    }
+  },
+  "windows": [
+    {
+      "startSec": 0,
+      "count": 187,
+      "rps": 18.7,
+      "p95": 116.38425199999983,
+      "errors": 0
+    },
+    {
+      "startSec": 10,
+      "count": 219,
+      "rps": 21.9,
+      "p95": 110.09502299999986,
+      "errors": 0
+    },
+    {
+      "startSec": 20,
+      "count": 210,
+      "rps": 21,
+      "p95": 113.80169699999897,
+      "errors": 0
+    },
+    {
+      "startSec": 30,
+      "count": 218,
+      "rps": 21.8,
+      "p95": 119.67673500000092,
+      "errors": 0
+    },
+    {
+      "startSec": 40,
+      "count": 229,
+      "rps": 22.9,
+      "p95": 115.87985000000481,
+      "errors": 0
+    },
+    {
+      "startSec": 50,
+      "count": 250,
+      "rps": 25,
+      "p95": 105.58533299999544,
+      "errors": 0
+    },
+    {
+      "startSec": 60,
+      "count": 294,
+      "rps": 29.4,
+      "p95": 106.48921599998721,
+      "errors": 0
+    },
+    {
+      "startSec": 70,
+      "count": 329,
+      "rps": 32.9,
+      "p95": 109.3938049999997,
+      "errors": 0
+    },
+    {
+      "startSec": 80,
+      "count": 323,
+      "rps": 32.3,
+      "p95": 112.2680709999986,
+      "errors": 0
+    },
+    {
+      "startSec": 90,
+      "count": 335,
+      "rps": 33.5,
+      "p95": 106.35093899999629,
+      "errors": 0
+    },
+    {
+      "startSec": 100,
+      "count": 343,
+      "rps": 34.3,
+      "p95": 108.49232900000061,
+      "errors": 0
+    },
+    {
+      "startSec": 110,
+      "count": 378,
+      "rps": 37.8,
+      "p95": 110.91671499999939,
+      "errors": 0
+    },
+    {
+      "startSec": 120,
+      "count": 312,
+      "rps": 31.2,
+      "p95": 122.5452409999998,
+      "errors": 0
+    },
+    {
+      "startSec": 130,
+      "count": 282,
+      "rps": 28.2,
+      "p95": 109.66702599998098,
+      "errors": 0
+    },
+    {
+      "startSec": 140,
+      "count": 305,
+      "rps": 30.5,
+      "p95": 109.30034899999737,
+      "errors": 0
+    },
+    {
+      "startSec": 150,
+      "count": 331,
+      "rps": 33.1,
+      "p95": 105.11673999999766,
+      "errors": 0
+    },
+    {
+      "startSec": 160,
+      "count": 339,
+      "rps": 33.9,
+      "p95": 104.36626000000979,
+      "errors": 0
+    },
+    {
+      "startSec": 170,
+      "count": 326,
+      "rps": 32.6,
+      "p95": 106.47189399998751,
+      "errors": 0
+    },
+    {
+      "startSec": 180,
+      "count": 1,
+      "rps": 0.1,
+      "p95": 6.187524000008125,
+      "errors": 0
+    }
+  ],
+  "trend": {
+    "firstThirdP95": 113.80169699999897,
+    "lastThirdP95": 105.11673999999766
+  },
+  "notes": [
+    "Xodim ekranlari: 20/20 muvaffaqiyatli kirdi"
+  ],
+  "scenarioResults": [
+    {
+      "type": "orders",
+      "ok": true,
+      "result": {
+        "fired": 263
+      }
+    },
+    {
+      "type": "guest",
+      "ok": true,
+      "result": {
+        "concurrentUsers": 1000
+      }
+    },
+    {
+      "type": "staff",
+      "ok": true,
+      "result": {
+        "screens": 20,
+        "loggedIn": 20
+      }
+    }
+  ],
+  "slo": {
+    "verdict": "INCONCLUSIVE",
+    "checks": [
+      {
+        "name": "kds-orders p95 ≤ 300 ms",
+        "ok": true,
+        "value": "136 ms"
+      },
+      {
+        "name": "waiter-orders p95 ≤ 300 ms",
+        "ok": true,
+        "value": "134 ms"
+      },
+      {
+        "name": "waiter-tables p95 ≤ 300 ms",
+        "ok": true,
+        "value": "167 ms"
+      },
+      {
+        "name": "order p95 ≤ 800 ms",
+        "ok": true,
+        "value": "75 ms"
+      },
+      {
+        "name": "menu p95 ≤ 500 ms",
+        "ok": true,
+        "value": "74 ms"
+      },
+      {
+        "name": "xato ulushi ≤ 0.10%",
+        "ok": true,
+        "value": "0.000% (0/5211)"
+      },
+      {
+        "name": "takroriy buyurtma raqami yo'q",
+        "ok": true,
+        "value": "0 ta takror"
+      },
+      {
+        "name": "buyurtma xatolari ≤ 0",
+        "ok": true,
+        "value": "0 ta"
+      }
+    ],
+    "warnings": [
+      "Yurish 180 s, mezon kamida 1800 s talab qiladi: bu isbot EMAS"
+    ]
+  }
+}

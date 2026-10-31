@@ -28,9 +28,9 @@ Egasi so'radi: *"loyiha million foydalanuvchiga, Google/OpenAI/Anthropic darajas
 
 | O'qilishi | Serverga yuki | Hozirgi holat |
 |---|---|---|
-| **A. 1000 kishi menyuni ochib, tanlab, vaqti-vaqti bilan bosadi** (haqiqiy xulq) | Har mehmon ochilishda 1–3 ta Python so'rovi (menyu sahifasi, savat/buyurtma), keyin tinch o'qiydi (mehmon ilovasi **polling qilmaydi**, `frontend/src/utils/pollerRoute.ts`). 1000 kishi 30 soniyada kirsa ≈ 35–100 req/s, keyin pasayadi | Taxminan sig'adi (o'lchovga qarang), lekin PostgreSQL, buyurtma yozish va portlash holati **sinalmagan** |
+| **A. 1000 kishi menyuni ochib, tanlab, vaqti-vaqti bilan bosadi** (haqiqiy xulq) | Har mehmon ochilishda 1–3 ta Python so'rovi (menyu sahifasi, savat/buyurtma), keyin tinch o'qiydi (mehmon ilovasi **polling qilmaydi**, `frontend/src/utils/pollerRoute.ts`). 1000 kishi 30 soniyada kirsa ≈ 35–100 req/s, keyin pasayadi | **Noutbukda PG bilan o'lchandi (2.2b): ~25 req/s, p95 < 100 ms, 0 xato**; lekin qisqa yurish va noutbuk: haqiqiy VPS'da 30 daqiqada isbotlanmagan |
 | **B. 1000 ta so'rov bir soniyada, to'xtovsiz** (stress) | 1000 ulanish dam olmay uradi | Server qotmaydi, lekin sekinlashadi: 2–4.5 s (o'lchandi) |
-| **C. Hammasi bir soniyada QR skanerlaydi** (to'y, aksiya) | 1000–4000 so'rov bir necha soniyada | Origin'da navbat; CDN keshi shart (S3) |
+| **C. Hammasi bir soniyada QR skanerlaydi** (to'y, aksiya) | 1000–4000 so'rov bir necha soniyada | 1000/10 s: yaxshi (p95 109 ms); **1000/1-2 s: navbat 4-7 s, xatosiz** (2.2b); CDN keshi shart (S3) |
 
 D1 qabul mezoni A va C uchun yoziladi (7-bo'lim). B faqat chegarani topish uchun ishlatiladi.
 
@@ -64,6 +64,31 @@ Xatolar: har yurishda 0–16 ta uzilgan ulanish (≤ 0.3%). Server **qotmadi**, 
 
 **To'g'rilash (rostlik uchun).** Birinchi o'lchovda men `/api/v1/products/` ni asosiy menyu yo'li deb xato o'lchab, "N+1 asosiy muammo" degan edim. U faqat server menyuni oldindan bermaganda ishlatiladigan zaxira yo'l (`MenuPage.tsx`). Asosiy yo'llarning natijasi yuqoridagi jadvalda. Umumiy xulosa (zalda bir vaqtda minglab so'rov bo'lsa 2–4.5 s) o'zgarmadi, lekin tuzatish yo'nalishi o'zgardi: asosiy muammo N+1 emas (T1–T3).
 
+### 2.2b PostgreSQL 16 + Caddy bazaviy o'lchov (S0-5, 2026-10-31)
+
+Sharoit: noutbuk (8 yadro, 7.7 GB, **swap ishlatilgan**, generator shu mashinada), gunicorn 4×4 `DEBUG=False`, PostgreSQL 16 (Docker, 768 MB), Caddy (Docker, gzip), baza: 1 restoran, 127 taom, 20 stol, **100 000 buyurtma** (`seed_load`). Hisobotlar: `docs/01_PRODUCT_RESTAURANT_3D_AR/load_reports/2026-10-31_*`. Hammasi lokal muhit va qisqa yurish: **D1 isboti emas** (hisobotlarda INCONCLUSIVE).
+
+| Stsenariy | Natija |
+|---|---|
+| **A**: 1000 bir vaqtdagi mehmon (o'ylash 10-30 s, 10% buyurtma), 300 s | 6563 so'rov, barqaror holatda **~25 req/s**; menyu p95 79 ms, boshlang'ich sahifa 50 ms, buyurtma 103 ms; 0 xato; 332 buyurtma, 0 takror |
+| **Yozuv**: 100 buyurtma/daq, 150 s | 250 buyurtma, p95 81 ms, 0 xato, 0 takror |
+| **Portlash (C)**: 1000 mehmon / 10 s | p95 109 ms (Caddy) · 166 ms (to'g'ridan-to'g'ri), 0 xato, bo'shash 0 s |
+| **Qiyin portlash**: 1000 / 2 s · 1000 / 1 s · 3000 / 10 s | p95 4.4 s · 4.1 s · 6.2 s; hammasida 0 xato; navbat 4.6 · 4.6 · 6.6 s da bo'shaydi |
+| **Q4 aralash**: 20 xodim ekrani + 100 buyurtma/daq + 1000 mehmon, 180 s, **bitta havza** | KDS p95 136 ms, ofitsiant buyurtmalar 134, stollar 167, qo'ng'iroqlar 9; menyu 74; buyurtma 75; 0 xato |
+| **Stress (B)**: 99 / 999 ulanish, 3 yo'l aralash | jami ~150-200 req/s; 999 da p50 4.4-4.6 s; 0 xato |
+
+Xulosalar (dalil bilan, taxmin emas):
+1. **Real xulqli 1000 bir vaqtdagi mehmon ≈ 25 req/s** (+ ~1.5 buyurtma/s) beradi: o'lchangan chegaraning ~15% i. Bizning modelimiz har "slot"da mehmonni ~68 s da yangisiga almashtiradi; real restoranda mehmon uzoqroq o'tiradi va kamroq so'raydi, ya'ni yuk **konservativ**. Qayta tashrif, 3D ochish va h.k. hisobga olinsa ham 2-3× zaxira bor.
+2. **Bitta tugun chegarasi ≈ 150-180 req/s.** 1000 mehmon 1-2 soniyada kirsa so'rovlar navbatga turadi (4-7 s), lekin **xato yo'q** va navbat tez bo'shaydi. Bu portlash holati uchun S3 (CDN/umumiy kesh) asosi.
+3. **Caddy gzip matn kanalini ~8× kamaytiradi**: `/menu/` 50 KB → 5.8 KB, menyu JSON 36 KB → 2 KB. Rasm va GLB siqilmaydi (T11 o'z kuchida).
+4. **PostgreSQL va SQLite natijalari mos** (~150-200 req/s): bo'g'z hozircha DB emas, Python/gunicorn qatlami (S1-1).
+5. Xodim va mehmon bitta havzada ham bu yukgacha bir-biriga xalaqit bermadi; pool ajratish (`web-staff`) isboti kattaroq yukda (S2/S4).
+6. `seed_load` PostgreSQL'da: 100k buyurtma ≈ 70-78 s, `ANALYZE` ishlaydi.
+
+**Cheklovlar:** generator va server bir noutbukda; swap ishlatilgan; yurishlar 2-5 daqiqa (mezon 30 daq); 1M buyurtma, 10k+ hajm va haqiqiy VPS sinalmagan. Bir xil stsenariyning takroriy yurishlari ±20-30% farq beradi.
+
+**Metodika xatolari (rostlik uchun):** (a) generatorda siqilgan javobni ochmaslik xatosi birinchi urinishni 0 so'rovda to'xtatdi, tuzatildi va testga qo'shildi; (b) `seed_load` standarti (to'langan 0.8) yetkazilgan buyurtmalarning ~15% ini to'lanmagan qoldirib, har stolda ~700 "ochiq hisob" yaratgan va stollar endpoint'ini sun'iy sekin (p95 902 ms) ko'rsatgan edi; standart 0.94 ga tuzatildi va Q4 qaytarildi.
+
 ### 2.3 Topilmalar (kod bilan tasdiqlangan)
 
 | № | Topilma | Dalil | Ta'siri |
@@ -83,6 +108,7 @@ Xatolar: har yurishda 0–16 ta uzilgan ulanish (≤ 0.3%). Server **qotmadi**, 
 | T13 | Xodim polling'i har 5 s, ETag/304 va yashirin tabda to'xtash yo'q | `NavigationContext.tsx:399,805` | Platformada yuk (1.3 qarang) |
 | T14 | **Kutilmagan server xatosi mijozga HTTP 400 bo'lib qaytadi**: `RestaurantOrderCreateView.post` dagi `except Exception` -> `400 "Buyurtmani qabul qilib bo'lmadi"`. Yuk testida SQLite `database is locked` shu tarzda 400 ga aylandi (19 buyurtmadan 1 tasi). PostgreSQL'da deadlock yoki ulanish uzilishi ham xuddi shunday bo'ladi | `orders/interfaces/api/views.py:79`; yuk testi jurnali | Sentry va monitoring buni xato deb ko'rmaydi (400), mijoz "so'rovim noto'g'ri" deb qayta urinmaydi, yo'qolgan buyurtma kuzatilmaydi. S4-1: kutilmagan/vaqtinchalik xatoda 503 + `Retry-After`, 400 faqat haqiqiy mijoz xatosida |
 | T15 | **304 yo'li ham 2 ta SQL qiladi** (`app_settings` + `shops`, faqat ETag hisoblash uchun): in-process 2.1 ms. Gunicorn ostida o'lchangan ~560 req/s esa 4 ishchi uchun ideal (~1900 req/s) dan 3-4 baravar past: vaqtning katta qismi Django ko'rinishidan **tashqarida** (gunicorn gthread, GIL, generator va server bir noutbukda, swap) | S0-3 profili va 2.2 jadvali | Ilova kodini noutbukdagi raqamga qarab haddan ortiq sayqallamaslik kerak; qolgan farq S2 da haqiqiy VPS'da ajratiladi |
+| T16 | **`/api/v1/restaurant/tables/` har stol uchun alohida `orders` so'rovi qiladi (N+1) va `orders` da faqat `table_id` indeksi bor**: so'rov stolning BUTUN tarixini o'qib keyin filtrlaydi (EXPLAIN: 4420 qator o'qildi, 3715 tashlandi, ~6 ms/stol) | EXPLAIN ANALYZE (PG), `orders/interfaces/api/views.py:222-228` | 100k bazada p95 167 ms (chegaradan past), lekin tarix o'sgani sari chiziqli sekinlashadi (xodim ekrani har 5 s so'raydi). S4-2 da 1M buyurtmada o'lchanadi; taklif: bitta yig'ma so'rov + to'lanmaganlar uchun qisman indeks |
 
 **Rad etilgan faraz (S0-3 profili).** Bu TZ'ning birinchi variantida "har so'rov ~7 ms: 16 ta middleware aybdor" deb taxmin qilingan edi. Profil buni **rad etdi**: har middleware'ning o'z vaqti ≈ 0.003-0.007 ms (jami < 0.2 ms). Shuning uchun middleware yengillashtirish rejadan **olib tashlandi** (ROADMAP S1). Xulosa dalilga tayanadi: profil bo'lmasa noto'g'ri joyni optimizatsiya qilgan bo'lardik.
 

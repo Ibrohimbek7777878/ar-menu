@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "profile": "d1-c-burst",
+    "label": "baseline-pg-caddy-1000u-1s",
+    "date": "2026-10-31T04:53:33.321Z",
+    "base": "http://127.0.0.1:8080",
+    "remote": false,
+    "stack": "noutbuk 8 yadro/7.7GB (swap ishlatilgan), gunicorn 4x4, PostgreSQL 16 (Docker, 768MB), Caddy (Docker, gzip), generator shu mashinada",
+    "notes": "",
+    "node": "v24.19.0",
+    "cpus": 8,
+    "memGB": 7.5,
+    "loadavgStart": [
+      2.27,
+      2.7,
+      2.86
+    ],
+    "loadavgEnd": [
+      2.65,
+      2.77,
+      2.88
+    ],
+    "gitSha": "5a640ec",
+    "timeScale": 1,
+    "seed": 42,
+    "durationSec": 120,
+    "actualSec": 5.6,
+    "scenarios": [
+      {
+        "type": "burst",
+        "users": 1000,
+        "windowSec": 1
+      }
+    ]
+  },
+  "totals": {
+    "requests": 1000,
+    "errors": 0,
+    "errorRate": 0,
+    "retried": 0,
+    "rps": 178.72996099359978,
+    "p50": 2189.772627,
+    "p95": 4131.6109799999995,
+    "p99": 4551.132331999999,
+    "max": 4602.684498,
+    "orders": {
+      "created": 0,
+      "duplicates": 0,
+      "failures": 0
+    }
+  },
+  "steps": {
+    "menu": {
+      "count": 1000,
+      "rps": 178.72996099359978,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 2211.965716239001,
+      "p50": 2189.772627,
+      "p95": 4131.6109799999995,
+      "p99": 4551.132331999999,
+      "max": 4602.684498,
+      "status": {
+        "200": 1000
+      }
+    }
+  },
+  "windows": [
+    {
+      "startSec": 0,
+      "count": 1000,
+      "rps": 100,
+      "p95": 4131.6109799999995,
+      "errors": 0
+    }
+  ],
+  "trend": null,
+  "notes": [
+    "Portlash: 1000 mehmon 1 s ichida; oxirgi javob oyna tugagach 4.6 s dan keyin keldi"
+  ],
+  "scenarioResults": [
+    {
+      "type": "burst",
+      "ok": true,
+      "result": {
+        "users": 1000,
+        "drainSec": 4.594156369999999
+      }
+    }
+  ],
+  "slo": {
+    "verdict": "FAIL",
+    "checks": [
+      {
+        "name": "menu p95 ≤ 1000 ms",
+        "ok": false,
+        "value": "4132 ms"
+      },
+      {
+        "name": "xato ulushi ≤ 1.00%",
+        "ok": true,
+        "value": "0.000% (0/1000)"
+      },
+      {
+        "name": "portlashdan keyin bo'shash ≤ 30 s",
+        "ok": true,
+        "value": "4.6 s"
+      }
+    ],
+    "warnings": []
+  }
+}

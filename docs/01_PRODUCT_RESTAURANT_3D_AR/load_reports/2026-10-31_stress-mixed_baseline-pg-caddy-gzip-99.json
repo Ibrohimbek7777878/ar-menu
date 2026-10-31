@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "profile": "stress-mixed",
+    "label": "baseline-pg-caddy-gzip-99",
+    "date": "2026-10-31T04:43:33.034Z",
+    "base": "http://127.0.0.1:8080",
+    "remote": false,
+    "stack": "noutbuk 8 yadro/7.7GB (swap ishlatilgan), gunicorn 4x4, PostgreSQL 16 (Docker, 768MB), generator shu mashinada",
+    "notes": "",
+    "node": "v24.19.0",
+    "cpus": 8,
+    "memGB": 7.5,
+    "loadavgStart": [
+      8.1,
+      4.67,
+      2.77
+    ],
+    "loadavgEnd": [
+      9.05,
+      4.98,
+      2.89
+    ],
+    "gitSha": "5a640ec",
+    "timeScale": 1,
+    "seed": 42,
+    "durationSec": 10,
+    "actualSec": 10.6,
+    "scenarios": [
+      {
+        "type": "stress",
+        "users": 99,
+        "paths": [
+          "/menu/",
+          "/",
+          "/api/v1/restaurant/menu/"
+        ]
+      }
+    ]
+  },
+  "totals": {
+    "requests": 2191,
+    "errors": 0,
+    "errorRate": 0,
+    "retried": 0,
+    "rps": 207.2038535388725,
+    "p50": 444.08522700000003,
+    "p95": 788.318162,
+    "p99": 836.0309790000001,
+    "max": 886.8047159999996,
+    "orders": {
+      "created": 0,
+      "duplicates": 0,
+      "failures": 0
+    }
+  },
+  "steps": {
+    "/menu/": {
+      "count": 714,
+      "rps": 67.52330051426516,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 473.96652224789943,
+      "p50": 458.722804,
+      "p95": 799.8637219999998,
+      "p99": 849.338103,
+      "max": 873.1882400000004,
+      "status": {
+        "200": 714
+      }
+    },
+    "/": {
+      "count": 743,
+      "rps": 70.26584353235155,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 452.43782945625793,
+      "p50": 433.804361,
+      "p95": 772.904536,
+      "p99": 823.0462159999997,
+      "max": 843.1673659999997,
+      "status": {
+        "200": 743
+      }
+    },
+    "/api/v1/restaurant/menu/": {
+      "count": 734,
+      "rps": 69.41470949225578,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 459.5241361226162,
+      "p50": 436.82475199999953,
+      "p95": 782.7740530000001,
+      "p99": 838.2708050000001,
+      "max": 886.8047159999996,
+      "status": {
+        "200": 734
+      }
+    }
+  },
+  "windows": [
+    {
+      "startSec": 0,
+      "count": 2187,
+      "rps": 218.7,
+      "p95": 788.318162,
+      "errors": 0
+    },
+    {
+      "startSec": 10,
+      "count": 4,
+      "rps": 0.4,
+      "p95": 578.5942099999993,
+      "errors": 0
+    }
+  ],
+  "trend": null,
+  "notes": [],
+  "scenarioResults": [
+    {
+      "type": "stress",
+      "ok": true,
+      "result": {
+        "users": 99
+      }
+    }
+  ],
+  "slo": {
+    "verdict": "PASS",
+    "checks": [
+      {
+        "name": "xato ulushi ≤ 5.00%",
+        "ok": true,
+        "value": "0.000% (0/2191)"
+      }
+    ],
+    "warnings": []
+  }
+}

@@ -35,9 +35,9 @@ Har faza oxirida **to'xtab hisobot** beriladi va keyingisiga ruxsat so'raladi. F
 | S0-2 | `seed_load` buyrug'i: hajmli sinov bazasi (masalan 5 restoran, 150 taom/restoran, 1M buyurtma qatori) | Idempotent, faqat `DEBUG`/aniq ruxsat bilan, tarmoqsiz, haqiqiy bazaga yozmaydi | C · ✅ bajarildi: `seed_load` (SQLite'da 100 000 buyurtma = 80 s, 1 316 buyurtma/s, eng ko'p 321 MB; qayta yurgizish 0.1 s; 100k da SQL yaxlitlik tekshiruvi 0 xato); **PostgreSQL'da hali sinalmagan** (S0-5 da) |
 | S0-3 | Profil: `/menu/` va 304 yo'lida vaqt qayerga ketishini o'lchash (`cProfile`, `loadtest/profile_django.py`) | Top xarajat jadvali (hisobotda) | C · ✅ bajarildi: bo'g'z = keshdagi model nusxalari (pickle); middleware **emas** (TZ 2.3) |
 | S0-4 | So'rov vaqti jurnali (`gunicorn %(D)s`, `X-Request-Id`), kesh sarlavhalari (`X-Cache`) | Jurnaldan p50/p95/p99 hisoblanadi | C · ✅ bajarildi: gunicorn jurnali `%(D)s` + Caddy `X-Request-Id`, `loadtest/parse_access_log.mjs` |
-| S0-5 | Bazaviy o'lchov: PG (Docker) + Caddy bilan **noutbukda** qayta o'lchash (SQLite emas) | Hisobot; 2.2-jadval yangilanadi | C |
+| S0-5 | Bazaviy o'lchov: PG (Docker) + Caddy bilan **noutbukda** (SQLite emas) | Hisobot; 2.2-jadval yangilanadi | C · ✅ bajarildi: TZ 2.2b, hisobotlar `load_reports/2026-10-31_*`; realistik yuk (A, yozuv, portlash, Q4) noutbukda katta zaxira bilan o'tdi (INCONCLUSIVE: qisqa, lokal); chegara ≈ 150-180 req/s |
 
-**G0 (darvoza):** bazaviy hisobot hujjatlashtirilgan; profil natijalari S1 ni belgilaydi (S1 ro'yxati o'zgarishi mumkin).
+**G0 (darvoza): ✅ tayyor** (2026-10-31): bazaviy hisobot TZ 2.2b da, profil natijalari S1 ni belgiladi (S1 ro'yxati qayta yozilgan). S1 ga o'tish uchun egasining ruxsati kutilmoqda.
 
 ### S1. Arzon ilova tezlatmalari (M) · oldin/keyin o'lchov majburiy · hammasi bayroq ortida
 
@@ -84,7 +84,7 @@ Har faza oxirida **to'xtab hisobot** beriladi va keyingisiga ruxsat so'raladi. F
 | ID | Ish | Qabul | Kim |
 |---|---|---|---|
 | S4-1 | Buyurtma yaratish **idempotent** (mijoz kalitli qayta yuborish xavfsiz) **va xato kodlari to'g'ri**: kutilmagan/vaqtinchalik xato (DB qulf, deadlock, uzilish) `400` emas, `503` + `Retry-After` va Sentry'ga tushadi; `400` faqat haqiqiy mijoz xatosida (TZ T14) | 20 parallel bir xil so'rov → 1 buyurtma, 1 kassa yozuvi, zaxira 1 marta kamayadi; DB xatosi simulyatsiyasida 503 (400 emas) va guest ilovasi qayta urinadi | C |
-| S4-2 | PG'da `EXPLAIN (ANALYZE)` hajmli bazada (S0-2): KDS ro'yxati, stollar, moliya summary; kerakli indekslar (migratsiya, orqaga mos) | Har issiq so'rov < 50 ms 1M qatorda; migratsiya orqaga qaytariladi | C |
+| S4-2 | PG'da `EXPLAIN (ANALYZE)` hajmli bazada (S0-2, 1M): KDS ro'yxati, **stollar holati (T16: N+1 + butun tarixni o'qish)**, moliya summary; kerakli indekslar (migratsiya, orqaga mos) | Har issiq so'rov < 50 ms 1M qatorda; migratsiya orqaga qaytariladi | C |
 | S4-3 | Sahifalash: Seller moliya (909 KB), buyurtmalar tarixi. "Hammasi" rejimi yashirin bayroq bilan qoladi (o'chirilmaydi) | Sahifa ≤ 100 KB; eski rejim sozlama bilan | C |
 | S4-4 | Xodim polling: ETag/304 (versiya bo'yicha), yashirin tabda to'xtash, xatoda backoff, interval sozlamadan (`staff_poll_ms`, standart 5000) | Bo'sh o'zgarishda 304; platforma yuki ≥3× kamayadi (o'lchanadi) | C |
 | S4-5 | Yozuv (Q3) va xodim (Q4) yuk testlari PG stekda | Q3, Q4 holati hisobotda | C |

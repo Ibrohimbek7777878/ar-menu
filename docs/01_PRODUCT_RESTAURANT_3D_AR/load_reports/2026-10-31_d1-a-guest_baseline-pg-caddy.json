@@ -1,0 +1,376 @@
+{
+  "meta": {
+    "profile": "d1-a-guest",
+    "label": "baseline-pg-caddy",
+    "date": "2026-10-31T04:49:40.374Z",
+    "base": "http://127.0.0.1:8080",
+    "remote": false,
+    "stack": "noutbuk 8 yadro/7.7GB (swap ishlatilgan), gunicorn 4x4, PostgreSQL 16 (Docker, 768MB), Caddy (Docker, gzip), generator shu mashinada",
+    "notes": "5 daqiqalik qisqartirilgan yurish (mezon 30 daq), 100k buyurtmali PG bazasi",
+    "node": "v24.19.0",
+    "cpus": 8,
+    "memGB": 7.5,
+    "loadavgStart": [
+      5.66,
+      4.98,
+      3.05
+    ],
+    "loadavgEnd": [
+      2.86,
+      4.39,
+      3.37
+    ],
+    "gitSha": "5a640ec",
+    "timeScale": 1,
+    "seed": 42,
+    "durationSec": 300,
+    "actualSec": 300,
+    "scenarios": [
+      {
+        "type": "guest",
+        "users": 1000,
+        "rampSec": 120,
+        "thinkMin": 10,
+        "thinkMax": 30,
+        "browseMin": 2,
+        "browseMax": 4,
+        "orderRatio": 0.1,
+        "welcomeRatio": 0.5
+      }
+    ]
+  },
+  "totals": {
+    "requests": 6563,
+    "errors": 0,
+    "errorRate": 0,
+    "retried": 0,
+    "rps": 21.87649748017934,
+    "p50": 30.0545989999664,
+    "p95": 72.08455599998706,
+    "p99": 132.0453439999983,
+    "max": 237.98873600000024,
+    "orders": {
+      "created": 332,
+      "duplicates": 0,
+      "failures": 0
+    }
+  },
+  "steps": {
+    "menu": {
+      "count": 4179,
+      "rps": 13.92989227025285,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 36.876344267767294,
+      "p50": 32.900525999997626,
+      "p95": 79.22534000000451,
+      "p99": 142.96916300000157,
+      "max": 237.98873600000024,
+      "status": {
+        "200": 4179
+      }
+    },
+    "welcome": {
+      "count": 2052,
+      "rps": 6.839947101832699,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 26.327666335769937,
+      "p50": 24.692304999989574,
+      "p95": 49.701284999988275,
+      "p99": 75.94656300000497,
+      "max": 195.5081759999739,
+      "status": {
+        "200": 2052
+      }
+    },
+    "order": {
+      "count": 332,
+      "rps": 1.1066581080937896,
+      "errors": 0,
+      "errorRate": 0,
+      "retried": 0,
+      "mean": 46.66825499698779,
+      "p50": 39.451310999982525,
+      "p95": 102.65466000000015,
+      "p99": 134.75749300000462,
+      "max": 147.38791800000035,
+      "status": {
+        "201": 332
+      }
+    }
+  },
+  "windows": [
+    {
+      "startSec": 0,
+      "count": 103,
+      "rps": 10.3,
+      "p95": 84.37194,
+      "errors": 0
+    },
+    {
+      "startSec": 10,
+      "count": 122,
+      "rps": 12.2,
+      "p95": 65.5169449999994,
+      "errors": 0
+    },
+    {
+      "startSec": 20,
+      "count": 124,
+      "rps": 12.4,
+      "p95": 59.4617279999984,
+      "errors": 0
+    },
+    {
+      "startSec": 30,
+      "count": 121,
+      "rps": 12.1,
+      "p95": 65.70118300000468,
+      "errors": 0
+    },
+    {
+      "startSec": 40,
+      "count": 137,
+      "rps": 13.7,
+      "p95": 70.73012100000051,
+      "errors": 0
+    },
+    {
+      "startSec": 50,
+      "count": 168,
+      "rps": 16.8,
+      "p95": 77.3986389999991,
+      "errors": 0
+    },
+    {
+      "startSec": 60,
+      "count": 177,
+      "rps": 17.7,
+      "p95": 102.65466000000015,
+      "errors": 0
+    },
+    {
+      "startSec": 70,
+      "count": 215,
+      "rps": 21.5,
+      "p95": 90.57197900000028,
+      "errors": 0
+    },
+    {
+      "startSec": 80,
+      "count": 240,
+      "rps": 24,
+      "p95": 73.39717599999858,
+      "errors": 0
+    },
+    {
+      "startSec": 90,
+      "count": 247,
+      "rps": 24.7,
+      "p95": 70.66941200000292,
+      "errors": 0
+    },
+    {
+      "startSec": 100,
+      "count": 281,
+      "rps": 28.1,
+      "p95": 69.8477899999998,
+      "errors": 0
+    },
+    {
+      "startSec": 110,
+      "count": 295,
+      "rps": 29.5,
+      "p95": 59.11759599999641,
+      "errors": 0
+    },
+    {
+      "startSec": 120,
+      "count": 227,
+      "rps": 22.7,
+      "p95": 75.37956100000883,
+      "errors": 0
+    },
+    {
+      "startSec": 130,
+      "count": 196,
+      "rps": 19.6,
+      "p95": 103.42141999999876,
+      "errors": 0
+    },
+    {
+      "startSec": 140,
+      "count": 216,
+      "rps": 21.6,
+      "p95": 96.37602100000367,
+      "errors": 0
+    },
+    {
+      "startSec": 150,
+      "count": 267,
+      "rps": 26.7,
+      "p95": 91.25613399999565,
+      "errors": 0
+    },
+    {
+      "startSec": 160,
+      "count": 266,
+      "rps": 26.6,
+      "p95": 68.48036600000341,
+      "errors": 0
+    },
+    {
+      "startSec": 170,
+      "count": 251,
+      "rps": 25.1,
+      "p95": 81.43502299999818,
+      "errors": 0
+    },
+    {
+      "startSec": 180,
+      "count": 225,
+      "rps": 22.5,
+      "p95": 75.94656300000497,
+      "errors": 0
+    },
+    {
+      "startSec": 190,
+      "count": 248,
+      "rps": 24.8,
+      "p95": 47.91535099997418,
+      "errors": 0
+    },
+    {
+      "startSec": 200,
+      "count": 215,
+      "rps": 21.5,
+      "p95": 62.03724299999885,
+      "errors": 0
+    },
+    {
+      "startSec": 210,
+      "count": 241,
+      "rps": 24.1,
+      "p95": 52.06701699999394,
+      "errors": 0
+    },
+    {
+      "startSec": 220,
+      "count": 270,
+      "rps": 27,
+      "p95": 55.694404000008944,
+      "errors": 0
+    },
+    {
+      "startSec": 230,
+      "count": 257,
+      "rps": 25.7,
+      "p95": 44.703696000011405,
+      "errors": 0
+    },
+    {
+      "startSec": 240,
+      "count": 248,
+      "rps": 24.8,
+      "p95": 67.54556699999375,
+      "errors": 0
+    },
+    {
+      "startSec": 250,
+      "count": 241,
+      "rps": 24.1,
+      "p95": 68.18370300001698,
+      "errors": 0
+    },
+    {
+      "startSec": 260,
+      "count": 259,
+      "rps": 25.9,
+      "p95": 63.391220000048634,
+      "errors": 0
+    },
+    {
+      "startSec": 270,
+      "count": 223,
+      "rps": 22.3,
+      "p95": 56.21639699995285,
+      "errors": 0
+    },
+    {
+      "startSec": 280,
+      "count": 233,
+      "rps": 23.3,
+      "p95": 61.632457999978215,
+      "errors": 0
+    },
+    {
+      "startSec": 290,
+      "count": 244,
+      "rps": 24.4,
+      "p95": 49.09877099998994,
+      "errors": 0
+    },
+    {
+      "startSec": 300,
+      "count": 6,
+      "rps": 0.6,
+      "p95": 47.809433999995235,
+      "errors": 0
+    }
+  ],
+  "trend": {
+    "firstThirdP95": 70.73012100000051,
+    "lastThirdP95": 55.694404000008944
+  },
+  "notes": [],
+  "scenarioResults": [
+    {
+      "type": "guest",
+      "ok": true,
+      "result": {
+        "concurrentUsers": 1000
+      }
+    }
+  ],
+  "slo": {
+    "verdict": "INCONCLUSIVE",
+    "checks": [
+      {
+        "name": "menu p95 ≤ 500 ms",
+        "ok": true,
+        "value": "79 ms"
+      },
+      {
+        "name": "welcome p95 ≤ 500 ms",
+        "ok": true,
+        "value": "50 ms"
+      },
+      {
+        "name": "order p95 ≤ 800 ms",
+        "ok": true,
+        "value": "103 ms"
+      },
+      {
+        "name": "xato ulushi ≤ 0.10%",
+        "ok": true,
+        "value": "0.000% (0/6563)"
+      },
+      {
+        "name": "takroriy buyurtma raqami yo'q",
+        "ok": true,
+        "value": "0 ta takror"
+      },
+      {
+        "name": "buyurtma xatolari ≤ 0",
+        "ok": true,
+        "value": "0 ta"
+      }
+    ],
+    "warnings": [
+      "Yurish 300 s, mezon kamida 1800 s talab qiladi: bu isbot EMAS"
+    ]
+  }
+}
