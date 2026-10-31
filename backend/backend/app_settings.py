@@ -6,9 +6,9 @@ from django.conf import settings
 
 
 def get_int(key, default, minimum, maximum):
-    from notifications.models import AppSetting
-    row = AppSetting.objects.filter(key=key.lower()).first()
-    raw = row.value if row is not None else getattr(settings, key.upper(), default)
+    from backend.runtime_cache import get_app_setting
+    value = get_app_setting(key)
+    raw = value if value is not None else getattr(settings, key.upper(), default)
     try:
         return max(minimum, min(maximum, int(raw)))
     except (TypeError, ValueError):
@@ -17,18 +17,18 @@ def get_int(key, default, minimum, maximum):
 
 def get_choice(key, default, choices):
     """AppSetting yoki .env dagi qiymat `choices` ichida bo'lmasa — `default` (noto'g'ri sozlama saytni buzmasin)."""
-    from notifications.models import AppSetting
-    row = AppSetting.objects.filter(key=key.lower()).first()
-    raw = row.value if row is not None else getattr(settings, key.upper(), default)
+    from backend.runtime_cache import get_app_setting
+    value = get_app_setting(key)
+    raw = value if value is not None else getattr(settings, key.upper(), default)
     value = str(raw).strip().lower()
     return value if value in choices else default
 
 
 def get_bool(key, default=False):
     """AppSetting yoki .env dan boolean sozlama o'qish (standart: default)."""
-    from notifications.models import AppSetting
-    row = AppSetting.objects.filter(key=key.lower()).first()
-    raw = row.value if row is not None else getattr(settings, key.upper(), default)
+    from backend.runtime_cache import get_app_setting
+    value = get_app_setting(key)
+    raw = value if value is not None else getattr(settings, key.upper(), default)
     if isinstance(raw, bool):
         return raw
     return str(raw).strip().lower() in ('1', 'true', 'yes', 'on')
@@ -41,6 +41,6 @@ def set_setting(key, value):
         key=key.lower(),
         defaults={'value': str(value)},
     )
-    return row
+    return row  # post_save signali jarayon keshini tozalaydi (backend/runtime_cache.py)
 
 

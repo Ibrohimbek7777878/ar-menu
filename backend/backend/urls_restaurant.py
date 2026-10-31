@@ -40,6 +40,8 @@ def restaurant_admin_redirect(request):
 urlpatterns = [
     # Health check
     path('health/', health.health_check, name='health_check'),
+    path('health/live/', health.health_live, name='health_live'),
+    path('health/ready/', health.health_ready, name='health_ready'),
 
     # ASOSIY BOSH SAHIFA: Saytga kirganda 1-bo'lib Welcome & Entry ekrani ochiladi
     path('', tma_views.tma_welcome, name='restaurant_root'),

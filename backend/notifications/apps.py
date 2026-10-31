@@ -7,3 +7,5 @@ class NotificationsConfig(AppConfig):
 
     def ready(self):
         from notifications import signals  # noqa: F401
+        from backend.runtime_cache import connect_runtime_cache_signals
+        connect_runtime_cache_signals()

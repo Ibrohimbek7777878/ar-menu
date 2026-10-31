@@ -19,6 +19,7 @@ from orders.models import Order, OrderItem, OrderStatusHistory
 from accounts.models import Customer
 from payments.payment_service import create_order_payment
 from notifications.admin_bot import get_restaurant_shop
+from web.http_cache import conditional_guest_page
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
     RESTAURANT_MANAGER_ROLES, can_view_order, guest_order_ids, is_restaurant_staff, remember_guest_order,
@@ -122,6 +123,86 @@ def _model_status(product):
         return 'none'
 
 
+def _build_tma_menu(active_shop):
+    """Mehmon menyusi ma'lumotlari (DB'dan). Eski kesh yo'li shu lug'atni (model nusxalari bilan) keshlaydi."""
+    # Faqat shu restoranning arxivlanmagan taomlari (avval o'chirilganlar ham chiqar, menyu 35 taomda kesilardi)
+    prod_qs = Product.objects.filter(is_available=True, is_deleted=False)
+    if active_shop:
+        prod_qs = prod_qs.filter(shop=active_shop)
+        categories = list(Category.objects.filter(
+            products__shop=active_shop, products__is_deleted=False, is_active=True,
+        ).distinct().order_by('sort_order', 'name'))
+    else:
+        categories = list(Category.objects.filter(is_active=True).order_by('sort_order')[:12])
+
+    featured_products = list(prod_qs.select_related('shop', 'category', 'model3d').order_by('id')[:300])
+    ar_products = [p for p in featured_products if p.has_3d][:12]
+
+    # Menyu toifalari bo'yicha guruhlash (menyuuu uslubidagi klassik ro'yxat uchun)
+    category_groups = []
+    for cat in categories:
+        c_prods = [p for p in featured_products if p.category_id == cat.id]
+        if c_prods:
+            category_groups.append({
+                'category': cat,
+                'products': c_prods,
+            })
+
+    # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
+    react_products = []
+    for p in featured_products:
+        react_products.append({
+            'id': p.id,
+            'name': p.name,
+            'description': p.description or '',
+            'price': float(p.price),
+            'old_price': float(p.old_price) if p.old_price else None,
+            'image': p.image.url if p.image else '',
+            'category_id': p.category_id,
+            'category_name': p.category.name if p.category else '',
+            'has_3d': bool(p.has_3d and p.ar_model),
+            'ar_model': p.ar_model or '',
+            'model_status': _model_status(p),
+            'unit': p.unit or 'dona',
+            'is_halal': bool(p.is_halal),
+            'is_popular': bool(p.is_featured),
+        })
+
+    from collections import Counter
+    cat_counts = Counter(p.category_id for p in featured_products)
+    react_categories = []
+    for c in categories:
+        react_categories.append({
+            'id': c.id,
+            'name': c.name,
+            'icon': getattr(c, 'icon', '') or '🍽️',
+            'count': cat_counts.get(c.id, 0),
+        })
+
+    return {
+        'categories': categories,
+        'category_groups': category_groups,
+        'featured_products': featured_products,
+        'ar_products': ar_products,
+        'react_categories': react_categories,
+        'react_products': react_products,
+    }
+
+
+def _build_tma_menu_plain(active_shop):
+    """
+    S1-1 (TZ T1): keshga faqat oddiy matn yoziladi. Model nusxalari (455 ta `__setstate__`, so'rov vaqtining ~yarmi)
+    va har so'rovdagi `json.dumps` (50 KB) o'rniga tayyor JSON satrlar. Matn `json.dumps` bilan aynan bir xil
+    belgilar ketma-ketligini beradi, shuning uchun HTML eski yo'ldagi bilan baytma-bayt bir xil.
+    """
+    data = _build_tma_menu(active_shop)
+    return {
+        'categories_json': json.dumps(data['react_categories']),
+        'products_json': json.dumps(data['react_products']),
+    }
+
+
+@conditional_guest_page
 def tma_home(request):
     """Telegram Mini App Bosh Sahifasi — faqat restoran 3D menyusi."""
     table, table_token = _get_tma_table(request)
@@ -130,78 +211,12 @@ def tma_home(request):
 
     from products.menu_cache import get_cached_menu
     active_shop_id = getattr(active_shop, 'id', None)
+    plain_cache = getattr(settings, 'MENU_CACHE_PLAIN_DATA', True)
 
-    def _build_tma_menu():
-        # Faqat shu restoranning arxivlanmagan taomlari (avval o'chirilganlar ham chiqar, menyu 35 taomda kesilardi)
-        prod_qs = Product.objects.filter(is_available=True, is_deleted=False)
-        if active_shop:
-            prod_qs = prod_qs.filter(shop=active_shop)
-            categories = list(Category.objects.filter(
-                products__shop=active_shop, products__is_deleted=False, is_active=True,
-            ).distinct().order_by('sort_order', 'name'))
-        else:
-            categories = list(Category.objects.filter(is_active=True).order_by('sort_order')[:12])
-
-        featured_products = list(prod_qs.select_related('shop', 'category', 'model3d').order_by('id')[:300])
-        ar_products = [p for p in featured_products if p.has_3d][:12]
-
-        # Menyu toifalari bo'yicha guruhlash (menyuuu uslubidagi klassik ro'yxat uchun)
-        category_groups = []
-        for cat in categories:
-            c_prods = [p for p in featured_products if p.category_id == cat.id]
-            if c_prods:
-                category_groups.append({
-                    'category': cat,
-                    'products': c_prods,
-                })
-
-        # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
-        react_products = []
-        for p in featured_products:
-            react_products.append({
-                'id': p.id,
-                'name': p.name,
-                'description': p.description or '',
-                'price': float(p.price),
-                'old_price': float(p.old_price) if p.old_price else None,
-                'image': p.image.url if p.image else '',
-                'category_id': p.category_id,
-                'category_name': p.category.name if p.category else '',
-                'has_3d': bool(p.has_3d and p.ar_model),
-                'ar_model': p.ar_model or '',
-                'model_status': _model_status(p),
-                'unit': p.unit or 'dona',
-                'is_halal': bool(p.is_halal),
-                'is_popular': bool(p.is_featured),
-            })
-
-        from collections import Counter
-        cat_counts = Counter(p.category_id for p in featured_products)
-        react_categories = []
-        for c in categories:
-            react_categories.append({
-                'id': c.id,
-                'name': c.name,
-                'icon': getattr(c, 'icon', '') or '🍽️',
-                'count': cat_counts.get(c.id, 0),
-            })
-
-        return {
-            'categories': categories,
-            'category_groups': category_groups,
-            'featured_products': featured_products,
-            'ar_products': ar_products,
-            'react_categories': react_categories,
-            'react_products': react_products,
-        }
-
-    cached_menu = get_cached_menu(active_shop_id, 'tma', _build_tma_menu)
-    categories = cached_menu['categories']
-    category_groups = cached_menu['category_groups']
-    featured_products = cached_menu['featured_products']
-    ar_products = cached_menu['ar_products']
-    react_categories = cached_menu['react_categories']
-    react_products = cached_menu['react_products']
+    if plain_cache:
+        cached_menu = get_cached_menu(active_shop_id, 'tma_plain', lambda: _build_tma_menu_plain(active_shop))
+    else:
+        cached_menu = get_cached_menu(active_shop_id, 'tma', lambda: _build_tma_menu(active_shop))
 
     # Savat miqdori (sessiyaga bog'liq, keshga kirmaydi)
     cart = request.session.get('cart', {})
@@ -215,23 +230,44 @@ def tma_home(request):
             except (ValueError, TypeError):
                 pass
 
+    shop_part = {'name': active_shop.name if active_shop else 'Guliston'}
+    table_part = {
+        'number': str(table.number) if table else '',
+        'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
+    }
+
+    if plain_cache:
+        # Kalit tartibi va ajratgichlar eski `json.dumps(react_initial_data)` bilan bir xil
+        react_initial_data_json = (
+            '{"shop": %s, "table": %s, "categories": %s, "products": %s, "cart": %s, "cartCount": %s}' % (
+                json.dumps(shop_part), json.dumps(table_part), cached_menu['categories_json'],
+                cached_menu['products_json'], json.dumps(flat_cart), json.dumps(cart_count),
+            )
+        )
+        context = {
+            'cart_count': cart_count,
+            'table': table,
+            'table_token': table_token,
+            'shop': active_shop,
+            'telegram_bot_username': getattr(settings, 'TELEGRAM_BOT_USERNAME', 'marketing_orign_bot'),
+            'react_initial_data_json': react_initial_data_json,
+        }
+        return render(request, 'tma/home.html', context)
+
     react_initial_data = {
-        'shop': {'name': active_shop.name if active_shop else 'Guliston'},
-        'table': {
-            'number': str(table.number) if table else '',
-            'hall': table.hall.name if (table and table.hall) else 'Asosiy Zal',
-        },
-        'categories': react_categories,
-        'products': react_products,
+        'shop': shop_part,
+        'table': table_part,
+        'categories': cached_menu['react_categories'],
+        'products': cached_menu['react_products'],
         'cart': flat_cart,
         'cartCount': cart_count,
     }
 
     context = {
-        'categories': categories,
-        'category_groups': category_groups,
-        'featured_products': featured_products,
-        'ar_products': ar_products,
+        'categories': cached_menu['categories'],
+        'category_groups': cached_menu['category_groups'],
+        'featured_products': cached_menu['featured_products'],
+        'ar_products': cached_menu['ar_products'],
         'cart_count': cart_count,
         'table': table,
         'table_token': table_token,
@@ -1175,6 +1211,7 @@ def _featured_dishes(shop, limit=8):
     } for p in rows]
 
 
+@conditional_guest_page
 def tma_welcome(request):
     """
     Ekran 2: Guliston-Welcome-Entry.png

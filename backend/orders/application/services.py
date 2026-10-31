@@ -31,6 +31,12 @@ class RestaurantOrderService:
         return shop
 
     @staticmethod
+    def get_default_shop_id():
+        """Mehmon menyusi restoranining ID si. Jarayon ichidagi kesh orqali (TTL ichida DB'siz), Shop nusxasi yaratilmaydi."""
+        from notifications.admin_bot import default_restaurant_shop_id
+        return default_restaurant_shop_id()
+
+    @staticmethod
     def service_fee_percent() -> Decimal:
         """Xizmat haqi foizi sozlamadan (TZ qarori Q2: default 0)."""
         try:
@@ -420,10 +426,10 @@ class RestaurantOrderService:
         Keshda 30s saqlanadi va mahsulot/kategoriya o'zgarganda darhol yangilanadi (TZ 0.7).
         """
         from products.menu_cache import get_cached_menu
-        shop = cls.get_or_default_shop()
-        shop_id = getattr(shop, 'id', None)
+        shop_id = cls.get_default_shop_id()
 
         def _build():
+            shop = cls.get_or_default_shop()  # Do'kon nusxasi faqat keshda yo'q bo'lganda kerak
             # Faqat shu restoranning taomlari (avval barcha do'konlar mahsulotlari aralashardi — TZ R-GST-07)
             products = Product.objects.filter(
                 shop=shop, is_available=True, is_deleted=False,

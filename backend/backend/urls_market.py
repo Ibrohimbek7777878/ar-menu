@@ -36,6 +36,8 @@ def market_admin_redirect(request):
 urlpatterns = [
     # Health check
     path('health/', health.health_check, name='health_check'),
+    path('health/live/', health.health_live, name='health_live'),
+    path('health/ready/', health.health_ready, name='health_ready'),
 
     # ASOSIY BOSH SAHIFA: Online Store Gipermarket
     path('', views.customer_home, name='customer_home'),

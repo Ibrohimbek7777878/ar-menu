@@ -8,6 +8,8 @@ from ar3d import views as ar3d_views
 urlpatterns = [
     # Health check
     path('health/', health.health_check, name='health_check'),
+    path('health/live/', health.health_live, name='health_live'),
+    path('health/ready/', health.health_ready, name='health_ready'),
 
     # Restoran 3D Menyu — ASOSIY BOSH SAHIFA (Mahsulot #1)
     path('', tma_views.tma_home, name='restaurant_root'),

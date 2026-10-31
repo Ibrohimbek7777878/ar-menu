@@ -306,7 +306,8 @@ class SeedLoadBehaviourTests(TestCase):
 
     def test_analyze_runs_only_on_postgresql(self):
         command = Command(stdout=io.StringIO())
-        with CaptureQueriesContext(connection) as sqlite_run:
+        # Test haqiqiy baza turiga bog'liq emas (PG da ham, SQLite da ham o'tadi): turini aniq belgilaymiz
+        with mock.patch.object(connection, 'vendor', 'sqlite'), CaptureQueriesContext(connection) as sqlite_run:
             command._analyze()
         self.assertEqual([q for q in sqlite_run.captured_queries if 'ANALYZE' in q['sql']], [])
         with mock.patch.object(connection, 'vendor', 'postgresql'), CaptureQueriesContext(connection) as pg_run:

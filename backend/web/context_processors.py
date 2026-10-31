@@ -1,10 +1,8 @@
-from notifications.models import AppSetting
+from backend.runtime_cache import get_app_settings
 
 
 def site_context(request):
-    settings = {}
-    for s in AppSetting.objects.all():
-        settings[s.key] = s.value
+    settings = get_app_settings()  # jarayon ichidagi qisqa kesh (S1-2); nusxa, o'zgartirish xavfsiz
 
     cart = request.session.get('cart', {})
     cart_count = 0

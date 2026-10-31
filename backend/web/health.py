@@ -7,6 +7,33 @@ from django.db import connection
 from django.conf import settings
 
 
+def health_live(request):
+    """
+    S1-5: jarayon tirikmi? DB'ga, diskka va tarmoqqa tegmaydi (0 SQL): faqat WSGI/URL/middleware yo'li ishlashini ko'rsatadi.
+    Konteyner "tirik"ligi uchun; ma'lumotlar bazasi holati `/health/ready/` da.
+    """
+    resp = JsonResponse({'status': 'alive'})
+    resp['Cache-Control'] = 'no-store'
+    return resp
+
+
+def health_ready(request):
+    """
+    S1-5: so'rov qabul qilishga tayyormi? Aynan 1 ta SQL (`SELECT 1`). DB javob bermasa 503.
+    To'liq diagnostika (disk, xotira, outbox, Telegram) o'zgarmagan `/health/` da: u tashqi monitoring uchun, soniyasiga emas.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception:
+        resp = JsonResponse({'status': 'unready'}, status=503)
+    else:
+        resp = JsonResponse({'status': 'ready'})
+    resp['Cache-Control'] = 'no-store'
+    return resp
+
+
 def health_check(request):
     """
     Health check endpoint.

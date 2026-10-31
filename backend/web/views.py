@@ -1943,6 +1943,8 @@ def admin_settings(request):
             if key.startswith('setting_'):
                 real_key = key[len('setting_'):]
                 AppSetting.objects.filter(key=real_key).update(value=value)
+        from backend.runtime_cache import invalidate_runtime_cache
+        invalidate_runtime_cache()  # QuerySet.update() signal bermaydi
         messages.success(request, 'Sozlamalar saqlandi')
         return redirect('admin_settings')
     settings = AppSetting.objects.all().order_by('category', 'key')

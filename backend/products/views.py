@@ -14,9 +14,11 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ['price', 'rating', 'total_orders', 'created_at']
 
     def get_queryset(self):
+        # select_related('shop'): ro'yxat serializeri har taom uchun do'kon nomini oladi (S1-6: 20 taomda 22 -> 3 so'rov)
+        qs = Product.objects.select_related('shop')
         if self.request.user.is_authenticated and self.request.user.role in ['super_admin', 'shop_owner', 'operator']:
-            return Product.objects.all()
-        return Product.objects.filter(is_available=True)
+            return qs
+        return qs.filter(is_available=True)
 
     def get_serializer_class(self):
         if self.action == 'list':

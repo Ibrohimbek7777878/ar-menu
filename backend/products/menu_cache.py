@@ -30,27 +30,28 @@ def bump_menu_version(shop_id: Any = None):
     cache.set(key, new_val, timeout=86400 * 30)
 
 
-def get_menu_etag(shop_id: Any = None) -> str:
-    """ETag generatsiyasi: versiya va shop_id asosida shartli kesh (304) uchun."""
-    v = get_menu_version(shop_id)
+def get_menu_etag(shop_id: Any = None, version: Any = None) -> str:
+    """ETag generatsiyasi: versiya va shop_id asosida shartli kesh (304) uchun. `version` berilsa qayta o'qilmaydi."""
+    v = get_menu_version(shop_id) if version is None else version
     return f'W/"menu-v{v}-s{shop_id or "all"}"'
 
 
-def is_etag_matched(request: Any, shop_id: Any = None) -> bool:
+def is_etag_matched(request: Any, shop_id: Any = None, version: Any = None) -> bool:
     """Client yuborgan If-None-Match sarlavhasi joriy ETag bilan mosligini tekshiradi."""
     if_none_match = getattr(request, 'META', {}).get('HTTP_IF_NONE_MATCH')
     if not if_none_match:
         return False
-    current_etag = get_menu_etag(shop_id)
+    current_etag = get_menu_etag(shop_id, version)
     candidate = if_none_match.strip()
     return candidate == current_etag or candidate.strip('W/') == current_etag.strip('W/')
 
 
-def apply_menu_cache_headers(response: Any, shop_id: Any = None, max_age: int = MENU_CACHE_TIMEOUT) -> Any:
+def apply_menu_cache_headers(response: Any, shop_id: Any = None, max_age: int = MENU_CACHE_TIMEOUT, version: Any = None) -> Any:
     """Javobga ETag, Cache-Control va X-Menu-Version sarlavhalarini qo'yadi."""
-    response['ETag'] = get_menu_etag(shop_id)
+    v = get_menu_version(shop_id) if version is None else version
+    response['ETag'] = get_menu_etag(shop_id, v)
     response['Cache-Control'] = f'public, max-age={max_age}, must-revalidate'
-    response['X-Menu-Version'] = str(get_menu_version(shop_id))
+    response['X-Menu-Version'] = str(v)
     return response
 
 

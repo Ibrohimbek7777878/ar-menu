@@ -170,9 +170,8 @@ def kassa_report_text(shops):
 def default_restaurant_slug():
     """Mehmon menyusi ko'rsatadigan asosiy restoran (bo'sh bo'lsa — eski xatti-harakat)."""
     from django.conf import settings as dj_settings
-    from notifications.models import AppSetting
-    row = AppSetting.objects.filter(key='restaurant_default_shop').first()
-    return ((row.value if row else '') or getattr(dj_settings, 'RESTAURANT_DEFAULT_SHOP', '') or '').strip()
+    from backend.runtime_cache import get_app_setting
+    return ((get_app_setting('restaurant_default_shop') or '') or getattr(dj_settings, 'RESTAURANT_DEFAULT_SHOP', '') or '').strip()
 
 
 def get_restaurant_shop(shop_id=None, order=None, table=None):
@@ -190,6 +189,19 @@ def get_restaurant_shop(shop_id=None, order=None, table=None):
             return s
     # Admin tanlagan asosiy restoran (AppSetting 'restaurant_default_shop' = slug, admin paneldan o'zgaradi;
     # yoki .env RESTAURANT_DEFAULT_SHOP). Avval doim "stollari bor birinchi do'kon" olinardi.
+    from backend.runtime_cache import runtime_cache_enabled
+    if runtime_cache_enabled():
+        shop_id = default_restaurant_shop_id()
+        if shop_id:
+            s = Shop.objects.filter(id=shop_id).first()
+            if s:
+                return s
+    # Kesh o'chiq yoki eskirgan (do'kon o'chirilgan) bo'lsa — to'liq qidiruv, natija keyingi chaqiruvda yangilanadi
+    return _resolve_default_restaurant_shop()
+
+
+def _resolve_default_restaurant_shop():
+    """Asosiy restoranni DB'dan to'liq qidiradi (tartib o'zgarmagan: admin tanlovi, stollari bor do'kon, birinchi do'kon)."""
     default_slug = default_restaurant_slug()
     if default_slug:
         s = Shop.objects.filter(slug=default_slug).first()
@@ -200,6 +212,20 @@ def get_restaurant_shop(shop_id=None, order=None, table=None):
     if shop_with_tables:
         return shop_with_tables
     return Shop.objects.first()
+
+
+def default_restaurant_shop_id():
+    """
+    Asosiy restoran ID si (jarayon ichida APPSETTING_CACHE_TTL soniya saqlanadi; TTL=0 da har safar DB).
+    DB'siz yo'llar (304, S1-3) uchun: Shop nusxasi kerak bo'lmasa shuni ishlating.
+    """
+    from backend.runtime_cache import cached_default_shop_id
+
+    def _resolve():
+        shop = _resolve_default_restaurant_shop()
+        return shop.id if shop else None
+
+    return cached_default_shop_id(default_restaurant_slug(), _resolve)
 
 
 def get_shop_admin_chat_ids(shop=None):

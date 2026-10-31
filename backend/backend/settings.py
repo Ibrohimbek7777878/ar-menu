@@ -189,6 +189,13 @@ RESTAURANT_PUBLIC_URL = os.environ.get('RESTAURANT_PUBLIC_URL', '').strip().rstr
 RESTAURANT_SERVICE_FEE_PERCENT = os.environ.get('RESTAURANT_SERVICE_FEE_PERCENT', '0')
 # Mehmon menyusi ko'rsatadigan asosiy restoran slug'i (admin paneldagi AppSetting 'restaurant_default_shop' ustun turadi)
 RESTAURANT_DEFAULT_SHOP = os.environ.get('RESTAURANT_DEFAULT_SHOP', '')
+# S1-1: `/menu/` keshiga model nusxalari o'rniga tayyor JSON satrlar (HTML baytma-bayt bir xil). False = eski yo'l.
+MENU_CACHE_PLAIN_DATA = _env_bool('MENU_CACHE_PLAIN_DATA', True)
+# S1-4: mehmon HTML sahifalari (`/`, `/menu/`) uchun ETag + `Cache-Control: private, max-age=0, must-revalidate`. False = eski (sarlavhasiz).
+GUEST_PAGE_ETAG = _env_bool('GUEST_PAGE_ETAG', True)
+# S1-2: AppSetting va asosiy restoran ID sini jarayon ichida saqlash muddati (soniya). 0 = o'chiq (har so'rovda DB).
+# Boshqa worker'larda admin o'zgartirishi shu muddat ichida ko'rinadi. Testlarda 0.
+APPSETTING_CACHE_TTL = 0.0 if RUNNING_TESTS else float(os.environ.get('APPSETTING_CACHE_TTL', '5') or 0)
 
 # Taom rasmidan 3D (TZ_LOKAL_RASMDAN_3D_MENYU). 'relief' — AI'siz, lokal, bepul (standart).
 RESTAURANT_3D_PROVIDER = os.environ.get('RESTAURANT_3D_PROVIDER', 'relief')

@@ -541,16 +541,17 @@ class RestaurantMenuView(RestaurantAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        from products.menu_cache import is_etag_matched, apply_menu_cache_headers
-        shop = RestaurantOrderService.get_or_default_shop()
-        shop_id = getattr(shop, 'id', None)
+        from products.menu_cache import get_menu_version, is_etag_matched, apply_menu_cache_headers
+        # S1-3: 304 yo'li DB'siz (restoran ID si jarayon keshidan, versiya kesh orqali); versiya bir marta o'qiladi
+        shop_id = RestaurantOrderService.get_default_shop_id()
+        version = get_menu_version(shop_id)
 
-        if is_etag_matched(request, shop_id):
+        if is_etag_matched(request, shop_id, version):
             resp = HttpResponse(status=304)
-            apply_menu_cache_headers(resp, shop_id)
+            apply_menu_cache_headers(resp, shop_id, version=version)
             return resp
 
         data = RestaurantOrderService.get_restaurant_menu()
         resp = Response(data)
-        apply_menu_cache_headers(resp, shop_id)
+        apply_menu_cache_headers(resp, shop_id, version=version)
         return resp

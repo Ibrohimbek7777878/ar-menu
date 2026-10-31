@@ -33,6 +33,8 @@ def studio_admin_redirect(request):
 urlpatterns = [
     # Health check
     path('health/', health.health_check, name='health_check'),
+    path('health/live/', health.health_live, name='health_live'),
+    path('health/ready/', health.health_ready, name='health_ready'),
 
     # ASOSIY BOSH SAHIFA: 3D Studio & Chop Etish
     path('', ar3d_views.print_3d_studio_page, name='studio_root'),
