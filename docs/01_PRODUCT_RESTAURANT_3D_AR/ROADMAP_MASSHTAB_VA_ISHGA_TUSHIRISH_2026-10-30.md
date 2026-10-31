@@ -32,7 +32,7 @@ Har faza oxirida **to'xtab hisobot** beriladi va keyingisiga ruxsat so'raladi. F
 | ID | Ish | Qabul | Kim |
 |---|---|---|---|
 | S0-1 | `loadtest/` papkasi: haqiqiy xulqli stsenariylar (A: mehmon yo'li o'ylash vaqti bilan; C: portlash; yozuv: buyurtma; xodim: 5 s polling). Vosita: k6 (Docker rasmi) yoki shu sessiyada yozilgan Node generator | Bitta buyruq bilan yuradi; natija JSON + qisqa `load_reports/YYYY-MM-DD_*.md` | C · ✅ bajarildi: `loadtest/` (14 o'z testi yashil) |
-| S0-2 | `seed_load` buyrug'i: hajmli sinov bazasi (masalan 5 restoran, 150 taom/restoran, 1M buyurtma qatori) | Idempotent, faqat `DEBUG`/aniq ruxsat bilan, tarmoqsiz, haqiqiy bazaga yozmaydi | C |
+| S0-2 | `seed_load` buyrug'i: hajmli sinov bazasi (masalan 5 restoran, 150 taom/restoran, 1M buyurtma qatori) | Idempotent, faqat `DEBUG`/aniq ruxsat bilan, tarmoqsiz, haqiqiy bazaga yozmaydi | C · ✅ bajarildi: `seed_load` (SQLite'da 100 000 buyurtma = 80 s, 1 316 buyurtma/s, eng ko'p 321 MB; qayta yurgizish 0.1 s; 100k da SQL yaxlitlik tekshiruvi 0 xato); **PostgreSQL'da hali sinalmagan** (S0-5 da) |
 | S0-3 | Profil: `/menu/` va 304 yo'lida vaqt qayerga ketishini o'lchash (`cProfile`, `loadtest/profile_django.py`) | Top xarajat jadvali (hisobotda) | C · ✅ bajarildi: bo'g'z = keshdagi model nusxalari (pickle); middleware **emas** (TZ 2.3) |
 | S0-4 | So'rov vaqti jurnali (`gunicorn %(D)s`, `X-Request-Id`), kesh sarlavhalari (`X-Cache`) | Jurnaldan p50/p95/p99 hisoblanadi | C · ✅ bajarildi: gunicorn jurnali `%(D)s` + Caddy `X-Request-Id`, `loadtest/parse_access_log.mjs` |
 | S0-5 | Bazaviy o'lchov: PG (Docker) + Caddy bilan **noutbukda** qayta o'lchash (SQLite emas) | Hisobot; 2.2-jadval yangilanadi | C |
