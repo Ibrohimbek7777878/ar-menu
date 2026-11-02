@@ -64,13 +64,13 @@
 
 .call-waiter-badge {
   display: inline-block;
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
   font-weight: 700;
   font-size: 0.75rem;
   padding: 0.25rem 0.65rem;
   border-radius: 9999px;
-  border: 1px solid #ffedd5;
+  border: 1px solid var(--brand-primary-subtle);
   margin-bottom: 0.5rem;
 }
 
@@ -114,9 +114,9 @@
 }
 
 .call-opt-card.active {
-  border-color: #ea580c;
+  border-color: var(--brand-primary);
   background: #fffaf5;
-  box-shadow: 0 0 0 1px #ea580c;
+  box-shadow: 0 0 0 1px var(--brand-primary);
 }
 
 .call-opt-emoji {
@@ -152,14 +152,14 @@
 }
 
 .call-opt-card.active .call-opt-radio {
-  border-color: #ea580c;
+  border-color: var(--brand-primary);
 }
 
 .radio-dot {
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;
-  background: #ea580c;
+  background: var(--brand-primary);
 }
 
 .call-waiter-note-wrap {
@@ -188,13 +188,13 @@
 }
 
 .call-note-input:focus {
-  border-color: #ea580c;
+  border-color: var(--brand-primary);
   background: #ffffff;
 }
 
 .btn-send-call {
   width: 100%;
-  background: linear-gradient(135deg, #ea580c, #c2410c);
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
   color: #ffffff;
   border: none;
   border-radius: 0.9rem;
@@ -206,13 +206,13 @@
   justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  box-shadow: 0 4px 14px rgb(var(--brand-primary-rgb) / 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-send-call:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45);
+  box-shadow: 0 6px 20px rgb(var(--brand-primary-rgb) / 0.45);
 }
 
 .call-waiter-success {

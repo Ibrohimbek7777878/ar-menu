@@ -15,7 +15,7 @@
 }
 
 .react-table-badge.status-occupied {
-  border-color: #FED7AA;
+  border-color: var(--brand-tint-2);
   background: #FFFBEB;
 }
 

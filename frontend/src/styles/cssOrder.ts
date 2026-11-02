@@ -39,3 +39,5 @@ import '../pages/AdminDashboardPage/AdminDashboardPage.css'
 // Yangi mehmon dizayni (maket ma'qullangan): eski uslublardan KEYIN — eski dizayn o'zgarmaydi
 import './welcomeNew.css'
 import './designNew.css'
+// Fasl ranglari (admin sozlamasi `guest_season`): faqat brend o'zgaruvchilarini almashtiradi, eng oxirida
+import './seasons.css'

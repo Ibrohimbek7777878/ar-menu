@@ -37,7 +37,7 @@ const CALL_OPTIONS: CallOption[] = [
     icon: '🙋‍♂️',
     title: 'Ofitsiantni chaqirish',
     desc: 'Stolga xizmat ko\'rsatish bo\'yicha yordam',
-    color: '#EA580C',
+    color: 'var(--brand-primary)',
   },
 ];
 

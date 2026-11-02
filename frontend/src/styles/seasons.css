@@ -1,0 +1,55 @@
+/* Fasl ranglari. Restoran sozlamasi `guest_season` (`/ra/settings` -> "Fasl rangi") tanlaydi, server `auto` ni oyga qarab
+   (Toshkent vaqti) kuz/qish/bahor/yoz ga aylantiradi. JS `<html data-season>` ni faqat yangi dizaynda (`data-design="new"`)
+   qo'yadi: klassik dizayn o'zgarmaydi. Fasl o'chiq bo'lsa `data-season` yo'q va bu fayl hech narsa qilmaydi, ya'ni
+   ko'rinish avvalgisi bilan piksel-piksel bir xil.
+   Qiymatlar maketdan (docs/dizayn). `--brand-primary` (tugma, narx, havola) har faslda oq matn bilan >= 4.5:1:
+   kuz 5.18, qish 7.77, bahor 5.04, yoz 5.02. Faqat index.css dagi brend o'zgaruvchilari almashadi; neytral ranglar,
+   status ranglari va `--brand-accent` (anor-qizil) o'zgarmaydi. */
+
+html[data-season='kuz'] {
+  --brand-primary: #C2410C;
+  --brand-primary-hover: #9A3412;
+  --brand-primary-light: #FFF7ED;
+  --brand-primary-subtle: #FFEDD5;
+  --brand-tint-2: #FED7AA;
+  --brand-tint-3: #FDBA74;
+  --brand-warm: #FB923C;
+  --brand-deep: #9A3412;
+  --brand-primary-rgb: 194 65 12;
+}
+
+html[data-season='qish'] {
+  --brand-primary: #9F1D35;
+  --brand-primary-hover: #7A1228;
+  --brand-primary-light: #FFF5F5;
+  --brand-primary-subtle: #FDE7E7;
+  --brand-tint-2: #F8CDCD;
+  --brand-tint-3: #F0A3A8;
+  --brand-warm: #F0A3A8;
+  --brand-deep: #7A1228;
+  --brand-primary-rgb: 159 29 53;
+}
+
+html[data-season='bahor'] {
+  --brand-primary: #3F7D20;
+  --brand-primary-hover: #2C5A14;
+  --brand-primary-light: #F6FBEE;
+  --brand-primary-subtle: #E6F3D3;
+  --brand-tint-2: #CFE6AB;
+  --brand-tint-3: #AFD57B;
+  --brand-warm: #AFD57B;
+  --brand-deep: #2C5A14;
+  --brand-primary-rgb: 63 125 32;
+}
+
+html[data-season='yoz'] {
+  --brand-primary: #B45309;
+  --brand-primary-hover: #78350F;
+  --brand-primary-light: #FFFBEB;
+  --brand-primary-subtle: #FEF3C7;
+  --brand-tint-2: #FDE68A;
+  --brand-tint-3: #FCD34D;
+  --brand-warm: #FCD34D;
+  --brand-deep: #78350F;
+  --brand-primary-rgb: 180 83 9;
+}

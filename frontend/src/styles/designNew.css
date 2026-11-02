@@ -43,7 +43,7 @@
 [data-design='new'] .header-table-badge { white-space: nowrap; }
 [data-design='new'] .header-nav svg { stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 [data-design='new'] .desktop-nav-item { transition: color 0.2s, background 0.2s, transform 0.2s; }
-[data-design='new'] .desktop-nav-item:hover { color: var(--brand-primary, #EA580C); }
+[data-design='new'] .desktop-nav-item:hover { color: var(--brand-primary); }
 [data-design='new'] .header-cart-btn,
 [data-design='new'] .btn-header-call-waiter { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
 [data-design='new'] .header-cart-btn:hover,
@@ -81,13 +81,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #FFEDD5, #FED7AA 60%, #FDBA74);
+  background: linear-gradient(135deg, var(--brand-primary-subtle), var(--brand-tint-2) 60%, var(--brand-tint-3));
 }
 [data-design='new'] .dish-card-placeholder svg { display: none; }
 [data-design='new'] .dish-card-placeholder::before {
   content: attr(data-letter);
   font: 800 64px 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  color: var(--brand-primary, #EA580C);
+  color: var(--brand-primary);
   opacity: 0.55;
 }
 

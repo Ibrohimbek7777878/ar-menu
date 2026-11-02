@@ -50,11 +50,11 @@
 }
 
 .bottom-tab:hover {
-  color: var(--brand-primary, #EA580C);
+  color: var(--brand-primary);
 }
 
 .bottom-tab.active {
-  color: var(--brand-primary, #EA580C);
+  color: var(--brand-primary);
   font-weight: 700;
 }
 
@@ -75,7 +75,7 @@
   position: absolute;
   top: -5px;
   right: -8px;
-  background: var(--brand-primary, #EA580C);
+  background: var(--brand-primary);
   color: #FFFFFF;
   font-size: 10px;
   font-weight: 800;
@@ -86,5 +86,5 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.4);
+  box-shadow: 0 1px 3px rgb(var(--brand-primary-rgb) / 0.4);
 }

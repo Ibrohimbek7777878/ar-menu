@@ -173,7 +173,7 @@ export const ARMenuPage: React.FC = () => {
                   type="button"
                   onClick={() => setIsStudioModalOpen(true)}
                   className="btn-ar-action btn-ar-action-secondary"
-                  style={{ background: '#EA580C', color: '#FFFFFF', borderColor: '#EA580C' }}
+                  style={{ background: 'var(--brand-primary)', color: '#FFFFFF', borderColor: 'var(--brand-primary)' }}
                 >
                   📸 Yangi 3D/360 Taom Yaratish
                 </button>
