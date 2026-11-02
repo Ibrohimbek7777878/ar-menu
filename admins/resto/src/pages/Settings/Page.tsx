@@ -312,7 +312,7 @@ export function SettingsPage() {
               padding: '16px',
               borderRadius: 'var(--radius-md)',
               backgroundColor: isOpen ? 'var(--accent-emerald-bg)' : 'var(--accent-rose-bg)',
-              border: `1px solid ${isOpen ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+              border: `1px solid ${isOpen ? 'rgb(22 163 74 / 0.3)' : 'rgb(220 38 38 / 0.3)'}`,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -324,7 +324,7 @@ export function SettingsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
+                  backgroundColor: isOpen ? 'rgb(22 163 74 / 0.2)' : 'rgb(220 38 38 / 0.2)',
                   color: isOpen ? 'var(--accent-emerald)' : 'var(--accent-rose)',
                 }}
               >

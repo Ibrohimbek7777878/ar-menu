@@ -32,29 +32,29 @@ import { restoUz, roleLabel } from '../../i18n/uz';
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   shop_owner: {
-    bg: 'rgba(16, 185, 129, 0.12)',
-    text: '#10b981',
-    border: 'rgba(16, 185, 129, 0.3)',
+    bg: 'var(--accent-emerald-bg)',
+    text: 'var(--accent-emerald)',
+    border: 'rgb(22 163 74 / 0.3)',
   },
   shop_manager: {
-    bg: 'rgba(59, 130, 246, 0.12)',
-    text: '#3b82f6',
-    border: 'rgba(59, 130, 246, 0.3)',
+    bg: 'var(--accent-indigo-bg)',
+    text: 'var(--accent-indigo)',
+    border: 'rgb(24 21 19 / 0.3)',
   },
   waiter: {
-    bg: 'rgba(14, 165, 233, 0.12)',
-    text: '#0ea5e9',
-    border: 'rgba(14, 165, 233, 0.3)',
+    bg: 'var(--accent-indigo-bg)',
+    text: 'var(--accent-indigo)',
+    border: 'rgb(24 21 19 / 0.3)',
   },
   kitchen: {
-    bg: 'rgba(245, 158, 11, 0.12)',
-    text: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.35)',
+    bg: 'var(--accent-amber-bg)',
+    text: 'var(--accent-amber)',
+    border: 'rgb(194 65 12 / 0.35)',
   },
   hostess: {
-    bg: 'rgba(139, 92, 246, 0.12)',
-    text: '#8b5cf6',
-    border: 'rgba(139, 92, 246, 0.3)',
+    bg: 'var(--accent-indigo-bg)',
+    text: 'var(--accent-indigo)',
+    border: 'rgb(24 21 19 / 0.3)',
   },
 };
 
@@ -287,17 +287,17 @@ export const StaffPage: React.FC = () => {
         <StatCard
           title="Ofitsiantlar"
           value={summary.waiters}
-          icon={<User size={22} color="#0ea5e9" />}
+          icon={<User size={22} color="var(--accent-indigo)" />}
         />
         <StatCard
           title={restoUz.staffPage.cooksCard}
           value={summary.kitchen}
-          icon={<UtensilsCrossed size={22} color="#f59e0b" />}
+          icon={<UtensilsCrossed size={22} color="var(--accent-amber)" />}
         />
         <StatCard
           title="Menejerlar"
           value={summary.managers}
-          icon={<Shield size={22} color="#10b981" />}
+          icon={<Shield size={22} color="var(--accent-emerald)" />}
         />
       </div>
 
@@ -328,7 +328,7 @@ export const StaffPage: React.FC = () => {
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                background: roleFilter === r.id ? 'var(--primary)' : 'var(--card-bg)',
+                background: roleFilter === r.id ? 'var(--text-main)' : 'var(--card-bg)',
                 color: roleFilter === r.id ? '#ffffff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '13px',
@@ -375,8 +375,8 @@ export const StaffPage: React.FC = () => {
 
       {/* Xatolik */}
       {error && (
-        <Card style={{ marginBottom: '24px', borderColor: 'rgba(239, 68, 68, 0.4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444' }}>
+        <Card style={{ marginBottom: '24px', borderColor: 'rgb(220 38 38 / 0.4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-rose)' }}>
             <AlertCircle size={20} />
             <span>{error}</span>
             <Button variant="secondary" onClick={refresh} style={{ marginLeft: 'auto' }}>
@@ -429,7 +429,7 @@ export const StaffPage: React.FC = () => {
                 style={{
                   padding: '20px',
                   borderRadius: '12px',
-                  border: `1px solid ${user.is_active ? 'var(--border-color)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  border: `1px solid ${user.is_active ? 'var(--border-color)' : 'rgb(220 38 38 / 0.3)'}`,
                   background: 'var(--card-bg)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -484,9 +484,9 @@ export const StaffPage: React.FC = () => {
                         borderRadius: '20px',
                         fontSize: '11px',
                         fontWeight: 600,
-                        background: user.is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: user.is_active ? '#10b981' : '#ef4444',
-                        border: `1px solid ${user.is_active ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                        background: user.is_active ? 'var(--accent-emerald-bg)' : 'var(--accent-rose-bg)',
+                        color: user.is_active ? 'var(--accent-emerald)' : 'var(--accent-rose)',
+                        border: `1px solid ${user.is_active ? 'rgb(22 163 74 / 0.3)' : 'rgb(220 38 38 / 0.3)'}`,
                       }}
                     >
                       {user.is_active ? 'Faol' : 'Bloklangan'}
@@ -561,7 +561,7 @@ export const StaffPage: React.FC = () => {
                       size="sm"
                       onClick={() => handleToggleBlock(user)}
                       title={user.is_active ? 'Xodimni bloklash' : 'Blokdan chiqarish'}
-                      style={{ color: user.is_active ? '#ef4444' : '#10b981' }}
+                      style={{ color: user.is_active ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}
                     >
                       {user.is_active ? <Ban size={15} /> : <CheckCircle2 size={15} />}
                     </Button>
@@ -586,9 +586,9 @@ export const StaffPage: React.FC = () => {
                 style={{
                   padding: '10px 14px',
                   borderRadius: '8px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#ef4444',
+                  background: 'var(--accent-rose-bg)',
+                  border: '1px solid rgb(220 38 38 / 0.3)',
+                  color: 'var(--accent-rose)',
                   fontSize: '13px',
                 }}
               >
@@ -739,8 +739,8 @@ export const StaffPage: React.FC = () => {
                 width: '56px',
                 height: '56px',
                 borderRadius: '50%',
-                background: 'rgba(16, 185, 129, 0.12)',
-                color: '#10b981',
+                background: 'var(--accent-emerald-bg)',
+                color: 'var(--accent-emerald)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -759,7 +759,7 @@ export const StaffPage: React.FC = () => {
 
             <div
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgb(24 21 19 / 0.04)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '10px',
                 padding: '16px',
@@ -789,7 +789,7 @@ export const StaffPage: React.FC = () => {
                     {revealModal.password}
                   </code>
                   <Button variant="ghost" size="sm" onClick={handleCopyPassword} title="Nusxalash">
-                    {copiedPass ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
+                    {copiedPass ? <Check size={16} color="var(--accent-emerald)" /> : <Copy size={16} />}
                   </Button>
                 </div>
               </div>

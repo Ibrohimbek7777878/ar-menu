@@ -39,45 +39,45 @@ const STATUS_CONFIG: Record<
 > = {
   free: {
     label: "Bo'sh",
-    bg: 'rgba(16, 185, 129, 0.12)',
-    text: '#10b981',
-    border: 'rgba(16, 185, 129, 0.3)',
+    bg: 'var(--accent-emerald-bg)',
+    text: 'var(--accent-emerald)',
+    border: 'var(--accent-emerald-border)',
   },
   occupied: {
     label: 'Band',
-    bg: 'rgba(245, 158, 11, 0.12)',
-    text: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.3)',
+    bg: 'var(--accent-amber-bg)',
+    text: 'var(--accent-amber)',
+    border: 'var(--accent-amber-border)',
   },
   ordering: {
     label: 'Buyurtma',
-    bg: 'rgba(245, 158, 11, 0.12)',
-    text: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.3)',
+    bg: 'var(--accent-amber-bg)',
+    text: 'var(--accent-amber)',
+    border: 'var(--accent-amber-border)',
   },
   waiting: {
     label: 'Kutmoqda',
-    bg: 'rgba(59, 130, 246, 0.12)',
-    text: '#3b82f6',
-    border: 'rgba(59, 130, 246, 0.3)',
+    bg: 'var(--accent-indigo-bg)',
+    text: 'var(--accent-indigo)',
+    border: 'var(--border-strong)',
   },
   ready: {
     label: 'Tayyor',
-    bg: 'rgba(139, 92, 246, 0.12)',
-    text: '#8b5cf6',
-    border: 'rgba(139, 92, 246, 0.3)',
+    bg: 'var(--accent-emerald-bg)',
+    text: 'var(--accent-emerald)',
+    border: 'var(--accent-emerald-border)',
   },
   bill: {
     label: 'Hisob',
-    bg: 'rgba(99, 102, 241, 0.15)',
-    text: '#818cf8',
-    border: 'rgba(99, 102, 241, 0.35)',
+    bg: 'var(--accent-rose-bg)',
+    text: 'var(--text-main)', // qizil matn kichik o'lchamda 4.4:1: to'q matn + qizil fon/chegara
+    border: 'var(--accent-rose-border)',
   },
   cleaning: {
     label: 'Tozalanmoqda',
-    bg: 'rgba(148, 163, 184, 0.12)',
-    text: '#94a3b8',
-    border: 'rgba(148, 163, 184, 0.25)',
+    bg: 'var(--bg-surface-hover)',
+    text: 'var(--text-muted)',
+    border: 'var(--border-strong)',
   },
 };
 
@@ -312,22 +312,22 @@ export const TablesPage: React.FC = () => {
         <StatCard
           title="Bo'sh Stollar"
           value={summary.free}
-          icon={<Armchair size={22} color="#10b981" />}
+          icon={<Armchair size={22} color="var(--accent-emerald)" />}
         />
         <StatCard
           title="Band / Buyurtma"
           value={summary.occupied}
-          icon={<Armchair size={22} color="#f59e0b" />}
+          icon={<Armchair size={22} color="var(--accent-amber)" />}
         />
         <StatCard
           title="Hisob Kutilmoqda"
           value={summary.bill}
-          icon={<Armchair size={22} color="#818cf8" />}
+          icon={<Armchair size={22} color="var(--accent-indigo)" />}
         />
         <StatCard
           title="Tozalanmoqda"
           value={summary.cleaning}
-          icon={<Armchair size={22} color="#94a3b8" />}
+          icon={<Armchair size={22} color="var(--text-dim)" />}
         />
       </div>
 
@@ -367,7 +367,7 @@ export const TablesPage: React.FC = () => {
               padding: '8px 16px',
               borderRadius: '8px',
               border: 'none',
-              background: selectedHall === h.id ? 'var(--primary)' : 'var(--card-bg)',
+              background: selectedHall === h.id ? 'var(--text-main)' : 'var(--card-bg)',
               color: selectedHall === h.id ? '#ffffff' : 'var(--text-muted)',
               fontWeight: 600,
               fontSize: '13px',
@@ -409,7 +409,7 @@ export const TablesPage: React.FC = () => {
                 borderRadius: '6px',
                 border: '1px solid',
                 borderColor: statusFilter === st.id ? 'var(--primary)' : 'var(--border-color)',
-                background: statusFilter === st.id ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                background: statusFilter === st.id ? 'var(--accent-amber-bg)' : 'transparent',
                 color: statusFilter === st.id ? 'var(--primary)' : 'var(--text-muted)',
                 fontWeight: 500,
                 fontSize: '13px',
@@ -454,8 +454,8 @@ export const TablesPage: React.FC = () => {
 
       {/* Xatolik xabari */}
       {error && (
-        <Card style={{ marginBottom: '24px', borderColor: 'rgba(239, 68, 68, 0.4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444' }}>
+        <Card style={{ marginBottom: '24px', borderColor: 'rgb(220 38 38 / 0.4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-rose)' }}>
             <AlertCircle size={20} />
             <span>{error}</span>
             <Button variant="secondary" onClick={refresh} style={{ marginLeft: 'auto' }}>
@@ -594,15 +594,15 @@ export const TablesPage: React.FC = () => {
                       style={{
                         padding: '8px 12px',
                         borderRadius: '8px',
-                        background: 'rgba(99, 102, 241, 0.08)',
-                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        background: 'rgb(24 21 19 / 0.08)',
+                        border: '1px solid rgb(24 21 19 / 0.2)',
                         marginBottom: '14px',
                       }}
                     >
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                         Ochiq hisob ({t.active_orders_count} buyurtma):
                       </div>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#818cf8' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-indigo)' }}>
                         {t.total_bill.toLocaleString('uz-UZ')} so'm
                       </div>
                     </div>
@@ -622,7 +622,7 @@ export const TablesPage: React.FC = () => {
                           padding: '6px 10px',
                           borderRadius: '6px',
                           border: '1px solid var(--border-color)',
-                          background: 'rgba(255, 255, 255, 0.04)',
+                          background: 'rgb(24 21 19 / 0.04)',
                           color: 'var(--text-main)',
                           fontSize: '12px',
                           fontWeight: 500,
@@ -676,7 +676,7 @@ export const TablesPage: React.FC = () => {
                             }
                           }}
                           title="Arxivlash"
-                          style={{ color: '#ef4444' }}
+                          style={{ color: 'var(--accent-rose)' }}
                         >
                           <Trash2 size={15} />
                         </Button>
@@ -687,7 +687,7 @@ export const TablesPage: React.FC = () => {
                         size="sm"
                         onClick={() => restoreDeletedTable(t.id)}
                         title="Tiklash"
-                        style={{ color: '#10b981' }}
+                        style={{ color: 'var(--accent-emerald)' }}
                       >
                         <RotateCcw size={14} style={{ marginRight: '4px' }} />
                         Tiklash
@@ -739,7 +739,7 @@ export const TablesPage: React.FC = () => {
                 gap: '8px',
                 padding: '8px 12px',
                 borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgb(24 21 19 / 0.04)',
                 border: '1px solid var(--border-color)',
                 fontSize: '12px',
                 color: 'var(--text-muted)',
@@ -754,7 +754,7 @@ export const TablesPage: React.FC = () => {
                 onClick={() => handleCopyLink(qrModalTable.qr_url)}
                 title="Havoladan nusxa olish"
               >
-                {copiedLink ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
+                {copiedLink ? <Check size={16} color="var(--accent-emerald)" /> : <Copy size={16} />}
               </Button>
             </div>
 
@@ -804,9 +804,9 @@ export const TablesPage: React.FC = () => {
                 style={{
                   padding: '10px 14px',
                   borderRadius: '8px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#ef4444',
+                  background: 'var(--accent-rose-bg)',
+                  border: '1px solid rgb(220 38 38 / 0.3)',
+                  color: 'var(--accent-rose)',
                   fontSize: '13px',
                 }}
               >
@@ -932,9 +932,9 @@ export const TablesPage: React.FC = () => {
                 style={{
                   padding: '10px 14px',
                   borderRadius: '8px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#ef4444',
+                  background: 'var(--accent-rose-bg)',
+                  border: '1px solid rgb(220 38 38 / 0.3)',
+                  color: 'var(--accent-rose)',
                   fontSize: '13px',
                 }}
               >

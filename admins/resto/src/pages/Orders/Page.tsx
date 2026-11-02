@@ -34,45 +34,45 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: 'Kutilmoqda',
-    bg: 'rgba(239, 68, 68, 0.12)',
-    text: '#ef4444',
-    border: 'rgba(239, 68, 68, 0.35)',
+    bg: 'var(--accent-amber-bg)',
+    text: 'var(--accent-amber)',
+    border: 'var(--accent-amber-border)',
   },
   confirmed: {
     label: 'Tasdiqlangan',
-    bg: 'rgba(59, 130, 246, 0.12)',
-    text: '#3b82f6',
-    border: 'rgba(59, 130, 246, 0.3)',
+    bg: 'var(--accent-indigo-bg)',
+    text: 'var(--accent-indigo)',
+    border: 'var(--border-strong)',
   },
   preparing: {
     label: 'Tayyorlanmoqda',
-    bg: 'rgba(245, 158, 11, 0.12)',
-    text: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.35)',
+    bg: 'var(--bg-surface-hover)',
+    text: 'var(--text-muted)',
+    border: 'var(--border-strong)',
   },
   ready: {
     label: 'Tayyor',
-    bg: 'rgba(139, 92, 246, 0.12)',
-    text: '#8b5cf6',
-    border: 'rgba(139, 92, 246, 0.35)',
+    bg: 'var(--accent-emerald-bg)',
+    text: 'var(--accent-emerald)',
+    border: 'var(--accent-emerald-border)',
   },
   out_for_delivery: {
     label: "Yo'lda",
-    bg: 'rgba(14, 165, 233, 0.12)',
-    text: '#0ea5e9',
-    border: 'rgba(14, 165, 233, 0.3)',
+    bg: 'var(--accent-indigo-bg)',
+    text: 'var(--accent-indigo)',
+    border: 'var(--border-strong)',
   },
   delivered: {
     label: 'Berildi',
-    bg: 'rgba(16, 185, 129, 0.12)',
-    text: '#10b981',
-    border: 'rgba(16, 185, 129, 0.3)',
+    bg: 'var(--accent-emerald-bg)',
+    text: 'var(--accent-emerald)',
+    border: 'var(--accent-emerald-border)',
   },
   cancelled: {
     label: 'Bekor qilindi',
-    bg: 'rgba(148, 163, 184, 0.12)',
-    text: '#94a3b8',
-    border: 'rgba(148, 163, 184, 0.25)',
+    bg: 'var(--accent-rose-bg)',
+    text: 'var(--text-main)', // qizil matn kichik o'lchamda 4.4:1: to'q matn + qizil fon/chegara
+    border: 'var(--accent-rose-border)',
   },
 };
 
@@ -201,17 +201,17 @@ export const OrdersPage: React.FC = () => {
         <StatCard
           title="Kutilmoqda (Yangi)"
           value={summary.pending}
-          icon={<Clock size={22} color="#ef4444" />}
+          icon={<Clock size={22} color="var(--accent-rose)" />}
         />
         <StatCard
           title="Oshxonada (Tayyorlanmoqda)"
           value={summary.preparing}
-          icon={<Flame size={22} color="#f59e0b" />}
+          icon={<Flame size={22} color="var(--accent-amber)" />}
         />
         <StatCard
           title="Tayyor (Tortish kerak)"
           value={summary.ready}
-          icon={<CheckCircle2 size={22} color="#8b5cf6" />}
+          icon={<CheckCircle2 size={22} color="var(--accent-indigo)" />}
         />
       </div>
 
@@ -245,7 +245,7 @@ export const OrdersPage: React.FC = () => {
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                background: statusFilter === st.id ? 'var(--primary)' : 'var(--card-bg)',
+                background: statusFilter === st.id ? 'var(--text-main)' : 'var(--card-bg)',
                 color: statusFilter === st.id ? '#ffffff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '13px',
@@ -274,7 +274,7 @@ export const OrdersPage: React.FC = () => {
                 borderRadius: '6px',
                 border: '1px solid',
                 borderColor: dateFilter === d.id ? 'var(--primary)' : 'var(--border-color)',
-                background: dateFilter === d.id ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                background: dateFilter === d.id ? 'var(--accent-amber-bg)' : 'transparent',
                 color: dateFilter === d.id ? 'var(--primary)' : 'var(--text-muted)',
                 fontSize: '12px',
                 fontWeight: 500,
@@ -322,8 +322,8 @@ export const OrdersPage: React.FC = () => {
 
       {/* Xatolik */}
       {error && (
-        <Card style={{ marginBottom: '24px', borderColor: 'rgba(239, 68, 68, 0.4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444' }}>
+        <Card style={{ marginBottom: '24px', borderColor: 'rgb(220 38 38 / 0.4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-rose)' }}>
             <AlertCircle size={20} />
             <span>{error}</span>
             <Button variant="secondary" onClick={refresh} style={{ marginLeft: 'auto' }}>
@@ -404,7 +404,7 @@ export const OrdersPage: React.FC = () => {
                           gap: '6px',
                           padding: '4px 10px',
                           borderRadius: '6px',
-                          background: 'rgba(255, 255, 255, 0.06)',
+                          background: 'rgb(24 21 19 / 0.04)',
                           fontSize: '13px',
                           fontWeight: 600,
                           color: 'var(--text-main)',
@@ -418,10 +418,10 @@ export const OrdersPage: React.FC = () => {
                         style={{
                           padding: '4px 10px',
                           borderRadius: '6px',
-                          background: 'rgba(59, 130, 246, 0.1)',
+                          background: 'rgb(24 21 19 / 0.1)',
                           fontSize: '12px',
                           fontWeight: 600,
-                          color: '#3b82f6',
+                          color: 'var(--accent-indigo)',
                         }}
                       >
                         Olib ketish / Yetkazish
@@ -442,9 +442,9 @@ export const OrdersPage: React.FC = () => {
                         borderRadius: '6px',
                         fontSize: '12px',
                         fontWeight: 600,
-                        background: order.payment_status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: order.payment_status === 'paid' ? '#10b981' : '#ef4444',
-                        border: `1px solid ${order.payment_status === 'paid' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                        background: order.payment_status === 'paid' ? 'var(--accent-emerald-bg)' : 'var(--accent-rose-bg)',
+                        color: order.payment_status === 'paid' ? 'var(--accent-emerald)' : 'var(--text-main)',
+                        border: `1px solid ${order.payment_status === 'paid' ? 'rgb(22 163 74 / 0.25)' : 'rgb(220 38 38 / 0.25)'}`,
                       }}
                     >
                       {order.payment_status_display}
@@ -477,7 +477,7 @@ export const OrdersPage: React.FC = () => {
                     gap: '12px',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    background: 'rgba(255, 255, 255, 0.02)',
+                    background: 'rgb(24 21 19 / 0.04)',
                     border: '1px solid var(--border-color)',
                   }}
                 >
@@ -489,7 +489,7 @@ export const OrdersPage: React.FC = () => {
                     </div>
 
                     {order.notes && (
-                      <div style={{ fontSize: '12px', color: '#f59e0b', fontStyle: 'italic' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--accent-amber)', fontStyle: 'italic' }}>
                         Izoh: "{order.notes}"
                       </div>
                     )}
@@ -549,7 +549,7 @@ export const OrdersPage: React.FC = () => {
                         variant="secondary"
                         size="sm"
                         onClick={() => handleQuickStatusChange(order, 'preparing')}
-                        style={{ color: '#f59e0b' }}
+                        style={{ color: 'var(--accent-amber)' }}
                       >
                         <Flame size={14} style={{ marginRight: '4px' }} />
                         Oshxonaga berish
@@ -561,7 +561,7 @@ export const OrdersPage: React.FC = () => {
                         variant="secondary"
                         size="sm"
                         onClick={() => handleQuickStatusChange(order, 'ready')}
-                        style={{ color: '#8b5cf6' }}
+                        style={{ color: 'var(--accent-indigo)' }}
                       >
                         <CheckCircle2 size={14} style={{ marginRight: '4px' }} />
                         Tayyor bo'ldi
@@ -586,7 +586,7 @@ export const OrdersPage: React.FC = () => {
                         size="sm"
                         onClick={() => handleMarkAsPaid(order)}
                         title="To'landi deb belgilash"
-                        style={{ color: '#10b981' }}
+                        style={{ color: 'var(--accent-emerald)' }}
                       >
                         To'lovni qabul qilish
                       </Button>
@@ -598,7 +598,7 @@ export const OrdersPage: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setCancellingOrder(order)}
-                        style={{ color: '#ef4444' }}
+                        style={{ color: 'var(--accent-rose)' }}
                       >
                         <XCircle size={14} style={{ marginRight: '4px' }} />
                         Bekor qilish
@@ -661,7 +661,7 @@ export const OrdersPage: React.FC = () => {
               id="printable-receipt"
               style={{
                 background: '#ffffff',
-                color: '#111827',
+                color: 'var(--text-main)',
                 padding: '24px',
                 borderRadius: '8px',
                 fontFamily: 'monospace',
@@ -670,7 +670,7 @@ export const OrdersPage: React.FC = () => {
                 marginBottom: '20px',
               }}
             >
-              <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '1px dashed #9ca3af', paddingBottom: '12px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '1px dashed var(--text-dim)', paddingBottom: '12px' }}>
                 <div style={{ fontSize: '18px', fontWeight: 700 }}>RESTORAN CHEKI</div>
                 <div>Buyurtma #{selectedOrder.order_number}</div>
                 <div>{formatHumanDateTime(selectedOrder.created_at, { alwaysTime: true })}</div>
@@ -704,13 +704,13 @@ export const OrdersPage: React.FC = () => {
               </table>
 
               {/* Jami hisob-kitob */}
-              <div style={{ borderTop: '1px dashed #9ca3af', paddingTop: '10px' }}>
+              <div style={{ borderTop: '1px dashed var(--text-dim)', paddingTop: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <span>Oraliq summa:</span>
                   <span>{selectedOrder.total_amount.toLocaleString('uz-UZ')} so'm</span>
                 </div>
                 {selectedOrder.discount_amount > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: '#ef4444' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--accent-rose)' }}>
                     <span>Chegirma:</span>
                     <span>-{selectedOrder.discount_amount.toLocaleString('uz-UZ')} so'm</span>
                   </div>
@@ -721,7 +721,7 @@ export const OrdersPage: React.FC = () => {
                     <span>{selectedOrder.delivery_fee.toLocaleString('uz-UZ')} so'm</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 700, marginTop: '8px', borderTop: '1px solid #111827', paddingTop: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 700, marginTop: '8px', borderTop: '1px solid var(--text-main)', paddingTop: '6px' }}>
                   <span>JAMI:</span>
                   <span>{selectedOrder.final_amount.toLocaleString('uz-UZ')} so'm</span>
                 </div>
@@ -786,7 +786,7 @@ export const OrdersPage: React.FC = () => {
               <Button variant="ghost" type="button" onClick={() => setCancellingOrder(null)}>
                 Orqaga
               </Button>
-              <Button variant="primary" type="submit" disabled={cancelSubmitting} style={{ background: '#ef4444' }}>
+              <Button variant="primary" type="submit" disabled={cancelSubmitting} style={{ background: 'var(--accent-rose)' }}>
                 {cancelSubmitting ? "Bekor qilinmoqda..." : "Bekor qilishni tasdiqlash"}
               </Button>
             </div>

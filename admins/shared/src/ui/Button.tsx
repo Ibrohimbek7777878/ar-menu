@@ -41,7 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
       default:
         return {
-          backgroundColor: 'var(--accent-emerald)',
+          backgroundColor: 'var(--action)',
           color: '#ffffff',
           border: 'none',
         };

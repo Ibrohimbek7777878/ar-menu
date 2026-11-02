@@ -118,8 +118,8 @@ const AppLayout: React.FC = () => {
                   textDecoration: 'none',
                   fontSize: '14px',
                   fontWeight: 500,
-                  color: isActive ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                  backgroundColor: isActive ? 'var(--accent-emerald-bg)' : 'transparent',
+                  color: isActive ? 'var(--accent-amber)' : 'var(--text-muted)',
+                  backgroundColor: isActive ? 'var(--accent-amber-bg)' : 'transparent',
                   transition: 'all var(--transition-fast)',
                 })}
               >

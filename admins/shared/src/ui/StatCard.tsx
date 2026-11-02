@@ -26,7 +26,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
             {title}
           </span>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '6px', color: 'var(--text-main)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--text-main)', fontFamily: 'var(--font-display)' }}>
             {value}
           </div>
           {subtitle && (

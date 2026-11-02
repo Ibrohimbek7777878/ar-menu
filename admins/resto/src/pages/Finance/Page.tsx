@@ -260,7 +260,7 @@ export function FinancePage() {
                   borderRadius: 'var(--radius-sm)',
                   border: 'none',
                   cursor: 'pointer',
-                  backgroundColor: preset === p ? 'var(--accent-emerald)' : 'transparent',
+                  backgroundColor: preset === p ? 'var(--text-main)' : 'transparent',
                   color: preset === p ? '#ffffff' : 'var(--text-muted)',
                   transition: 'all var(--transition-fast)',
                 }}
@@ -438,9 +438,9 @@ export function FinancePage() {
             <div
               style={{
                 padding: '8px',
-                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                backgroundColor: 'var(--accent-indigo-bg)',
                 borderRadius: 'var(--radius-md)',
-                color: '#3b82f6',
+                color: 'var(--accent-indigo)',
                 display: 'flex',
               }}
             >
@@ -497,9 +497,9 @@ export function FinancePage() {
             <div
               style={{
                 padding: '8px',
-                backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                backgroundColor: 'var(--accent-indigo-bg)',
                 borderRadius: 'var(--radius-md)',
-                color: '#a855f7',
+                color: 'var(--accent-indigo)',
                 display: 'flex',
               }}
             >
@@ -592,7 +592,7 @@ export function FinancePage() {
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-subtle)',
                     cursor: 'pointer',
-                    backgroundColor: txType === t ? 'var(--accent-emerald)' : 'var(--bg-elevated)',
+                    backgroundColor: txType === t ? 'var(--text-main)' : 'var(--bg-elevated)',
                     color: txType === t ? '#ffffff' : 'var(--text-muted)',
                     transition: 'all var(--transition-fast)',
                   }}
@@ -773,7 +773,7 @@ export function FinancePage() {
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-subtle)',
                     cursor: 'pointer',
-                    backgroundColor: debtType === t ? 'var(--accent-emerald)' : 'var(--bg-elevated)',
+                    backgroundColor: debtType === t ? 'var(--text-main)' : 'var(--bg-elevated)',
                     color: debtType === t ? '#ffffff' : 'var(--text-muted)',
                     transition: 'all var(--transition-fast)',
                   }}
