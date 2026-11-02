@@ -2,6 +2,11 @@
 
 Tashqi paketsiz (Node >= 20). Maqsad: `docs/01_PRODUCT_RESTAURANT_3D_AR/TZ_MASSHTAB_VA_ISHONCHLILIK_2026-10-30.md` §7 dagi Q1–Q4 mezonlarini **takrorlanadigan** usulda o'lchash va hisobot yozish.
 
+> **Diqqat (2026-11-02, P0):** buyurtma stsenariylari (`placeOrder`) stol raqamini QR'siz yuboradi. Production sozlamasida
+> (`RESTAURANT_ALLOW_TABLE_NUMBER_URL=False`) server buni 400 bilan rad etadi. Buyurtmali profillarni (Q1–Q4) ishga tushirishda
+> serverni `RESTAURANT_ALLOW_TABLE_NUMBER_URL=True` bilan yoqing (faqat lokal sinov). Haqiqiy mehmon kabi QR skanerlab
+> (`/t/<token>/` -> sessiya cookie) yuborish TZ_SOTUVGA_TAYYORLASH P3 da rejalashtirilgan.
+
 ## Tez boshlash
 
 ```bash

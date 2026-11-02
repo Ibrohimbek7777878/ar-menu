@@ -37,8 +37,13 @@ class MultiUserJWTAuthentication(JWTAuthentication):
         user_id = validated_token.get('user_id')
         if user_id is not None:
             try:
-                return AdminUser.objects.get(pk=user_id, is_active=True)
+                user = AdminUser.objects.get(pk=user_id, is_active=True)
             except AdminUser.DoesNotExist:
                 raise InvalidToken('Foydalanuvchi topilmadi')
+            from accounts.policy import is_account_approved
+            if not is_account_approved(user):
+                # Ro'yxatdan o'tish token berardi; tasdiqlanmagan hisob hech qaysi API'ga kira olmasin
+                raise InvalidToken('Hisob hali tasdiqlanmagan')
+            return user
 
         raise InvalidToken('Token user_id/customer_id/courier_id claim\'ini o\'z ichiga olmaydi')

@@ -50,8 +50,33 @@ def user_role(user):
     return getattr(user, 'role', '') or ''
 
 
+def _has_restaurant_scope(user):
+    """
+    Platforma admini bundan mustasno, xodim aniq bir restoranga bog'langan bo'lishi shart. Do'konsiz hisob avval
+    `shop or get_or_default_shop()` orqali asosiy restoranga tushib qolardi (kassa, bronlar, taom yaratish).
+    Faqat "ha" natija eslab qolinadi: do'kon keyin biriktirilsa eski "yo'q" javob qolib ketmasin.
+    """
+    if user_role(user) == 'super_admin':
+        return True
+    if getattr(user, '_restaurant_scope_ok', False):
+        return True
+    ok = bool(getattr(user, 'shop_id', None))
+    if not ok:
+        from shops.models import Shop
+        ok = Shop.objects.filter(owner_id=user.pk).exists()
+    if ok:
+        try:
+            user._restaurant_scope_ok = True
+        except AttributeError:
+            pass
+    return ok
+
+
 def is_restaurant_staff(user, roles=RESTAURANT_STAFF_ROLES):
-    return bool(user_role(user) in roles and getattr(user, 'is_active', False))
+    if not (user_role(user) in roles and getattr(user, 'is_active', False)):
+        return False
+    from accounts.policy import is_account_approved
+    return is_account_approved(user) and _has_restaurant_scope(user)
 
 
 def staff_shop(request):

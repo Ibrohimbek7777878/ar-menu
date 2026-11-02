@@ -81,6 +81,9 @@ def payment_callback_payme(request):
 @require_POST
 def payment_callback_uzcard(request):
     """UzCard / Paycom API v2 Webhook."""
+    # Kalitlar sozlanmagan bo'lsa callback ochiq qoldirilmaydi: imzosiz so'rov to'lovni "to'langan" qilmasin (fail-closed)
+    if not (getattr(settings, 'UZCARD_MERCHANT_ID', '') and getattr(settings, 'UZCARD_SECRET_KEY', '')):
+        return JsonResponse({'success': False, 'error': 'Uzcard sozlanmagan'}, status=403)
     from payments.services.uzcard_service import verify_payment
     try:
         data = json.loads(request.body)

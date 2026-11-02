@@ -212,3 +212,35 @@ Tavsiya: birinchi pilotni P0–P4 dan keyin boshlash; P5–P7 ni real foydalanuv
 - **H. Bron:** "limit" = mehmon so'ragan davomiylikmi? Kechikish muddati (mehmon kelmasa necha daqiqada bekor) *(tavsiya 15 daqiqa, sozlanadi)*.
 - **I. GitHub:** remote `menu`, branch `feature/sale-ready`, P0 dan keyin, `main` ga tegilmaydi, repo yopiq.
 - **J. Stolga bog'lanish:** 4 soat va stolga 10 ta ochiq buyurtma limiti (sozlanadi).
+
+---
+
+## 10. P0 holati (2026-11-02): bajarildi, egasi ko'rib chiqishi kutilmoqda
+
+Branch: `feature/sale-ready`. Egasi "ruxsat boshla" dedi; A–J savollariga javob hali yo'q (P0 ularga bog'liq emas edi).
+
+### Nima qilindi
+| Band | Natija |
+|---|---|
+| P0-1 Eski API'lar | `backend/backend/legacy_gate.py` (middleware): `accounts, shops, orders, notifications, v1/*, ai-chat, 3d-print/order, api/payments, payment` restoran mahsulotida 404; `products` va `categories` faqat GET (yozuv 405). `LEGACY_API_ENABLED=True` hammasini qaytaradi, kod o'chirilmadi |
+| P0-2 Do'konsiz xodim | `is_restaurant_staff` endi xodimni aniq restoranga (yoki egasi bo'lgan do'konga) bog'laydi; do'konsiz hisob xodim API'lariga kira olmaydi. Platforma admini (superuser/`super_admin` roli) istisno |
+| P0-3 Tasdiq / register | `accounts/policy.py`: egasi/menejer tasdiqlanmaguncha JWT ham, sessiya ham ishlamaydi (ofitsiant/oshpaz/hostess avvalgidek tasdiqsiz). Register token bermaydi, parol Django qoidalaridan o'tadi, `support` o'zini ro'yxatdan o'tkaza olmaydi, takroriy do'kon nomi 500 bermaydi |
+| P0-4 Kesh | Fayl keshi chegarasi 300 -> 5000 (`CACHE_MAX_ENTRIES`). O'lchandi: yangi kalit yozish 0.64 / 8.9 / 34 ms (300 / 5000 / 20000). Vaqtinchalik; Redis P3 da |
+| P0-5 `/health/` | Anonimga faqat `{"status": ...}`; to'liq javob `X-Health-Token` yoki rahbariyat sessiyasi bilan |
+| P0-6 Qo'riqchi | `web/test_route_permissions.py`: ochiq DRF yo'llari va anonim GET sahifalari ro'yxati muzlatilgan; yangi ochiq yo'l testni qizartiradi |
+| P0-7 Regressiya | `web/test_p0_sale_ready.py`: 31 ta yangi test (darvoza, register, tasdiq, do'konsiz xodim, Uzcard, buyurtma qo'riqchilari) |
+
+### TZ dan chetga chiqishlar (ochiq aytaman)
+1. **Register hozir restoran mahsulotida umuman ishlamaydi** (darvoza 404 beradi). Egasi register kerak degan edi: u P4 da alohida subdomenda, tasdiq va limit bilan qayta quriladi. Eski `register_view` kodi saqlangan va xavfsizlashtirilgan.
+2. **`/m/<slug>/` (eski AIR menyu)** yopilgan `/v1/*` API'lariga tayangani uchun asosiy ilovaga yo'naltiriladi (imzolangan stol tokeni bo'lsa `/t/<uuid>/` orqali stol saqlanadi). `?classic=1` o'zgarmagan.
+3. **Auditorlar topmagan teshik:** `api/payments/create/` anonimga istalgan buyurtma id si uchun to'lov yozuvi yaratardi. Egasi tizim ichida onlayn to'lov bo'lmasin degani uchun `/api/payments/` va `/payment/` ham yopildi; Uzcard callback kalitsiz 403 beradi.
+4. **P1 dan P0 ga ko'tarilgan ikki band** (auditor PoC'lari qayta yurganda hali ochiq chiqdi): `orders/create/` endi mehmon uchun stolni faqat QR sessiyasidan oladi (ofitsiant POS o'zgarmagan); bitta buyurtmada <= 50 qator (`RESTAURANT_MAX_ORDER_LINES`); savatda qator miqdori <= 100.
+5. **Mavjud testlarga 6 ta tuzatish kiritildi (8 ta testga ta'sir qildi):** ular `is_approved` siz egasi/admin yaratib `force_login` bilan kirgan (haqiqiy hayotda sessiya bilan kira olmaydigan hisoblar), health testlari anonimga to'liq tana kutgan, bitta test mehmon sifatida QR'siz buyurtma bergan. Bular eski teshikka tayanib o'tgan testlar edi.
+
+### Dalil
+- Backend: **912 test OK** (881 eski + 31 yangi), 7 tasi avvalgidek o'tkazib yuborilgan; ruff toza; `makemigrations --check` o'zgarishsiz; e2e **12/12** (haqiqiy Chromium).
+- Mutatsiya sinovi: tasdiq/do'kon tekshiruvi, JWT tasdig'i, register tokeni va darvoza alohida-alohida buzilganda mos testlar yiqildi (testlar bo'sh emas).
+- Auditor PoC'lari (`A_sec/poc1..11`) toza bazada qayta yurildi: eski API'lar 404/405; QR'siz buyurtma 400; 3000 qator 400 (0 SQL, 0.1 s; avval 6015 SQL, 4.4 s). Token olishga tayangan skriptlar token olinmagani uchun to'xtadi (kutilgan).
+
+### Hali yopilmagan (P1 va keyingi bosqichlar)
+`/checkout/` tranzaksiyasi va idempotentligi, yopiq restoran / ish vaqti tekshiruvi, holat mashinasi qulflari, bekor qilishda storno, UTC kun chegarasi, soxta tugmalar, Redis, tashqi zaxira, yuk testini QR bilan yuborish (hozir `loadtest/README.md` da ogohlantirish), `Category`/`Customer` do'kon maydoni. Eski git tarixidagi `SECRET_KEY` va Firebase kaliti (S-24) hamon aylantirilmagan bo'lishi mumkin: kalitlarni almashtirish egasining ishi.

@@ -79,10 +79,9 @@ def register_view(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    refresh = RefreshToken.for_user(user)
+    # Token BERILMAYDI: hisob super-admin tasdiqlamaguncha hech narsaga kira olmaydi (TZ P0-3).
     return Response({
-        'access': str(refresh.access_token),
-        'refresh': str(refresh),
+        'detail': "Arizangiz qabul qilindi. Tasdiqlangach tizimga kira olasiz.",
         'user': AdminUserSerializer(user).data,
     }, status=status.HTTP_201_CREATED)
 

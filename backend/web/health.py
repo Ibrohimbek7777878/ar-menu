@@ -168,4 +168,18 @@ def health_check(request):
         health['unhealthy_services'] = unhealthy_services
 
     status_code = 200 if health['status'] != 'unhealthy' else 503
+    if not _details_allowed(request):
+        # Ochiq so'rovga tafsilot (disk, xotira, DB turi, xato matni, debug bayrog'i) berilmaydi: faqat umumiy holat va kod.
+        # Monitoring faqat HTTP kodiga qaraydi; to'liq javob uchun rahbariyat sessiyasi yoki X-Health-Token sarlavhasi kerak.
+        return JsonResponse({'status': health['status']}, status=status_code)
     return JsonResponse(health, status=status_code)
+
+
+def _details_allowed(request):
+    import hmac
+    token = getattr(settings, 'HEALTH_TOKEN', '')
+    supplied = request.headers.get('X-Health-Token', '')
+    if token and supplied:
+        return hmac.compare_digest(token, supplied)
+    from web.restaurant_auth import RESTAURANT_MANAGER_ROLES, is_restaurant_staff
+    return is_restaurant_staff(getattr(request, 'user', None), RESTAURANT_MANAGER_ROLES)

@@ -27,7 +27,8 @@ class FinanceApiTests(TestCase):
         self.owner = AdminUser.objects.get(username='kassa-ega')
         self.waiter = AdminUser.objects.create_user(username='kassa-ofitsiant', password='Ofitsiant-parol-1',
                                                     role='waiter', shop=self.shop)
-        other_owner = AdminUser.objects.create_user(username='boshqa-ega-2', password='x-12345-y', role='shop_owner')
+        other_owner = AdminUser.objects.create_user(username='boshqa-ega-2', password='x-12345-y', role='shop_owner',
+                                                    is_approved=True)   # haqiqiy boshqa restoran egasi (tasdiqlangan)
         self.other_shop = Shop.objects.create(name='Boshqa', slug='boshqa-k', owner=other_owner, address='a',
                                               phone='1', latitude=1, longitude=1)
         other_owner.shop = self.other_shop

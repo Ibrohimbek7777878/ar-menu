@@ -2170,6 +2170,21 @@ def ar_menu_page(request, slug):
     Standart holatda ultra-zamonaviy AIR 3D Menyu (air-3d-menu) ochiladi.
     Agar ?classic=1 parametri uzatilsa, klassik model-viewer sahifasi ko'rsatiladi."""
     if request.GET.get('classic') != '1':
+        from backend.legacy_gate import legacy_api_closed
+        if legacy_api_closed(request):
+            # Eski AIR menyu yopilgan `/v1/*` API'lariga tayanadi: mehmonni asosiy ilovaga o'tkazamiz.
+            # Imzolangan stol tokeni bo'lsa stol bog'lanishi saqlanadi (/t/<uuid>/ orqali), aks holda oddiy menyu.
+            import uuid as _uuid
+            from django.core.signing import TimestampSigner
+            target = '/menu/'
+            if request.GET.get('t'):
+                try:
+                    raw = TimestampSigner().unsign(request.GET['t'], max_age=12 * 3600)
+                    from django.urls import reverse as _reverse
+                    target = _reverse('table_menu_redirect', args=[_uuid.UUID(raw)])
+                except Exception:
+                    pass
+            return redirect(target)
         from ar3d.views import ar_3d_menu_page
         return ar_3d_menu_page(request, slug=slug)
 

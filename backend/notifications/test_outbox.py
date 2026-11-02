@@ -179,7 +179,8 @@ class OutboxProcessingTests(TestCase):
         self.event()
         stats = outbox.outbox_stats()
         self.assertEqual(stats['pending'], 1)
-        res = Client().get('/health/')
+        with self.settings(HEALTH_TOKEN='outbox-monitor'):   # tafsilot faqat token yoki rahbariyat sessiyasi bilan (P0-5)
+            res = Client().get('/health/', HTTP_X_HEALTH_TOKEN='outbox-monitor')
         self.assertIn('outbox', res.json()['services'])
         self.assertNotIn(TOKEN[-4:], res.content.decode())
 

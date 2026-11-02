@@ -49,10 +49,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        if data.get('role') and data['role'] not in ['shop_owner', 'shop_manager', 'support']:
-            raise serializers.ValidationError('Faqat sotuvchi rollari ro\'yxatdan o\'tishi mumkin')
+        # `support` o'zini o'zi ro'yxatdan o'tkaza olmaydi (is_staff beradi); xodimni egasi qo'shadi
+        if data.get('role') and data['role'] not in ['shop_owner', 'shop_manager']:
+            raise serializers.ValidationError('Faqat egasi yoki menejer ro\'yxatdan o\'tishi mumkin')
         if data.get('shop_name') and not data.get('shop_address'):
             raise serializers.ValidationError('Do\'kon manzili kiritilishi shart')
+        # Django parol qoidalari ("123456", "password" kabi parollar o'tmasin)
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_password(data.get('password', ''), user=AdminUser(
+                username=data.get('username', ''), email=data.get('email', ''),
+                first_name=data.get('first_name', ''), last_name=data.get('last_name', '')))
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'password': list(exc.messages)})
         return data
 
     def create(self, validated_data):
@@ -61,30 +71,30 @@ class RegisterSerializer(serializers.ModelSerializer):
         shop_lat = validated_data.pop('shop_lat', None)
         shop_lng = validated_data.pop('shop_lng', None)
 
-        role = validated_data.get('role', 'shop_owner')
-        if role == 'support':
-            validated_data['is_staff'] = True
+        from django.db import transaction
+        with transaction.atomic():   # do'kon yaratilmasa hisob ham qolmasin (yetim hisob)
+            user = AdminUser.objects.create_user(**validated_data)
+            user.is_approved = False  # superadmin tasdiqlashi kerak
+            user.save(update_fields=['is_approved'])
 
-        user = AdminUser.objects.create_user(**validated_data)
-        user.is_approved = False  # superadmin tasdiqlashi kerak
-        user.save(update_fields=['is_approved'])
-
-        if shop_name:
-            from shops.models import Shop
-            from django.utils.text import slugify   # avval `import slugify` (modul) chaqirilardi: do'kon nomi bilan ro'yxatdan o'tish har doim yiqilardi
-            shop = Shop.objects.create(
-                name=shop_name,
-                slug=slugify(shop_name, allow_unicode=True)[:200] or f'shop-{user.id}',
-                description='',
-                address=shop_address,
-                phone=user.phone or '',
-                latitude=shop_lat or 0.0,
-                longitude=shop_lng or 0.0,
-                owner=user,
-                plan='basic',
-            )
-            user.shop = shop
-            user.save(update_fields=['shop'])
+            if shop_name:
+                from shops.models import Shop
+                from django.utils.text import slugify   # avval `import slugify` (modul) chaqirilardi: do'kon nomi bilan ro'yxatdan o'tish har doim yiqilardi
+                base_slug = slugify(shop_name, allow_unicode=True)[:190] or 'shop'
+                slug = base_slug if not Shop.objects.filter(slug=base_slug).exists() else f'{base_slug}-{user.id}'
+                shop = Shop.objects.create(
+                    name=shop_name,
+                    slug=slug,
+                    description='',
+                    address=shop_address,
+                    phone=user.phone or '',
+                    latitude=shop_lat or 0.0,
+                    longitude=shop_lng or 0.0,
+                    owner=user,
+                    plan='basic',
+                )
+                user.shop = shop
+                user.save(update_fields=['shop'])
 
         return user
 

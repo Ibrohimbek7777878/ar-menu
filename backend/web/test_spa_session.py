@@ -47,7 +47,7 @@ class SpaSessionTests(TestCase):
 
     def test_super_admin_dashboard_carries_the_admin_session(self):
         boss = AdminUser.objects.create_user(username='bosh-admin', password='Bosh-parol-1', role='super_admin',
-                                             is_staff=True)
+                                             is_staff=True, is_approved=True)
         data = session_in(self.login(boss).get('/admin/').content.decode())
         self.assertEqual((data['role'], data['roles']), ('admin', ['admin']))
 

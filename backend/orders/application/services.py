@@ -107,6 +107,10 @@ class RestaurantOrderService:
         # Narxlar serverdan; bo'sh yoki noma'lum taomli buyurtma qabul qilinmaydi
         if not isinstance(items_data, list) or not items_data:
             raise ValueError("Buyurtmada taom yo'q")
+        # Anonim 100 KB so'rov 3000 qator = 6015 SQL / 4.4 s berardi (audit S-07); haqiqiy buyurtma bunchalik katta emas
+        max_lines = int(getattr(settings, 'RESTAURANT_MAX_ORDER_LINES', 50))
+        if len(items_data) > max_lines:
+            raise ValueError(f"Buyurtmada taomlar juda ko'p (ko'pi bilan {max_lines} ta)")
         resolved_items = [cls.resolve_menu_item(shop, it) for it in items_data]
 
         # Stol faqat shu restoranning o'zidan (boshqa restoranning shu raqamli stoli emas)

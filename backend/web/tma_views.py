@@ -460,7 +460,8 @@ def tma_cart_api(request):
             cart[shop_key] = {}
         
         current_item = cart[shop_key].get(product_id, {})
-        new_qty = current_item.get('quantity', 0) + qty_param
+        # Bir qatordagi miqdor 100 dan oshmasin (qayta-qayta `add` bilan 3000 dona yig'ish mumkin edi, audit B-10)
+        new_qty = min(current_item.get('quantity', 0) + qty_param, 100)
         cart[shop_key][product_id] = {
             'name': product.name,
             'price': str(product.price),

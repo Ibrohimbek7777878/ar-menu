@@ -59,8 +59,20 @@ class RestaurantOrderCreateView(RestaurantAPIView):
 
     def post(self, request):
         try:
-            shop = self.staff_shop() if has_capability(request.user, 'pos') else None
-            order = RestaurantOrderService.create_order(request.data, shop=shop)
+            is_pos = has_capability(request.user, 'pos')
+            shop = self.staff_shop() if is_pos else None
+            payload = request.data
+            if not is_pos:
+                # Mehmon stoli faqat QR orqali sessiyaga yozilgan stol (`/checkout/` bilan bir xil qoida). Avval stol raqamini
+                # klientdan olardi: QR'siz, istalgan raqam bilan soxta buyurtma berib stolni band qilish mumkin edi (audit S-05/B-09).
+                table = guest_session_table(request._request)
+                if table is not None:
+                    shop = table.shop
+                    payload = {k: request.data.get(k) for k in request.data.keys()}
+                    payload['table_number'] = table.number
+                elif not getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
+                    return Response({'error': "Avval stol ustidagi QR kodni skanerlang"}, status=status.HTTP_400_BAD_REQUEST)
+            order = RestaurantOrderService.create_order(payload, shop=shop)
             remember_guest_order(request._request, order)
             return Response({
                 'id': order.id,

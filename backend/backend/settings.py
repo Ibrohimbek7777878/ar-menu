@@ -105,6 +105,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'backend.middleware.MultiProductHostPortMiddleware',
+    'backend.legacy_gate.LegacyApiGateMiddleware',   # MultiProduct'dan keyin: product_code shu yerda o'rnatiladi
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -173,6 +174,13 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Demo rejim: mock ma'lumotlar, demo to'lov, "Muhayyo Karimova" kabi namuna bronlar.
 # Production'da DOIM False. Hech narsa o'chirilmaydi — faqat shu flag ortiga yashiriladi (AGENTS.md 4-qoida).
 DEMO_MODE = os.environ.get('DEMO_MODE', 'False').lower() == 'true'
+
+# Restoran mahsulotida eski bozor/studiya/ar3d API'lari yopiq (404/405); kod saqlanadi, bu bayroq bilan qaytadi.
+# Qarang: backend/legacy_gate.py, TZ_SOTUVGA_TAYYORLASH P0-1.
+LEGACY_API_ENABLED = _env_bool('LEGACY_API_ENABLED', False)
+
+# `/health/` ning to'liq (tafsilotli) javobi uchun X-Health-Token sarlavhasi; bo'sh bo'lsa faqat rahbariyat sessiyasi ko'radi.
+HEALTH_TOKEN = os.environ.get('HEALTH_TOKEN', '')
 # Faqat mock to'lov sahifalari (DEMO_MODE'siz). Production'da False.
 ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 'true'
 
@@ -180,6 +188,8 @@ ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 
 # yuborish mumkin. Production'da stol faqat QR'dagi tasodifiy token (/t/<uuid>/) orqali aniqlanadi. Raqam bilan kirish
 # faqat DEMO_MODE'da yoki shu flag aniq yoqilganda ishlaydi (TZ R1-10; funksiya o'chirilmagan — flag ortiga yashirilgan).
 RESTAURANT_ALLOW_TABLE_NUMBER_URL = _env_bool('RESTAURANT_ALLOW_TABLE_NUMBER_URL', DEMO_MODE)
+# Bitta buyurtmadagi qatorlar soni chegarasi (anonim 3000 qatorli so'rov serverni 4+ soniya band qilardi)
+RESTAURANT_MAX_ORDER_LINES = int(os.environ.get('RESTAURANT_MAX_ORDER_LINES', '50'))
 # Mehmon sahifalari dizayni: 'new' (yangi) yoki 'classic' (eski). Admin paneldan (AppSetting `guest_design`) ham almashtiriladi.
 GUEST_DESIGN = os.environ.get('GUEST_DESIGN', 'new').strip().lower()
 # Bosma QR kodlar ko'rsatadigan domen (masalan https://menu.example.uz). Bo'sh bo'lsa — xodim ochgan sayt domeni.
@@ -291,6 +301,10 @@ elif not DEBUG and not RUNNING_TESTS:
         'default': {
             'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'LOCATION': os.environ.get('CACHE_DIR', str(BASE_DIR / 'cache')),
+            # Django standarti 300: 450 ta begona kalit login-qulf hisoblagichlarini va menyu versiyasini o'chirib yuborardi.
+            # Bu vaqtinchalik chora; haqiqiy yechim Redis (TZ P3). Fayl keshi har YANGI kalitda papkani sanaydi, shuning uchun
+            # chegarani cheksiz oshirib bo'lmaydi (shu noutbukda o'lchangan: yangi kalit 300 -> 0.64 ms, 5000 -> 8.9 ms, 20000 -> 34 ms).
+            'OPTIONS': {'MAX_ENTRIES': int(os.environ.get('CACHE_MAX_ENTRIES', '5000'))},
         }
     }
 else:

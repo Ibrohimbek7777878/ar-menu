@@ -252,12 +252,14 @@ class RestaurantApiTests(RestaurantFixtureMixin, TestCase):
         self.assertEqual(tx.payment_method, 'card')
 
     def test_order_price_comes_from_server_menu(self):
+        # Mehmon stolga faqat QR orqali bog'lanadi (QR'siz stol raqami bilan buyurtma berib bo'lmaydi: P0, audit S-05)
+        self.client.get(f'/t/{self.table_a5.qr_token}/', follow=True, HTTP_X_PRODUCT='restaurant')
         payload = {
             'table_number': '5', 'customer_name': 'Mehmon',
             'items': [{'product_id': self.product_a.pk, 'name': 'Osh', 'price': 1, 'quantity': 2}],
         }
         res = self.client.post(f'{self.API}/orders/create/', payload, content_type='application/json')
-        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.status_code, 201, res.content)
         order = Order.objects.get(pk=res.json()['id'])
         self.assertEqual(order.total_amount, Decimal('96000'))
         self.assertEqual(order.final_amount, Decimal('96000'))  # xizmat haqi yo'q (TZ qarori Q2)

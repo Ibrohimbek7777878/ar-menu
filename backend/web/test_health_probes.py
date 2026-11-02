@@ -43,13 +43,22 @@ class HealthProbeTests(TestCase):
             broken.cursor.side_effect = RuntimeError('db down')
             self.assertEqual(Client().get('/health/live/').status_code, 200)
 
-    def test_full_health_is_unchanged_for_external_monitoring(self):
+    def test_anonymous_health_exposes_only_the_overall_status(self):
+        """P0-5: ochiq `/health/` disk, xotira, DB turi, xato matni va debug bayrog'ini bermaydi; kod va `status` saqlanadi."""
         resp = Client().get('/health/')
         self.assertEqual(resp.status_code, 200)
-        body = resp.json()
-        self.assertEqual(body['status'], 'healthy')  # healthcheck.sh shu maydonni o'qiydi
+        self.assertEqual(resp.json(), {'status': 'healthy'})  # healthcheck.sh shu maydonni o'qiydi
+
+    @override_settings(HEALTH_TOKEN='monitor-token-123')
+    def test_full_health_needs_the_monitoring_token(self):
+        body = Client().get('/health/', HTTP_X_HEALTH_TOKEN='monitor-token-123').json()
+        self.assertEqual(body['status'], 'healthy')
         for key in ('database', 'disk', 'outbox'):
             self.assertIn(key, body['services'])
+        self.assertEqual(Client().get('/health/', HTTP_X_HEALTH_TOKEN='wrong').json(), {'status': 'healthy'})
+
+    def test_empty_token_setting_never_unlocks_the_details(self):
+        self.assertEqual(Client().get('/health/', HTTP_X_HEALTH_TOKEN='').json(), {'status': 'healthy'})
 
 
 class HealthRoutesTests(SimpleTestCase):

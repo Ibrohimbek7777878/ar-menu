@@ -22,6 +22,7 @@ class RestoAdminSessionApiTests(TestCase):
             first_name='Ali',
             last_name='Valiyev',
             is_active=True,
+            is_approved=True,   # tasdiqlanmagan egasi sessiya bilan ham kira olmaydi (accounts.policy)
         )
         self.shop = Shop.objects.create(
             name='Test Oshxona',
