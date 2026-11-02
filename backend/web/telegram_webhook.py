@@ -83,6 +83,11 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None,
     tma_btn = {"web_app": {"url": tma_url}} if is_https else {"url": tma_url}
     orders_btn = {"web_app": {"url": orders_url}} if is_https else {"url": orders_url}
 
+    waiter_row = []
+    if table_token:
+        from notifications.guest_bot import waiter_button
+        waiter_row = [[waiter_button(table_token)]]
+
     if bot_scope == 'restaurant':
         keyboard = [
             [
@@ -109,6 +114,8 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None,
                 {"text": "📍 Mening stolim & Bron", **orders_btn}
             ]
         ]
+
+    keyboard.extend(waiter_row)
 
     if is_user_admin:
         shop_id = shop.id if shop else 0
@@ -167,6 +174,9 @@ def _handle_telegram_update(request):
             command='callback',
             response="Callback qabul qilindi",
         )
+        from notifications.guest_bot import handle_guest_callback
+        if handle_guest_callback(cq_data, cq_id=cq_id):
+            return JsonResponse({'ok': True})
         if handle_table_callback(cq_data, chat_id, message_id=message_id, cq_id=cq_id, username=username):
             return JsonResponse({'ok': True})
 
@@ -227,6 +237,8 @@ def _handle_telegram_update(request):
     # Deep link orqali stolni aniqlash (/start t_<token> yoki demo'da table_5)
     table_num = None
     table_token = None
+    table_hall = ''
+    table_shop_name = ''
     if text_clean.startswith('/start'):
         parts = text_clean.split(maxsplit=1)
         if len(parts) > 1:
@@ -237,10 +249,12 @@ def _handle_telegram_update(request):
                 try:
                     token_uuid = uuid.UUID(raw_token)
                     from tables_restaurant.models import Table
-                    table_obj = Table.objects.filter(qr_token=token_uuid, is_active=True).first()
+                    table_obj = Table.objects.filter(qr_token=token_uuid, is_active=True).select_related('hall', 'shop').first()
                     if table_obj:
                         table_token = str(table_obj.qr_token)
                         table_num = str(table_obj.number)
+                        table_hall = table_obj.hall.name if table_obj.hall else ''
+                        table_shop_name = table_obj.shop.name if table_obj.shop else ''
                 except Exception:
                     pass
             elif getattr(settings, 'DEMO_MODE', False) or getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
@@ -256,25 +270,19 @@ def _handle_telegram_update(request):
 
 
     if text_clean.startswith('/start') or text_clean in ('/menu', 'menu', 'menyu', 'Menyu', 'boshlash', 'start'):
+        shop_title = esc(table_shop_name or (shop.name if shop else '') or 'Restoran')
         if table_num:
+            hall_part = f" · {esc(table_hall)}" if table_hall else ""
             welcome = (
-                f"Assalomu alaykum, <b>{esc(first_name or 'aziz mehmon')}</b>! 👋\n\n"
-                f"🍽 Siz <b>Stol №{table_num}</b> ga muvaffaqiyatli ulandingiz!\n\n"
-                f"Restoranimizning interaktiv 3D AR menyusi orqali:\n"
-                f"• Mazali taomlarimizni 3D holda stolingiz ustida ko'rishingiz\n"
-                f"• Tarkibi, tayyorlanish vaqti va narxlarini bilishingiz\n"
-                f"• Stolingizdan turib tez va oson buyurtma berishingiz mumkin.\n\n"
-                f"Taomlarni tanlash uchun 3D menyuni oching 👇"
+                f"✅ <b>Siz {esc(table_num)}-stolga ulandingiz</b>{hall_part}\n\n"
+                f"Endi menyudan taom tanlashingiz mumkin."
+                + (" Ofitsiant kerak bo'lsa, pastdagi tugmani bosing." if table_token else "")
             )
         else:
             welcome = (
-                f"Assalomu alaykum, <b>{esc(first_name or 'aziz mehmon')}</b>! 👋\n\n"
-                f"🍽 Restoranimizning <b>3D AR interaktiv menyusi</b>ga xush kelibsiz!\n\n"
-                f"Telefoningiz orqali:\n"
-                f"• Mazali taomlarimizni 3D holda stolingiz ustida ko'rishingiz\n"
-                f"• Tarkibi, tayyorlanish vaqti va narxlarini bilishingiz\n"
-                f"• Stolingizdan turib tez va qulay buyurtma berishingiz mumkin.\n\n"
-                f"Taomlarni ko'rish va tanlash uchun quyidagi tugmani bosing 👇"
+                f"👋 <b>Xush kelibsiz, {esc(first_name or 'aziz mehmon')}!</b>\n\n"
+                f"<b>{shop_title}</b> menyusini shu yerning o'zida oching, taomni 360° da ko'ring "
+                f"va bir daqiqada buyurtma bering."
             )
         send_message(chat_id, welcome, reply_markup=markup)
         bot_msg.response = welcome
