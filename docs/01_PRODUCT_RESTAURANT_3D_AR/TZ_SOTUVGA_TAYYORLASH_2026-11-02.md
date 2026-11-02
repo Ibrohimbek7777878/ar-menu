@@ -244,3 +244,9 @@ Branch: `feature/sale-ready`. Egasi "ruxsat boshla" dedi; A–J savollariga javo
 
 ### Hali yopilmagan (P1 va keyingi bosqichlar)
 `/checkout/` tranzaksiyasi va idempotentligi, yopiq restoran / ish vaqti tekshiruvi, holat mashinasi qulflari, bekor qilishda storno, UTC kun chegarasi, soxta tugmalar, Redis, tashqi zaxira, yuk testini QR bilan yuborish (hozir `loadtest/README.md` da ogohlantirish), `Category`/`Customer` do'kon maydoni. Eski git tarixidagi `SECRET_KEY` va Firebase kaliti (S-24) hamon aylantirilmagan bo'lishi mumkin: kalitlarni almashtirish egasining ishi.
+
+### GitHub: yuborilmadi, sabab (2026-11-02)
+Egasi "to'g'irlab GitHub'ga yubor" degan edi, lekin yuborishdan oldin repo ko'rinishi tekshirildi:
+- `menu` (`Ibrohimbek7777878/3d-ar-menu-`) **OMMAVIY (public)**. Ushbu tarmoqqa 2026-10-30 da `feature/admin-menu-telegram` allaqachon yuborilgan, uning tarixida auditor topgan eski `SECRET_KEY` (cd038ab..22c88d1) va Firebase kaliti (c243b58, birinchi commit) bor. Ya'ni **o'sha kalitlar allaqachon ommaviy**. Ularni almashtirish/o'chirish kerak (joriy `SECRET_KEY` eski bilan bir xil emasligi auditor tomonidan aytilgan, men qiymatlarni ko'rmadim va tekshirmadim).
+- `origin` (`Ibrohimbek7777878/online_Store`) ommaviy emas (anonim API 404, lekin SSH orqali mavjud): yopiq repo deb hisoblanadi.
+- Bu ish uchun audit hisobotlari (zaiflik tafsilotlari) va ~90 commit tarixi ommaviy repoga YUBORILMAYDI. `origin` ga yuborish tavsiya etiladi; egasi remote'ni tasdiqlashi kutilmoqda.
