@@ -7,6 +7,7 @@ import {
   Toast,
 } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { getGuestDesign } from '../../utils/guestDesign';
 import './CheckoutPage.css';
 
 interface InitialCheckoutData {
@@ -25,6 +26,7 @@ export const CheckoutPage: React.FC = () => {
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
   const items = initialData.items || [];
+  const isNewDesign = getGuestDesign() === 'new';
   const subtotal = initialData.subtotal || 0;
   const cartCount = initialData.cartCount || 0;
   const savedNote = sessionStorage.getItem('order_note') || '';
@@ -202,6 +204,29 @@ export const CheckoutPage: React.FC = () => {
               </div>
             </div>
           </section>
+
+          {/* 1b. Buyurtma tarkibi: faqat yangi dizaynda (maket); hisob-kitob va yuborish mantig'i o'zgarmagan */}
+          {isNewDesign && items.length > 0 && (
+            <section className="checkout-section-card">
+              <div className="checkout-section-head">
+                <span className="section-head-title">Buyurtmangiz</span>
+              </div>
+              <ul className="checkout-items-list">
+                {items.map((it, i) => (
+                  <li key={`${it.name}-${i}`} className="checkout-item-row">
+                    <span className="checkout-item-avatar" aria-hidden="true">{(it.name || '?').charAt(0).toUpperCase()}</span>
+                    <span className="checkout-item-info">
+                      <span className="checkout-item-name">{it.name}</span>
+                      <span className="checkout-item-qty tabular-nums">
+                        {it.quantity} × {new Intl.NumberFormat('uz-UZ').format(it.price)} so'm
+                      </span>
+                    </span>
+                    <span className="checkout-item-total tabular-nums">{new Intl.NumberFormat('uz-UZ').format(it.subtotal)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* 2. Mehmon & Manzil ma'lumotlari */}
           <section className="checkout-section-card">

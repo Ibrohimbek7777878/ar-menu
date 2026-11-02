@@ -105,6 +105,42 @@
 [data-design='new'] .chip-pill { transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s; }
 [data-design='new'] .chip-pill:hover { transform: translateY(-2px); }
 
+/* ── F3: maket bilan moslik (faqat yangi dizayn; klassik o'zgarmaydi) ── */
+/* Sarlavhalar: Playfair (serif, tashqi Google Fonts) o'rniga mehmon dizayn tili shrifti */
+[data-design='new'] .summary-card-title,
+[data-design='new'] .checkout-page-title,
+[data-design='new'] .table-hub-title,
+[data-design='new'] .ar-empty-title,
+[data-design='new'] .orders-page-title,
+[data-design='new'] .empty-orders-title,
+[data-design='new'] .cart-title-main {
+  font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Faol toifa chipi maketda to'q (fasl rangiga bog'liq emas) */
+[data-design='new'] .chip-pill.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 2px 8px rgba(24, 21, 19, 0.18);
+}
+
+/* Rasmiylashtirish: "Buyurtmangiz" ro'yxati (maketdagidek: bosh harfli belgi, nom, miqdor, summa) */
+[data-design='new'] .checkout-items-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+[data-design='new'] .checkout-item-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+[data-design='new'] .checkout-item-row:last-child { border-bottom: 0; padding-bottom: 0; }
+[data-design='new'] .checkout-item-avatar {
+  flex: none; width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--brand-primary-subtle), var(--brand-tint-2));
+  color: var(--brand-primary-hover); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 17px;
+}
+[data-design='new'] .checkout-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+[data-design='new'] .checkout-item-name { font-weight: 700; font-size: 14px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-design='new'] .checkout-item-qty { font-size: 12px; color: var(--text-secondary); }
+[data-design='new'] .checkout-item-total { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; color: var(--text-primary); white-space: nowrap; }
+
 @media (prefers-reduced-motion: reduce) {
   [data-design='new'] .menu-dishes-grid .dish-card { animation: none; }
   [data-design='new'] .dish-card,
