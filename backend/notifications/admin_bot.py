@@ -434,19 +434,28 @@ def build_table_detail_keyboard(table_id):
 
 
 def build_stats_keyboard(shop_id=None):
-    """Admin statistika xabarining tugmalari."""
+    """Admin statistika xabarining tugmalari (TZ B3): Buyurtmalar, Stollar, Kassa + Yangilash."""
     sid = shop_id or 0
     return {
         "inline_keyboard": [
             [
-                {"text": "🪑 Stollar Monitoringi", "callback_data": f"t_list:{sid}"},
-                {"text": "🧾 So'nggi buyurtmalar", "callback_data": "admin_orders"},
+                {"text": "🧾 Buyurtmalar", "callback_data": "admin_orders"},
+                {"text": "🪑 Stollar", "callback_data": f"t_list:{sid}"},
+                {"text": "💵 Kassa", "callback_data": "admin_kassa"},
             ],
             [
                 {"text": "🔄 Yangilash", "callback_data": "admin_stats"}
             ]
         ]
     }
+
+
+_UZ_MONTHS = ('yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr')
+
+
+def _day_label(now):
+    """"Bugun, 1-noyabr" (Toshkent vaqti)."""
+    return f"Bugun, {now.day}-{_UZ_MONTHS[now.month - 1]}"
 
 
 def build_stats_text(shop_ids=None):
@@ -475,14 +484,17 @@ def build_stats_text(shop_ids=None):
 
     if shop_ids is not None:
         names = ", ".join(esc(n) for n in Shop.objects.filter(id__in=shop_ids).order_by('id').values_list('name', flat=True))
+        live_cnt = live.filter(created_at__gte=today_start).count()
+        avg_check = int(today_rev / live_cnt) if live_cnt else 0
+        tables = Table.objects.filter(shop_id__in=shop_ids, is_active=True)
         return (
-            f"📊 <b>{names} — Admin Panel</b>\n\n"
-            f"📦 Mahsulotlar: <b>{products.count()}</b>\n"
-            f"🧾 Buyurtmalar: <b>{orders.count()}</b>\n\n"
-            f"💰 <b>Bugun:</b> {_fmt_sum(today_rev)} so'm ({today_cnt} ta)\n"
-            f"📈 <b>Bu hafta:</b> {_fmt_sum(week_rev)} so'm\n"
-            f"⭐ O'rtacha reyting: <b>{round(avg_rating, 1)}</b>\n\n"
-            "<i>Buyruqlar: /stollar — stollar nazorati, /orders — buyurtmalar, /kassa — bugungi kassa</i>"
+            f"📊 <b>{_day_label(timezone.localtime())}</b> · {names}\n\n"
+            f"💰 <b>{_fmt_sum(today_rev)} so'm</b>\n"
+            f"📦 Buyurtma: <b>{live_cnt} ta</b>\n"
+            f"🪑 Band stol: <b>{tables.exclude(status='free').count()} / {tables.count()}</b>\n"
+            f"🧾 O'rtacha chek: <b>{_fmt_sum(avg_check)} so'm</b>\n"
+            f"📈 Hafta: <b>{_fmt_sum(week_rev)} so'm</b>\n\n"
+            "<i>Buyruqlar: /stollar, /orders, /kassa</i>"
         )
 
     tg_subs = TelegramSubscriber.objects.filter(is_active=True).count()
@@ -697,6 +709,14 @@ def handle_table_callback(data, chat_id, message_id=None, cq_id=None, username='
         shop = scope.primary_shop()
         text = build_stats_text(scope.shop_filter())
         kb = build_stats_keyboard(shop.id if shop else None)
+        if cq_id:
+            answer_callback_query(cq_id)
+        _show(text, kb)
+        return True
+
+    elif data == 'admin_kassa':
+        text = kassa_report_text(scope.shops())
+        kb = {"inline_keyboard": [[{"text": "⬅️ Orqaga (Statistika)", "callback_data": "admin_stats"}]]}
         if cq_id:
             answer_callback_query(cq_id)
         _show(text, kb)
