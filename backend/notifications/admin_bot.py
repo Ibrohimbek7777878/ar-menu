@@ -541,53 +541,64 @@ def notify_new_order(order):
     return sent
 
 
+def _mark(current, status, label):
+    return f"▶️ {label} ◀️" if current == status else label
+
+
 def build_order_keyboard(order):
     """
-    Buyurtma uchun interaktiv inline tugmalar (Oshxona / Ofitsiant / Kassa).
-    Agar stol buyurtmasi bo'lsa:
-      [ 👨‍🍳 Tayyorlanmoqda ] [ 🩵 Tayyor ]
-      [ 🟢 Stolga berildi ] [ 📍 Stol №... ]
-    Agar yetkazib berish (Marketplace) bo'lsa:
-      [ ✅ Tasdiqlash ] [ 🚗 Yo'lga chiqdi ]
-      [ 🎉 Yetkazildi ] [ ❌ Bekor qilish ]
+    Buyurtma uchun interaktiv inline tugmalar (TZ B2). "Bekor qilish" ikki bosqichli: `ord_cancel` -> tasdiq -> `ord_status:..:cancelled`.
+    Stol buyurtmasi:
+      [ ✅ Qabul qilish ] [ 👨‍🍳 Tayyorlanmoqda ]
+      [ 🩵 Tayyor ]       [ 🟢 Berildi ]
+      [ 📍 Stol №.. ]     [ ❌ Bekor qilish ]
+    Olib ketish / yetkazib berish:
+      [ ✅ Tasdiqlash ]   [ 🚗 Yo'lga chiqdi ]
+      [ 🎉 Yetkazildi ]   [ ❌ Bekor qilish ]
+    Eski xabarlardagi `ord_status:<id>:cancelled` tugmasi ham ishlayveradi (orqaga moslik).
     """
+    cur = order.status
+    cancel_btn = ({"text": "▶️ Bekor qilingan ◀️", "callback_data": f"ord_status:{order.id}:cancelled"} if cur == 'cancelled'
+                  else {"text": "❌ Bekor qilish", "callback_data": f"ord_cancel:{order.id}"})
     if hasattr(order, 'table') and order.table:
-        cur = order.status
-        btn_prep = "▶️ 👨‍🍳 Tayyorlanmoqda ◀️" if cur == 'preparing' else "👨‍🍳 Tayyorlanmoqda"
-        btn_ready = "▶️ 🩵 Tayyor ◀️" if cur == 'ready' else "🩵 Tayyor"
-        btn_deliv = f"▶️ 🟢 Berildi ◀️" if cur == 'delivered' else f"🟢 Stol №{order.table.number} ga berildi"
-
         return {
             "inline_keyboard": [
                 [
-                    {"text": btn_prep, "callback_data": f"ord_status:{order.id}:preparing"},
-                    {"text": btn_ready, "callback_data": f"ord_status:{order.id}:ready"},
+                    {"text": _mark(cur, 'confirmed', "✅ Qabul qilish"), "callback_data": f"ord_status:{order.id}:confirmed"},
+                    {"text": _mark(cur, 'preparing', "👨‍🍳 Tayyorlanmoqda"), "callback_data": f"ord_status:{order.id}:preparing"},
                 ],
                 [
-                    {"text": btn_deliv, "callback_data": f"ord_status:{order.id}:delivered"},
+                    {"text": _mark(cur, 'ready', "🩵 Tayyor"), "callback_data": f"ord_status:{order.id}:ready"},
+                    {"text": _mark(cur, 'delivered', "🟢 Berildi"), "callback_data": f"ord_status:{order.id}:delivered"},
+                ],
+                [
                     {"text": f"📍 Stol №{order.table.number}", "callback_data": f"t_view:{order.table.id}"},
+                    cancel_btn,
                 ],
             ]
         }
-    else:
-        cur = order.status
-        btn_conf = "▶️ Tasdiqlangan ◀️" if cur == 'confirmed' else "✅ Tasdiqlash"
-        btn_out = "▶️ Yo'lda ◀️" if cur == 'out_for_delivery' else "🚗 Yo'lga chiqdi"
-        btn_del = "▶️ Yetkazildi ◀️" if cur == 'delivered' else "🎉 Yetkazildi"
-        btn_can = "▶️ Bekor ◀️" if cur == 'cancelled' else "❌ Bekor qilish"
+    return {
+        "inline_keyboard": [
+            [
+                {"text": _mark(cur, 'confirmed', "✅ Tasdiqlash"), "callback_data": f"ord_status:{order.id}:confirmed"},
+                {"text": _mark(cur, 'out_for_delivery', "🚗 Yo'lga chiqdi"), "callback_data": f"ord_status:{order.id}:out_for_delivery"},
+            ],
+            [
+                {"text": _mark(cur, 'delivered', "🎉 Yetkazildi"), "callback_data": f"ord_status:{order.id}:delivered"},
+                cancel_btn,
+            ],
+        ]
+    }
 
-        return {
-            "inline_keyboard": [
-                [
-                    {"text": btn_conf, "callback_data": f"ord_status:{order.id}:confirmed"},
-                    {"text": btn_out, "callback_data": f"ord_status:{order.id}:out_for_delivery"},
-                ],
-                [
-                    {"text": btn_del, "callback_data": f"ord_status:{order.id}:delivered"},
-                    {"text": btn_can, "callback_data": f"ord_status:{order.id}:cancelled"},
-                ]
-            ]
-        }
+
+def build_cancel_confirm_keyboard(order):
+    """Bekor qilishni tasdiqlash (tasodifiy bosishdan himoya)."""
+    return {
+        "inline_keyboard": [
+            [{"text": "✅ Ha, bekor qilish", "callback_data": f"ord_status:{order.id}:cancelled"}],
+            [{"text": "↩️ Yo'q, qaytish", "callback_data": f"ord_back:{order.id}"}],
+        ]
+    }
 
 
 def _deny_callback(cq_id, text="⛔️ Bu amal sizga ruxsat etilmagan"):
@@ -702,6 +713,32 @@ def handle_table_callback(data, chat_id, message_id=None, cq_id=None, username='
         if cq_id:
             answer_callback_query(cq_id)
         _show(text, kb)
+        return True
+
+    elif data.startswith(('ord_cancel:', 'ord_back:')):
+        action, _, raw_id = data.partition(':')
+        if not raw_id.isdigit():
+            return _deny_callback(cq_id, "Noto'g'ri so'rov")
+        try:
+            order = Order.objects.select_related('table', 'shop').get(id=int(raw_id))
+            if not scope.allows_shop(order.shop_id):
+                raise Order.DoesNotExist   # boshqa do'kon buyurtmasi: mavjudligi ham oshkor bo'lmaydi
+        except Order.DoesNotExist:
+            if cq_id:
+                answer_callback_query(cq_id, "Buyurtma topilmadi", show_alert=True)
+            return True
+        if action == 'ord_cancel':
+            if order.status in ('delivered', 'cancelled', 'failed'):
+                return _deny_callback(cq_id, "Bu buyurtmani endi bekor qilib bo'lmaydi")
+            if cq_id:
+                answer_callback_query(cq_id, "Buyurtmani bekor qilasizmi?")
+            kb = build_cancel_confirm_keyboard(order)
+        else:
+            if cq_id:
+                answer_callback_query(cq_id, "Bekor qilinmadi")
+            kb = build_order_keyboard(order)
+        if message_id:
+            edit_message_reply_markup(chat_id, message_id, reply_markup=kb)
         return True
 
     elif data.startswith('ord_status:'):

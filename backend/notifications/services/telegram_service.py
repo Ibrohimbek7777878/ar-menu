@@ -133,31 +133,8 @@ def notify_enabled(key, default=False):
 
 def send_order_created(order):
     """Yangi buyurtma yaratilganda xabar — restoran xodimlariga + mijozga."""
-    items_text = "\n".join([
-        f"  • {esc(item.product_name)} x{item.quantity} — {int(item.total):,} so'm"
-        for item in order.items.all()
-    ])
-
-    table_text = ""
-    if getattr(order, 'table', None):
-        table_text = f"🍽 <b>STOL:</b> №{esc(order.table.number)}"
-        if order.table.hall:
-            table_text += f" ({esc(order.table.hall.name)})"
-        table_text += "\n"
-
-    text = (
-        f"🛒 <b>Yangi buyurtma!</b>\n\n"
-        f"📦 #{esc(order.order_number)}\n"
-        f"{table_text}"
-        f"👤 {esc(order.customer_name)}\n"
-        f"📞 {esc(order.customer_phone_1)}\n"
-        f"📍 {esc(order.delivery_address) or 'Ko\'rsatilmagan'}\n\n"
-        f"🛍 <b>Mahsulotlar:</b>\n{items_text}\n\n"
-        f"💰 Jami: {int(order.total_amount):,} so'm\n"
-        f"🚗 Yetkazish: {int(order.delivery_fee):,} so'm\n"
-        f"💳 Umumiy: {int(order.final_amount):,} so'm"
-        f"{_order_link(order)}"
-    )
+    from notifications.order_card import order_card_text
+    text = order_card_text(order, link=_order_link(order))
 
     reply_markup = None
     try:
