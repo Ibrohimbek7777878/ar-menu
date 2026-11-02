@@ -317,7 +317,8 @@ class OrderPaymentUpdateView(RestoAdminAPIView):
 
         with transaction.atomic():
             # Qatorni qulflab qayta o'qiymiz: bekor qilinayotgan buyurtmaga parallel "to'landi" yozilmasin
-            order = get_object_or_404(Order.objects.select_for_update().select_related('table'), pk=order.pk, shop=shop)
+            # of=('self',): `table` bo'sh bo'lishi mumkin (LEFT JOIN), PostgreSQL unga FOR UPDATE qo'yishni rad etadi
+            order = get_object_or_404(Order.objects.select_for_update(of=('self',)).select_related('table'), pk=order.pk, shop=shop)
             if new_payment == 'paid' and order.status == 'cancelled':
                 return Response({'error': "Bekor qilingan buyurtmaga to'lov yozib bo'lmaydi."},
                                 status=status.HTTP_409_CONFLICT)

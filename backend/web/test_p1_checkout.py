@@ -3,13 +3,16 @@ P1 (TZ_SOTUVGA_TAYYORLASH): mehmon buyurtmasi `/checkout/` — atomiklik, takror
 telefon, stol limiti, stolga bog'lanish muddati, to'lov usuli.
 """
 import json
+import threading
 import time as time_module
+import unittest
 from datetime import datetime, timezone as dt_timezone
 from decimal import Decimal
 from unittest import mock
 
 from django.core.cache import cache
-from django.test import Client, TestCase, override_settings
+from django.db import connection
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from categories.models import Category
@@ -163,16 +166,18 @@ class CheckoutIdempotencyTests(CheckoutBase):
         self.assertEqual(first.json()['order_id'], second.json()['order_id'])
         self.assertEqual(Order.objects.count(), 1)
 
-    def test_same_key_from_another_session_is_rejected(self):
+    def test_same_key_from_another_session_does_not_see_or_reuse_the_order(self):
+        """Kalit sessiyaga bog'langan: boshqa brauzer o'sha kalitni yuborsa, begona buyurtmani olmaydi, o'zinikini yaratadi."""
         self.scan_qr()
         self.add_to_cart()
-        self.checkout(service_type='table', submission_id=SID)
+        first = self.checkout(service_type='table', submission_id=SID)
         other = Client()
         self.scan_qr(other)
         self.add_to_cart(other)
-        resp = self.checkout(client=other, service_type='table', submission_id=SID)
-        self.assertEqual(resp.status_code, 409)
-        self.assertEqual(Order.objects.count(), 1)
+        second = self.checkout(client=other, service_type='table', submission_id=SID)
+        self.assertEqual(second.status_code, 200, second.content)
+        self.assertNotEqual(first.json()['order_id'], second.json()['order_id'])
+        self.assertEqual(Order.objects.count(), 2)
 
     def test_race_on_unique_key_returns_the_winner(self):
         """Ikki so'rov bir vaqtda kalitni tekshirdi (ikkalasida ham yo'q), biri yaratdi, ikkinchisi IntegrityError oladi."""
@@ -199,7 +204,7 @@ class CheckoutIdempotencyTests(CheckoutBase):
     def test_malformed_key_is_ignored_not_trusted(self):
         resp = self.table_order(submission_id='a b')
         self.assertEqual(resp.status_code, 200, resp.content)
-        self.assertIsNone(Order.objects.get().submission_id)
+        self.assertIsNone(Order.objects.get().submission_id)          # kalit bo'lmasa idempotentlik yo'q, lekin buyurtma ishlaydi
 
 
 class CheckoutAtomicityTests(CheckoutBase):
@@ -371,3 +376,50 @@ class GuestServiceCallTests(CheckoutBase):
         self.assertIn(resp.status_code, (400, 401, 403, 404))        # stol topilmadi: chaqiruv yaratilmadi
         from tables_restaurant.models import ServiceCall
         self.assertFalse(ServiceCall.objects.exists())
+
+
+@unittest.skipUnless(connection.vendor == 'postgresql', "haqiqiy parallel so'rovlar faqat PostgreSQL'da mazmunli (SQLite butun bazani qulflaydi)")
+class ConcurrentCheckoutTests(TransactionTestCase):
+    """Bir brauzerdan bir vaqtda kelgan ikki bir xil so'rov = BITTA buyurtma, ikkalasiga ham o'sha javob."""
+
+    def setUp(self):
+        cache.clear()
+        self.owner, self.shop = make_owner('ega-p', 'resto-p')
+        hall = Hall.objects.create(shop=self.shop, name='Zal')
+        self.table = Table.objects.create(shop=self.shop, hall=hall, number='5')
+        cat = Category.objects.create(name='Milliy', name_uz='Milliy', name_ru='Milliy', icon='x')
+        self.product = Product.objects.create(shop=self.shop, name='Osh', slug='osh-p', price=Decimal('48000'), category=cat)
+
+    def prepared_session_cookie(self):
+        first = Client()
+        first.get(f'/t/{self.table.qr_token}/', follow=True, HTTP_X_PRODUCT='restaurant')
+        first.post('/tma/api/cart/', data=json.dumps({'action': 'add', 'product_id': self.product.pk, 'quantity': 1}),
+                   content_type='application/json', HTTP_X_PRODUCT='restaurant')
+        return {k: v.value for k, v in first.cookies.items()}
+
+    def test_two_simultaneous_identical_requests_make_one_order(self):
+        cookies = self.prepared_session_cookie()
+        barrier = threading.Barrier(2)
+        results = []
+
+        def worker():
+            client = Client()
+            for name, value in cookies.items():
+                client.cookies[name] = value
+            barrier.wait()
+            try:
+                resp = client.post('/checkout/', {'service_type': 'table', 'submission_id': SID}, **RESTO)
+                results.append((resp.status_code, resp.json()))
+            finally:
+                connection.close()
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=60)
+
+        self.assertEqual(len(results), 2, results)
+        self.assertEqual(Order.objects.count(), 1, results)
+        self.assertEqual([code for code, _ in results], [200, 200], results)
+        self.assertEqual(results[0][1]['order_id'], results[1][1]['order_id'])

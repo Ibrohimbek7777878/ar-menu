@@ -78,9 +78,20 @@ class OrderCardTextTests(TestCase):
         self.assertEqual(text.count(' • '), MAX_ITEM_LINES)
 
     def test_text_never_exceeds_the_telegram_limit(self):
-        items = tuple(('X' * 300, '1000', 1) for _ in range(MAX_ITEM_LINES))
+        # Taom nomi bazada 200 belgigacha (OrderItem.product_name): PostgreSQL uzunroq qiymatni rad etadi
+        items = tuple(('X' * 200, '1000', 1) for _ in range(MAX_ITEM_LINES))
         text = order_card_text(make_order(self.shop, 'OC-7', table=self.table, items=items), link='\n\n🔗 link')
         self.assertLess(len(text), 4096)
+
+    def test_long_text_is_cut_at_the_limit_and_the_link_is_kept(self):
+        # Haqiqiy ma'lumot 3800 belgiga yetmaydi, shuning uchun kesish yo'lini chegarani kichraytirib tekshiramiz
+        link = '\n\n🔗 link'
+        items = tuple(('Taom-' + 'Y' * 150, '1000', 1) for _ in range(MAX_ITEM_LINES))
+        with mock.patch('notifications.order_card.MAX_TEXT_LENGTH', 400):
+            text = order_card_text(make_order(self.shop, 'OC-7b', table=self.table, items=items), link=link)
+        self.assertLessEqual(len(text), 400 + len(link))
+        self.assertTrue(text.endswith(link))
+        self.assertIn('…', text)
 
     def test_link_is_appended(self):
         self.assertTrue(order_card_text(make_order(self.shop, 'OC-8', table=self.table), link='\n\n🔗 L').endswith('🔗 L'))

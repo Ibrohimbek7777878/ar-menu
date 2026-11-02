@@ -3,6 +3,7 @@ Telegram Mini App (TMA) Views.
 Maxsus Telegram WebApp dizayn va xususiyatlariga moslashgan yengil, tezkor interfeys.
 """
 from datetime import timedelta
+import hashlib
 from decimal import Decimal
 import json
 import logging
@@ -540,17 +541,25 @@ def _checkout_success(request, order, wants_json, target=None):
     return redirect(target)
 
 
+def _submission_key(request, raw_sid):
+    """Mijoz kalitini SESSIYAGA bog'laydi (sha256): kalit faqat shu brauzer uchun amal qiladi.
+
+    Shu sababli bir sessiyaning takroriy yoki bir vaqtdagi so'rovi o'sha buyurtmani oladi (poygada yutqazgan so'rov ham:
+    uning sessiya ma'lumotida g'olibning buyurtmasi hali yo'q), boshqa sessiya kalitni taxmin qilsa ham buyurtmani ko'rmaydi.
+    """
+    if not _SUBMISSION_ID_RE.match(raw_sid or ''):
+        return None
+    if not request.session.session_key:
+        request.session.save()
+    return hashlib.sha256(f'{request.session.session_key}:{raw_sid}'.encode()).hexdigest()
+
+
 def _replay_submission(request, submission_id, wants_json):
     """Shu kalit bilan buyurtma allaqachon yaratilgan bo'lsa, o'shani qaytaradi (qo'sh bosish / tarmoq qayta urinishi)."""
     if not submission_id:
         return None
     existing = Order.all_objects.filter(submission_id=submission_id).first()
-    if existing is None:
-        return None
-    if existing.pk not in guest_order_ids(request):
-        return _checkout_error(request, wants_json, "Bu buyurtma kaliti band. Sahifani yangilab, qayta urinib ko'ring.",
-                               status=409, code='submission_conflict')
-    return _checkout_success(request, existing, wants_json)
+    return _checkout_success(request, existing, wants_json) if existing is not None else None
 
 
 def _clean_phone(raw):
@@ -637,8 +646,7 @@ def tma_checkout(request):
         blocked = rate_limited(request, 'tma_checkout', limit=90, seconds=60)
         if blocked is not None:
             return blocked
-        raw_sid = (request.POST.get('submission_id') or '').strip()
-        submission_id = raw_sid if _SUBMISSION_ID_RE.match(raw_sid) else None
+        submission_id = _submission_key(request, (request.POST.get('submission_id') or '').strip())
         # Savat tekshiruvidan OLDIN: birinchi so'rov savatni bo'shatgan bo'lsa, qayta urinish xato emas, o'sha buyurtmani oladi
         replay = _replay_submission(request, submission_id, wants_json)
         if replay is not None:
