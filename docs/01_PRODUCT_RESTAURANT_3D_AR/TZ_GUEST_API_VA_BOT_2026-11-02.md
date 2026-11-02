@@ -26,7 +26,7 @@
 | Joyi | PDF'dagi dizayn | Hozirgi (kod) |
 |---|---|---|
 | Mehmon boti tugmalari | Menyuni ochish, Mening stolim, Ofitsiantni chaqirish | "🍽 Menyuni ochish", "📍 Mening stolim & Bron" (`web/telegram_webhook.py: get_menu_markup`). Ofitsiant tugmasi yo'q |
-| Yangi buyurtma xabari | Kartochka: stol va zal, tarkib, to'lov turi, summa, holat | Emoji matn: raqam, stol, mijoz, telefon, do'kon, summa, holat (`notifications/admin_bot.py:524`). Tarkib va to'lov turi yo'q |
+| Yangi buyurtma xabari | Kartochka: stol va zal, tarkib, to'lov turi, summa, holat | **Tuzatish:** haqiqiy xabar `send_order_created` (`notifications/services/telegram_service.py`), `admin_bot.notify_new_order` esa eskirgan va ishlatilmaydi. Haqiqiysi tarkibni ko'rsatgan, lekin uzun (do'kon, yetkazish 0 so'm, manzil "ko'rsatilmagan" shovqini). To'lov USULI `Order` modelida umuman yo'q (faqat to'lov holati) |
 | Holat tugmalari | Qabul qilish, Tayyorlanmoqda, Tayyor, Bekor qilish | Stol: Tayyorlanmoqda, Tayyor, Berildi, Stol. Bekor qilish faqat yetkazib berishda (`build_order_keyboard`) |
 | `/stats` | Tushum, buyurtma soni, band stol, o'rtacha chek, 3 tugma | "Bugungi Kassa" (kirim, chiqim, sof kassa) va stol monitoringi emoji matn |
 
@@ -85,3 +85,21 @@ Umumiy: `Cache-Control: private`, javobda boshqa mehmon ma'lumoti va xom ichki m
 
 ## 9. Ochiq (bu TZ da qilinmaydi)
 A4 stol va bron API, B4 Telegram mavzusi va `MainButton`, B5 mehmonga bot orqali xabar (rozilik), frontendni API'ga o'tkazish, T17 ni yopish, xodim sahifalari uchun API.
+
+## 10. Bajarilgan ishlar (2026-11-02, branch `feature/guest-api-bot`) ✅
+Commit'lar: TZ `4364593`, A1 `4a98406`, A2 `7c25750`, A3 `7315618`, B1 `734d75e`, B2 `65affd4`, B3 `2385485`. **Push qilinmagan.**
+Backend to'liq to'plam **881 test yashil** (7 o'tkazib yuborilgan avvalgidek). Yangi testlar: API 34, B1 15, B2 23, B3 10.
+
+**A (API).** `GET /api/guest/v1/` ostida: `session/`, `welcome/`, `menu/` (mavjud `/api/v1/restaurant/menu/` bilan bir xil javob va ETag), `cart/`, `checkout/`, `orders/`, `orders/<id>/`. Faqat GET, `private` + ETag/304, `guest_api` sozlamasi (o'chirilsa 404), IP bo'yicha O(1) tezlik cheklovi (`GUEST_API_RATE_LIMIT`, 1200/min). Har sahifa uchun **API javobi = sahifadagi blok** tenglik testi bor. Mavjud ko'rinishlarga tegilmagan. `checkout/` narxni serverdagi menyudan oladi (sessiyadagiga ishonmaydi). `orders/<id>/` begona buyurtmani 404 qiladi (IDOR testi), N+1 yo'q. Caddy: `/api/guest/*` mehmon havzasiga (`web`) tushadi.
+**B1.** Stol QR/deep link orqali aniq bo'lsa `🛎 Ofitsiantni chaqirish` (`wc:<token>`); faqat faol stolning joriy tokeni, stolga 60 soniyada 1, kutilayotgan chaqiruv bo'lsa yangisi yaratilmaydi. `/start` matni qisqa (3D AR jargonisiz).
+**B2.** `send_order_created` ixcham kartochka; tugmalar PDF'dagidek; **Bekor qilish ikki bosqichli** (eski to'g'ridan-to'g'ri tugma ishlayveradi).
+**B3.** `/stats` kartochkasi (tushum, buyurtma, band stol, o'rtacha chek, hafta) + `Kassa` tugmasi (restoran doirasida).
+
+**Kodda topilgan, tegilmagan xatolar (alohida ruxsat kerak):**
+1. ⚠️ **Mehmon sahifalarida buyurtma vaqti UTC bilan** (`/orders/`, `/tma/order/<id>/`): Toshkentda 11:46 o'rniga 06:46 (5 soat orqada). Sababi `created_at.strftime(...)` `timezone.localtime` siz. Tuzatish 2 qator (`tma_orders`, `tma_order_detail`) + `web/guest_api._order_dict`. API tenglik uchun xatoni takrorlaydi.
+2. `domains/restaurant/application/services.py: call_waiter()` modelda yo'q `notes` maydonini beradi, ishlatilsa yiqiladi. Ishlatilmadi.
+3. `admin_bot.notify_new_order` eskirgan (haqiqiy yo'l `send_order_created`).
+4. Caddy: `POST /api/v1/restaurant/orders*` (mehmon buyurtmasi) `web-staff` havzasiga yo'naltirilgan; mehmon yuklamasi xodim havzasini band qilishi mumkin. O'lchanmagan ❓.
+5. T17 (loginsiz yozish `/api/v1/products/`) hali ochiq. Mehmon menyusi endi `guest/v1/menu/` ga o'tishga tayyor, lekin frontend bu bosqichda o'zgartirilmadi.
+
+**Ataylab qilinmagan:** A4 (stol, bron), B4 (Telegram mavzusi, MainButton), B5 (mehmonga bot orqali xabar), frontendni API'ga o'tkazish, xodim sahifalari uchun API, to'lov USULI maydoni.
