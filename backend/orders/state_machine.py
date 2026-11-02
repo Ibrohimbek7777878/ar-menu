@@ -53,7 +53,19 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
     """
     Order holatini o'zgartirish.
     Returns: (success: bool, message: str)
+
+    Butun o'tish BITTA tranzaksiyada va buyurtma qatori qulflangan holda bajariladi (TZ: P1-7): ikki xodim bir vaqtda
+    "yetkazildi" va "bekor" bossa, ikkinchisi birinchining natijasini ko'radi va rad etiladi (avval ikkalasi o'tib, mijoz
+    statistikasi/kassa ikki marta yozilar yoki bekor qilingan buyurtma "yetkazildi" bo'lib qolar edi).
     """
+    from django.db import transaction
+    with transaction.atomic():
+        type(order)._base_manager.select_for_update().filter(pk=order.pk).first()       # qatorni qulflash
+        order.refresh_from_db()                                                          # qulfdan keyingi HAQIQIY holat
+        return _transition_locked(order, new_status, actor=actor, reason=reason, request=request)
+
+
+def _transition_locked(order, new_status, actor=None, reason='', request=None):
     if not can_transition(order, new_status):
         current_label = ORDER_STATES.get(order.status, {}).get('label', order.status)
         new_label = ORDER_STATES.get(new_status, {}).get('label', new_status)
@@ -105,6 +117,12 @@ def transition_order(order, new_status, actor=None, reason='', request=None):
         # faqat zaxira bo'shatiladi.
         from orders.inventory import release_reservations
         release_reservations(order)
+        # Storno: bekor qilingan buyurtmaning kassadagi kirimi bekor qilinadi, to'langan bo'lsa "qaytarilgan" deb belgilanadi
+        # (avval kirim kassada qolib daromad oshirib ko'rsatilardi). Xato bo'lsa butun bekor qilish ortga qaytadi.
+        from finance.services.order_integration import cancel_order_income_transactions
+        cancel_order_income_transactions(order, reason="Buyurtma bekor qilindi", actor=actor, request=request)
+        if order.payment_status == 'paid':
+            order.payment_status = 'refunded'
 
     elif new_status == 'confirmed':
         order.confirmed_at = timezone.now()

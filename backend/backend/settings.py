@@ -190,6 +190,15 @@ ALLOW_MOCK_PAYMENTS = os.environ.get('ALLOW_MOCK_PAYMENTS', 'False').lower() == 
 RESTAURANT_ALLOW_TABLE_NUMBER_URL = _env_bool('RESTAURANT_ALLOW_TABLE_NUMBER_URL', DEMO_MODE)
 # Bitta buyurtmadagi qatorlar soni chegarasi (anonim 3000 qatorli so'rov serverni 4+ soniya band qilardi)
 RESTAURANT_MAX_ORDER_LINES = int(os.environ.get('RESTAURANT_MAX_ORDER_LINES', '50'))
+# Bitta stolda ochiq (yetkazilmagan, bekor qilinmagan) buyurtmalar chegarasi: QR'ni olgan begona stolni buyurtmalar bilan to'ldirmasin
+RESTAURANT_MAX_OPEN_ORDERS_PER_TABLE = int(os.environ.get('RESTAURANT_MAX_OPEN_ORDERS_PER_TABLE', '10'))
+# QR skanerlangandan keyin stolga bog'lanish necha soniya amal qiladi (0 = cheksiz). Uyga ketgan mehmon ertasi kuni ham shu stolga yozmasin.
+RESTAURANT_TABLE_BINDING_TTL_SECONDS = int(os.environ.get('RESTAURANT_TABLE_BINDING_TTL_SECONDS', str(4 * 3600)))
+# Restoran ish vaqtidan tashqari buyurtma qabul qilinmasin. Har restoran `business_profile.enforce_working_hours` bilan o'zgartiradi.
+# Testlarda o'chiq: aks holda testlar kunning vaqtiga qarab o'tadi yoki yiqiladi (ish vaqti tekshiruvi o'z testlarida yoqiladi).
+RESTAURANT_ENFORCE_WORKING_HOURS = _env_bool('RESTAURANT_ENFORCE_WORKING_HOURS', not (len(sys.argv) > 1 and sys.argv[1] == 'test'))
+# Onlayn to'lov (Click/Payme/karta) yoqilganmi. Standart o'chiq: hozir faqat naqd / stolda to'lash haqiqiy ishlaydi.
+RESTAURANT_ONLINE_PAYMENT_ENABLED = _env_bool('RESTAURANT_ONLINE_PAYMENT_ENABLED', False)
 # Mehmon sahifalari dizayni: 'new' (yangi) yoki 'classic' (eski). Admin paneldan (AppSetting `guest_design`) ham almashtiriladi.
 GUEST_DESIGN = os.environ.get('GUEST_DESIGN', 'new').strip().lower()
 # Bosma QR kodlar ko'rsatadigan domen (masalan https://menu.example.uz). Bo'sh bo'lsa — xodim ochgan sayt domeni.

@@ -24,6 +24,8 @@ class Order(SoftDeleteBehaviour, models.Model):
     ]
 
     order_number = models.CharField(max_length=20, unique=True)
+    # Mehmon buyurtmasi ikki marta yaratilmasligi uchun (qo'sh bosish, tarmoq qayta urinishi): sahifa ochilganda berilgan kalit
+    submission_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
     customer = models.ForeignKey(
         'accounts.Customer', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='orders'

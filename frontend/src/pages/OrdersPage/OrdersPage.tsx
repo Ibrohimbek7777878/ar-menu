@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import './OrdersPage.css';
@@ -14,7 +14,7 @@ export interface OrderData {
   id: number;
   order_number: string;
   created_at: string;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled';
   status_display: string;
   total_amount: number;
   table_number?: string | number;
@@ -27,7 +27,12 @@ interface InitialOrdersData {
   table?: { number: string | number; hall?: string };
   orders?: OrderData[];
   cartCount?: number;
+  onlinePayment?: boolean;
 }
+
+// Server holatlari (orders.Order.STATUS_CHOICES): 'delivered' va 'out_for_delivery' avval filtrda yo'q edi
+const ACTIVE_STATUSES: OrderData['status'][] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'];
+const FINISHED_STATUSES: OrderData['status'][] = ['delivered', 'completed', 'cancelled'];
 
 declare global {
   interface Window {
@@ -43,6 +48,7 @@ export const OrdersPage: React.FC = () => {
     tableNumber: ctxTableNumber,
     setIsCallWaiterOpen,
     setIsNfcModalOpen,
+    createServiceCall,
   } = useNavigation();
 
   const initialData: InitialOrdersData =
@@ -51,7 +57,7 @@ export const OrdersPage: React.FC = () => {
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
 
-  const orders: OrderData[] = useMemo(() => {
+  const baseOrders: OrderData[] = useMemo(() => {
     // Django sahifasi ma'lumot bilan kelgan bo'lsa — FAQAT shu mehmonning o'z buyurtmalari (sessiya bo'yicha).
     // Avval brauzerdagi demo buyurtmalar ("№101", "664,000 so'm") serverdagi haqiqiy buyurtma ustidan chiqib ketardi.
     if (Array.isArray(initialData.orders)) {
@@ -101,6 +107,40 @@ export const OrdersPage: React.FC = () => {
     ];
   }, [initialData.orders, sharedOrders, ctxTableNumber]);
 
+  // Jonli yangilanish: faol buyurtma bor ekan, holat serverdan har ~12 soniyada so'raladi (ETag: o'zgarmasa 304, arzon)
+  const [polledOrders, setPolledOrders] = useState<OrderData[] | null>(null);
+  const orders: OrderData[] = polledOrders ?? baseOrders;
+  const pollEtag = useRef<string>('');
+  const hasActiveOrder = orders.some((o) => ACTIVE_STATUSES.includes(o.status));
+
+  useEffect(() => {
+    if (!hasActiveOrder || !Array.isArray(initialData.orders)) return undefined;
+    let stopped = false;
+    const tick = async () => {
+      if (stopped || document.visibilityState !== 'visible') return;
+      try {
+        const res = await fetch('/api/guest/v1/orders/', {
+          credentials: 'same-origin',
+          headers: pollEtag.current ? { 'If-None-Match': pollEtag.current } : {},
+        });
+        if (res.status === 304 || !res.ok) return;
+        const data = await res.json();
+        pollEtag.current = res.headers.get('ETag') || '';
+        if (!stopped && Array.isArray(data?.orders)) {
+          setPolledOrders(data.orders);
+          setSelectedOrder((prev) => (prev ? data.orders.find((o: OrderData) => o.id === prev.id) ?? prev : prev));
+        }
+      } catch {
+        // Aloqa uzilsa jim: keyingi urinishda qaytadan so'raladi, ekrandagi oxirgi holat qoladi
+      }
+    };
+    const timer = window.setInterval(tick, 12000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [hasActiveOrder, initialData.orders]);
+
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed'>('all');
   
   // URL parametr bo'yicha buyurtmani avtomatik ochish (/order/<pk>/)
@@ -129,16 +169,29 @@ export const OrdersPage: React.FC = () => {
     setTimeout(() => setToastVisible(false), 2400);
   };
 
-  const handleCallWaiter = () => {
-    showToast('Ofitsiantga chaqiruv yuborildi');
+  // Haqiqiy chaqiruv: "yuborildi" faqat server qabul qilgandan keyin (avval tugmalar faqat xabar ko'rsatardi)
+  const [isSendingCall, setIsSendingCall] = useState(false);
+  const callTableNumber = table?.number || ctxTableNumber;
+
+  const sendCall = async (type: 'waiter' | 'bill' | 'tea' | 'bread', title: string, okMessage: string) => {
+    if (isSendingCall) return;
+    if (!callTableNumber) {
+      showToast('Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.');
+      return;
+    }
+    setIsSendingCall(true);
+    const ok = await createServiceCall({ table_number: callTableNumber, type, title });
+    setIsSendingCall(false);
+    showToast(ok ? okMessage : "Chaqiruv yuborilmadi. Qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring.");
   };
 
-  const handleRequestBill = () => {
-    showToast('Hisob-kitob so\'rovi qabul qilindi');
-  };
+  const handleCallWaiter = () => sendCall('waiter', 'Ofitsiantni chaqirish', 'Ofitsiantga chaqiruv yuborildi');
+
+  const handleRequestBill = () => sendCall('bill', 'Hisob-kitob so\'rovi', 'Hisob-kitob so\'rovi qabul qilindi');
 
   const handleServiceCall = (serviceName: string) => {
-    showToast(`"${serviceName}" so'rovi yuborildi`);
+    const type = serviceName === 'Choy yangilash' ? 'tea' : serviceName === 'Tandir non olib kelish' ? 'bread' : 'waiter';
+    return sendCall(type, serviceName, `"${serviceName}" so'rovi yuborildi`);
   };
 
   const handlePrintReceipt = () => {
@@ -151,10 +204,10 @@ export const OrdersPage: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     if (filterStatus === 'active') {
-      return orders.filter((o) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
+      return orders.filter((o) => ACTIVE_STATUSES.includes(o.status));
     }
     if (filterStatus === 'completed') {
-      return orders.filter((o) => ['completed', 'cancelled'].includes(o.status));
+      return orders.filter((o) => FINISHED_STATUSES.includes(o.status));
     }
     return orders;
   }, [orders, filterStatus]);
@@ -349,14 +402,14 @@ export const OrdersPage: React.FC = () => {
             className={`filter-tab ${filterStatus === 'active' ? 'active' : ''}`}
             onClick={() => setFilterStatus('active')}
           >
-            Jarayonda ({orders.filter((o) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)).length})
+            Jarayonda ({orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length})
           </button>
           <button
             type="button"
             className={`filter-tab ${filterStatus === 'completed' ? 'active' : ''}`}
             onClick={() => setFilterStatus('completed')}
           >
-            Yakunlangan ({orders.filter((o) => ['completed', 'cancelled'].includes(o.status)).length})
+            Yakunlangan ({orders.filter((o) => FINISHED_STATUSES.includes(o.status)).length})
           </button>
         </div>
 
@@ -503,13 +556,15 @@ export const OrdersPage: React.FC = () => {
               >
                 Chekni chop etish
               </button>
-              <button
-                type="button"
-                className="btn-pay-order"
-                onClick={() => handleOnlinePay(selectedOrder)}
-              >
-                Onlayn to'lov
-              </button>
+              {initialData.onlinePayment === true && (
+                <button
+                  type="button"
+                  className="btn-pay-order"
+                  onClick={() => handleOnlinePay(selectedOrder)}
+                >
+                  Onlayn to'lov
+                </button>
+              )}
             </div>
           </div>
         </div>

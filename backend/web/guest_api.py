@@ -190,12 +190,14 @@ def build_checkout(request):
     (sessiyadagi narxga ishonilmaydi); tugagan/arxivlangan taom ro'yxatga tushmaydi. Buyurtma yaratish bu yerda emas."""
     from notifications.admin_bot import get_restaurant_shop
     from products.models import Product
+    from shops.availability import checkout_gate_payload
     from shops.models import Shop
     from tables_restaurant.models import Table
 
     lines = _cart_lines(request)
-    shop = None
-    if lines:
+    table = _table_of(request)
+    shop = table.shop if table else None           # QR stoli ishonchli manba (`/checkout/` bilan bir xil)
+    if shop is None and lines:
         shop = Shop.objects.filter(id=lines[0][0]).first()
     shop = shop or get_restaurant_shop()
 
@@ -222,7 +224,6 @@ def build_checkout(request):
         total += subtotal
         items.append({'name': product.name, 'price': float(price), 'quantity': qty, 'subtotal': float(subtotal)})
 
-    table = _table_of(request)
     all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number') if shop else []
     return {
         'shop': _shop_part(shop),
@@ -232,6 +233,7 @@ def build_checkout(request):
         'subtotal': float(total),
         'allTables': [{'id': t.id, 'number': str(t.number), 'hall': t.hall.name if t.hall else 'Asosiy Zal'}
                       for t in all_tables],
+        **(checkout_gate_payload(shop, 'table' if table else 'delivery', total) if shop else {}),
     }
 
 
@@ -259,6 +261,7 @@ def _orders_context(request, orders, cart_count):
         'table': _table_part(table) if table else None,
         'orders': orders,
         'cartCount': cart_count,
+        'onlinePayment': bool(getattr(settings, 'RESTAURANT_ONLINE_PAYMENT_ENABLED', False)),
     }
 
 

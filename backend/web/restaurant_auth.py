@@ -221,15 +221,51 @@ def guest_season(request):
     return guest_season_for_shop_id(guest_shop_id(request))
 
 
-def guest_session_table(request):
-    """Mehmon QR skanerlaganda sessiyada eslab qolingan stol (tasodifiy token orqali), aks holda None."""
-    import uuid
+def session_table_token(request):
+    """Sessiyada eslab qolingan stol tokeni, agar bog'lanish muddati o'tmagan bo'lsa (aks holda sessiyadan olib tashlanadi).
+
+    Bog'lanish vaqti token o'zgargan paytdan hisoblanadi (har qanday joyda yozilgan token uchun ishlaydi); QR qayta
+    skanerlansa `bind_session_table` muddatni yangilaydi.
+    """
+    import time
+    from django.conf import settings
     session = getattr(request, 'session', None)
     raw = session.get('tma_table_token') if session is not None else None
     if not raw:
         return None
+    raw = str(raw)
+    now = int(time.time())
+    if session.get('tma_table_bound_for') != raw:
+        session['tma_table_bound_for'] = raw
+        session['tma_table_bound_at'] = now
+        session.modified = True
+        return raw
+    ttl = getattr(settings, 'RESTAURANT_TABLE_BINDING_TTL_SECONDS', 0)
+    if ttl and now - int(session.get('tma_table_bound_at') or now) > ttl:
+        for key in ('tma_table_token', 'tma_table_bound_for', 'tma_table_bound_at'):
+            session.pop(key, None)
+        session.modified = True
+        return None
+    return raw
+
+
+def bind_session_table(request, token):
+    """QR skanerlandi: stolni sessiyaga yozadi va bog'lanish muddatini yangidan boshlaydi."""
+    import time
+    request.session['tma_table_token'] = token
+    request.session['tma_table_bound_for'] = str(token)
+    request.session['tma_table_bound_at'] = int(time.time())
+    request.session.modified = True
+
+
+def guest_session_table(request):
+    """Mehmon QR skanerlaganda sessiyada eslab qolingan stol (tasodifiy token orqali), aks holda None."""
+    import uuid
+    raw = session_table_token(request)
+    if not raw:
+        return None
     try:
-        token = uuid.UUID(str(raw).strip())
+        token = uuid.UUID(raw.strip())
     except (ValueError, TypeError, AttributeError):
         return None
     from tables_restaurant.models import Table

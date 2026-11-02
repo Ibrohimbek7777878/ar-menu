@@ -316,6 +316,11 @@ class OrderPaymentUpdateView(RestoAdminAPIView):
             }, status=status.HTTP_403_FORBIDDEN)
 
         with transaction.atomic():
+            # Qatorni qulflab qayta o'qiymiz: bekor qilinayotgan buyurtmaga parallel "to'landi" yozilmasin
+            order = get_object_or_404(Order.objects.select_for_update().select_related('table'), pk=order.pk, shop=shop)
+            if new_payment == 'paid' and order.status == 'cancelled':
+                return Response({'error': "Bekor qilingan buyurtmaga to'lov yozib bo'lmaydi."},
+                                status=status.HTTP_409_CONFLICT)
             order.payment_status = new_payment
             order.save(update_fields=['payment_status', 'updated_at'])
 

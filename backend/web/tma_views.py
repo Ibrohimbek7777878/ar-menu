@@ -2,18 +2,23 @@
 Telegram Mini App (TMA) Views.
 Maxsus Telegram WebApp dizayn va xususiyatlariga moslashgan yengil, tezkor interfeys.
 """
+from datetime import timedelta
 from decimal import Decimal
 import json
+import logging
+import re
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 
 from categories.models import Category
 from products.models import Product
+from shops.availability import SERVICE_TYPES, checkout_gate_payload, order_gate, quote_totals
 from shops.models import Shop
 from orders.models import Order, OrderItem, OrderStatusHistory
 from accounts.models import Customer
@@ -22,10 +27,13 @@ from notifications.admin_bot import get_restaurant_shop
 from web.http_cache import conditional_guest_page
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
-    RESTAURANT_MANAGER_ROLES, can_view_order, guest_order_ids, is_restaurant_staff, remember_guest_order,
-    restaurant_staff_required, role_home_url, staff_shop, user_role,
+    RESTAURANT_MANAGER_ROLES, bind_session_table, can_view_order, guest_order_ids, is_restaurant_staff,
+    remember_guest_order, restaurant_staff_required, role_home_url, session_table_token, staff_shop, user_role,
 )
 from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
+
+
+logger = logging.getLogger(__name__)
 
 
 def _calculate_cart_count(cart) -> int:
@@ -70,10 +78,9 @@ def _get_tma_table(request):
     """URL ?table= yoki sessiya orqali faol restoran stolini aniqlash."""
     table_token = request.GET.get('table') or request.GET.get('t') or request.POST.get('table')
     if table_token:
-        request.session['tma_table_token'] = table_token
-        request.session.modified = True
+        bind_session_table(request, table_token)
     else:
-        table_token = request.session.get('tma_table_token') or request.session.get('tma_table_id')
+        table_token = session_table_token(request) or request.session.get('tma_table_id')
 
     if not table_token:
         return None, None
@@ -513,6 +520,106 @@ def tma_cart_api(request):
     })
 
 
+_SUBMISSION_ID_RE = re.compile(r'^[A-Za-z0-9_-]{8,64}$')
+_OPEN_ORDER_WINDOW = timedelta(hours=12)
+_FINAL_ORDER_STATUSES = ('delivered', 'cancelled')
+
+
+def _checkout_error(request, wants_json, message, status=400, code='invalid', **extra):
+    if wants_json:
+        return JsonResponse({'ok': False, 'error': message, 'code': code, **extra}, status=status)
+    # React ilova doim XHR yuboradi; JS'siz (to'g'ridan-to'g'ri forma) so'rovga ham xato jim yutilmasin
+    return HttpResponse(message, status=status, content_type='text/plain; charset=utf-8')
+
+
+def _checkout_success(request, order, wants_json, target=None):
+    from django.urls import reverse
+    target = target or reverse('tma_order_detail', kwargs={'pk': order.id})
+    if wants_json:
+        return JsonResponse({'ok': True, 'order_id': order.id, 'order_number': order.order_number, 'redirect': target})
+    return redirect(target)
+
+
+def _replay_submission(request, submission_id, wants_json):
+    """Shu kalit bilan buyurtma allaqachon yaratilgan bo'lsa, o'shani qaytaradi (qo'sh bosish / tarmoq qayta urinishi)."""
+    if not submission_id:
+        return None
+    existing = Order.all_objects.filter(submission_id=submission_id).first()
+    if existing is None:
+        return None
+    if existing.pk not in guest_order_ids(request):
+        return _checkout_error(request, wants_json, "Bu buyurtma kaliti band. Sahifani yangilab, qayta urinib ko'ring.",
+                               status=409, code='submission_conflict')
+    return _checkout_success(request, existing, wants_json)
+
+
+def _clean_phone(raw):
+    """'+998 90 123-45-67', '901234567' -> '+998901234567'; noto'g'ri bo'lsa None."""
+    digits = re.sub(r'\D', '', raw or '')
+    if len(digits) == 9:
+        digits = '998' + digits
+    if len(digits) == 12 and digits.startswith('998'):
+        return '+' + digits
+    return None
+
+
+def _guest_products(shop, cart):
+    """Savatdagi taomlar: (mavjud taomlar {id: Product}, tugagan/boshqa restoran taomlari [(shop_id, id, nom)])."""
+    ids = [int(p_id) for products in cart.values() for p_id in products if str(p_id).isdigit()]
+    available = {p.id: p for p in Product.objects.filter(id__in=ids, is_available=True, is_deleted=False, shop_id=shop.id)}
+    gone_names = {}
+    missing = [i for i in ids if i not in available]
+    if missing:
+        gone_names = dict(Product.all_objects.filter(id__in=missing).values_list('id', 'name'))
+    return available, gone_names
+
+
+def _place_guest_order(*, request, shop, table, service_type, items, subtotal, delivery_fee, final_amount,
+                       name, phone, address, notes, submission_id):
+    """Buyurtmani BITTA tranzaksiyada yaratadi: yo'lda xato bo'lsa hech narsa (yarim buyurtma) qolmaydi."""
+    from tables_restaurant.models import Table
+    with transaction.atomic():
+        if table is not None:
+            # Stolni qulflaymiz: ikki bir vaqtdagi buyurtma limitni birgalikda aylanib o'tmasin
+            table = Table.objects.select_for_update().get(pk=table.pk)
+            open_orders = Order.objects.filter(
+                table=table, created_at__gte=timezone.now() - _OPEN_ORDER_WINDOW,
+            ).exclude(status__in=_FINAL_ORDER_STATUSES).count()
+            if open_orders >= settings.RESTAURANT_MAX_OPEN_ORDERS_PER_TABLE:
+                raise _TableBusy()
+
+        customer = None
+        if phone:
+            telegram_id = telegram_id_from_request(request)
+            customer, _ = Customer.objects.get_or_create(
+                phone=phone, defaults={'name': name, 'address': address, 'telegram_chat_id': telegram_id})
+            if telegram_id and not customer.telegram_chat_id:
+                customer.telegram_chat_id = telegram_id
+                customer.save(update_fields=['telegram_chat_id'])
+
+        from orders.creation import create_order
+        order = create_order(
+            customer=customer, customer_name=name, customer_phone_1=phone, shop=shop, table=table,
+            delivery_address=address, notes=f"TMA buyurtma ({service_type}). {notes}".strip(),
+            total_amount=subtotal, delivery_fee=delivery_fee, final_amount=final_amount,
+            status='pending', payment_status='unpaid', submission_id=submission_id,
+        )
+        if table is not None:
+            table.status = 'ordering'
+            table.save(update_fields=['status'])
+        OrderItem.objects.bulk_create([
+            OrderItem(order=order, product=it['product'], product_name=it['product'].name, price=it['price'],
+                      quantity=it['quantity'], unit=it['product'].unit or 'dona', total=it['subtotal'])
+            for it in items
+        ])
+        OrderStatusHistory.objects.create(order=order, status='pending', note='Telegram Mini App orqali buyurtma berildi')
+    return order
+
+
+class _TableBusy(Exception):
+    pass
+
+
 def tma_checkout(request):
     """TMA Buyurtma berish va To'lov usulini tanlash: Stolda, Yetkazib berish yoki Olib ketish."""
     # React checkout sahifasi fetch() bilan yuboradi (X-Requested-With) — unga HTML emas, JSON qaytariladi
@@ -523,49 +630,56 @@ def tma_checkout(request):
     from django.middleware.csrf import get_token
     get_token(request)
 
-    cart = request.session.get('cart', {})
-    if not cart:
-        if wants_json and request.method == 'POST':
-            return JsonResponse({'ok': False, 'error': "Savat bo'sh yoki buyurtma allaqachon yuborilgan"}, status=400)
-        return redirect('restaurant_home')
-
-    first_shop_id = list(cart.keys())[0]
-    shop = Shop.objects.filter(id=first_shop_id).first() or get_restaurant_shop()
-
-    total_amount = Decimal('0')
-    items_to_create = []
-    sold_out = []          # savatda bor, lekin tugagan/arxivlangan taomlar: mehmonga aytiladi (avval jimgina tushib qolardi)
-
-    for s_id, products in cart.items():
-        for p_id, item in products.items():
-            # Faqat mavjud, arxivlanmagan taom (avval o'chirilgan taom ham buyurtmaga tushardi)
-            p = Product.objects.filter(id=p_id, is_available=True, is_deleted=False).first()
-            if not p:
-                gone = Product.all_objects.filter(id=p_id).values_list('name', flat=True).first()
-                sold_out.append((s_id, p_id, gone or 'Taom'))
-            if p:
-                price = p.effective_price if getattr(p, 'flash_active', False) else p.price
-                qty = int(item.get('quantity', 1))
-                subtotal = price * qty
-                total_amount += subtotal
-                items_to_create.append({
-                    'product': p,
-                    'quantity': qty,
-                    'price': price,
-                    'subtotal': subtotal,
-                })
-
-    from tables_restaurant.models import Table
-    table, table_token = _get_tma_table(request)
-    all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number')
-
-    if request.method == 'POST':
+    is_post = request.method == 'POST'
+    submission_id = None
+    if is_post:
         from backend.ratelimit import rate_limited
         blocked = rate_limited(request, 'tma_checkout', limit=90, seconds=60)
         if blocked is not None:
             return blocked
+        raw_sid = (request.POST.get('submission_id') or '').strip()
+        submission_id = raw_sid if _SUBMISSION_ID_RE.match(raw_sid) else None
+        # Savat tekshiruvidan OLDIN: birinchi so'rov savatni bo'shatgan bo'lsa, qayta urinish xato emas, o'sha buyurtmani oladi
+        replay = _replay_submission(request, submission_id, wants_json)
+        if replay is not None:
+            return replay
 
-    if request.method == 'POST' and sold_out and items_to_create:
+    cart = request.session.get('cart', {})
+    if not cart:
+        if wants_json and is_post:
+            return JsonResponse({'ok': False, 'error': "Savat bo'sh yoki buyurtma allaqachon yuborilgan"}, status=400)
+        return redirect('restaurant_home')
+    if is_post and sum(len(p) for p in cart.values()) > settings.RESTAURANT_MAX_ORDER_LINES:
+        return _checkout_error(request, wants_json,
+                               f"Buyurtmada taomlar juda ko'p (ko'pi bilan {settings.RESTAURANT_MAX_ORDER_LINES} ta)")
+
+    from tables_restaurant.models import Table
+    table, table_token = _get_tma_table(request)
+    # QR stoli — ishonchli manba: restoran shu stolnikidan olinadi (savatdagi kalit emas)
+    first_shop_id = list(cart.keys())[0]
+    shop = (table.shop if table else None) or Shop.objects.filter(id=first_shop_id).first() or get_restaurant_shop()
+    all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number')
+
+    available, gone_names = _guest_products(shop, cart)
+    total_amount = Decimal('0')
+    items_to_create = []
+    sold_out = []          # savatda bor, lekin tugagan/arxivlangan/boshqa restoran taomlari: mehmonga aytiladi
+    for s_id, products in cart.items():
+        for p_id, item in products.items():
+            p = available.get(int(p_id)) if str(p_id).isdigit() else None
+            if p is None:
+                sold_out.append((s_id, p_id, gone_names.get(int(p_id) if str(p_id).isdigit() else -1) or 'Taom'))
+                continue
+            price = p.effective_price if getattr(p, 'flash_active', False) else p.price
+            try:
+                qty = max(1, min(int(item.get('quantity', 1)), 100))
+            except (TypeError, ValueError):
+                qty = 1
+            subtotal = price * qty
+            total_amount += subtotal
+            items_to_create.append({'product': p, 'quantity': qty, 'price': price, 'subtotal': subtotal})
+
+    if is_post and sold_out and items_to_create:
         # Buyurtma yaratilmaydi: mehmon nima o'zgarganini bilib, tasdiqlaydi. Savat yangilanadi (qayta urinish ishlasin).
         for s_id, p_id, _name in sold_out:
             request.session['cart'].get(str(s_id), {}).pop(str(p_id), None)
@@ -573,173 +687,118 @@ def tma_checkout(request):
         names = ', '.join(dict.fromkeys(name for _s, _p, name in sold_out))
         message = f"Quyidagi taomlar hozir tugagan: {names}. Savat yangilandi — buyurtmani qayta tasdiqlang."
         if wants_json:
-            return JsonResponse({'ok': False, 'error': message, 'sold_out': [name for _s, _p, name in sold_out]}, status=409)
+            return JsonResponse({'ok': False, 'error': message, 'code': 'sold_out',
+                                 'sold_out': [name for _s, _p, name in sold_out]}, status=409)
         return redirect('restaurant_cart')
 
-    if request.method == 'POST' and not items_to_create:
+    if is_post and not items_to_create:
         # Savatdagi barcha taomlar menyudan olib tashlangan
         request.session['cart'] = {}
         request.session.modified = True
         if wants_json:
-            return JsonResponse({'ok': False, 'error': "Savatdagi taomlar endi menyuda yo'q"}, status=400)
+            return JsonResponse({'ok': False, 'error': "Savatdagi taomlar endi menyuda yo'q", 'code': 'sold_out'}, status=400)
         return redirect('restaurant_home')
 
-    # Boshlang'ich yetkazib berish haqi
-    delivery_fee = Decimal('0') if table else (shop.delivery_fee if total_amount < shop.free_delivery_from else Decimal('0'))
-    final_amount = total_amount + Decimal(str(delivery_fee))
+    default_service = 'table' if table else 'delivery'
+    delivery_fee, final_amount = quote_totals(shop, default_service, total_amount)
 
-    if request.method == 'POST':
-        service_type = request.POST.get('service_type', 'table' if table else 'delivery')
+    if is_post:
+        service_type = (request.POST.get('service_type') or default_service).strip()
+        if service_type not in SERVICE_TYPES:
+            return _checkout_error(request, wants_json, "Xizmat turi noto'g'ri", code='service_type')
+
+        # Restoran yopiq / ish vaqtidan tashqari / xizmat turi o'chirilgan / minimal summa — buyurtma yaratilmaydi
+        rejection = order_gate(shop, service_type, total_amount)
+        if rejection is not None:
+            status = 400 if rejection.code == 'min_order' else 409
+            return _checkout_error(request, wants_json, rejection.message, status=status, code=rejection.code)
+
+        delivery_fee, final_amount = quote_totals(shop, service_type, total_amount)
         selected_table_id = request.POST.get('table_id')
         table_num_manual = request.POST.get('table_number_manual', '').strip()
-
         name = (request.POST.get('name') or request.POST.get('customer_name') or '').strip()
-        phone = (request.POST.get('phone') or request.POST.get('customer_phone') or '').strip()
+        raw_phone = (request.POST.get('phone') or request.POST.get('customer_phone') or '').strip()
         address = request.POST.get('address', '').strip()
-        payment_method = request.POST.get('payment_method', 'cash')
         notes = request.POST.get('notes', '').strip()
-        telegram_id = telegram_id_from_request(request)
+        if len(name) > 200 or len(address) > 500 or len(notes) > 500:
+            return _checkout_error(request, wants_json, "Ism, manzil yoki izoh juda uzun", code='too_long')
+        phone = _clean_phone(raw_phone) if raw_phone else ''
+        if raw_phone and phone is None:
+            return _checkout_error(request, wants_json, "Telefon raqami noto'g'ri. Masalan: +998 90 123 45 67", code='phone')
+        # Onlayn to'lov o'chiq bo'lsa, qanday tanlangan bo'lmasin, buyurtma naqd/stolda to'lanadi
+        payment_method = request.POST.get('payment_method', 'cash')
+        if not settings.RESTAURANT_ONLINE_PAYMENT_ENABLED:
+            payment_method = 'cash'
 
-        # 1. Stolda xizmat ko'rsatish
         if service_type == 'table':
-            delivery_fee = Decimal('0')
-            final_amount = total_amount
-
-            # Stol faqat shu restoranning mavjud stoli bo'lishi mumkin. Avval mavjud bo'lmagan raqam kiritilsa
-            # zalsiz stol yaratilardi (IntegrityError → 500), stol topilmasa esa tasodifiy "birinchi stol" olinardi.
-            # Raqam/ID bilan tanlash taxmin qilinadi: faqat DEMO_MODE yoki RESTAURANT_ALLOW_TABLE_NUMBER_URL bilan
+            # Stol faqat shu restoranning mavjud stoli bo'lishi mumkin. Raqam/ID bilan tanlash taxmin qilinadi:
+            # faqat DEMO_MODE yoki RESTAURANT_ALLOW_TABLE_NUMBER_URL bilan
             if getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
                 if not table and selected_table_id:
                     table = Table.objects.filter(id=selected_table_id, shop=shop, is_active=True).first()
                 if not table and table_num_manual:
                     table = Table.objects.filter(shop=shop, number=table_num_manual, is_active=True).first()
             if not table:
-                msg = "Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling."
-                if wants_json:
-                    return JsonResponse({'ok': False, 'error': msg}, status=400)
-                return render(request, 'tma/checkout.html', {
-                    'shop': shop, 'items': items_to_create, 'total_amount': total_amount,
-                    'delivery_fee': delivery_fee, 'final_amount': final_amount, 'table': None,
-                    'all_tables': all_tables, 'table_token': table_token, 'error': msg,
-                })
-
-            table_num_str = str(table.number) if table else (table_num_manual or '1')
-            hall_name = table.hall.name if (table and table.hall) else 'Registon Restorani'
-            if not address:
-                address = f"Stol №{table_num_str} ({hall_name})"
-            if not name:
-                name = f"Mehmon (Stol №{table_num_str})"
-            if not phone:
-                phone = f"+99800{int(table_num_str):07d}" if table_num_str.isdigit() else "+998900000000"
-
-        # 2. Olib ketish (Takeout)
-        elif service_type == 'pickup':
-            delivery_fee = Decimal('0')
-            final_amount = total_amount
-            if not address:
-                address = f"Olib ketish ({shop.name})"
-            if not name:
-                name = "Mehmon (Olib ketish)"
-            if not phone:
-                phone = "+998900000000"
-
-        # 3. Yetkazib berish (Dostavka)
+                return _checkout_error(
+                    request, wants_json,
+                    "Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling.",
+                    code='no_table')
+            table_num_str = str(table.number)
+            hall_name = table.hall.name if table.hall else 'Registon Restorani'
+            address = address or f"Stol №{table_num_str} ({hall_name})"
+            name = name or f"Mehmon (Stol №{table_num_str})"
         else:
-            delivery_fee = shop.delivery_fee if total_amount < shop.free_delivery_from else Decimal('0')
-            final_amount = total_amount + Decimal(str(delivery_fee))
-            if not phone:
-                context = {
-                    'shop': shop,
-                    'items': items_to_create,
-                    'total_amount': total_amount,
-                    'delivery_fee': delivery_fee,
-                    'final_amount': final_amount,
-                    'table': table,
-                    'all_tables': all_tables,
-                    'table_token': table_token,
-                    'error': 'Yetkazib berish uchun telefon raqamingizni kiriting!',
-                }
-                return render(request, 'tma/checkout.html', context)
-            if not address:
-                context = {
-                    'shop': shop,
-                    'items': items_to_create,
-                    'total_amount': total_amount,
-                    'delivery_fee': delivery_fee,
-                    'final_amount': final_amount,
-                    'table': table,
-                    'all_tables': all_tables,
-                    'table_token': table_token,
-                    'error': 'Yetkazib berish manzilini kiriting!',
-                }
-                return render(request, 'tma/checkout.html', context)
+            table = None            # olib ketish / yetkazish buyurtmasi stolga bog'lanmaydi
+            if service_type == 'pickup':
+                address = address or f"Olib ketish ({shop.name})"
+                name = name or "Mehmon (Olib ketish)"
+            else:
+                if not phone:
+                    return _checkout_error(request, wants_json, 'Yetkazib berish uchun telefon raqamingizni kiriting!', code='phone')
+                if not address:
+                    return _checkout_error(request, wants_json, 'Yetkazib berish manzilini kiriting!', code='address')
+                name = name or "Mehmon (Yetkazish)"
 
-        # Mijozni topish yoki yaratish
-        customer, _ = Customer.objects.get_or_create(
-            phone=phone,
-            defaults={'name': name, 'address': address, 'telegram_chat_id': telegram_id}
-        )
-        if telegram_id and not customer.telegram_chat_id:
-            customer.telegram_chat_id = telegram_id
-            customer.save(update_fields=['telegram_chat_id'])
-
-        # Buyurtma raqami
-        from orders.creation import create_order
-        order = create_order(
-            customer=customer,
-            customer_name=name,
-            customer_phone_1=phone,
-            shop=shop,
-            table=table,
-            delivery_address=address,
-            notes=f"TMA buyurtma ({service_type}). {notes}".strip(),
-            total_amount=total_amount,
-            delivery_fee=delivery_fee,
-            final_amount=final_amount,
-            status='pending',
-            payment_status='unpaid',
-        )
-
-        if table:
-            table.status = 'ordering'
-            table.save(update_fields=['status'])
-
-        for it in items_to_create:
-            OrderItem.objects.create(
-                order=order,
-                product=it['product'],
-                product_name=it['product'].name,
-                price=it['price'],
-                quantity=it['quantity'],
-                unit=it['product'].unit or 'dona',
-                total=it['subtotal'],
-            )
-
-        OrderStatusHistory.objects.create(
-            order=order, status='pending', note='Telegram Mini App orqali buyurtma berildi'
-        )
+        try:
+            order = _place_guest_order(
+                request=request, shop=shop, table=table, service_type=service_type, items=items_to_create,
+                subtotal=total_amount, delivery_fee=delivery_fee, final_amount=final_amount,
+                name=name, phone=phone, address=address, notes=notes, submission_id=submission_id)
+        except _TableBusy:
+            return _checkout_error(request, wants_json,
+                                   "Bu stolda ochiq buyurtmalar juda ko'p. Iltimos, ofitsiantga murojaat qiling.",
+                                   status=429, code='table_busy')
+        except IntegrityError:
+            # Ikki bir vaqtdagi so'rov bir xil kalit bilan keldi: yutgani yaratdi, biz uni qaytaramiz
+            replay = _replay_submission(request, submission_id, wants_json)
+            if replay is not None:
+                return replay
+            logger.exception("Buyurtma yaratilmadi (IntegrityError)")
+            return _checkout_error(request, wants_json, "Vaqtincha xatolik, buyurtma yuborilmadi. Qayta urinib ko'ring.",
+                                   status=503, code='server_error', retry=True)
+        except Exception:
+            # Tranzaksiya bekor qilindi: yarim buyurtma qolmadi. Kalit o'sha, shuning uchun qayta urinish xavfsiz.
+            logger.exception("Buyurtma yaratilmadi")
+            return _checkout_error(request, wants_json, "Vaqtincha xatolik, buyurtma yuborilmadi. Qayta urinib ko'ring.",
+                                   status=503, code='server_error', retry=True)
 
         # Telegram xabarnoma so'rov ichida yuborilmaydi: Order post_save signali outbox hodisasini yozadi,
         # yuborishni fon ishchisi bajaradi (notifications/signals.py, outbox.py)
-
-        # Savatni tozalash
         request.session['cart'] = {}
         request.session.modified = True
         remember_guest_order(request, order)
 
-        # To'lov yaratish: Naqd / Stolda to'lash to'lov shlyuzisiz to'g'ridan-to'g'ri qabul qilinadi
+        # Onlayn to'lov faqat yoqilgan bo'lsa; shlyuz xatosi buyurtmani yo'qotmaydi
         from django.urls import reverse
         target = reverse('tma_order_detail', kwargs={'pk': order.id})
-        if not (payment_method == 'cash' or service_type == 'table'):
-            return_url = request.build_absolute_uri(target)
-            pay_result = create_order_payment(order, payment_method, return_url)
-            if pay_result.get('success') and pay_result.get('payment_url'):
-                target = pay_result['payment_url']
-
-        if wants_json:
-            return JsonResponse({'ok': True, 'order_id': order.id, 'order_number': order.order_number,
-                                 'redirect': target})
-        return redirect(target)
+        if payment_method != 'cash' and service_type != 'table':
+            try:
+                pay_result = create_order_payment(order, payment_method, request.build_absolute_uri(target))
+                if pay_result.get('success') and pay_result.get('payment_url'):
+                    target = pay_result['payment_url']
+            except Exception:
+                logger.exception("To'lov havolasi yaratilmadi (order=%s)", order.pk)
+        return _checkout_success(request, order, wants_json, target)
 
     react_checkout_items = []
     for it in items_to_create:
@@ -769,6 +828,7 @@ def tma_checkout(request):
         'cartCount': sum(it['quantity'] for it in items_to_create),
         'subtotal': float(total_amount),
         'allTables': react_all_tables,
+        **checkout_gate_payload(shop, default_service, total_amount),
     }
 
     context = {
@@ -974,6 +1034,7 @@ def tma_orders(request):
         } if table else None,
         'orders': react_orders,
         'cartCount': cart_count,
+        'onlinePayment': bool(settings.RESTAURANT_ONLINE_PAYMENT_ENABLED),
     }
 
     context = {
@@ -1025,6 +1086,7 @@ def tma_order_detail(request, pk):
         } if table else None,
         'orders': single_order_data,
         'cartCount': 0,
+        'onlinePayment': bool(settings.RESTAURANT_ONLINE_PAYMENT_ENABLED),
     }
 
     context = {

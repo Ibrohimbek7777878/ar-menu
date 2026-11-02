@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   HeaderNav,
   TableBadge,
@@ -17,7 +17,19 @@ interface InitialCheckoutData {
   cartCount?: number;
   subtotal?: number;
   allTables?: Array<{ id: number; number: string; hall?: string }>;
+  // Restoran hozir buyurtma qabul qiladimi (server hal qiladi: "yopiq" tugmasi, ish vaqti, xizmat turi)
+  orderGate?: { open: boolean; code: string; message: string };
+  minOrder?: number;
+  onlinePayment?: boolean;
 }
+
+// Buyurtma kaliti: qo'sh bosish yoki tarmoq qayta urinishi ikkinchi buyurtma yaratmasligi uchun (server shu kalit bo'yicha takrorni tanib oladi)
+const newSubmissionId = () =>
+  (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+    ? crypto.randomUUID()
+    : `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+
+const SUBMIT_TIMEOUT_MS = 20000;
 
 export const CheckoutPage: React.FC = () => {
   const { navigate, clearCart } = useNavigation();
@@ -30,6 +42,10 @@ export const CheckoutPage: React.FC = () => {
   const subtotal = initialData.subtotal || 0;
   const cartCount = initialData.cartCount || 0;
   const savedNote = sessionStorage.getItem('order_note') || '';
+  const submissionId = useRef(newSubmissionId());
+  const isClosed = initialData.orderGate ? !initialData.orderGate.open : false;
+  const closedMessage = initialData.orderGate?.message || 'Restoran hozir buyurtma qabul qilmayapti.';
+  const onlinePayment = initialData.onlinePayment === true;
 
   // Form State
   const [serviceType, setServiceType] = useState<'table' | 'pickup' | 'delivery'>(
@@ -59,8 +75,19 @@ export const CheckoutPage: React.FC = () => {
     e.preventDefault();
     if (isSubmitting) return;
 
+    if (isClosed) {
+      showToast(closedMessage);
+      return;
+    }
+
     if (serviceType === 'delivery' && !deliveryAddress.trim()) {
       showToast("Iltimos, yetkazib berish manzilini kiriting");
+      return;
+    }
+
+    const minOrder = initialData.minOrder || 0;
+    if (serviceType === 'delivery' && minOrder > 0 && subtotal < minOrder) {
+      showToast(`Yetkazib berish uchun buyurtma kamida ${minOrder.toLocaleString('ru-RU')} so'm bo'lishi kerak`);
       return;
     }
 
@@ -81,22 +108,30 @@ export const CheckoutPage: React.FC = () => {
     formData.append('address', deliveryAddress);
     formData.append('payment_method', paymentMethod);
     formData.append('notes', notes);
+    formData.append('submission_id', submissionId.current);
     // Telegram imzolagan initData (faqat Mini App ichida bo'ladi); server uni tekshiradi, oddiy telegram_id'ga ishonmaydi
     const tgInitData = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp?.initData;
     if (tgInitData) formData.append('init_data', tgInitData);
 
     // Bitta so'rov: buyurtmani server yaratadi (narx va taomlar serverdagi savatdan). Avval buyurtma
     // ikki marta (lokal createOrder + form POST) yaratilardi va xatoda ham "qabul qilindi" deyilardi.
+    // Javob 20 soniyada kelmasa so'rov to'xtatiladi: tugma abadiy "Yuborilmoqda..." da qotib qolmasin
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), SUBMIT_TIMEOUT_MS);
     try {
       const res = await fetch('/checkout/', {
         method: 'POST',
         headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin',
         body: formData,
+        signal: controller.signal,
       });
+      window.clearTimeout(timer);
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok) {
+        // Kalit boshqa sessiyaniki bo'lib qolsa, yangisini olamiz; boshqa xatolarda kalit o'sha qoladi (qayta urinish xavfsiz)
+        if (data?.code === 'submission_conflict') submissionId.current = newSubmissionId();
         showToast(data?.error || "Buyurtmani yuborib bo'lmadi. Qayta urinib ko'ring.");
         setIsSubmitting(false);
         return;
@@ -109,7 +144,9 @@ export const CheckoutPage: React.FC = () => {
         window.location.assign(data.redirect || '/orders/');
       }, 600);
     } catch {
-      showToast("Internet bilan aloqa yo'q. Buyurtma yuborilmadi, qayta urinib ko'ring.");
+      window.clearTimeout(timer);
+      // Buyurtma serverga yetib borgan bo'lishi mumkin. Kalit o'zgarmaydi: qayta yuborsangiz ikkinchi buyurtma yaratilmaydi.
+      showToast("Aloqa uzildi. Qayta yuboring: buyurtma ikki marta yaratilmaydi.");
       setIsSubmitting(false);
     }
   };
@@ -319,6 +356,9 @@ export const CheckoutPage: React.FC = () => {
                 <span className="payment-opt-title">Naqd pul</span>
               </div>
 
+              {/* Onlayn to'lov hozir yo'q (egasi qarori): karta/Click/Payme faqat server yoqsa ko'rinadi */}
+              {onlinePayment && (
+                <>
               <div
                 className={`payment-opt-card ${paymentMethod === 'card' ? 'active' : ''}`}
                 onClick={() => setPaymentMethod('card')}
@@ -347,6 +387,8 @@ export const CheckoutPage: React.FC = () => {
                 <div className="payment-brand-badge payme-badge">Payme</div>
                 <span className="payment-opt-title">Payme</span>
               </div>
+                </>
+              )}
             </div>
           </section>
 
@@ -360,15 +402,16 @@ export const CheckoutPage: React.FC = () => {
           <button
             type="submit"
             className="btn-submit-order"
-            disabled={isSubmitting || items.length === 0}
+            disabled={isSubmitting || items.length === 0 || isClosed}
           >
-            <span>{isSubmitting ? 'Yuborilmoqda...' : 'Buyurtmani tasdiqlash'}</span>
+            <span>{isClosed ? 'Restoran hozir yopiq' : isSubmitting ? 'Yuborilmoqda...' : 'Buyurtmani tasdiqlash'}</span>
             {!isSubmitting && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             )}
           </button>
+          {isClosed && <p role="alert">{closedMessage}</p>}
         </form>
       </main>
 

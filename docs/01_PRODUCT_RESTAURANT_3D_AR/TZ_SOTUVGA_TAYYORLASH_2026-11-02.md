@@ -76,6 +76,8 @@ AGENTS 3-qoida (1000 bir vaqtdagi mehmon) hozirgacha faqat noutbukda o'lchangan 
 
 ## 4. Ish rejasi (ketma-ketlik; har bosqichdan keyin to'liq test + sizga hisobot)
 
+> **Eslatma:** bu bo'lim dastlabki P0–P6 rejasi. Amal qiladigani — 8-bo'limdagi yangilangan tartib (P0–P9). P1 tarkibi (quyida) o'zgarmagan.
+
 Hajm: S ≤ yarim kun, M ≈ 1–2 kun, L ≥ 3 kun (baho, o'lchanmagan). Kalendar va'dasi bermayman.
 
 ### Bosqich P0 — Teshiklarni yopish (xavfsizlik bloklari). Hajm: M
@@ -250,3 +252,33 @@ Egasi "to'g'irlab GitHub'ga yubor" degan edi, lekin yuborishdan oldin repo ko'ri
 - `menu` (`Ibrohimbek7777878/3d-ar-menu-`) **OMMAVIY (public)**. Ushbu tarmoqqa 2026-10-30 da `feature/admin-menu-telegram` allaqachon yuborilgan, uning tarixida auditor topgan eski `SECRET_KEY` (cd038ab..22c88d1) va Firebase kaliti (c243b58, birinchi commit) bor. Ya'ni **o'sha kalitlar allaqachon ommaviy**. Ularni almashtirish/o'chirish kerak (joriy `SECRET_KEY` eski bilan bir xil emasligi auditor tomonidan aytilgan, men qiymatlarni ko'rmadim va tekshirmadim).
 - `origin` (`Ibrohimbek7777878/online_Store`) ommaviy emas (anonim API 404, lekin SSH orqali mavjud): yopiq repo deb hisoblanadi.
 - Bu ish uchun audit hisobotlari (zaiflik tafsilotlari) va ~90 commit tarixi ommaviy repoga YUBORILMAYDI. `origin` ga yuborish tavsiya etiladi; egasi remote'ni tasdiqlashi kutilmoqda.
+
+---
+
+## 11. P1 holati (2026-11-02): bajarildi (KDS qismi tashqari), egasi ko'rib chiqishi kutilmoqda
+
+Egasi "ishni boshla" dedi; G, H, J ga javob bermagani uchun TZ tavsiyasi qo'yildi: G — manzil + haq + minimal summa sozlamasi (kuryer qo'lda, jonli kuzatuvsiz); J — stolga bog'lanish 4 soat, stolda 10 ta ochiq buyurtma (ikkalasi sozlanadi). H (bron) P5 ga tegishli, tegilmadi.
+
+| TZ bandi | Nima qilindi |
+|---|---|
+| P1-2 atomik + idempotent | `/checkout/` bitta `transaction.atomic()`: mijoz, buyurtma, qatorlar, tarix, stol holati. `Order.submission_id` (UNIQUE, migratsiya 0013): sahifa ochilganda beriladigan kalit; qo'sh bosish yoki qayta urinish o'sha buyurtmani qaytaradi, boshqa sessiya kalitini ishlata olmaydi (409). Kutilmagan xato -> 503 `retry`, hech narsa qolmaydi, savat saqlanadi |
+| P1-3 validatsiya | qatorlar <= 50, miqdor <= 100, ism <= 200, manzil/izoh <= 500, telefon formati (+998XXXXXXXXX), xizmat turi ro'yxatda, boshqa restoran taomi buyurtmaga tushmaydi, taomlar bitta so'rovda olinadi (avval qatorma-qator) |
+| P1-4 yopiq restoran | `shops/availability.py`: `is_open`, ish vaqti (kechadan o'tadigan oraliq ham; tushunarsiz matn = ochiq), xizmat turi o'chirilgan, minimal summa (faqat yetkazishda). Ish vaqti tekshiruvi `business_profile.enforce_working_hours` bilan restoran kesimida o'chiriladi. `working_days` hisobga olinmaydi (matn erkin, noaniq) |
+| P1-5 xato kodlari | 503 (400 emas), mehmon ilovasi 20 s timeout, "Aloqa uzildi, qayta yuboring: ikki marta yaratilmaydi" |
+| P1-6 narx | yetkazish haqi faqat yetkazishda (`quote_totals`); aksiya/yaxlitlash BIRLASHTIRILMADI (qarang: hali yopilmagan) |
+| P1-7 holat mashinasi | `transition_order` tranzaksiya + `select_for_update` + qayta o'qish; bekor qilish kassa kirimini storno qiladi va to'langan bo'lsa `refunded`; bekor qilinganga to'lov yozib bo'lmaydi (409) |
+| P1-8 Telegram | kartochkada mehmon izohi (allergiya); telefonsiz buyurtma umumiy `Customer`ga bog'lanmaydi (avval hamma soxta raqamli mehmon bitta mijozga yig'ilardi) |
+| P1-10 mehmon ilovasi | 5 soxta tugma `createServiceCall` ga ulandi ("yuborildi" faqat server qabul qilganda), buyurtmalar sahifasi faol buyurtma bo'lsa har ~12 s da holatni so'raydi (ETag), "Yakunlangan" filtri `delivered` ni ham ko'radi |
+| P1-11 suiiste'mol | stolda ochiq buyurtmalar <= 10 (12 soat oynasi), stolga bog'lanish 4 soatdan keyin tugaydi (QR qayta skanerlansa yangilanadi) |
+| P1-12 to'lov | onlayn to'lov `RESTAURANT_ONLINE_PAYMENT_ENABLED` (standart o'chiq) ortida: server har doim naqd deb yozadi, mehmon ilovasida karta/Click/Payme va "Onlayn to'lov" tugmalari yashirin |
+
+**Tekshiruv:** backend 948 test yashil (912 + 36 yangi), ruff toza, migratsiya tekshiruvi toza, `tsc -b` + build toza, e2e 14/14 (2 yangi: mehmon QR -> savat -> React checkout -> qo'sh bosish = 1 buyurtma; yopiq restoranda tugma o'chiq). Buzib tekshirish: kalit-takrorni, `is_open`ni, atomiklikni va stornoni alohida o'chirganda mos testlar yiqildi.
+
+**Hali yopilmagan (halol ro'yxat):**
+- P1-9 KDS: 200/24 soat chegarasi o'rniga sahifalash, oflayn banner, demo boshlang'ich ma'lumotsiz — BAJARILMADI.
+- P1-6: aksiya/yaxlitlash yagona funksiyaga birlashtirilmadi; `guest_api` va `tma_views` narxni hali alohida hisoblaydi (formula bir xil, lekin ikki joyda).
+- PostgreSQL'da haqiqiy parallel yuk (2 bir vaqtdagi POST = 1 buyurtma) tekshirilmadi: poyga testi SQLite'da `IntegrityError` yo'lini sun'iy chaqiradi, bu yo'l mantiqini isbotlaydi, lekin PostgreSQL'dagi `select_for_update` xatti-harakatini emas.
+- Buyurtmalar sahifasidagi jonli yangilanish va 4 ta xizmat tugmasi brauzerda qo'lda/e2e'da tekshirilmadi (faqat tip va build + `calls/` endpointi testi). Checkout oqimi esa haqiqiy brauzerda tekshirildi.
+- "Hozir yopiq" uchun alohida ekran dizayni yo'q: tugma o'chiq + matn (CSS o'zgartirilmadi, maket kelishilmagan).
+- Restoran sozlamalarida `enforce_working_hours` va `disabled_service_types` uchun admin paneli tugmasi yo'q (hozircha API/DB orqali) — P7.
+- Auditor B ning "14 ta yetishmayotgan testi" bittama-bitta moslanmadi; ularning o'rniga 36 ta yangi test yozildi.

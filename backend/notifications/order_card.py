@@ -5,6 +5,7 @@ Ixcham: raqam va holat, xizmat turi (stol va zal / olib ketish / yetkazib berish
 telefoni faqat stolsiz buyurtmada (kuryer/qo'ng'iroq uchun kerak). Hamma foydalanuvchi matni `esc` orqali (HTML inyeksiya yo'q),
 xabar Telegram chegarasidan (4096 belgi) oshmaydi.
 """
+import re
 from notifications.telegram_client import esc
 
 MAX_ITEM_LINES = 12
@@ -34,6 +35,12 @@ def _items_lines(order):
     return "\n".join(lines)
 
 
+def _guest_note(order):
+    """Mehmon yozgan izoh (allergiya, "achchiq bo'lmasin"): oshxona/ofitsiant kartochkada ko'rishi shart. Texnik "TMA buyurtma (...)." prefiksisiz."""
+    note = re.sub(r'^TMA buyurtma \([a-z_]+\)\.?\s*', '', (getattr(order, 'notes', '') or '').strip())
+    return note[:300]
+
+
 def order_card_text(order, link=''):
     from notifications.admin_bot import STATUS_UZ
     status = STATUS_UZ.get(order.status, ('⚪️ ' + str(order.status), order.status))[0]
@@ -43,6 +50,7 @@ def order_card_text(order, link=''):
         "",
         _items_lines(order) or " (taomlar ko'rsatilmagan)",
         "",
+        *([f"📝 <b>Izoh:</b> {esc(_guest_note(order))}", ""] if _guest_note(order) else []),
         f"💳 {esc(order.get_payment_status_display())}",
     ]
     if not getattr(order, 'table', None) and getattr(order, 'delivery_fee', 0):

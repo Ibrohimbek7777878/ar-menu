@@ -646,7 +646,8 @@ class ProductionVerificationTests(TestCase):
         self.assertEqual(res_cart_page.status_code, 200)
         self.assertContains(res_cart_page, self.product_shop1.name)
 
-        # 5. TMA Checkout
+        # 5. TMA Checkout (yetkazib berishda minimal summa endi majburiy: test mahsuloti 14 000 < 20 000)
+        Shop.objects.filter(pk=self.shop1.pk).update(min_order=0)
         res_checkout = self.client.post('/tma/checkout/', {
             'name': 'Telegram Xaridor',
             'phone': '+998931112244',
