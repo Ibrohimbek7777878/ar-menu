@@ -9,4 +9,6 @@ urlpatterns = [
     path('menu/', guest_api.menu_view, name='guest_api_menu'),
     path('cart/', guest_api.cart_view, name='guest_api_cart'),
     path('checkout/', guest_api.checkout_view, name='guest_api_checkout'),
+    path('orders/', guest_api.orders_view, name='guest_api_orders'),
+    path('orders/<int:pk>/', guest_api.order_detail_view, name='guest_api_order_detail'),
 ]
