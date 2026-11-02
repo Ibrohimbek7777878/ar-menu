@@ -13,6 +13,7 @@ Qoidalar:
 import hashlib
 import json
 import time
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.cache import cache
@@ -138,6 +139,102 @@ def build_session(request):
     }
 
 
+def _cart_lines(request):
+    """Sessiya savatidagi (restoran_id, taom_id, element) qatorlari. Buzuq tuzilma 500 bermaydi, o'tkazib yuboriladi."""
+    cart = request.session.get('cart', {})
+    if not isinstance(cart, dict):
+        return []
+    lines = []
+    for shop_id, products in cart.items():
+        if not isinstance(products, dict):
+            continue
+        for product_id, item in products.items():
+            if isinstance(item, dict):
+                lines.append((shop_id, product_id, item))
+    return lines
+
+
+def build_cart(request):
+    """`/cart/` sahifasi bloki (`tma_cart`). Narx va nom sessiyadagi nusxadan (sahifadagi kabi)."""
+    from notifications.admin_bot import get_restaurant_shop
+    table = _table_of(request)
+    items = []
+    total = Decimal('0')
+    for _shop_id, product_id, item in _cart_lines(request):
+        price = Decimal(str(item.get('price', 0)))
+        qty = int(item.get('quantity', 1))
+        subtotal = price * qty
+        total += subtotal
+        items.append({
+            'product_id': int(product_id),
+            'name': item.get('name'),
+            'price': float(price),
+            'quantity': qty,
+            'subtotal': float(subtotal),
+            'image': item.get('image', '') or '',
+            'unit': item.get('unit', 'dona') or 'dona',
+        })
+    shop = table.shop if (table and table.shop) else get_restaurant_shop()
+    return {
+        'shop': _shop_part(shop),
+        'table': _table_part(table),
+        'items': items,
+        'cartCount': sum(i['quantity'] for i in items),
+        'totalAmount': float(total),
+        'demo': bool(settings.DEMO_MODE),
+    }
+
+
+def build_checkout(request):
+    """`/checkout/` sahifasi bloki (`tma_checkout` GET qismi). FAQAT O'QISH: narx va mavjudlik serverdagi menyudan
+    (sessiyadagi narxga ishonilmaydi); tugagan/arxivlangan taom ro'yxatga tushmaydi. Buyurtma yaratish bu yerda emas."""
+    from notifications.admin_bot import get_restaurant_shop
+    from products.models import Product
+    from shops.models import Shop
+    from tables_restaurant.models import Table
+
+    lines = _cart_lines(request)
+    shop = None
+    if lines:
+        shop = Shop.objects.filter(id=lines[0][0]).first()
+    shop = shop or get_restaurant_shop()
+
+    ids = []
+    for _shop_id, product_id, _item in lines:
+        try:
+            ids.append(int(product_id))
+        except (TypeError, ValueError):
+            continue
+    products = {p.id: p for p in Product.objects.filter(id__in=ids, is_available=True, is_deleted=False)}
+
+    items = []
+    total = Decimal('0')
+    for _shop_id, product_id, item in lines:
+        try:
+            product = products.get(int(product_id))
+        except (TypeError, ValueError):
+            product = None
+        if product is None:
+            continue
+        price = product.effective_price if getattr(product, 'flash_active', False) else product.price
+        qty = int(item.get('quantity', 1))
+        subtotal = price * qty
+        total += subtotal
+        items.append({'name': product.name, 'price': float(price), 'quantity': qty, 'subtotal': float(subtotal)})
+
+    table = _table_of(request)
+    all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number') if shop else []
+    return {
+        'shop': _shop_part(shop),
+        'table': {**_table_part(table), 'id': table.id if table else None},
+        'items': items,
+        'cartCount': sum(i['quantity'] for i in items),
+        'subtotal': float(total),
+        'allTables': [{'id': t.id, 'number': str(t.number), 'hall': t.hall.name if t.hall else 'Asosiy Zal'}
+                      for t in all_tables],
+    }
+
+
 # ── Ko'rinishlar ──
 
 @guest_endpoint
@@ -160,3 +257,15 @@ def menu_view(request, *args, **kwargs):
     def _gate(req):
         return RestaurantMenuView.as_view()(req)
     return _gate(request)
+
+
+@guest_endpoint
+def cart_view(request):
+    """GET /api/guest/v1/cart/"""
+    return guest_json(request, build_cart(request))
+
+
+@guest_endpoint
+def checkout_view(request):
+    """GET /api/guest/v1/checkout/ — faqat o'qish (buyurtma yaratish: POST /checkout/ yoki /api/v1/restaurant/orders/)"""
+    return guest_json(request, build_checkout(request))

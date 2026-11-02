@@ -7,4 +7,6 @@ urlpatterns = [
     path('session/', guest_api.session_view, name='guest_api_session'),
     path('welcome/', guest_api.welcome_view, name='guest_api_welcome'),
     path('menu/', guest_api.menu_view, name='guest_api_menu'),
+    path('cart/', guest_api.cart_view, name='guest_api_cart'),
+    path('checkout/', guest_api.checkout_view, name='guest_api_checkout'),
 ]

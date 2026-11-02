@@ -58,7 +58,7 @@ class GuestApiBase(TestCase):
 class GuestApiCommonTests(GuestApiBase):
 
     def test_only_get_is_allowed(self):
-        for path in ('session/', 'welcome/', 'menu/'):
+        for path in ('session/', 'welcome/', 'menu/', 'cart/', 'checkout/'):
             for method in ('post', 'put', 'patch', 'delete'):
                 res = getattr(Client(), method)(API + path)
                 self.assertEqual(res.status_code, 405, f'{method} {path}')
@@ -88,7 +88,7 @@ class GuestApiCommonTests(GuestApiBase):
     def test_switching_the_setting_off_gives_404_everywhere(self):
         from notifications.models import AppSetting
         AppSetting.objects.create(key='guest_api', value='false', category='guest')
-        for path in ('session/', 'welcome/', 'menu/'):
+        for path in ('session/', 'welcome/', 'menu/', 'cart/', 'checkout/'):
             res = self.get(path)
             self.assertEqual(res.status_code, 404, path)
             self.assertIn('error', res.json())
@@ -177,3 +177,78 @@ class GuestApiMenuTests(GuestApiBase):
         first = self.get('menu/')
         second = self.get('menu/', HTTP_IF_NONE_MATCH=first['ETag'])
         self.assertEqual(second.status_code, 304)
+
+
+class GuestApiCartAndCheckoutTests(GuestApiBase):
+
+    def client_with_cart(self, with_table=False):
+        client, _table = self.table_client() if with_table else (Client(), None)
+        session = client.session
+        session['cart'] = {str(self.shop.id): {
+            str(self.osh.id): {'quantity': 2, 'price': 48000, 'name': 'Osh', 'image': '/media/products/osh.png', 'unit': 'porsiya'},
+            str(self.manti.id): {'quantity': 1, 'price': 32000, 'name': 'Manti'},
+        }}
+        session.save()
+        return client
+
+    # ── savat ──
+    def test_empty_cart(self):
+        data = self.get('cart/').json()
+        self.assertEqual((data['items'], data['cartCount'], data['totalAmount']), ([], 0, 0.0))
+
+    def test_cart_equals_the_cart_page_block(self):
+        for with_table in (False, True):
+            client = self.client_with_cart(with_table)
+            page = blob(client.get('/cart/').content.decode(), 'CART')
+            self.assertEqual(self.get('cart/', client=client).json(), page, f'stol bilan={with_table}')
+        self.assertEqual(page['cartCount'], 3)
+        self.assertEqual(page['totalAmount'], 128000.0)
+
+    def test_malformed_session_cart_does_not_crash(self):
+        client = Client()
+        session = client.session
+        session['cart'] = {'x': 'not-a-dict', str(self.shop.id): {'1': 'bad', '2': 5}}
+        session.save()
+        for path in ('cart/', 'checkout/'):
+            self.assertEqual(self.get(path, client=client).status_code, 200, path)
+
+    # ── rasmiylashtirish ──
+    def test_checkout_with_an_empty_cart_is_ok(self):
+        data = self.get('checkout/').json()
+        self.assertEqual((data['items'], data['subtotal'], data['cartCount']), ([], 0.0, 0))
+        self.assertTrue(data['allTables'])
+
+    def test_checkout_equals_the_checkout_page_block(self):
+        for with_table in (False, True):
+            client = self.client_with_cart(with_table)
+            page = blob(client.get('/checkout/').content.decode(), 'CHECKOUT')
+            self.assertEqual(self.get('checkout/', client=client).json(), page, f'stol bilan={with_table}')
+        self.assertEqual([i['name'] for i in page['items']], ['Osh', 'Manti'])
+
+    def test_checkout_takes_prices_from_the_server_not_from_the_session(self):
+        client = self.client_with_cart()
+        session = client.session
+        session['cart'][str(self.shop.id)][str(self.osh.id)]['price'] = 1  # mijoz narxni "arzonlashtirdi"
+        session.save()
+        data = self.get('checkout/', client=client).json()
+        osh = next(i for i in data['items'] if i['name'] == 'Osh')
+        self.assertEqual(osh['price'], 48000.0)
+        self.assertEqual(data['subtotal'], 128000.0)
+
+    def test_checkout_skips_sold_out_and_archived_dishes(self):
+        client = self.client_with_cart()
+        self.manti.is_available = False
+        self.manti.save()
+        data = self.get('checkout/', client=client).json()
+        self.assertEqual([i['name'] for i in data['items']], ['Osh'])
+        self.assertEqual(data['subtotal'], 96000.0)
+        self.osh.is_deleted = True
+        self.osh.save()
+        self.assertEqual(self.get('checkout/', client=client).json()['items'], [])
+
+    def test_checkout_lists_only_tables_of_the_cart_restaurant(self):
+        call_command('create_restaurant', name='Boshqa', slug='boshqa', owner='boshqa-ega',
+                     password='Boshqa-parol-1', tables=3, stdout=io.StringIO())
+        data = self.get('checkout/', client=self.client_with_cart()).json()
+        other_ids = set(Table.objects.exclude(shop=self.shop).values_list('id', flat=True))
+        self.assertFalse(other_ids & {t['id'] for t in data['allTables']})
