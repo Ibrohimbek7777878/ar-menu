@@ -12,7 +12,7 @@
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-DfqZsfjx.js",
+    "file": "assets/index-yMfk7SSF.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -57,7 +57,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-rs4YrPnz.js",
+    "file": "assets/model-viewer-CP8GhktD.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -66,7 +66,7 @@
     ]
   },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-_O35cHbZ.js",
+    "file": "assets/PhotogrammetryStudioModal-DNv5_cvv.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -76,7 +76,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-CqlqaIje.js",
+    "file": "assets/QRGeneratorModal-Dp1d6UbA.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -85,7 +85,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-mSaIB7f3.js",
+    "file": "assets/ARMenuPage-DsKue-ZB.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -97,7 +97,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-CTdoS4UL.js",
+    "file": "assets/AdminDashboardPage-ph1uJOSs.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -109,7 +109,7 @@
     ]
   },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-otLrJ8od.js",
+    "file": "assets/CartPage-CPcwO8X1.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -118,7 +118,7 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-DjmMoW7y.js",
+    "file": "assets/CheckoutPage-BYESO7AI.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
@@ -127,7 +127,7 @@
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-DLXds8wE.js",
+    "file": "assets/HostessDeskPage-lspVyAlu.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -136,7 +136,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-CKj-PTKj.js",
+    "file": "assets/MenuPage-DjE3K0Md.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -148,7 +148,7 @@
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-DnDTicVS.js",
+    "file": "assets/OrdersPage-BWmp-66u.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
@@ -157,7 +157,7 @@
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-BFBL5yxY.js",
+    "file": "assets/ReservationPage-Ce2xtoze.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -166,7 +166,7 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-ORijW9zC.js",
+    "file": "assets/TableHubPage-B_P0ZGE4.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
@@ -175,7 +175,7 @@
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-Dk9RGI1x.js",
+    "file": "assets/WaiterPanelPage-BFUmdauB.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -184,7 +184,7 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-C6DJbvY0.js",
+    "file": "assets/WelcomePage-B7AKnEyO.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
@@ -193,7 +193,7 @@
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-DmnfSnEk.js",
+    "file": "assets/ComponentShowcase-Ddgy7n52.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
