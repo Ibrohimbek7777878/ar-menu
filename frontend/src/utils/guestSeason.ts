@@ -1,0 +1,22 @@
+// Mehmon sayti fasl rangi (restoran sozlamasi `guest_season`, admin: /ra/settings -> "Fasl rangi").
+// Server tayyor fasl nomini beradi (`auto` ni oyga qarab o'zi hisoblaydi): `window.__GULISTON_SESSION__.season`.
+// Bu yerda faqat tekshirib `<html data-season>` ga qo'yamiz; ranglarning o'zi styles/seasons.css da.
+export type GuestSeason = 'kuz' | 'qish' | 'bahor' | 'yoz'
+
+const SEASONS: readonly string[] = ['kuz', 'qish', 'bahor', 'yoz']
+
+/** Noma'lum qiymat (eskirgan server, buzilgan JSON) -> null: fasl qo'yilmaydi, ranglar o'zgarmaydi. */
+export function parseGuestSeason(value: unknown): GuestSeason | null {
+  return typeof value === 'string' && SEASONS.includes(value) ? (value as GuestSeason) : null
+}
+
+/** `<html data-season>`: faqat yangi dizaynda; aks holda atribut olib tashlanadi (klassik dizayn o'zgarmaydi). */
+export function applyGuestSeason(design: 'new' | 'classic'): GuestSeason | null {
+  const season =
+    design === 'new' && typeof window !== 'undefined' ? parseGuestSeason(window.__GULISTON_SESSION__?.season) : null
+  if (typeof document !== 'undefined') {
+    if (season) document.documentElement.dataset.season = season
+    else delete document.documentElement.dataset.season
+  }
+  return season
+}

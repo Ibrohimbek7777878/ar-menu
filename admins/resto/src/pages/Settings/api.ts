@@ -1,5 +1,8 @@
 import { apiClient } from '@admins/shared';
 
+/** Mehmon sayti fasl rangi: off — hozirgi ranglar, auto — oyga qarab (backend: shops/guest_season.py) */
+export type GuestSeasonSetting = 'off' | 'auto' | 'kuz' | 'qish' | 'bahor' | 'yoz';
+
 export interface ShopSettings {
   id: number;
   name: string;
@@ -19,6 +22,7 @@ export interface ShopSettings {
   kds_critical_minutes: number;
   telegram_chat_id: string;
   auto_accept_orders: boolean;
+  guest_season: GuestSeasonSetting;
   panel_scope: string;
 }
 

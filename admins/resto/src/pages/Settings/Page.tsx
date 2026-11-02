@@ -11,8 +11,10 @@ import {
   AlertCircle,
   Power,
   RotateCcw,
+  Palette,
 } from 'lucide-react';
 import { useSettings } from './useSettings';
+import type { GuestSeasonSetting } from './api';
 import { restoUz } from '../../i18n/uz';
 
 const inputStyle: React.CSSProperties = {
@@ -74,6 +76,7 @@ export function SettingsPage() {
   const [kdsCriticalMinutes, setKdsCriticalMinutes] = useState<number>(30);
   const [telegramChatId, setTelegramChatId] = useState('');
   const [autoAcceptOrders, setAutoAcceptOrders] = useState(false);
+  const [guestSeason, setGuestSeason] = useState<GuestSeasonSetting>('off');
 
   useEffect(() => {
     if (settings) {
@@ -92,6 +95,7 @@ export function SettingsPage() {
       setKdsCriticalMinutes(settings.kds_critical_minutes ?? 30);
       setTelegramChatId(settings.telegram_chat_id || '');
       setAutoAcceptOrders(Boolean(settings.auto_accept_orders));
+      setGuestSeason(settings.guest_season ?? 'off');
     }
   }, [settings]);
 
@@ -113,6 +117,7 @@ export function SettingsPage() {
       kds_critical_minutes: kdsCriticalMinutes,
       telegram_chat_id: telegramChatId.trim(),
       auto_accept_orders: autoAcceptOrders,
+      guest_season: guestSeason,
     });
   };
 
@@ -480,6 +485,44 @@ export function SettingsPage() {
                 />
               </button>
             </div>
+          </div>
+        </Card>
+
+        {/* 3b. MEHMON MENYUSI RANGI (fasl) */}
+        <Card style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              fontWeight: 600,
+              fontSize: '15px',
+            }}
+          >
+            <Palette size={18} color="var(--accent-amber)" />
+            <span>{restoUz.settingsPage.seasonTitle}</span>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="guest-season">
+              {restoUz.settingsPage.seasonLabel}
+            </label>
+            <select
+              id="guest-season"
+              value={guestSeason}
+              onChange={(e) => setGuestSeason(e.target.value as GuestSeasonSetting)}
+              style={inputStyle}
+            >
+              {(Object.keys(restoUz.settingsPage.seasonOptions) as GuestSeasonSetting[]).map((key) => (
+                <option key={key} value={key}>
+                  {restoUz.settingsPage.seasonOptions[key]}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.seasonHint}</p>
           </div>
         </Card>
 

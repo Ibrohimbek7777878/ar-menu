@@ -158,7 +158,30 @@ def spa_session(request):
         from backend.app_settings import get_int
         warn = get_int('kds_warn_minutes', 10, 1, 120)
         payload['config'] = {'kds_warn_minutes': warn, 'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240))}
+    elif payload['design'] == 'new':
+        # Fasl rangi faqat mehmonga va faqat yangi dizaynda; o'chiq bo'lsa kalit umuman yo'q (javob avvalgidek)
+        season = guest_season(request)
+        if season:
+            payload['season'] = season
     return payload
+
+
+def guest_season(request):
+    """Mehmon sahifasi fasl rangi: QR stol restoranining sozlamasi, bo'lmasa asosiy restoran. Kesh orqali, qo'shimcha SQL yo'q."""
+    from backend.runtime_cache import cached_shop_value
+    from shops.guest_season import guest_season_for_shop_id
+    shop_id = None
+    session = getattr(request, 'session', None)
+    raw = session.get('tma_table_token') if session is not None else None
+    if raw:
+        def _table_shop_id():
+            table = guest_session_table(request)
+            return table.shop_id if table is not None else None
+        shop_id = cached_shop_value(('table', str(raw)), 'shop_id', _table_shop_id)
+    if not shop_id:
+        from notifications.admin_bot import default_restaurant_shop_id
+        shop_id = default_restaurant_shop_id()
+    return guest_season_for_shop_id(shop_id)
 
 
 def guest_session_table(request):

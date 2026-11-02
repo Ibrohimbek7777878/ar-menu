@@ -21,6 +21,7 @@ from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
     capability,
 )
+from shops.guest_season import SEASON_CHOICES, normalize_season
 from web.restaurant_auth import staff_shop
 
 
@@ -58,6 +59,7 @@ class SettingsAdminView(RestoAdminAPIView):
             'kds_critical_minutes': int(bp.get('kds_critical_minutes', 30)),
             'telegram_chat_id': str(bp.get('telegram_chat_id', '')),
             'auto_accept_orders': bool(bp.get('auto_accept_orders', False)),
+            'guest_season': normalize_season(bp.get('guest_season')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -132,6 +134,13 @@ class SettingsAdminView(RestoAdminAPIView):
 
         if 'auto_accept_orders' in data:
             bp['auto_accept_orders'] = parse_bool(data['auto_accept_orders'], 'auto_accept_orders')
+            bp_changed = True
+
+        if 'guest_season' in data:
+            season = parse_text(data['guest_season'], 'guest_season', max_length=10).strip().lower()
+            if season not in SEASON_CHOICES:
+                raise InputError("Fasl rangi: off, auto, kuz, qish, bahor yoki yoz bo'lishi kerak", 'guest_season')
+            bp['guest_season'] = season
             bp_changed = True
 
         if bp_changed:

@@ -27,6 +27,8 @@ export interface ServerSession {
   demo: boolean;
   /** Mehmon sahifalari dizayni (admin sozlamasi `guest_design`): 'new' — yangi, 'classic' — eski */
   design?: 'new' | 'classic';
+  /** Fasl rangi (restoran sozlamasi `guest_season`); faqat mehmon va yangi dizaynda, o'chiq bo'lsa kalit yo'q */
+  season?: 'kuz' | 'qish' | 'bahor' | 'yoz';
   /** Admin paneldan sozlanadigan ish qiymatlari (xodim sessiyasida) */
   config?: { kds_warn_minutes?: number; kds_late_minutes?: number };
 }

@@ -58,6 +58,18 @@ export const restoUz = {
     kitchenTimersTitle: 'Oshxona ekrani taymer chegaralari',
     kitchenTimersHint:
       'Oshxona ekranida taomlar tayyorlanish vaqtiga qarab kartochka rangi sariq va qizilga aylanadi:',
+    seasonTitle: 'Mehmon menyusining rangi',
+    seasonLabel: 'Fasl rangi',
+    seasonHint:
+      "Mehmon menyusidagi tugma, narx va urg'u ranglari. «Avtomatik» da rang oyga qarab o'zi almashadi: dekabr–fevral qish, mart–may bahor, iyun–avgust yoz, sentabr–noyabr kuz. Eski (klassik) dizaynga ta'sir qilmaydi.",
+    seasonOptions: {
+      off: "O'chiq (hozirgi apelsin ranglar)",
+      auto: "Avtomatik (oyga qarab)",
+      kuz: 'Kuz: to\'q apelsin',
+      qish: 'Qish: anor-qizil',
+      bahor: 'Bahor: yashil',
+      yoz: 'Yoz: amber',
+    },
   },
 };
 
