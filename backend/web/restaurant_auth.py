@@ -159,17 +159,23 @@ def spa_session(request):
         warn = get_int('kds_warn_minutes', 10, 1, 120)
         payload['config'] = {'kds_warn_minutes': warn, 'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240))}
     elif payload['design'] == 'new':
-        # Fasl rangi faqat mehmonga va faqat yangi dizaynda; o'chiq bo'lsa kalit umuman yo'q (javob avvalgidek)
-        season = guest_season(request)
+        # Fasl rangi va animatsiya darajasi: faqat mehmonga va faqat yangi dizaynda; standart bo'lsa kalit umuman yo'q
+        # (javob avvalgidek). Restoran bir marta aniqlanadi, sozlamalar jarayon keshidan o'qiladi.
+        from shops.guest_motion import guest_motion_for_shop_id
+        from shops.guest_season import guest_season_for_shop_id
+        shop_id = guest_shop_id(request)
+        season = guest_season_for_shop_id(shop_id)
         if season:
             payload['season'] = season
+        motion = guest_motion_for_shop_id(shop_id)
+        if motion:
+            payload['motion'] = motion
     return payload
 
 
-def guest_season(request):
-    """Mehmon sahifasi fasl rangi: QR stol restoranining sozlamasi, bo'lmasa asosiy restoran. Kesh orqali, qo'shimcha SQL yo'q."""
+def guest_shop_id(request):
+    """Mehmon sahifasi qaysi restoranniki: QR stol restorani, bo'lmasa asosiy restoran. Kesh orqali, qo'shimcha SQL yo'q."""
     from backend.runtime_cache import cached_shop_value
-    from shops.guest_season import guest_season_for_shop_id
     shop_id = None
     session = getattr(request, 'session', None)
     raw = session.get('tma_table_token') if session is not None else None
@@ -181,7 +187,13 @@ def guest_season(request):
     if not shop_id:
         from notifications.admin_bot import default_restaurant_shop_id
         shop_id = default_restaurant_shop_id()
-    return guest_season_for_shop_id(shop_id)
+    return shop_id
+
+
+def guest_season(request):
+    """Mehmon sahifasi fasl rangi (''/kuz/qish/bahor/yoz)."""
+    from shops.guest_season import guest_season_for_shop_id
+    return guest_season_for_shop_id(guest_shop_id(request))
 
 
 def guest_session_table(request):

@@ -104,6 +104,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
         {/* Savat */}
         <button
+          data-cart-target=""
           type="button"
           className={`bottom-tab ${activeTab === 'cart' ? 'active' : ''}`}
           onClick={() => handleTab('cart')}

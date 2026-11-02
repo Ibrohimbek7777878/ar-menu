@@ -1,0 +1,57 @@
+/* F5: ishtaha qatlami va animatsiya darajasi (admin sozlamasi `guest_motion`: full | light | off).
+   Faqat yangi dizayn. Yangi effektlar faqat `transform` va `opacity` ni animatsiya qiladi (GPU), box-shadow/filter yo'q.
+   `<html data-motion>`: 'full' (standart), 'light' (cheksiz animatsiyasiz; zaif qurilmada avtomatik), 'off' (animatsiyasiz). */
+
+/* 1. Yaltirash: birinchi 8 taom kartasi rasmida 1 marta yorug' chiziq o'tadi (pishgan, yaltiroq taom taassuroti) */
+[data-design='new'] .menu-dishes-grid .dish-card:nth-child(-n + 8) .dish-card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: dn-gloss 900ms 450ms ease-out 1 both;
+}
+@keyframes dn-gloss {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(120%); }
+}
+
+/* 2. 360° undovi: belgidagi ikonka 2 marta aylanib to'xtaydi (3D ochilishini rag'batlantiradi) */
+[data-design='new'] .badge-3d-clean svg,
+[data-design='new'] .btn-trigger-3d svg {
+  animation: dn-spin-hint 1.1s 1.2s ease-in-out 2 both;
+}
+@keyframes dn-spin-hint {
+  to { transform: rotate(360deg); }
+}
+
+/* Harakat darajasi: LIGHT: cheksiz animatsiyalar o'chadi (bir martalik kirish va "Qo'shish" mukofoti qoladi) */
+[data-motion='light'] .wn-eyebrow::before,
+[data-motion='light'] .wn-ring,
+[data-motion='light'] .wn-main-dish,
+[data-motion='light'] .wn-steam i,
+[data-motion='light'] .wn-mini,
+[data-motion='light'] .wn-tag,
+[data-motion='light'] .wn-badge360 svg,
+[data-motion='light'] .wn-banner-dish {
+  animation: none !important;
+}
+
+/* OFF: hech qanday animatsiya va o'tish yo'q */
+[data-motion='off'] *,
+[data-motion='off'] *::before,
+[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* Tizim sozlamasi `prefers-reduced-motion` hamma yangi effektni ham o'chiradi */
+@media (prefers-reduced-motion: reduce) {
+  [data-design='new'] .menu-dishes-grid .dish-card .dish-card-media::after,
+  [data-design='new'] .badge-3d-clean svg,
+  [data-design='new'] .btn-trigger-3d svg {
+    animation: none;
+  }
+}

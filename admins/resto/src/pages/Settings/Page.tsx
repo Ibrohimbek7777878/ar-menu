@@ -14,7 +14,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { useSettings } from './useSettings';
-import type { GuestSeasonSetting } from './api';
+import type { GuestMotionSetting, GuestSeasonSetting } from './api';
 import { restoUz } from '../../i18n/uz';
 
 const inputStyle: React.CSSProperties = {
@@ -77,6 +77,7 @@ export function SettingsPage() {
   const [telegramChatId, setTelegramChatId] = useState('');
   const [autoAcceptOrders, setAutoAcceptOrders] = useState(false);
   const [guestSeason, setGuestSeason] = useState<GuestSeasonSetting>('off');
+  const [guestMotion, setGuestMotion] = useState<GuestMotionSetting>('full');
 
   useEffect(() => {
     if (settings) {
@@ -96,6 +97,7 @@ export function SettingsPage() {
       setTelegramChatId(settings.telegram_chat_id || '');
       setAutoAcceptOrders(Boolean(settings.auto_accept_orders));
       setGuestSeason(settings.guest_season ?? 'off');
+      setGuestMotion(settings.guest_motion ?? 'full');
     }
   }, [settings]);
 
@@ -118,6 +120,7 @@ export function SettingsPage() {
       telegram_chat_id: telegramChatId.trim(),
       auto_accept_orders: autoAcceptOrders,
       guest_season: guestSeason,
+      guest_motion: guestMotion,
     });
   };
 
@@ -523,6 +526,25 @@ export function SettingsPage() {
               ))}
             </select>
             <p style={helpTextStyle}>{restoUz.settingsPage.seasonHint}</p>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="guest-motion">
+              {restoUz.settingsPage.motionLabel}
+            </label>
+            <select
+              id="guest-motion"
+              value={guestMotion}
+              onChange={(e) => setGuestMotion(e.target.value as GuestMotionSetting)}
+              style={inputStyle}
+            >
+              {(Object.keys(restoUz.settingsPage.motionOptions) as GuestMotionSetting[]).map((key) => (
+                <option key={key} value={key}>
+                  {restoUz.settingsPage.motionOptions[key]}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.motionHint}</p>
           </div>
         </Card>
 

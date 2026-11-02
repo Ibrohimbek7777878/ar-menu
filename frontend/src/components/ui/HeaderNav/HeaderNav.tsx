@@ -107,6 +107,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <button
             type="button"
             className="header-cart-btn"
+            data-cart-target=""
             onClick={onCartClick || (() => navigate('/cart'))}
             aria-label="Savat"
           >

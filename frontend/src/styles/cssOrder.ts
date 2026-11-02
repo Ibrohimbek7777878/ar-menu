@@ -41,3 +41,5 @@ import './welcomeNew.css'
 import './designNew.css'
 // Fasl ranglari (admin sozlamasi `guest_season`): faqat brend o'zgaruvchilarini almashtiradi, eng oxirida
 import './seasons.css'
+// Ishtaha qatlami va animatsiya darajasi (`guest_motion`)
+import './motion.css'

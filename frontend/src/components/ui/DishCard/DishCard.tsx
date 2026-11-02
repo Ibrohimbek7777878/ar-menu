@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Product } from '../../../types/dish';
 import './DishCard.css';
+import { flyToCart } from '../../../utils/cartFly';
 
 export interface DishCardProps {
   product: Product;
@@ -36,6 +37,7 @@ export const DishCard: React.FC<DishCardProps> = ({
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    flyToCart(e.currentTarget as Element);
     if (onAddToCart) {
       onAddToCart(product);
     }

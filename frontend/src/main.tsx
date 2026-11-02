@@ -4,10 +4,13 @@ import './index.css'
 import './styles/cssOrder.ts'
 import App from './App.tsx'
 import { applyGuestDesign } from './utils/guestDesign'
+import { applyGuestMotion } from './utils/guestMotion'
 import { applyGuestSeason } from './utils/guestSeason'
 import { initTelegramWebApp } from './utils/telegramBoot'
 
-applyGuestSeason(applyGuestDesign())
+const guestDesign = applyGuestDesign()
+applyGuestSeason(guestDesign)
+applyGuestMotion(guestDesign)
 initTelegramWebApp()
 
 

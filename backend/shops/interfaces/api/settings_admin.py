@@ -21,6 +21,7 @@ from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
     capability,
 )
+from shops.guest_motion import MOTION_CHOICES, normalize_motion
 from shops.guest_season import SEASON_CHOICES, normalize_season
 from web.restaurant_auth import staff_shop
 
@@ -60,6 +61,7 @@ class SettingsAdminView(RestoAdminAPIView):
             'telegram_chat_id': str(bp.get('telegram_chat_id', '')),
             'auto_accept_orders': bool(bp.get('auto_accept_orders', False)),
             'guest_season': normalize_season(bp.get('guest_season')),
+            'guest_motion': normalize_motion(bp.get('guest_motion')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -141,6 +143,13 @@ class SettingsAdminView(RestoAdminAPIView):
             if season not in SEASON_CHOICES:
                 raise InputError("Fasl rangi: off, auto, kuz, qish, bahor yoki yoz bo'lishi kerak", 'guest_season')
             bp['guest_season'] = season
+            bp_changed = True
+
+        if 'guest_motion' in data:
+            motion = parse_text(data['guest_motion'], 'guest_motion', max_length=10).strip().lower()
+            if motion not in MOTION_CHOICES:
+                raise InputError("Animatsiya darajasi: full, light yoki off bo'lishi kerak", 'guest_motion')
+            bp['guest_motion'] = motion
             bp_changed = True
 
         if bp_changed:

@@ -3,6 +3,9 @@ import { apiClient } from '@admins/shared';
 /** Mehmon sayti fasl rangi: off — hozirgi ranglar, auto — oyga qarab (backend: shops/guest_season.py) */
 export type GuestSeasonSetting = 'off' | 'auto' | 'kuz' | 'qish' | 'bahor' | 'yoz';
 
+/** Mehmon sayti animatsiya darajasi: full — hammasi, light — faqat bir martalik, off — animatsiyasiz (backend: shops/guest_motion.py) */
+export type GuestMotionSetting = 'full' | 'light' | 'off';
+
 export interface ShopSettings {
   id: number;
   name: string;
@@ -23,6 +26,7 @@ export interface ShopSettings {
   telegram_chat_id: string;
   auto_accept_orders: boolean;
   guest_season: GuestSeasonSetting;
+  guest_motion: GuestMotionSetting;
   panel_scope: string;
 }
 
