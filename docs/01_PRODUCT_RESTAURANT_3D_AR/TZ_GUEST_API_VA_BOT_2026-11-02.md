@@ -48,7 +48,7 @@
 | A3 | `GET orders/` | mening buyurtmalarim (`__GULISTON_ORDERS_DATA__`) | faqat sessiyadagi `my_order_ids` |
 | A3 | `GET orders/<id>/` | bitta buyurtma, holat, tarkib | `can_view_order`; **ETag/304** (jonli holat uchun polling); begona buyurtma 404 |
 
-Umumiy: `Cache-Control: private`, javobda boshqa mehmon ma'lumoti va xom ichki maydon yo'q (telefon, ichki izoh, xodim). Tezlik cheklovi mavjud `backend/ratelimit.rate_limited` orqali, restoran Wi‑Fi'si bitta IP'dan chiqishini hisobga olib keng (sessiya bo'yicha). Xato javobi: `{"error": "..."}`, texnik matnsiz.
+Umumiy: `Cache-Control: private`, javobda boshqa mehmon ma'lumoti va xom ichki maydon yo'q (telefon, ichki izoh, xodim). Tezlik cheklovi: IP bo'yicha **belgilangan oyna hisoblagichi** (keshga bitta son, O(1)); mavjud `rate_limited` har chaqiruvda barcha vaqt belgilarini yozgani uchun ko'p so'rovli GET API'ga og'ir. Restoran Wi‑Fi'si bitta IP'dan chiqishi uchun keng (`GUEST_API_RATE_LIMIT`, standart 1200/min, 0 = o'chiq); kesh ishlamasa API to'xtamaydi. `?table=` o'qish API'sida stolni bog'lamaydi va sessiyani o'zgartirmaydi. Xato javobi: `{"error": "..."}`, texnik matnsiz.
 
 ## 5. B: bot (faqat matn, tugma, format; xavfsizlik va mavjud testlar saqlanadi)
 - **B1 mehmon boti.** `/start` matni PDF'dagidek (restoran nomi dinamik). Stol QR/deep link orqali aniq bo'lsa **"🛎 Ofitsiantni chaqirish"** tugmasi (`callback_data` ichida stol tokeni, stolga 60 soniyada 1 marta, javobda tasdiq). Qolgan tugmalar mavjud bo'lib qoladi.

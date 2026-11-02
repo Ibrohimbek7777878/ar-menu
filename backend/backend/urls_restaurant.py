@@ -123,6 +123,7 @@ urlpatterns = [
     # Restoran REST API (React xodim panellari va mehmon menyusi). Avval faqat backend/urls.py da edi —
     # 8001-portda barcha /api/v1/restaurant/... so'rovlari 404 qaytarardi (TZ: R-GST-03)
     path('api/v1/restaurant/', include('orders.interfaces.api.urls')),
+    path('api/guest/v1/', include('web.guest_api_urls')),  # mehmon sahifalari uchun O'QISH API (TZ_GUEST_API_VA_BOT)
     path('api/restaurant/admin/v1/menu/', include('orders.interfaces.api.menu_admin_urls')),
     path('api/restaurant/admin/v1/tables/', include('tables_restaurant.interfaces.api.tables_admin_urls')),
     path('api/restaurant/admin/v1/orders/', include('orders.interfaces.api.orders_admin_urls')),
