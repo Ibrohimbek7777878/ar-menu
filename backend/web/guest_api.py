@@ -21,6 +21,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
 from backend.ratelimit import client_ip
+from web.guest_dish import name_translations, product_name_translations
 
 _RATE_WINDOW = 60
 
@@ -160,7 +161,9 @@ def build_cart(request):
     table = _table_of(request)
     items = []
     total = Decimal('0')
-    for _shop_id, product_id, item in _cart_lines(request):
+    lines = list(_cart_lines(request))
+    cart_names = product_name_translations([product_id for _s, product_id, _i in lines])
+    for _shop_id, product_id, item in lines:
         price = Decimal(str(item.get('price', 0)))
         qty = int(item.get('quantity', 1))
         subtotal = price * qty
@@ -168,6 +171,7 @@ def build_cart(request):
         items.append({
             'product_id': int(product_id),
             'name': item.get('name'),
+            **cart_names.get(int(product_id), {}),
             'price': float(price),
             'quantity': qty,
             'subtotal': float(subtotal),
@@ -222,7 +226,8 @@ def build_checkout(request):
         qty = int(item.get('quantity', 1))
         subtotal = price * qty
         total += subtotal
-        items.append({'name': product.name, 'price': float(price), 'quantity': qty, 'subtotal': float(subtotal)})
+        items.append({'name': product.name, **name_translations(product), 'price': float(price), 'quantity': qty,
+                      'subtotal': float(subtotal)})
 
     all_tables = Table.objects.filter(shop=shop, is_active=True).select_related('hall').order_by('number') if shop else []
     return {
@@ -237,7 +242,7 @@ def build_checkout(request):
     }
 
 
-def _order_dict(order):
+def _order_dict(order, names=None):
     """Bitta buyurtma (sahifadagi `orders[]` elementi bilan bir xil). Telefon va ichki izoh yo'q."""
     return {
         'id': order.id,
@@ -247,7 +252,8 @@ def _order_dict(order):
         'status_display': order.get_status_display() or order.status,
         'total_amount': float(order.final_amount),
         'table_number': str(order.table.number) if order.table else '',
-        'items': [{'name': it.product_name, 'quantity': it.quantity, 'price': float(it.price), 'total': float(it.total)}
+        'items': [{'name': it.product_name, **(names or {}).get(it.product_id, {}), 'quantity': it.quantity,
+                   'price': float(it.price), 'total': float(it.total)}
                   for it in order.items.all()],
     }
 
@@ -276,7 +282,9 @@ def build_orders(request):
         cart_count = sum(int(item.get('quantity', 1)) for items in cart.values() for item in items.values())
     except Exception:
         cart_count = 0
-    return _orders_context(request, [_order_dict(o) for o in rows], cart_count)
+    rows = list(rows)
+    names = product_name_translations({it.product_id for o in rows for it in o.items.all() if it.product_id})
+    return _orders_context(request, [_order_dict(o, names) for o in rows], cart_count)
 
 
 def build_order_detail(request, pk):
@@ -286,7 +294,8 @@ def build_order_detail(request, pk):
     order = Order.objects.filter(pk=pk).select_related('table').prefetch_related('items').first()
     if order is None or not can_view_order(request, order):
         return None
-    return _orders_context(request, [_order_dict(order)], 0)
+    names = product_name_translations({it.product_id for it in order.items.all() if it.product_id})
+    return _orders_context(request, [_order_dict(order, names)], 0)
 
 
 # ── Ko'rinishlar ──

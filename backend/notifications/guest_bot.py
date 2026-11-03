@@ -10,6 +10,7 @@ import uuid
 
 from django.core.cache import cache
 
+from notifications.bot_i18n import bt
 from notifications.telegram_bot import answer_callback_query
 
 logger = logging.getLogger(__name__)
@@ -18,41 +19,41 @@ CALL_PREFIX = 'wc:'
 COOLDOWN_SECONDS = 60
 
 
-def waiter_button(table_token):
-    return {"text": "🛎 Ofitsiantni chaqirish", "callback_data": f"{CALL_PREFIX}{table_token}"}
+def waiter_button(table_token, lang='uz'):
+    return {"text": bt(lang, 'btn_waiter'), "callback_data": f"{CALL_PREFIX}{table_token}"}
 
 
-def handle_guest_callback(data, cq_id=None):
+def handle_guest_callback(data, cq_id=None, lang='uz'):
     """`wc:` callback'ini bajaradi. Bu prefiks emas bo'lsa False (boshqa ishlovchi davom etadi), aks holda True."""
     if not str(data or '').startswith(CALL_PREFIX):
         return False
     try:
         token = uuid.UUID(data[len(CALL_PREFIX):].strip())
     except (ValueError, AttributeError):
-        answer_callback_query(cq_id, "Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang.", show_alert=True)
+        answer_callback_query(cq_id, bt(lang, 'table_unknown'), show_alert=True)
         return True
 
     from tables_restaurant.models import ServiceCall, Table
     table = Table.objects.filter(qr_token=token, is_active=True).first()
     if table is None:
-        answer_callback_query(cq_id, "Stol topilmadi. Stol ustidagi QR kodni qayta skanerlang.", show_alert=True)
+        answer_callback_query(cq_id, bt(lang, 'table_not_found'), show_alert=True)
         return True
 
     cooldown_key = f"tg_waiter_call:{table.id}"
     if not cache.add(cooldown_key, 1, COOLDOWN_SECONDS):
-        answer_callback_query(cq_id, "⏳ Ofitsiant allaqachon chaqirilgan. Iltimos, biroz kuting.")
+        answer_callback_query(cq_id, bt(lang, 'waiter_already'))
         return True
     try:
         # Sayt API'sidagi kabi: shu stol uchun javobsiz chaqiruv bo'lsa yangisi yaratilmaydi
         if ServiceCall.objects.filter(table=table, call_type='waiter', status='pending').exists():
-            answer_callback_query(cq_id, "⏳ Ofitsiant allaqachon chaqirilgan. Iltimos, biroz kuting.")
+            answer_callback_query(cq_id, bt(lang, 'waiter_already'))
             return True
         ServiceCall.objects.create(shop_id=table.shop_id, table=table, call_type='waiter',
                                    title='Ofitsiant chaqiruvi (Telegram)', status='pending')
     except Exception:
         logger.exception("Botdan ofitsiant chaqirishda xato (stol %s)", table.id)
         cache.delete(cooldown_key)
-        answer_callback_query(cq_id, "Xatolik yuz berdi. Iltimos, ofitsiantni qo'l ko'tarib chaqiring.", show_alert=True)
+        answer_callback_query(cq_id, bt(lang, 'waiter_error'), show_alert=True)
         return True
-    answer_callback_query(cq_id, f"🛎 Ofitsiant chaqirildi. Stol №{table.number}")
+    answer_callback_query(cq_id, bt(lang, 'waiter_called', num=table.number))
     return True

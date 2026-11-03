@@ -25,7 +25,10 @@ from orders.models import Order, OrderItem, OrderStatusHistory
 from accounts.models import Customer
 from payments.payment_service import create_order_payment
 from notifications.admin_bot import get_restaurant_shop
-from web.guest_dish import guest_dish_extras, new_dish_cutoff
+from web.guest_dish import (
+    guest_category_translations, guest_dish_extras, guest_dish_translations, name_translations, new_dish_cutoff,
+    product_name_translations,
+)
 from web.http_cache import conditional_guest_page
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
@@ -189,6 +192,7 @@ def _build_tma_menu(active_shop):
             'icon': getattr(c, 'icon', '') or '🍽️',
             'count': cat_counts.get(c.id, 0),
             'kind': c.effective_kind,
+            **guest_category_translations(c),
         })
 
     return {
@@ -206,11 +210,13 @@ def _build_tma_menu_plain(active_shop):
     S1-1 (TZ T1): keshga faqat oddiy matn yoziladi. Model nusxalari (455 ta `__setstate__`, so'rov vaqtining ~yarmi)
     va har so'rovdagi `json.dumps` (50 KB) o'rniga tayyor JSON satrlar. Matn `json.dumps` bilan aynan bir xil
     belgilar ketma-ketligini beradi, shuning uchun HTML eski yo'ldagi bilan baytma-bayt bir xil.
+    `ensure_ascii=False`: ruscha tarjima `\\u041f\\u043b...` (har harf 6 bayt) bo'lib emas, UTF-8 (2 bayt) bo'lib ketadi;
+    `<`, `>`, `&` va U+2028/2029 ni shablondagi `script_json` xavfsiz almashtiradi.
     """
     data = _build_tma_menu(active_shop)
     return {
-        'categories_json': json.dumps(data['react_categories']),
-        'products_json': json.dumps(data['react_products']),
+        'categories_json': json.dumps(data['react_categories'], ensure_ascii=False),
+        'products_json': json.dumps(data['react_products'], ensure_ascii=False),
     }
 
 
@@ -252,8 +258,9 @@ def tma_home(request):
         # Kalit tartibi va ajratgichlar eski `json.dumps(react_initial_data)` bilan bir xil
         react_initial_data_json = (
             '{"shop": %s, "table": %s, "categories": %s, "products": %s, "cart": %s, "cartCount": %s}' % (
-                json.dumps(shop_part), json.dumps(table_part), cached_menu['categories_json'],
-                cached_menu['products_json'], json.dumps(flat_cart), json.dumps(cart_count),
+                json.dumps(shop_part, ensure_ascii=False), json.dumps(table_part, ensure_ascii=False),
+                cached_menu['categories_json'], cached_menu['products_json'],
+                json.dumps(flat_cart), json.dumps(cart_count),
             )
         )
         context = {
@@ -285,7 +292,7 @@ def tma_home(request):
         'table_token': table_token,
         'shop': active_shop,
         'telegram_bot_username': getattr(settings, 'TELEGRAM_BOT_USERNAME', 'marketing_orign_bot'),
-        'react_initial_data_json': json.dumps(react_initial_data),
+        'react_initial_data_json': json.dumps(react_initial_data, ensure_ascii=False),
     }
     return render(request, 'tma/home.html', context)
 
@@ -381,10 +388,12 @@ def tma_cart(request):
 
     # React CartPage uchun JSON
     react_cart_items = []
+    cart_names = product_name_translations([item['product_id'] for item in items_list])
     for item in items_list:
         react_cart_items.append({
             'product_id': int(item['product_id']),
             'name': item['name'],
+            **cart_names.get(int(item['product_id']), {}),
             'price': float(item['price']),
             'quantity': int(item['quantity']),
             'subtotal': float(item['subtotal']),
@@ -816,6 +825,7 @@ def tma_checkout(request):
     for it in items_to_create:
         react_checkout_items.append({
             'name': it['product'].name,
+            **name_translations(it['product']),
             'price': float(it['price']),
             'quantity': int(it['quantity']),
             'subtotal': float(it['subtotal']),
@@ -1011,11 +1021,13 @@ def tma_orders(request):
     )
 
     react_orders = []
+    item_names = product_name_translations({it.product_id for o in orders_qs for it in o.items.all() if it.product_id})
     for o in orders_qs:
         items = []
         for it in o.items.all():
             items.append({
                 'name': it.product_name,
+                **item_names.get(it.product_id, {}),
                 'quantity': it.quantity,
                 'price': float(it.price),
                 'total': float(it.total),
@@ -1071,9 +1083,11 @@ def tma_order_detail(request, pk):
     shop = get_restaurant_shop()
 
     items = []
+    item_names = product_name_translations({it.product_id for it in order.items.all() if it.product_id})
     for it in order.items.all():
         items.append({
             'name': it.product_name,
+            **item_names.get(it.product_id, {}),
             'quantity': it.quantity,
             'price': float(it.price),
             'total': float(it.total),
@@ -1283,6 +1297,7 @@ def _featured_dishes(shop, limit=8):
         'image': p.image.url,
         'has_3d': bool(p.has_3d and p.ar_model),
         'is_popular': bool(p.is_featured),
+        **{k: (v[:110] if k.startswith('desc_') else v) for k, v in guest_dish_translations(p).items()},
     } for p in rows]
 
 
@@ -1575,6 +1590,7 @@ def tma_ar_menu(request):
                 'icon': getattr(c, 'icon', '') or '✨',
                 'count': per_category.get(c.id, 0),
                 'kind': c.effective_kind,
+                **guest_category_translations(c),
             })
 
         return {
@@ -1625,7 +1641,7 @@ def tma_ar_menu(request):
         'table': table,
         'table_token': table_token,
         'tma_active_tab': 'ar',
-        'react_ar_data_json': json.dumps(react_ar_data),
+        'react_ar_data_json': json.dumps(react_ar_data, ensure_ascii=False),
     }
     return render(request, 'tma/ar_menu.html', context)
 

@@ -184,20 +184,10 @@ def spa_session(request):
         warn = get_int('kds_warn_minutes', 10, 1, 120)
         payload['config'] = {'kds_warn_minutes': warn, 'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240))}
     elif payload['design'] == 'new':
-        # Fasl rangi va animatsiya darajasi: faqat mehmonga va faqat yangi dizaynda; standart bo'lsa kalit umuman yo'q
-        # (javob avvalgidek). Restoran bir marta aniqlanadi, sozlamalar jarayon keshidan o'qiladi.
-        from shops.guest_dish_sheet import guest_dish_sheet_for_shop_id
-        from shops.guest_motion import guest_motion_for_shop_id
-        from shops.guest_season import guest_season_for_shop_id
-        shop_id = guest_shop_id(request)
-        season = guest_season_for_shop_id(shop_id)
-        if season:
-            payload['season'] = season
-        motion = guest_motion_for_shop_id(shop_id)
-        if motion:
-            payload['motion'] = motion
-        if guest_dish_sheet_for_shop_id(shop_id) == 'off':
-            payload['dishSheet'] = 'off'
+        # Fasl rangi, animatsiya, taom oynasi, kun/tun va tillar: faqat mehmonga va faqat yangi dizaynda; standart bo'lsa kalit
+        # umuman yo'q (javob avvalgidek). Restoran bir marta aniqlanadi, sozlamalar BITTA so'rov bilan o'qiladi va jarayon keshida turadi.
+        from shops.guest_profile import guest_session_extras
+        payload.update(guest_session_extras(guest_shop_id(request)))
     return payload
 
 

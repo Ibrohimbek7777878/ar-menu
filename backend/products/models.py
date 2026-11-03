@@ -23,6 +23,11 @@ class Product(SoftDeleteBehaviour, models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, allow_unicode=True)
     description = models.TextField(blank=True)
+    # Mehmon menyusi tarjimalari (ixtiyoriy). Bo'sh bo'lsa mehmon o'zbekcha `name` / `description` ni ko'radi.
+    name_ru = models.CharField('Nomi (ruscha)', max_length=200, blank=True)
+    name_en = models.CharField('Nomi (inglizcha)', max_length=200, blank=True)
+    description_ru = models.TextField('Tavsifi (ruscha)', blank=True)
+    description_en = models.TextField('Tavsifi (inglizcha)', blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=0)
     old_price = models.DecimalField(
         max_digits=12, decimal_places=0, null=True, blank=True

@@ -100,6 +100,7 @@ class NewDishCutoffTests(SimpleTestCase):
             calories = None
             created_at = timezone.now()
             category = None
+            name_ru = name_en = description_ru = description_en = ''  # tarjimasiz taom: javobda tarjima kalitlari yo'q
 
         extras = guest_dish_extras(P())
         self.assertEqual(extras, {'images': [], 'weight': '', 'prep_time': '', 'calories': '', 'is_new': False, 'category_kind': 'other'})

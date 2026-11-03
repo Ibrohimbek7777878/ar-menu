@@ -22,7 +22,9 @@ from orders.interfaces.api.permissions import (
     capability,
 )
 from shops.guest_dish_sheet import DISH_SHEET_CHOICES, normalize_dish_sheet
+from shops.guest_languages import is_valid_languages, normalize_languages
 from shops.guest_motion import MOTION_CHOICES, normalize_motion
+from shops.guest_theme import THEME_CHOICES, normalize_theme
 from shops.guest_season import SEASON_CHOICES, normalize_season
 from web.restaurant_auth import staff_shop
 
@@ -64,6 +66,8 @@ class SettingsAdminView(RestoAdminAPIView):
             'guest_season': normalize_season(bp.get('guest_season')),
             'guest_motion': normalize_motion(bp.get('guest_motion')),
             'guest_dish_sheet': normalize_dish_sheet(bp.get('guest_dish_sheet')),
+            'guest_theme': normalize_theme(bp.get('guest_theme')),
+            'guest_languages': normalize_languages(bp.get('guest_languages')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -159,6 +163,20 @@ class SettingsAdminView(RestoAdminAPIView):
             if sheet not in DISH_SHEET_CHOICES:
                 raise InputError("Taom oynasi: on yoki off bo'lishi kerak", 'guest_dish_sheet')
             bp['guest_dish_sheet'] = sheet
+            bp_changed = True
+
+        if 'guest_theme' in data:
+            theme = parse_text(data['guest_theme'], 'guest_theme', max_length=10).strip().lower()
+            if theme not in THEME_CHOICES:
+                raise InputError("Kun va tun: day, night, auto yoki off bo'lishi kerak", 'guest_theme')
+            bp['guest_theme'] = theme
+            bp_changed = True
+
+        if 'guest_languages' in data:
+            languages = parse_text(data['guest_languages'], 'guest_languages', max_length=20).strip().lower()
+            if not is_valid_languages(languages):
+                raise InputError("Tillar: uz, ru, en kodlaridan kamida bittasi, vergul bilan (masalan uz,ru)", 'guest_languages')
+            bp['guest_languages'] = languages
             bp_changed = True
 
         if bp_changed:

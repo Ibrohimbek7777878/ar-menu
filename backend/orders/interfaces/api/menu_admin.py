@@ -41,6 +41,13 @@ NAME_MAX = 200                     # Product.name / Category.name uzunligi
 DESCRIPTION_MAX = 5000
 LIST_ITEM_MAX = 50                 # allergen / diet tag uzunligi
 LIST_ITEMS_MAX = 30
+# Mehmon menyusi tarjimalari (ixtiyoriy; bo'sh bo'lsa mehmon o'zbekcha nom/tavsifni ko'radi): (maydon, xabardagi nomi, chegara)
+TRANSLATION_FIELDS = (
+    ('name_ru', 'Ruscha nom', NAME_MAX),
+    ('name_en', 'Inglizcha nom', NAME_MAX),
+    ('description_ru', 'Ruscha tavsif', DESCRIPTION_MAX),
+    ('description_en', 'Inglizcha tavsif', DESCRIPTION_MAX),
+)
 
 
 def _error(message, status_code=status.HTTP_400_BAD_REQUEST, **extra):
@@ -111,6 +118,22 @@ def _clean_ar_model(value):
         raise InputError(str(exc), 'ar_model') from None
 
 
+def _clean_translations(data):
+    """Tarjima maydonlari: faqat so'rovda kelganlari (PATCH'da kelmaganiga tegilmaydi); bo'sh qiymat tarjimani tozalaydi.
+
+    Xato xabarida xom maydon nomi («name_ru») o'rniga odam tilidagi nom chiqadi; `field` esa o'zgarmaydi."""
+    cleaned = {}
+    for field, label, limit in TRANSLATION_FIELDS:
+        if field not in data:
+            continue
+        try:
+            cleaned[field] = parse_text(data.get(field), field, max_length=limit)
+        except InputError as exc:
+            message = str(exc.detail.get('error', '')).replace(f'«{field}»', label)
+            raise InputError(message, field) from None
+    return cleaned
+
+
 def _serialize_product(p):
     """Mahsulotni to'liq va xavfsiz JSON ko'rinishida formatlash."""
     return {
@@ -118,6 +141,10 @@ def _serialize_product(p):
         'name': p.name,
         'slug': p.slug,
         'description': p.description or '',
+        'name_ru': p.name_ru or '',
+        'name_en': p.name_en or '',
+        'description_ru': p.description_ru or '',
+        'description_en': p.description_en or '',
         'price': int(p.price) if p.price is not None else 0,
         'old_price': int(p.old_price) if p.old_price else None,
         'category': {
@@ -168,7 +195,9 @@ class MenuProductListCreateView(RestoAdminAPIView):
 
         q = query_text(request, 'q')
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
+            qs = qs.filter(
+                Q(name__icontains=q) | Q(description__icontains=q) | Q(name_ru__icontains=q) | Q(name_en__icontains=q)
+            )
 
         category_id = query_id(request, 'category')
         if category_id:
@@ -222,6 +251,9 @@ class MenuProductListCreateView(RestoAdminAPIView):
         if 'cook_min' in data and data.get('cook_min') not in (None, ''):
             cook_min = _clean_minutes(data.get('cook_min'), 'cook_min', allow_none=False)
         description = parse_text(data.get('description'), 'description', max_length=DESCRIPTION_MAX)
+        translations = _clean_translations(data)
+        filled_translations = sorted(field for field, value in translations.items() if value)
+        translation_audit = {'translations': filled_translations} if filled_translations else {}
         is_available = parse_bool(data.get('is_available'), 'is_available') if 'is_available' in data else True
         allergens = _clean_tags(data.get('allergens'), 'allergens') if 'allergens' in data else []
         diet_tags = _clean_tags(data.get('diet_tags'), 'diet_tags') if 'diet_tags' in data else []
@@ -244,6 +276,7 @@ class MenuProductListCreateView(RestoAdminAPIView):
                 old_price=old_price,
                 category=category,
                 description=description,
+                **translations,
                 prep_minutes=prep_minutes,
                 cook_min=cook_min,
                 is_available=is_available,
@@ -263,7 +296,7 @@ class MenuProductListCreateView(RestoAdminAPIView):
                 actor=request.user,
                 target_type='product',
                 target_id=product.id,
-                new_value={'action': 'create', 'name': product.name, 'price': price},
+                new_value={'action': 'create', 'name': product.name, 'price': price, **translation_audit},
             )
 
         return Response(_serialize_product(product), status=status.HTTP_201_CREATED)
@@ -307,6 +340,12 @@ class MenuProductDetailView(RestoAdminAPIView):
 
         if 'description' in data:
             product.description = parse_text(data.get('description'), 'description', max_length=DESCRIPTION_MAX)
+
+        changed_translations = []
+        for field, value in _clean_translations(data).items():
+            if getattr(product, field) != value:
+                setattr(product, field, value)
+                changed_translations.append(field)
 
         if 'category_id' in data or 'category' in data:
             product.category = _clean_category(shop, data.get('category_id') if 'category_id' in data else data.get('category'))
@@ -355,7 +394,10 @@ class MenuProductDetailView(RestoAdminAPIView):
                 target_type='product',
                 target_id=product.id,
                 old_value=old_val,
-                new_value={'action': 'update', 'name': product.name, 'price': int(product.price), 'is_available': product.is_available},
+                new_value={
+                    'action': 'update', 'name': product.name, 'price': int(product.price), 'is_available': product.is_available,
+                    **({'translations_changed': changed_translations} if changed_translations else {}),
+                },
             )
 
         return Response(_serialize_product(product), status=status.HTTP_200_OK)
@@ -397,6 +439,10 @@ class MenuProductDuplicateView(RestoAdminAPIView):
                 price=product.price,
                 old_price=product.old_price,
                 description=product.description,
+                name_ru=product.name_ru,
+                name_en=product.name_en,
+                description_ru=product.description_ru,
+                description_en=product.description_en,
                 category=product.category,
                 image=product.image,
                 image2=product.image2,

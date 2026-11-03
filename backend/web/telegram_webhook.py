@@ -13,6 +13,7 @@ from django.conf import settings
 
 from notifications import telegram_client
 from notifications.telegram_client import esc
+from notifications.bot_i18n import bot_lang, bt
 from notifications.models import TelegramSubscriber, BotMessage
 from notifications.webhook_security import is_valid_telegram_webhook
 from web.restaurant_auth import restaurant_staff_required
@@ -60,7 +61,13 @@ def get_base_url_from_request(request):
     return f"{scheme}://{domain}".rstrip('/')
 
 
-def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None, table_token=None):
+def guest_lang(language_code, shop=None):
+    """Mehmon bot xabarlari tili: Telegram tili restoran yoqqan tillar ichida bo'lsa shu, aks holda restoranning birinchi tili."""
+    profile = getattr(shop, 'business_profile', None) if shop is not None else None
+    return bot_lang(language_code, profile.get('guest_languages') if isinstance(profile, dict) else None)
+
+
+def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None, table_token=None, lang='uz'):
     """
     Restoran bot klaviaturasi (TZ: Stage 5, T1, T3).
     bot_scope = 'restaurant' bo'lsa faqat 'Menyuni ochish' va 'Mening stolim & Bron'.
@@ -86,15 +93,15 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None,
     waiter_row = []
     if table_token:
         from notifications.guest_bot import waiter_button
-        waiter_row = [[waiter_button(table_token)]]
+        waiter_row = [[waiter_button(table_token, lang)]]
 
     if bot_scope == 'restaurant':
         keyboard = [
             [
-                {"text": "🍽 Menyuni ochish", **tma_btn}
+                {"text": bt(lang, 'btn_menu'), **tma_btn}
             ],
             [
-                {"text": "📍 Mening stolim & Bron", **orders_btn}
+                {"text": bt(lang, 'btn_table'), **orders_btn}
             ]
         ]
     else:
@@ -175,7 +182,7 @@ def _handle_telegram_update(request):
             response="Callback qabul qilindi",
         )
         from notifications.guest_bot import handle_guest_callback
-        if handle_guest_callback(cq_data, cq_id=cq_id):
+        if handle_guest_callback(cq_data, cq_id=cq_id, lang=guest_lang(from_user.get('language_code'))):
             return JsonResponse({'ok': True})
         if handle_table_callback(cq_data, chat_id, message_id=message_id, cq_id=cq_id, username=username):
             return JsonResponse({'ok': True})
@@ -266,24 +273,19 @@ def _handle_telegram_update(request):
                 elif arg.isdigit():
                     table_num = arg
 
-    markup = get_menu_markup(base_url, is_user_admin=is_user_admin, shop=shop, table_number=table_num, table_token=table_token)
+    lang = guest_lang(from_user.get('language_code'), shop)
+    markup = get_menu_markup(base_url, is_user_admin=is_user_admin, shop=shop, table_number=table_num, table_token=table_token, lang=lang)
 
 
     if text_clean.startswith('/start') or text_clean in ('/menu', 'menu', 'menyu', 'Menyu', 'boshlash', 'start'):
-        shop_title = esc(table_shop_name or (shop.name if shop else '') or 'Restoran')
+        shop_title = esc(table_shop_name or (shop.name if shop else '') or bt(lang, 'shop_default'))
         if table_num:
             hall_part = f" · {esc(table_hall)}" if table_hall else ""
-            welcome = (
-                f"✅ <b>Siz {esc(table_num)}-stolga ulandingiz</b>{hall_part}\n\n"
-                f"Endi menyudan taom tanlashingiz mumkin."
-                + (" Ofitsiant kerak bo'lsa, pastdagi tugmani bosing." if table_token else "")
-            )
+            welcome = bt(lang, 'welcome_table', num=esc(table_num), hall=hall_part)
+            if table_token:
+                welcome += bt(lang, 'welcome_table_waiter')
         else:
-            welcome = (
-                f"👋 <b>Xush kelibsiz, {esc(first_name or 'aziz mehmon')}!</b>\n\n"
-                f"<b>{shop_title}</b> menyusini shu yerning o'zida oching, taomni 360° da ko'ring "
-                f"va bir daqiqada buyurtma bering."
-            )
+            welcome = bt(lang, 'welcome', name=esc(first_name or bt(lang, 'guest_name')), shop=shop_title)
         send_message(chat_id, welcome, reply_markup=markup)
         bot_msg.response = welcome
         bot_msg.save(update_fields=['response'])
