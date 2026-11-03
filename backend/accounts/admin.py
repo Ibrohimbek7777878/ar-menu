@@ -24,7 +24,7 @@ class AdminUserAdmin(UserAdmin):
     list_filter = ['role', 'is_approved', 'is_active']
     fieldsets = UserAdmin.fieldsets + (
         ('Qo\'shimcha', {
-            'fields': ('role', 'phone', 'shop', 'is_approved', 'avatar'),
+            'fields': ('role', 'phone', 'shop', 'is_approved', 'avatar', 'extra_capabilities', 'revoked_capabilities'),
         }),
     )
 

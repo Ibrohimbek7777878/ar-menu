@@ -22,6 +22,10 @@ class AdminUser(AbstractUser):
     )
     is_approved = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    # Restoran xodimining shaxsiy ruxsatlari (katalog: web/capabilities.py). Samarali ruxsat = (rol standarti ∪ extra) − revoked.
+    # `shop_owner` va `super_admin` uchun ishlatilmaydi (ular doim hamma narsaga ega). Ro'yxat — katalog kalitlari.
+    extra_capabilities = models.JSONField(default=list, blank=True, verbose_name="Qo'shimcha ruxsatlar")
+    revoked_capabilities = models.JSONField(default=list, blank=True, verbose_name='Olib tashlangan ruxsatlar')
 
     class Meta:
         db_table = 'admin_users'

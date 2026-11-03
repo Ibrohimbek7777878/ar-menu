@@ -13,6 +13,7 @@ from urllib.parse import quote
 from django.urls import NoReverseMatch, reverse
 
 from accounts.policy import is_account_approved
+from web.capabilities import MANAGEMENT_CAPABILITIES, effective_capabilities_for
 from web.restaurant_auth import RESTAURANT_STAFF_ROLES, role_panel
 
 BLOCKED_REASON = "Xodim bloklangan. Kirish uchun avval uni blokdan chiqaring."
@@ -50,7 +51,7 @@ def unavailable_reason(user):
 
 def staff_access(user, origin):
     """
-    {panel_path, panel_label, login_url, login_unavailable_reason}.
+    {panel_path, panel_label, login_url, login_unavailable_reason, ra_path}.
 
     `login_url` = `<origin>/admin/login/?next=<panel_path>`; `next` har doim bizning ichki yo'limiz (qiymat
     foydalanuvchidan olinmaydi), shuning uchun ochiq yo'naltirish (open redirect) imkoni yo'q — login sahifasi baribir
@@ -61,9 +62,13 @@ def staff_access(user, origin):
     login_url = None
     if panel and reason is None:
         login_url = f"{origin.rstrip('/')}{_login_path()}?next={quote(panel['path'], safe='/')}"
+    # Ish sahifasidan tashqari /ra/ (boshqaruv paneli) ham ochiq bo'lsa (egasi shaxsiy boshqaruv ruxsati bergan), shu yo'l
+    allowed = effective_capabilities_for(user.role, user.extra_capabilities, user.revoked_capabilities)
+    has_management = any(cap in MANAGEMENT_CAPABILITIES for cap in allowed)
     return {
         'panel_path': panel['path'] if panel else None,
         'panel_label': panel['label'] if panel else None,
         'login_url': login_url,
         'login_unavailable_reason': reason,
+        'ra_path': '/ra/' if panel and panel['path'] != '/ra/' and has_management else None,
     }

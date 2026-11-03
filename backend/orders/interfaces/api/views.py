@@ -20,7 +20,7 @@ from tables_restaurant.reservations import ReservationError, serialize as reserv
 from finance.models import FinanceTransaction, DebtRecord
 from orders.application.services import RestaurantOrderService
 from orders.interfaces.api.permissions import (
-    RESTAURANT_API_AUTHENTICATION, IsRestaurantManager, IsRestaurantStaff, capability,
+    RESTAURANT_API_AUTHENTICATION, IsRestaurantStaff, capability,
 )
 from web.restaurant_auth import (
     guest_session_table, has_capability, is_restaurant_staff, remember_guest_order, staff_shop,
@@ -350,7 +350,7 @@ class RestaurantFinanceSyncView(RestaurantAPIView):
     GET /api/v1/restaurant/finance/ - Kassa va Qarzlar (faqat restoran rahbariyati).
     Yozish: finance/api_views.py (finance/tx/, finance/tx/<id>/cancel/, finance/debts/, finance/debts/<id>/pay/).
     """
-    permission_classes = [IsRestaurantManager]
+    permission_classes = [capability('finance')]
 
     def get(self, request):
         from finance.api_views import serialize_debt, serialize_tx
@@ -531,7 +531,7 @@ class RestaurantProduct3DScanView(RestaurantAPIView):
     POST /api/v1/restaurant/products/<int:product_id>/3d-scan/ (mavjud taomga biriktirish)
     Faqat restoran rahbariyati (avval mehmon ham real mahsulot yarata olardi).
     """
-    permission_classes = [IsRestaurantManager]
+    permission_classes = [capability('menu_admin')]
 
     def post(self, request, product_id=None):
         try:

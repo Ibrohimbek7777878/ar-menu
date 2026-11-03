@@ -190,8 +190,19 @@ class StaffFuzzTests(RestoAdminFuzzBase):
         self.fuzz_body('PATCH', f'staff/{self.waiter.id}/', {'full_name': 'Vali Aliyev', 'phone': '+998909998877',
                                                             'role': 'kitchen'})
         self.fuzz_body('POST', f'staff/{self.waiter.id}/reset-password/', {'password': 'Yangi-Parol-12345'})
-        for tail, methods in (('', ('PATCH',)), ('block/', ('POST',)), ('unblock/', ('POST',)),
-                              ('reset-password/', ('POST',))):
+        # Login, ism, e-pochta va shaxsiy ruxsatlar (Xodimlar sahifasi); parolni egasi o'rnatadi
+        self.fuzz_body('PATCH', f'staff/{self.waiter.id}/', {'username': 'fuzz-waiter-2', 'first_name': 'Vali', 'last_name': 'Aliyev',
+                                                            'email': 'vali@example.com', 'extra_capabilities': ['menu_admin'],
+                                                            'revoked_capabilities': ['pos']})
+        self.fuzz_body('POST', 'staff/', {'username': 'fuzz-yangi-2', 'role': 'kitchen', 'email': 'x@example.com',
+                                          'extra_capabilities': ['pos'], 'revoked_capabilities': ['stoplist']})
+        self.fuzz_body('POST', f'staff/{self.waiter.id}/set-password/', {'password': 'Yana-Kuchli-Parol-9921'})
+        self.fuzz_body('POST', f'staff/{self.owner.id}/set-password/', {'password': 'Yana-Kuchli-Parol-9921', 'current_password': 'Parol-Fuzz-123'})
+        self.fuzz_query('staff/', ['x'])
+        self.check(self.send('GET', 'staff/permissions/catalog/'), 'GET staff/permissions/catalog/')
+        self.check(self.send('GET', f'staff/{self.waiter.id}/'), 'GET staff/<pk>/')
+        for tail, methods in (('', ('GET', 'PATCH')), ('block/', ('POST',)), ('unblock/', ('POST',)),
+                              ('reset-password/', ('POST',)), ('set-password/', ('POST',))):
             for method in methods:
                 self.fuzz_ids(method, 'staff/{pk}/' + tail)
         self.assertClean()

@@ -10,25 +10,53 @@ from django.contrib.auth.views import redirect_to_login
 from django.http import JsonResponse
 from django.urls import reverse
 
-RESTAURANT_MANAGER_ROLES = ('super_admin', 'shop_owner', 'shop_manager')
-RESTAURANT_STAFF_ROLES = RESTAURANT_MANAGER_ROLES + ('waiter', 'kitchen', 'hostess')
+from web.capabilities import (  # noqa: F401  (qayta eksport: boshqa modullar shu yerdan import qiladi)
+    CAPABILITIES,
+    CAPABILITY_KEYS,
+    MANAGEMENT_CAPABILITIES,
+    RESTAURANT_MANAGER_ROLES,
+    RESTAURANT_STAFF_ROLES,
+    effective_capabilities_for,
+)
 
-# Ruxsat matritsasi (TZ: R2-1): imkoniyat → qaysi rollar. Har rol faqat o'z ishiga kerakli narsani ko'radi:
-#   oshpaz — faqat KDS; hostess — faqat bron va stollar holati; ofitsiant — POS va chaqiruvlar; moliya — rahbariyat.
-CAPABILITIES = {
-    'kds_screen': RESTAURANT_MANAGER_ROLES + ('kitchen',),               # KDS (oshxona) sahifasi
-    'kds': RESTAURANT_MANAGER_ROLES + ('kitchen', 'waiter'),             # KDS API: buyurtmalar, holat, taom belgilari
-    'pos': RESTAURANT_MANAGER_ROLES + ('waiter',),                       # stol hisobi, taom qo'shish, chaqiruvlar
-    'tables_read': RESTAURANT_MANAGER_ROLES + ('waiter', 'hostess'),     # stollar holatini ko'rish
-    'reservations': RESTAURANT_MANAGER_ROLES + ('hostess',),             # bronlar va hostess ekrani
-    'stoplist': RESTAURANT_MANAGER_ROLES + ('kitchen', 'waiter'),        # taom tugadi/qaytdi (stop-list)
-    'menu_admin': RESTAURANT_MANAGER_ROLES,                              # menyu, 3D modellar
-    'finance': RESTAURANT_MANAGER_ROLES,
-}
+# Ruxsat matritsasi va katalog — `web/capabilities.py` (yagona manba). Xodimning SAMARALI ruxsati: rol standarti,
+# unga qo'shimcha berilganlar, olib tashlanganlar (`AdminUser.extra_capabilities` / `revoked_capabilities`).
+
+
+def capabilities_of(user):
+    """Xodimning samarali ruxsatlari (katalog tartibida). Faol, tasdiqlangan, restoranga bog'langan xodim bo'lmasa — bo'sh."""
+    if not is_restaurant_staff(user):
+        return []
+    return effective_capabilities_for(
+        user_role(user), getattr(user, 'extra_capabilities', None), getattr(user, 'revoked_capabilities', None))
 
 
 def has_capability(user, capability):
-    return is_restaurant_staff(user, CAPABILITIES[capability])
+    if capability not in CAPABILITIES:
+        raise KeyError(capability)                 # imlo xatosi jimgina "ruxsat yo'q" bo'lib qolmasin
+    return capability in capabilities_of(user)
+
+
+def has_role_capability(user, capability):
+    """
+    Faqat ROL + shaxsiy ruxsatlar bo'yicha hisob (xodim faolligi, tasdig'i va restoran bog'lanishini tekshirmaydi).
+    Eski Django `/seller/` sahifalari o'z kirish qoidasiga ega (`seller_required`); u shu yerdan faqat "bu foydalanuvchiga
+    bo'lim ruxsat etilganmi" savoliga javob oladi.
+    """
+    if capability not in CAPABILITIES:
+        raise KeyError(capability)
+    return capability in effective_capabilities_for(
+        user_role(user), getattr(user, 'extra_capabilities', None), getattr(user, 'revoked_capabilities', None))
+
+
+def has_any_capability(user, capabilities):
+    allowed = set(capabilities_of(user))
+    return any(cap in allowed for cap in capabilities)
+
+
+def has_management_access(user):
+    """Kamida bitta BOSHQARUV ruxsati bor xodim: /ra/ (boshqaruv paneli) unga ochiq."""
+    return has_any_capability(user, MANAGEMENT_CAPABILITIES)
 
 
 def role_home_url(user):
@@ -139,10 +167,15 @@ def _deny(request, api, status, message):
 def restaurant_staff_required(view_func=None, *, roles=RESTAURANT_STAFF_ROLES, api=False, capability=None):
     """
     HTML sahifa: login qilmagan → restoran login sahifasiga (?next= bilan); xodim lekin ruxsati yo'q → o'z bosh sahifasiga.
-    JSON API (api=True): 401 / 403. `capability` berilsa, rollar CAPABILITIES matritsasidan olinadi.
+    JSON API (api=True): 401 / 403. `capability` berilsa (kalit yoki kalitlar kortejidan KAMIDA BITTASI), tekshiruv
+    xodimning SAMARALI ruxsatlari bo'yicha (rol standarti + qo'shimcha − olib tashlangan); aks holda `roles` bo'yicha.
     """
+    wanted = None
     if capability:
-        roles = CAPABILITIES[capability]
+        wanted = (capability,) if isinstance(capability, str) else tuple(capability)
+        unknown = [cap for cap in wanted if cap not in CAPABILITIES]
+        if unknown:
+            raise KeyError(unknown[0])             # dekorator o'rnatilganda (import paytida) xato bilinsin
 
     def decorator(func):
         @wraps(func)
@@ -150,7 +183,8 @@ def restaurant_staff_required(view_func=None, *, roles=RESTAURANT_STAFF_ROLES, a
             user = request.user
             if not getattr(user, 'is_authenticated', False):
                 return _deny(request, api, 401, "Avval tizimga kiring.")
-            if not is_restaurant_staff(user, roles):
+            allowed = has_any_capability(user, wanted) if wanted else is_restaurant_staff(user, roles)
+            if not allowed:
                 if api:
                     return _deny(request, api, 403, "Bu amal uchun ruxsatingiz yo'q.")
                 from django.http import HttpResponseForbidden
@@ -166,6 +200,8 @@ def restaurant_staff_required(view_func=None, *, roles=RESTAURANT_STAFF_ROLES, a
                 from django.middleware.csrf import get_token
                 get_token(request)
             return func(request, *args, **kwargs)
+        # Marshrut-ruxsat testlari (web/test_route_permissions.py) shu belgidan sahifa qaysi ruxsatni talab qilishini bilib oladi
+        _wrapped.staff_capabilities = wanted
         return _wrapped
 
     if view_func is not None:

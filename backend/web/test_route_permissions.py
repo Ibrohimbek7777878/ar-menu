@@ -10,11 +10,15 @@ Eslatma: ro'yxatni "to'ldirib qo'yish" uchun emas, yangi yo'lni tekshirish uchun
 """
 import re
 import uuid
+from types import SimpleNamespace
 
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import URLResolver, get_resolver
 
+from accounts.models import AdminUser
 from backend.legacy_gate import LEGACY_RULES, READONLY, legacy_rule_for
+from shops.models import Shop
+from web.capabilities import CAPABILITY_KEYS, role_default_capabilities
 
 PRODUCT = {'HTTP_X_PRODUCT': 'restaurant'}
 SAMPLE = {'int': '1', 'uuid': str(uuid.uuid4()), 'slug': 'x', 'str': 'x', 'path': 'x'}
@@ -150,3 +154,129 @@ class RoutePermissionGuardTests(TestCase):
         self.assertEqual(
             served, PUBLIC_GET_PAGES,
             "Anonim foydalanuvchiga ochiq sahifalar ro'yxati o'zgardi (yangi ochiq sahifa yoki yopilib qolgan sahifa).")
+
+
+# ─── Ruxsatlar katalogi bo'yicha marshrut matritsasi ────────────────────────────────────────────────────────────────────
+def _required_keys(cls, method):
+    """DRF sinfi shu HTTP usul uchun talab qiladigan katalog kalitlari (`Can_<kalit>`); ochiq yoki kalitga bog'lanmagan — bo'sh."""
+    view = cls()
+    view.request = SimpleNamespace(method=method.upper())      # get_permissions() faqat request.method ga qaraydi
+    try:
+        names = [type(perm).__name__ for perm in view.get_permissions()]
+    except Exception:                                            # noqa: BLE001  (g'alati get_permissions: matritsadan chiqarib tashlanadi)
+        return []
+    if 'AllowAny' in names:
+        return []
+    return [name[len('Can_'):] for name in names if name.startswith('Can_')]
+
+
+ADMIN = 'api/restaurant/admin/v1/'
+# Bo'limlar → qaysi ruxsat boshqarishi (QO'LDA yozilgan, koddan olinmagan: kalit noto'g'ri bo'limga o'tib ketsa test yiqiladi).
+# Tartib muhim: birinchi mos qoida ishlaydi. (regex, {usullar yoki None=hammasi}, {kalitlar})
+SECTION_GUARDS = (
+    (rf'^{ADMIN}staff/', None, {'staff_admin'}),
+    (rf'^{ADMIN}settings/', None, {'settings_admin'}),
+    (rf'^{ADMIN}finance/', None, {'finance'}),
+    (rf'^{ADMIN}menu/products/<int:pk>/availability/$', None, {'stoplist'}),
+    (rf'^{ADMIN}menu/', None, {'menu_admin'}),
+    (rf'^{ADMIN}tables/<int:pk>/(status/|qr\.svg)$', None, {'tables_read'}),
+    (rf'^{ADMIN}tables/(halls/)?$', {'get'}, {'tables_read'}),
+    (rf'^{ADMIN}tables/', None, {'tables_admin'}),
+    (rf'^{ADMIN}orders/<int:pk>/payment/$', None, {'pos'}),
+    (rf'^{ADMIN}orders/', None, {'kds'}),
+    (r'^api/v1/restaurant/finance/', None, {'finance'}),
+    (r'^api/v1/restaurant/products/(<int:product_id>/)?3d-scan/$', None, {'menu_admin'}),
+)
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant')
+class CapabilityRouteMatrixTests(TestCase):
+    """
+    Katalogdagi HAR BIR ruxsat uchun, shu ruxsatni talab qiladigan HAR BIR marshrutda (DRF va HTML/JSON sahifa):
+      • umuman ruxsati yo'q xodim (ofitsiant, hamma standarti olib tashlangan) — taqiqlanadi;
+      • faqat shu bitta ruxsati bor xodim (standart yoki qo'shimcha) — taqiqlanmaydi.
+    Yangi ruxsat yoki yangi marshrut qo'shilsa, bu matritsa avtomatik qamraydi (qo'lda ro'yxat yo'q).
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.owner = AdminUser.objects.create_user(username='mx_owner', password='Parol-Mx-1234', role='shop_owner', is_approved=True)
+        cls.shop = Shop.objects.create(name='Matritsa', slug='matritsa', owner=cls.owner, address='Guliston', latitude=40.49,
+                                       longitude=68.78, is_open=True, phone='+998901112233')
+        defaults = role_default_capabilities('waiter')
+        cls.bare = cls._waiter('mx_bare', [], defaults)
+        cls.only = {key: cls._waiter(f'mx_only_{key}', [] if key in defaults else [key], [d for d in defaults if d != key])
+                    for key in CAPABILITY_KEYS}
+
+    @classmethod
+    def _waiter(cls, name, extra, revoked):
+        return AdminUser.objects.create_user(username=name, password='Parol-Mx-1234', role='waiter', shop=cls.shop, is_approved=True,
+                                             extra_capabilities=extra, revoked_capabilities=revoked)
+
+    @staticmethod
+    def _client(user):
+        client = Client()
+        client.force_login(user)
+        return client
+
+    def _guarded(self):
+        """[(url, usul, {kalit}, api)] — katalog ruxsatini talab qiladigan marshrutlar."""
+        found = []
+        for route, callback in _walk(get_resolver('backend.urls_restaurant').url_patterns):
+            url = _url_for(route)
+            if not url or url.startswith(IGNORED_PREFIXES) or '<drf_format_suffix' in route or legacy_rule_for(url):
+                continue
+            cls = getattr(callback, 'cls', None)
+            if cls is not None and hasattr(cls, 'permission_classes'):
+                for method in ('get', 'post', 'put', 'patch', 'delete'):
+                    keys = _required_keys(cls, method)
+                    if keys:
+                        found.append((url, method, set(keys), route))
+            elif getattr(callback, 'staff_capabilities', None):
+                for method in ('get', 'post'):
+                    found.append((url, method, set(callback.staff_capabilities), route))
+        return found
+
+    def test_every_catalog_key_guards_at_least_one_route(self):
+        guarded = set()
+        for _url, _method, keys, _route in self._guarded():
+            guarded |= keys
+        # `orders_manage` marshrutni yopmaydi: u buyurtma-holat o'tkazishlarini ichkarida cheklaydi (web/test_capabilities.py tekshiradi)
+        self.assertEqual(set(CAPABILITY_KEYS) - guarded - {'orders_manage'}, set(),
+                         "Ruxsat katalogda bor, lekin hech qaysi marshrut uni talab qilmaydi")
+        self.assertEqual(guarded - set(CAPABILITY_KEYS), set())
+
+    def test_user_without_a_capability_is_denied_and_user_with_only_it_is_allowed(self):
+        bare_client = self._client(self.bare)
+        only_clients = {key: self._client(user) for key, user in self.only.items()}
+        checked, bad = 0, []
+        for url, method, keys, _route in self._guarded():
+            kwargs = {} if method == 'get' else {'data': '{}', 'content_type': 'application/json'}
+            res = getattr(bare_client, method)(url, **kwargs)
+            checked += 1
+            if res.status_code not in (302, 401, 403):
+                bad.append(('BARE', method.upper(), url, sorted(keys), res.status_code))
+            if res.status_code == 302 and '/admin/login/' not in res['Location'] and res['Location'] == url:
+                bad.append(('BARE-LOOP', method.upper(), url, res['Location']))
+            for key in keys:
+                res = getattr(only_clients[key], method)(url, **kwargs)
+                checked += 1
+                denied = res.status_code in (401, 403) or (res.status_code == 302 and res['Location'].startswith(
+                    ('/waiter/panel/', '/admin/login/')) and res['Location'] != url)
+                if denied:
+                    bad.append((f'ONLY-{key}', method.upper(), url, res.status_code, res.get('Location')))
+        self.assertEqual(bad, [], 'Ruxsat matritsasi buzildi')
+        self.assertGreater(checked, 150)
+
+    def test_sections_are_guarded_by_their_own_capability(self):
+        import re as _re
+        matched, wrong = 0, []
+        for _url, method, keys, route in self._guarded():
+            for pattern, methods, expected in SECTION_GUARDS:
+                if _re.search(pattern, route) and (methods is None or method in methods):
+                    matched += 1
+                    if keys != expected:
+                        wrong.append((method.upper(), route, sorted(keys), sorted(expected)))
+                    break
+        self.assertEqual(wrong, [], "Bo'lim noto'g'ri ruxsat bilan himoyalangan")
+        self.assertGreater(matched, 60)

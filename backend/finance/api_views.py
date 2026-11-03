@@ -19,7 +19,7 @@ from rest_framework.response import Response
 
 from finance.models import DebtRecord, FinanceCategory, FinanceTransaction
 from orders.audit import log_audit
-from orders.interfaces.api.permissions import IsRestaurantManager
+from orders.interfaces.api.permissions import capability
 from orders.interfaces.api.views import RestaurantAPIView
 from orders.timeutils import local_today
 
@@ -106,7 +106,7 @@ def _fail(message, http_status=status.HTTP_400_BAD_REQUEST):
 # ─── Endpoint'lar ────────────────────────────────────────────────────────────────────────────────
 class FinanceTxCreateView(RestaurantAPIView):
     """POST /finance/tx/ — qo'lda kirim yoki chiqim."""
-    permission_classes = [IsRestaurantManager]
+    permission_classes = [capability('finance')]
 
     def post(self, request):
         data = request.data
@@ -139,7 +139,7 @@ class FinanceTxCancelView(RestaurantAPIView):
     POST /finance/tx/<id>/cancel/ — storno: yozuv o'chirilmaydi, sabab bilan bekor qilinadi.
     Qarz to'lovi bekor qilinsa, qarz qoldig'i tiklanadi. Chek (buyurtma kirimi) bu yerdan bekor qilinmaydi.
     """
-    permission_classes = [IsRestaurantManager]
+    permission_classes = [capability('finance')]
 
     @transaction.atomic
     def post(self, request, tx_id):
@@ -174,7 +174,7 @@ class FinanceTxCancelView(RestaurantAPIView):
 
 class FinanceDebtCreateView(RestaurantAPIView):
     """POST /finance/debts/ — nasiya (mijoz bizga) yoki qarz (biz ta'minotchiga)."""
-    permission_classes = [IsRestaurantManager]
+    permission_classes = [capability('finance')]
 
     def post(self, request):
         data = request.data
@@ -206,7 +206,7 @@ class FinanceDebtCreateView(RestaurantAPIView):
 
 class FinanceDebtPayView(RestaurantAPIView):
     """POST /finance/debts/<id>/pay/ — qarzni (qisman) to'lash; summa qoldiqdan oshmaydi."""
-    permission_classes = [IsRestaurantManager]
+    permission_classes = [capability('finance')]
 
     @transaction.atomic
     def post(self, request, debt_id):

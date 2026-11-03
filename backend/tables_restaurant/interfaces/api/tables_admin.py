@@ -1,6 +1,6 @@
 """
 Restoran Stollar va QR Kodlar Boshqaruvi REST API (Tables Admin API).
-Faqat vakolatli restoran xodimlari uchun (tables_read / menu_admin).
+Faqat vakolatli restoran xodimlari uchun (o'qish: tables_read, tahrirlash: tables_admin).
 Tenant isolation (IDOR himoyasi), Soft-delete va AuditLog qat'iy ta'minlanadi.
 """
 from django.db import transaction
@@ -90,7 +90,7 @@ class TablesListCreateView(RestoAdminAPIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [capability('tables_read')()]
-        return [capability('menu_admin')()]
+        return [capability('tables_admin')()]
 
     def get(self, request):
         shop = staff_shop(request)
@@ -231,7 +231,7 @@ class TableDetailUpdateDeleteView(RestoAdminAPIView):
     DELETE /api/restaurant/admin/v1/tables/<pk>/ — Stolni arxivlash (Soft delete).
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
-    permission_classes = [capability('menu_admin')]
+    permission_classes = [capability('tables_admin')]
 
     def patch(self, request, pk):
         shop = staff_shop(request)
@@ -317,7 +317,7 @@ class TableRestoreView(RestoAdminAPIView):
     POST /api/restaurant/admin/v1/tables/<pk>/restore/ — Arxivlangan stolni qayta tiklash.
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
-    permission_classes = [capability('menu_admin')]
+    permission_classes = [capability('tables_admin')]
 
     def post(self, request, pk):
         shop = staff_shop(request)
@@ -382,7 +382,7 @@ class TableRotateQrView(RestoAdminAPIView):
     Eski token 24 soat grace davrida ishlaydi, yangi QR generatsiya bo'ladi.
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
-    permission_classes = [capability('menu_admin')]
+    permission_classes = [capability('tables_admin')]
 
     def post(self, request, pk):
         shop = staff_shop(request)
@@ -442,7 +442,7 @@ class HallListCreateView(RestoAdminAPIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [capability('tables_read')()]
-        return [capability('menu_admin')()]
+        return [capability('tables_admin')()]
 
     def get(self, request):
         shop = staff_shop(request)
@@ -483,7 +483,7 @@ class HallDetailUpdateDeleteView(RestoAdminAPIView):
     DELETE /api/restaurant/admin/v1/tables/halls/<pk>/ — Zalni o'chirish (is_active=False).
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
-    permission_classes = [capability('menu_admin')]
+    permission_classes = [capability('tables_admin')]
 
     def patch(self, request, pk):
         shop = staff_shop(request)

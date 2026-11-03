@@ -29,7 +29,7 @@ from orders.interfaces.api.permissions import (
 )
 from orders.models import Order, OrderItem
 from orders.state_machine import transition_order
-from web.restaurant_auth import has_capability, staff_shop, user_role
+from web.restaurant_auth import has_capability, staff_shop
 
 
 STATUS_LABELS = {
@@ -246,9 +246,11 @@ class OrderStatusUpdateView(RestoAdminAPIView):
 
         new_status = parse_choice(request.data.get('status'), 'status', tuple(STATUS_LABELS))
 
-        # Rol bo'yicha cheklov: oshpaz faqat tayyorlash jarayonlarini boshqara oladi
-        role = user_role(request.user)
-        if role == 'kitchen' and new_status not in ('preparing', 'ready'):
+        # Ruxsat bo'yicha cheklov: "buyurtma holatini o'zgartirish" (orders_manage) ruxsati yo'q xodim (oshpaz) faqat
+        # tayyorlash jarayonlarini boshqara oladi. Avval bu rol nomiga bog'liq edi: shaxsiy `kds` ruxsati berilgan
+        # begona rol (masalan hostess) bekor qilish/yetkazishgacha hamma holatni o'tkaza olardi.
+        # (Xabar matni o'zgarmagan: /ra/ tarjimalari aynan shu matn bo'yicha.)
+        if not has_capability(request.user, 'orders_manage') and new_status not in ('preparing', 'ready'):
             return Response({
                 'error': "Oshpaz faqat 'preparing' va 'ready' holatlariga o'tkaza oladi."
             }, status=status.HTTP_403_FORBIDDEN)

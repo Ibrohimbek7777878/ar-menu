@@ -8,6 +8,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError
 
+from web.capabilities import normalize_overrides
+
 from .models import AdminUser
 
 # Rahbariyat xodimni yaratadi; rahbariyat rollarining o'zini (egasi, super_admin) bu yerdan yaratib bo'lmaydi.
@@ -27,8 +29,11 @@ def _audit(action, user, **extra):
         pass
 
 
-def create_staff(shop, username, role, password='', full_name='', phone='', update=False):
-    """Xodim yaratadi (yoki update=True bo'lsa mavjudini yangilaydi). (user, ko'rsatiladigan_parol|None) qaytaradi."""
+def create_staff(shop, username, role, password='', full_name='', phone='', update=False, email=None,
+                 extra_capabilities=None, revoked_capabilities=None):
+    """Xodim yaratadi (yoki update=True bo'lsa mavjudini yangilaydi). (user, ko'rsatiladigan_parol|None) qaytaradi.
+
+    `extra_capabilities` / `revoked_capabilities` berilsa, rolga moslab tozalanib saqlanadi (web/capabilities.py)."""
     username = (username or '').strip()
     if not username:
         raise StaffError("Login kiritilmagan")
@@ -67,16 +72,30 @@ def create_staff(shop, username, role, password='', full_name='', phone='', upda
         user.first_name, user.last_name = first[:150], last[:150]
     if phone:
         user.phone = phone[:20]
+    if email is not None:
+        user.email = email
+    if extra_capabilities is not None or revoked_capabilities is not None:
+        user.extra_capabilities, user.revoked_capabilities = normalize_overrides(
+            role,
+            user.extra_capabilities if extra_capabilities is None else extra_capabilities,
+            user.revoked_capabilities if revoked_capabilities is None else revoked_capabilities)
+    else:
+        # Rol o'zgargan bo'lishi mumkin (update=True): eski shaxsiy ruxsatlar yangi rolga moslab tozalanadi
+        user.extra_capabilities, user.revoked_capabilities = normalize_overrides(
+            role, user.extra_capabilities, user.revoked_capabilities)
     user.is_approved = True
     user.save()
     _audit(event, user, shop=shop.slug)
     return user, generated
 
 
-def end_sessions(user):
-    """Foydalanuvchining barcha ochiq sessiyalarini tugatadi (bloklanganda darhol chiqib ketsin)."""
+def end_sessions(user, keep_session_key=None):
+    """Foydalanuvchining barcha ochiq sessiyalarini tugatadi (bloklanganda darhol chiqib ketsin). `keep_session_key` —
+    shu sessiya qoldiriladi (o'z parolini o'zgartirgan xodim joriy sessiyadan chiqib ketmasin)."""
     removed = 0
     for session in Session.objects.all().iterator():
+        if keep_session_key and session.session_key == keep_session_key:
+            continue
         if str(session.get_decoded().get('_auth_user_id')) == str(user.pk):
             session.delete()
             removed += 1

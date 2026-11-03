@@ -59,6 +59,12 @@ def record_failure(request, username='', scope='staff'):
                        scope, username[:60], ip_attempts, user_attempts)
 
 
+def clear_user(username):
+    """Login bo'yicha urinishlar sanagichini tozalaydi (parol egasi tomonidan almashtirilganda blok ham olinadi)."""
+    if username:
+        cache.delete(_key('user', username))
+
+
 def record_success(request, username='', user=None, scope='staff'):
     if username:
         cache.delete(_key('user', username))

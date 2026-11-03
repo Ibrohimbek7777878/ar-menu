@@ -32,7 +32,7 @@ from web.guest_dish import (
 from web.http_cache import conditional_guest_page
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
-    RESTAURANT_MANAGER_ROLES, bind_session_table, can_view_order, guest_order_ids, is_restaurant_staff,
+    MANAGEMENT_CAPABILITIES, bind_session_table, can_view_order, guest_order_ids, has_capability, is_restaurant_staff,
     remember_guest_order, restaurant_staff_required, role_home_url, session_table_token, staff_shop, user_role,
 )
 from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
@@ -1126,7 +1126,7 @@ def tma_order_detail(request, pk):
 # RESTORAN ADMIN VA BOSHQARUV MARKAZI (ADMIN HUB & LOGIN)
 # ==============================================================================
 
-@restaurant_staff_required(roles=RESTAURANT_MANAGER_ROLES)
+@restaurant_staff_required(capability=MANAGEMENT_CAPABILITIES)
 def restaurant_admin_dashboard(request):
     """
     Restoran Boshqaruv Markazi (Dashboard).
@@ -1155,7 +1155,8 @@ def restaurant_admin_dashboard(request):
     from finance.services.summary import today_summary
     summary = today_summary(shop)
     today_orders_count = summary['today_orders_count']
-    today_rev = summary['today_revenue']
+    # Tushum — moliya ma'lumoti: "moliya" ruxsati olib tashlangan rahbarga raqam ko'rsatilmaydi
+    today_rev = summary['today_revenue'] if has_capability(request.user, 'finance') else 0
 
     kds_orders = orders_qs.filter(status__in=['pending', 'confirmed', 'preparing']).order_by('-created_at')
     pending_kds_count = kds_orders.count()
@@ -1790,6 +1791,18 @@ KDS_ROLE_STATUSES = {
     'kitchen': {'confirmed', 'preparing', 'ready'},
     'waiter': {'confirmed', 'delivered', 'cancelled'},
 }
+KDS_PIPELINE_STATUSES = KDS_ROLE_STATUSES['kitchen']
+
+
+def kds_allowed_statuses(user):
+    """
+    Xodim KDS orqali o'tkaza oladigan holatlar (None — cheklovsiz). "Buyurtma holatini o'zgartirish" (`orders_manage`)
+    ruxsati bo'lmaganda faqat oshxona bosqichlari; bo'lsa — rol qoidasi (ofitsiant: yetkazish/bekor, rahbariyat: hammasi).
+    Shaxsiy `kds` ruxsati berilgan begona rol (masalan hostess) shu orqali bekor qilish/yetkazishga ega bo'lib qolmaydi.
+    """
+    if not has_capability(user, 'orders_manage'):
+        return KDS_PIPELINE_STATUSES
+    return KDS_ROLE_STATUSES.get(user_role(user))
 
 
 @restaurant_staff_required(api=True, capability='kds')
@@ -1813,7 +1826,7 @@ def kds_status_update_api(request):
 
     if not order_id or not new_status:
         return JsonResponse({'error': 'order_id va new_status talab qilinadi'}, status=400)
-    allowed = KDS_ROLE_STATUSES.get(user_role(request.user))
+    allowed = kds_allowed_statuses(request.user)
     if allowed is not None and new_status not in allowed:
         return JsonResponse({'ok': False, 'error': "Bu holatni o'zgartirish sizning rolingiz uchun ruxsat etilmagan"}, status=403)
 

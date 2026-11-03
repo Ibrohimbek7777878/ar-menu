@@ -1,7 +1,7 @@
 """
 Restoran Sozlamalari Admin REST API (Settings Admin API).
 Do'kon egasi va menejerlar uchun umumiy restoran ma'lumotlari va biznes profilini boshqarish.
-AuditLog, RBAC ('menu_admin'), validatsiya va xavfsizlik to'liq ta'minlangan.
+AuditLog, RBAC ('settings_admin'), validatsiya va xavfsizlik to'liq ta'minlangan.
 """
 from decimal import Decimal
 from rest_framework import status
@@ -37,7 +37,7 @@ class SettingsAdminView(RestoAdminAPIView):
     PATCH /api/restaurant/admin/v1/settings/ — Restoran sozlamalarini yangilash.
     """
     authentication_classes = RESTAURANT_API_AUTHENTICATION
-    permission_classes = [capability('menu_admin')]
+    permission_classes = [capability('settings_admin')]
 
     def get(self, request):
         shop = staff_shop(request)

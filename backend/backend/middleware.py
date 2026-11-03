@@ -244,8 +244,14 @@ class RestaurantStaffRBACMiddleware(MiddlewareMixin):
         if request.META.get('HTTP_AUTHORIZATION'):
             return None
 
-        from web.restaurant_auth import RESTAURANT_MANAGER_ROLES, is_restaurant_staff
-        if is_restaurant_staff(getattr(request, 'user', None), RESTAURANT_MANAGER_ROLES):
+        from web.restaurant_auth import RESTAURANT_MANAGER_ROLES, has_capability, is_restaurant_staff
+        user = getattr(request, 'user', None)
+        # Moliya yo'llari — "moliya" ruxsati bo'yicha (xodimga shaxsiy berilgan/olib tashlangan ruxsat ham hisobda),
+        # qolgan himoyalangan yo'llar — rahbariyat roli.
+        if '/finance/' in request.path:
+            if has_capability(user, 'finance'):
+                return None
+        elif is_restaurant_staff(user, RESTAURANT_MANAGER_ROLES):
             return None
 
         from django.http import JsonResponse
