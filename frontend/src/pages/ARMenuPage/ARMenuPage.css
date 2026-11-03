@@ -230,3 +230,6 @@
   outline: 2px solid var(--brand-primary-hover);
   outline-offset: 2px;
 }
+
+/* Yangi dizaynda sarlavha shrifti sayt bilan bir xil (Outfit); klassik dizayn o'zgarmaydi */
+[data-design='new'] .ar-empty-title { font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif; }

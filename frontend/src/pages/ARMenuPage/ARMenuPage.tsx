@@ -212,7 +212,16 @@ export const ARMenuPage: React.FC = () => {
             </div>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {filteredProducts.length === 0 && products.length === 0 ? (
+            // Restoranda hali birorta taomga 3D model biriktirilmagan: "qidiruv topilmadi" emas, haqiqiy sabab aytiladi
+            <div className="ar-empty-state">
+              <h3 className="ar-empty-title">Hozircha 360° taomlar yo'q</h3>
+              <p className="ar-empty-desc">Taomlarning 360° ko'rinishi tayyorlanmoqda. Hozircha butun menyuni ko'rishingiz mumkin.</p>
+              <button type="button" className="btn-ar-reset" onClick={() => navigate('/menu')}>
+                Menyuni ko'rish
+              </button>
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="ar-empty-state">
               <p>Qidiruv bo'yicha mos taom topilmadi.</p>
               <button
