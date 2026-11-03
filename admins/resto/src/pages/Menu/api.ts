@@ -5,6 +5,11 @@ export interface MenuProduct {
   name: string;
   slug: string;
   description: string;
+  // Mehmon menyusi tarjimalari (ixtiyoriy; bo'sh bo'lsa mehmon o'zbekcha nom/tavsifni ko'radi)
+  name_ru?: string;
+  name_en?: string;
+  description_ru?: string;
+  description_en?: string;
   price: number;
   old_price?: number | null;
   category_id?: number | null;

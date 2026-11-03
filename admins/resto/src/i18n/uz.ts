@@ -52,6 +52,21 @@ export const restoUz = {
     debtsTab: 'Qarzlar',
     subtitle: 'Kassa kirim-chiqimlari, foyda va qarzlar balansi',
   },
+  menuPage: {
+    translationsTitle: 'Tarjimalar',
+    translationsSummary: 'Boshqa tillarda nomi (ixtiyoriy)',
+    translationsHint: "Bo'sh qoldirilsa mehmonga o'zbekcha nom ko'rinadi",
+    translationsFilled: "To'ldirilgan",
+    languageRu: 'Русский',
+    languageEn: 'English',
+    nameLabel: 'Nomi',
+    descriptionLabel: 'Tavsifi',
+    nameRuPlaceholder: 'Masalan: Плов',
+    nameEnPlaceholder: 'Masalan: Pilaf',
+    descriptionRuPlaceholder: 'Masalan: Рис, мясо, морковь, нут',
+    descriptionEnPlaceholder: 'Masalan: Rice, beef, carrots, chickpeas',
+    saveFailed: "Saqlab bo'lmadi",
+  },
   settingsPage: {
     subtitle: 'Restoran profili, oshxona ekrani taymerlari va xizmat haqi parametrlari',
     menuLink: 'Menyu havolasi',
@@ -76,6 +91,24 @@ export const restoUz = {
     dishSheetOptions: {
       on: 'Yoqilgan',
       off: "O'chirilgan",
+    },
+    themeLabel: 'Kun va tun',
+    themeHint:
+      "Mehmon saytining qorong'i (tun) rejimi. Mehmon sozlamalar tugmasidan o'zi Kun, Tun yoki Avto (telefon mavzusiga ergashadi) ni tanlaydi va tanlovi eslab qolinadi; bu yerda faqat yangi mehmon nima ko'rishi belgilanadi. Eski (klassik) dizaynda tun rejimi yo'q.",
+    themeOptions: {
+      day: 'Kun (standart, mehmon almashtira oladi)',
+      night: 'Tun (yangi mehmon qorong\'ini ko\'radi)',
+      auto: 'Avto (telefon mavzusiga ergashadi)',
+      off: "O'chirilgan (almashtirgich ko'rinmaydi)",
+    },
+    languagesLabel: 'Tillar',
+    languagesHint:
+      "Mehmon saytida qaysi tillar bo'lishi. Mehmon tilni sozlamalar tugmasidan almashtiradi; birinchi tashrifda telefon tili mos kelsa o'sha til tanlanadi. Taom nomlari va tavsiflari tarjimasi taom tahrirlash oynasidan kiritiladi (tarjima bo'lmasa o'zbekcha ko'rinadi).",
+    languagesOptions: {
+      'uz,ru,en': "O'zbekcha, Русский, English",
+      'uz,ru': "O'zbekcha, Русский",
+      'uz,en': "O'zbekcha, English",
+      uz: "Faqat o'zbekcha",
     },
     seasonOptions: {
       off: "O'chiq (hozirgi apelsin ranglar)",

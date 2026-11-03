@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { useMenu, StatusFilter } from './useMenu';
 import { MenuProduct } from './api';
+import { TranslationFields } from './TranslationFields';
+import {
+  appendTranslations,
+  emptyTranslations,
+  TranslationField,
+  TranslationValues,
+  translationsFromProduct,
+} from './translations';
+import { restoUz } from '../../i18n/uz';
 import {
   Card,
   Button,
@@ -8,6 +17,7 @@ import {
   Skeleton,
   EmptyState,
   commonUz,
+  useToast,
 } from '@admins/shared';
 import {
   Plus,
@@ -46,6 +56,7 @@ export const MenuPage: React.FC = () => {
     saveProduct,
     addCategory,
   } = useMenu();
+  const { showToast } = useToast();
 
   // Modallar holati
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -58,6 +69,7 @@ export const MenuPage: React.FC = () => {
   const [formCategory, setFormCategory] = useState('');
   const [formPrepMinutes, setFormPrepMinutes] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [formTranslations, setFormTranslations] = useState<TranslationValues>(emptyTranslations());
   const [formImage, setFormImage] = useState<File | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
@@ -72,6 +84,7 @@ export const MenuPage: React.FC = () => {
     setFormCategory(String(selectedCategory || categories[0]?.id || ''));
     setFormPrepMinutes('15');
     setFormDescription('');
+    setFormTranslations(emptyTranslations());
     setFormImage(null);
     setIsProductModalOpen(true);
   };
@@ -83,8 +96,13 @@ export const MenuPage: React.FC = () => {
     setFormCategory(String(p.category_id || ''));
     setFormPrepMinutes(String(p.prep_minutes || ''));
     setFormDescription(p.description || '');
+    setFormTranslations(translationsFromProduct(p));
     setFormImage(null);
     setIsProductModalOpen(true);
+  };
+
+  const changeTranslation = (field: TranslationField, value: string) => {
+    setFormTranslations((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleProductSubmit = async (e: React.FormEvent) => {
@@ -98,11 +116,16 @@ export const MenuPage: React.FC = () => {
       fd.append('price', formPrice);
       if (formCategory) fd.append('category_id', formCategory);
       if (formPrepMinutes) fd.append('prep_minutes', formPrepMinutes);
-      if (formDescription) fd.append('description', formDescription);
+      // Tahrirlashda bo'sh tavsif ham yuboriladi: aks holda egasi tavsifni tozalay olmasdi
+      if (editingProduct || formDescription) fd.append('description', formDescription);
+      appendTranslations(fd, formTranslations);
       if (formImage) fd.append('image', formImage);
 
       await saveProduct(editingProduct ? editingProduct.id : null, fd);
       setIsProductModalOpen(false);
+    } catch (err) {
+      // Server xabari (masalan uzunlik chegarasi) ko'rinsin; oyna ochiq qoladi, kiritilgan matn yo'qolmaydi
+      showToast(err instanceof Error && err.message ? err.message : restoUz.menuPage.saveFailed, 'error');
     } finally {
       setFormSubmitting(false);
     }
@@ -554,7 +577,11 @@ export const MenuPage: React.FC = () => {
         title={editingProduct ? "Taomni tahrirlash" : "Yangi taom qo'shish"}
         maxWidth="520px"
       >
-        <form onSubmit={handleProductSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form
+          onSubmit={handleProductSubmit}
+          // Tarjimalar ochilganda forma telefon ekranidan oshib ketsa, oyna ichida aylanadi (Saqlash tugmasi yo'qolmaydi)
+          style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: 'calc(100dvh - 150px)', overflowY: 'auto' }}
+        >
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>
               Taom nomi *
@@ -697,6 +724,8 @@ export const MenuPage: React.FC = () => {
               }}
             />
           </div>
+
+          <TranslationFields values={formTranslations} onChange={changeTranslation} />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
             <Button

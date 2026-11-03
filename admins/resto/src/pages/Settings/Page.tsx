@@ -14,7 +14,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { useSettings } from './useSettings';
-import type { GuestDishSheetSetting, GuestMotionSetting, GuestSeasonSetting } from './api';
+import type { GuestDishSheetSetting, GuestMotionSetting, GuestSeasonSetting, GuestThemeSetting } from './api';
 import { restoUz } from '../../i18n/uz';
 
 const inputStyle: React.CSSProperties = {
@@ -79,6 +79,8 @@ export function SettingsPage() {
   const [guestSeason, setGuestSeason] = useState<GuestSeasonSetting>('off');
   const [guestMotion, setGuestMotion] = useState<GuestMotionSetting>('full');
   const [guestDishSheet, setGuestDishSheet] = useState<GuestDishSheetSetting>('on');
+  const [guestTheme, setGuestTheme] = useState<GuestThemeSetting>('day');
+  const [guestLanguages, setGuestLanguages] = useState('uz,ru,en');
 
   useEffect(() => {
     if (settings) {
@@ -100,6 +102,8 @@ export function SettingsPage() {
       setGuestSeason(settings.guest_season ?? 'off');
       setGuestMotion(settings.guest_motion ?? 'full');
       setGuestDishSheet(settings.guest_dish_sheet ?? 'on');
+      setGuestTheme(settings.guest_theme ?? 'day');
+      setGuestLanguages(settings.guest_languages ?? 'uz,ru,en');
     }
   }, [settings]);
 
@@ -124,6 +128,8 @@ export function SettingsPage() {
       guest_season: guestSeason,
       guest_motion: guestMotion,
       guest_dish_sheet: guestDishSheet,
+      guest_theme: guestTheme,
+      guest_languages: guestLanguages,
     });
   };
 
@@ -567,6 +573,44 @@ export function SettingsPage() {
               ))}
             </select>
             <p style={helpTextStyle}>{restoUz.settingsPage.dishSheetHint}</p>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="guest-theme">
+              {restoUz.settingsPage.themeLabel}
+            </label>
+            <select
+              id="guest-theme"
+              value={guestTheme}
+              onChange={(e) => setGuestTheme(e.target.value as GuestThemeSetting)}
+              style={inputStyle}
+            >
+              {(Object.keys(restoUz.settingsPage.themeOptions) as GuestThemeSetting[]).map((key) => (
+                <option key={key} value={key}>
+                  {restoUz.settingsPage.themeOptions[key]}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.themeHint}</p>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="guest-languages">
+              {restoUz.settingsPage.languagesLabel}
+            </label>
+            <select
+              id="guest-languages"
+              value={guestLanguages}
+              onChange={(e) => setGuestLanguages(e.target.value)}
+              style={inputStyle}
+            >
+              {Object.entries(restoUz.settingsPage.languagesOptions).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.languagesHint}</p>
           </div>
         </Card>
 
