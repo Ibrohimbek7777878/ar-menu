@@ -104,6 +104,9 @@ class Command(BaseCommand):
             tables=6, hall='Asosiy zal', stdout=io.StringIO(),
         )
         shop = Shop.objects.get(slug=SHOP_SLUG)
+        # Sinovlar soatga bog'liq bo'lmasin: standart ish vaqti 08:00-22:00 va kechqurun ishlagan CI restoranni "yopiq" ko'rardi
+        shop.working_hours = '00:00-24:00'
+        shop.save(update_fields=['working_hours'])
         terrace, _ = Hall.objects.get_or_create(shop=shop, name='Terrasa')
         for number in ('7', '8'):
             Table.objects.get_or_create(shop=shop, number=number, defaults={'hall': terrace, 'capacity': 4, 'status': 'free'})
