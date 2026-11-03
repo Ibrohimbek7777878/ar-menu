@@ -2,8 +2,11 @@
    Faqat palitra tokenlari (shared/src/ui/tokens.css): qattiq rang yo'q. */
 .ra-shell {
   display: flex;
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* Qobiq ekran balandligi bilan cheklangan, kontent `.ra-main` ichida aylanadi: shunda sahifalardagi `position: sticky; bottom: 0`
+     panellar ("Saqlash", "Bron qilish") haqiqatan ekran pastiga yopishadi (avval hujjat aylanar edi va yopishmas edi) */
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   background-color: var(--bg-primary);
 }
 
@@ -25,6 +28,7 @@
 .ra-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: auto;
 }

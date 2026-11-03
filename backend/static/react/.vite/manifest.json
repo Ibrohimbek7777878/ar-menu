@@ -1,6 +1,14 @@
 {
-  "_HeroPlate3D-BMTIjrhc.js": {
-    "file": "assets/HeroPlate3D-BMTIjrhc.js",
+  "_BookingEntry-DkTHWXUm.js": {
+    "file": "assets/BookingEntry-DkTHWXUm.js",
+    "name": "BookingEntry",
+    "imports": [
+      "index.html",
+      "_useBooking-xpsC9khp.js"
+    ]
+  },
+  "_HeroPlate3D-vg5WNI4F.js": {
+    "file": "assets/HeroPlate3D-vg5WNI4F.js",
     "name": "HeroPlate3D",
     "imports": [
       "index.html"
@@ -17,24 +25,31 @@
     "file": "assets/mockDishes-Ct1bRflm.js",
     "name": "mockDishes"
   },
-  "_motion-B6z3knLi.js": {
-    "file": "assets/motion-B6z3knLi.js",
+  "_motion-BKmWTjds.js": {
+    "file": "assets/motion-BKmWTjds.js",
     "name": "motion",
     "imports": [
       "index.html",
-      "_HeroPlate3D-BMTIjrhc.js"
+      "_HeroPlate3D-vg5WNI4F.js"
     ]
   },
   "_three.module-VGYe9TAt.js": {
     "file": "assets/three.module-VGYe9TAt.js",
     "name": "three.module"
   },
+  "_useBooking-xpsC9khp.js": {
+    "file": "assets/useBooking-xpsC9khp.js",
+    "name": "useBooking",
+    "imports": [
+      "index.html"
+    ]
+  },
   "_uzbekSearch-BqSgXjOo.js": {
     "file": "assets/uzbekSearch-BqSgXjOo.js",
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-tdnJLKqF.js",
+    "file": "assets/index-CZKjDpYL.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -50,6 +65,7 @@
       "src/pages/OrdersPage/OrdersPage.tsx",
       "src/pages/TableHubPage/TableHubPage.tsx",
       "src/pages/ReservationPage/ReservationPage.tsx",
+      "src/pages/BookingPage/BookingPage.tsx",
       "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
       "src/pages/HostessDeskPage/HostessDeskPage.tsx",
       "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
@@ -96,7 +112,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-D_Mw_e-U.js",
+    "file": "assets/model-viewer-vT9v1z3h.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -106,7 +122,7 @@
     ]
   },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-BvfufzfU.js",
+    "file": "assets/PhotogrammetryStudioModal-ByFsMV6s.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -116,7 +132,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-DZfiPIqv.js",
+    "file": "assets/QRGeneratorModal-BDq4IoQR.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -125,19 +141,19 @@
     ]
   },
   "src/i18n/en/index.ts": {
-    "file": "assets/en-B2ykg-RU.js",
+    "file": "assets/en-BH4XjvTa.js",
     "name": "en",
     "src": "src/i18n/en/index.ts",
     "isDynamicEntry": true
   },
   "src/i18n/ru/index.ts": {
-    "file": "assets/ru-Dp0TBkjX.js",
+    "file": "assets/ru-B0FoPF7l.js",
     "name": "ru",
     "src": "src/i18n/ru/index.ts",
     "isDynamicEntry": true
   },
   "src/motion/three/celebrationScene.ts": {
-    "file": "assets/celebrationScene-CpKusbLk.js",
+    "file": "assets/celebrationScene-CfrEGe0W.js",
     "name": "celebrationScene",
     "src": "src/motion/three/celebrationScene.ts",
     "isDynamicEntry": true,
@@ -147,7 +163,7 @@
     ]
   },
   "src/motion/three/heroPlateScene.ts": {
-    "file": "assets/heroPlateScene-wCwIKl7u.js",
+    "file": "assets/heroPlateScene-Dhw9KiMI.js",
     "name": "heroPlateScene",
     "src": "src/motion/three/heroPlateScene.ts",
     "isDynamicEntry": true,
@@ -157,7 +173,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-mwZLaLKr.js",
+    "file": "assets/ARMenuPage-CGYQEjW6.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -169,7 +185,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-DCqWwrrk.js",
+    "file": "assets/AdminDashboardPage-D2bvA-Jo.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -180,8 +196,18 @@
       "src/pages/TableHubPage/TableHubPage.tsx"
     ]
   },
+  "src/pages/BookingPage/BookingPage.tsx": {
+    "file": "assets/BookingPage-CSuzR4Iz.js",
+    "name": "BookingPage",
+    "src": "src/pages/BookingPage/BookingPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_useBooking-xpsC9khp.js"
+    ]
+  },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-DMuEAwzY.js",
+    "file": "assets/CartPage-B5D_Vup7.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -190,20 +216,20 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-B-4_Zk6m.js",
+    "file": "assets/CheckoutPage-CZPo9kfO.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-B6z3knLi.js"
+      "_motion-BKmWTjds.js"
     ],
     "dynamicImports": [
       "src/motion/three/celebrationScene.ts"
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-BcCO6cvn.js",
+    "file": "assets/HostessDeskPage-Bdw9tC78.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -212,7 +238,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-B3mCpa1N.js",
+    "file": "assets/MenuPage-B9L5y_52.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -220,21 +246,22 @@
       "index.html",
       "_Smart3DMatcher-Cg3blFo0.js",
       "_mockDishes-Ct1bRflm.js",
-      "_uzbekSearch-BqSgXjOo.js"
+      "_uzbekSearch-BqSgXjOo.js",
+      "_BookingEntry-DkTHWXUm.js"
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-BsxJ7-uS.js",
+    "file": "assets/OrdersPage-tfyQlwXA.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-B6z3knLi.js"
+      "_motion-BKmWTjds.js"
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-Cyabe1EH.js",
+    "file": "assets/ReservationPage-DzUCSzIq.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -243,16 +270,17 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-bUOh3f7w.js",
+    "file": "assets/TableHubPage-jvQkf-Rq.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "index.html"
+      "index.html",
+      "_BookingEntry-DkTHWXUm.js"
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-Cva9gJj_.js",
+    "file": "assets/WaiterPanelPage-CKSZfWEw.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -261,17 +289,19 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-BPZ8hJ3X.js",
+    "file": "assets/WelcomePage-C5BynMxj.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_HeroPlate3D-BMTIjrhc.js"
+      "_useBooking-xpsC9khp.js",
+      "_BookingEntry-DkTHWXUm.js",
+      "_HeroPlate3D-vg5WNI4F.js"
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-CW-79LKS.js",
+    "file": "assets/ComponentShowcase-B4BP3FOu.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
@@ -281,7 +311,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-CmY910gL.css",
+    "file": "assets/style-BjikLKy-.css",
     "src": "style.css"
   }
 }

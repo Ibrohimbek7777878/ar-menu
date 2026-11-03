@@ -3,6 +3,7 @@ import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { useNavigation } from '../../context/NavigationContext';
 import { t, tr } from '../../i18n';
+import { BookingEntry } from '../BookingPage/BookingEntry';
 import './TableHubPage.css';
 
 export interface HallData {
@@ -266,6 +267,8 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                 {t('Stoldan chiqish ↩')}
               </button>
             )}
+            {/* Stol bron qilish (yangi oqim: zal rejasi, sana/vaqt oraliqlari): faqat restoran bronni yoqqan bo'lsa ko'rinadi; pastdagi eski bron formasi o'zgarmagan */}
+            <BookingEntry variant="pill" />
             {isStaff && (
             <button
               type="button"

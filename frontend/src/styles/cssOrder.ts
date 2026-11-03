@@ -33,6 +33,8 @@ import '../pages/ARMenuPage/ARMenuPage.css'
 import '../pages/OrdersPage/OrdersPage.css'
 import '../pages/TableHubPage/TableHubPage.css'
 import '../pages/ReservationPage/ReservationPage.css'
+// Stol bron qilish (/book/) va kirish tugmalari: sinflar `bk-` bilan, faqat tokenlar; Welcome/TableHub/Menyudagi tugma ham shu yerdan
+import '../pages/BookingPage/BookingPage.css'
 import '../pages/WaiterPanelPage/WaiterPanelPage.css'
 import '../pages/HostessDeskPage/HostessDeskPage.css'
 import '../pages/KDSPage/KDSPage.css'

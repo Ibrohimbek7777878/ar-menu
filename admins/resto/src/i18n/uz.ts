@@ -15,6 +15,7 @@ export const restoUzSource = {
   menu: 'Menyu',
   menu3d: '3D Taomlar',
   tables: 'Stollar & QR',
+  bookings: 'Bronlar',
   staff: 'Xodimlar',
   finance: 'Moliya',
   settings: 'Sozlamalar',

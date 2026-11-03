@@ -268,6 +268,7 @@ const NO_HARDCODED_SCOPE = [
   'admins/resto/src/pages/Menu',
   'admins/resto/src/pages/Staff',
   'admins/resto/src/pages/Settings',
+  'admins/resto/src/pages/Bookings',
 ];
 const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|(?<![\w-])(?:white|black)(?![\w-])/;
 

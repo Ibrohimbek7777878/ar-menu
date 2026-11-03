@@ -26,6 +26,7 @@ import './i18n/register';
 import { restoUz, roleLabel } from './i18n/uz';
 import { adminRoutes } from './routes';
 import {
+  CalendarDays,
   LayoutDashboard,
   ShoppingBag,
   UtensilsCrossed,
@@ -103,6 +104,7 @@ const AppLayout: React.FC = () => {
     { to: 'orders', label: restoUz.orders, icon: ShoppingBag, cap: 'kds' },
     { to: 'menu', label: restoUz.menu, icon: UtensilsCrossed, cap: 'menu_admin' },
     { to: 'tables', label: restoUz.tables, icon: QrCode, cap: 'tables_read' },
+    { to: 'bookings', label: restoUz.bookings, icon: CalendarDays, cap: 'reservations' },
     { to: 'staff', label: restoUz.staff, icon: Users, cap: 'staff_admin' },
     { to: 'finance', label: restoUz.finance, icon: DollarSign, cap: 'finance' },
     { to: 'settings', label: restoUz.settings, icon: Settings, cap: 'settings_admin' },

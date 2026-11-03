@@ -6,6 +6,7 @@ import { roleService } from '../../core/auth/RoleService';
 import { HeroPlate3D } from '../../motion/HeroPlate3D';
 import { fmtNum, getLang, t } from '../../i18n';
 import { dishDescription, dishName } from '../../utils/dishText';
+import { BookingEntry } from '../BookingPage/BookingEntry';
 
 interface FeaturedDish {
   id: number;
@@ -147,6 +148,8 @@ export const WelcomePageNew: React.FC = () => {
                   <Icon name="rotate" size={18} />
                   <span>{t('360° taomlar')}</span>
                 </button>
+                {/* Stol bron qilish: faqat restoran onlayn bronni yoqqan bo'lsa chiziladi (o'chiq bo'lsa hech narsa ko'rinmaydi) */}
+                <BookingEntry className="wn-btn wn-btn-ghost" />
               </div>
               <ul className="wn-trust wn-rise" style={{ ['--i' as string]: 4 }}>
                 <li><Icon name="check" size={15} strokeWidth={3} />{t('Halol')}</li>

@@ -141,7 +141,8 @@ export class RouteGuard {
       cleanPath.startsWith('/cart') ||
       cleanPath.startsWith('/checkout') ||
       cleanPath.startsWith('/orders') ||
-      cleanPath.startsWith('/table')
+      cleanPath.startsWith('/table') ||
+      cleanPath.startsWith('/book')
     );
   }
 }

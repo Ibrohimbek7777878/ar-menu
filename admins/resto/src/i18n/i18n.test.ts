@@ -22,7 +22,7 @@ const I18N = import.meta.dirname;
  * Kalitlari skanerlanadigan joylar (src ga nisbatan; fayl yoki papka). Sahifa agentlari tarjimasini yozib bo'lgach o'z papkasini
  * shu ro'yxatga qo'shadi: shunda sahifada tarjimasiz t('...') qolsa test qizaradi. `admins/shared` o'zining testida tekshiriladi.
  */
-const SCAN_SCOPE = ['main.tsx', 'routes.tsx', 'pages/Finance', 'pages/Dashboard', 'pages/Tables', 'pages/Orders', 'pages/Menu', 'pages/Staff', 'pages/Settings'];
+const SCAN_SCOPE = ['main.tsx', 'routes.tsx', 'pages/Finance', 'pages/Dashboard', 'pages/Tables', 'pages/Orders', 'pages/Menu', 'pages/Staff', 'pages/Settings', 'pages/Bookings'];
 
 type Dict = Record<string, string>;
 

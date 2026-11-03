@@ -8,6 +8,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import { roleService } from '../../core/auth/RoleService';
 import { getGuestDesign } from '../../utils/guestDesign';
 import { t } from '../../i18n';
+import { useBookingEnabled } from '../BookingPage/useBooking';
 import { WelcomePageNew } from './WelcomePageNew';
 import './WelcomePage.css';
 
@@ -29,6 +30,7 @@ const WelcomePageClassic: React.FC = () => {
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
   const cartCount = navCartCount || initialData.cartCount || 0;
+  const bookingOn = useBookingEnabled();
 
   const [inputTableNum, setInputTableNum] = useState('');
   // Stol raqamini yozish va "NFC skaneri" production'da stolni aniqlay olmaydi (server faqat QR tokenni taniydi);
@@ -200,6 +202,30 @@ const WelcomePageClassic: React.FC = () => {
                   <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36M9.46 6.21a11.76 11.76 0 0 1 0 11.58M12.91 4.1a16.1 16.1 0 0 1 0 15.8" />
                 </svg>
                 <span>{t('NFC / Stolni tanlash')}</span>
+              </button>
+            </div>
+          )}
+
+          {/* 3b. Stol bron qilish (faqat restoran onlayn bronni yoqqan bo'lsa) */}
+          {bookingOn && (
+            <div className="connect-option-card">
+              <div className="card-icon-title-row">
+                <div className="opt-circle-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 18v3M20 18v3M4 11h16M7 11V4h10v7M6 18h12" />
+                  </svg>
+                </div>
+                <div className="opt-text-block">
+                  <h4>{t('Stol bron qilish')}</h4>
+                  <p>{t('Sana va vaqtni tanlang, stol sizni kutadi')}</p>
+                </div>
+              </div>
+              <button type="button" className="btn-card-action-outline" onClick={() => navigate('/book/')}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="18" height="18" x="3" y="4" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                <span>{t('Stol bron qilish')}</span>
               </button>
             </div>
           )}

@@ -6,6 +6,7 @@ const DashboardPage = lazy(() => import('./pages/Dashboard/Page'));
 const OrdersPage = lazy(() => import('./pages/Orders/Page'));
 const MenuPage = lazy(() => import('./pages/Menu/Page'));
 const TablesPage = lazy(() => import('./pages/Tables/Page'));
+const BookingsPage = lazy(() => import('./pages/Bookings/Page'));
 const StaffPage = lazy(() => import('./pages/Staff/Page'));
 const FinancePage = lazy(() => import('./pages/Finance/Page'));
 const SettingsPage = lazy(() => import('./pages/Settings/Page'));
@@ -40,6 +41,14 @@ export const adminRoutes: RouteObject[] = [
     element: (
       <CapabilityGuard capability="tables_read">
         <TablesPage />
+      </CapabilityGuard>
+    ),
+  },
+  {
+    path: 'bookings',
+    element: (
+      <CapabilityGuard capability="reservations">
+        <BookingsPage />
       </CapabilityGuard>
     ),
   },

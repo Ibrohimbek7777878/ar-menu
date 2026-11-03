@@ -18,6 +18,7 @@ import { DishSheet } from '../../components/ui/DishSheet/DishSheet';
 import { enrichDishWith3D } from '../../services/Smart3DMatcher';
 import { getLang, t } from '../../i18n';
 import { dishName } from '../../utils/dishText';
+import { BookingEntry } from '../BookingPage/BookingEntry';
 import './MenuPage.css';
 
 interface InitialData {
@@ -257,6 +258,9 @@ export const MenuPage: React.FC = () => {
             <span>{t('Faqat 360° taomlar')}</span>
           </button>
         </div>
+
+        {/* Stol bron qilish: faqat restoran onlayn bronni yoqqan bo'lsa chiziladi */}
+        <BookingEntry variant="strip" />
 
         {/* ─── 2. Search Bar ─── */}
         <div className="menu-search-wrapper">

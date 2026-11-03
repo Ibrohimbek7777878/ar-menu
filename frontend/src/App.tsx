@@ -23,6 +23,7 @@ const ARMenuPage = page(() => import('./pages/ARMenuPage/ARMenuPage'), 'ARMenuPa
 const OrdersPage = page(() => import('./pages/OrdersPage/OrdersPage'), 'OrdersPage');
 const TableHubPage = page(() => import('./pages/TableHubPage/TableHubPage'), 'TableHubPage');
 const ReservationPage = page(() => import('./pages/ReservationPage/ReservationPage'), 'ReservationPage');
+const BookingPage = page(() => import('./pages/BookingPage/BookingPage'), 'BookingPage');
 const WaiterPanelPage = page(() => import('./pages/WaiterPanelPage/WaiterPanelPage'), 'WaiterPanelPage');
 const HostessDeskPage = page(() => import('./pages/HostessDeskPage/HostessDeskPage'), 'HostessDeskPage');
 const AdminDashboardPage = page(() => import('./pages/AdminDashboardPage/AdminDashboardPage'), 'AdminDashboardPage');
@@ -68,6 +69,11 @@ const AppContent: React.FC = () => {
   // Oshxona Ekrani (KDS) (/kds/ yoki /kitchen/ yoki /seller/kds/)
   if (currentPath.includes('/kds') || currentPath.includes('/kitchen')) {
     return <AdminDashboardPage initialTab="kds" />;
+  }
+
+  // Stol bron qilish (/book/): zal rejasi -> bron oynasi -> bron kodi. Mavjud /reservation/ oqimi o'zgarmagan (pastda).
+  if (/^\/book(\/|$)/.test(currentPath.split('?')[0].split('#')[0])) {
+    return <BookingPage />;
   }
 
   // Bron qidirish & Kelishni tasdiqlash (/reservation/arrival yoki /reservation/find).
