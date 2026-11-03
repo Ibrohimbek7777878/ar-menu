@@ -1,7 +1,7 @@
 // "Qo'shish" mukofoti: tugmadan savat belgisiga kichik nuqta uchib boradi, savat belgisi sakraydi, telefon qisqa tebranadi.
 // Faqat ko'rinish: savatga qo'shish mantiqi (handleAdd -> onAddToCart) bu yerda o'zgarmaydi, xato bo'lsa ham jim o'tadi.
-// Faqat `transform` va `opacity` (GPU) animatsiya qilinadi. `data-motion="off"`, klassik dizayn va
-// `prefers-reduced-motion: reduce` da hech narsa qilmaydi.
+// Faqat `transform` va `opacity` (GPU) animatsiya qilinadi. `data-motion="off"` va
+// `prefers-reduced-motion: reduce` da hech narsa qilmaydi (dizayn tartibidan qat'i nazar).
 const SIZE = 16
 
 function visibleCartTarget(): HTMLElement | null {
@@ -13,7 +13,7 @@ export function flyToCart(source: Element | null): void {
   try {
     if (!source || typeof document === 'undefined') return
     const root = document.documentElement
-    if (root.dataset.design !== 'new' || root.dataset.motion === 'off') return
+    if (root.dataset.motion === 'off') return
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     const target = visibleCartTarget()
     if (!target || typeof target.animate !== 'function') return

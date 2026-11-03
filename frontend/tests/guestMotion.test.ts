@@ -42,28 +42,36 @@ function withEnv(motion: unknown, nav: Record<string, unknown>, run: (html: { da
   }
 }
 
-test('applyGuestMotion: yangi dizaynda daraja <html data-motion> ga qo\'yiladi', () => {
+test('applyGuestMotion: daraja <html data-motion> ga qo\'yiladi (dizayn tartibidan qat\'i nazar)', () => {
   withEnv('off', { hardwareConcurrency: 8 }, (html) => {
-    assert.equal(applyGuestMotion('new'), 'off');
+    assert.equal(applyGuestMotion(), 'off');
     assert.equal(html.dataset.motion, 'off');
   });
   withEnv(undefined, { hardwareConcurrency: 8 }, (html) => {
-    assert.equal(applyGuestMotion('new'), 'full');
+    assert.equal(applyGuestMotion(), 'full');
     assert.equal(html.dataset.motion, 'full');
   });
 });
 
 test('applyGuestMotion: zaif qurilmada standart full -> light', () => {
   withEnv(undefined, { hardwareConcurrency: 2 }, (html) => {
-    assert.equal(applyGuestMotion('new'), 'light');
+    assert.equal(applyGuestMotion(), 'light');
     assert.equal(html.dataset.motion, 'light');
   });
 });
 
-test('applyGuestMotion: klassik dizaynda atribut yo\'q (eski atribut olib tashlanadi)', () => {
+// Egasi qarori: imkoniyatlar dizaynga (`guest_design`) bog'liq emas. Oldin klassik tartibda atribut olib tashlanardi (null);
+// endi sessiyada `design: 'classic'` bo'lsa ham animatsiya darajasi xuddi shunday qo'yiladi.
+test('applyGuestMotion: klassik tartibda (design=classic) ham daraja qo\'yiladi — egasi qarori: imkoniyatlar dizaynga bog\'liq emas', () => {
   withEnv('off', { hardwareConcurrency: 8 }, (html) => {
+    (g.window as { __GULISTON_SESSION__: Record<string, unknown> }).__GULISTON_SESSION__.design = 'classic';
     html.dataset.motion = 'full';
-    assert.equal(applyGuestMotion('classic'), null);
-    assert.equal('motion' in html.dataset, false);
+    assert.equal(applyGuestMotion(), 'off');
+    assert.equal(html.dataset.motion, 'off');
+  });
+  withEnv(undefined, { hardwareConcurrency: 8 }, (html) => {
+    (g.window as { __GULISTON_SESSION__: Record<string, unknown> }).__GULISTON_SESSION__.design = 'classic';
+    assert.equal(applyGuestMotion(), 'full');
+    assert.equal(html.dataset.motion, 'full');
   });
 });

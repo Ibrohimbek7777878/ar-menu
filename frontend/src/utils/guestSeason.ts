@@ -10,10 +10,9 @@ export function parseGuestSeason(value: unknown): GuestSeason | null {
   return typeof value === 'string' && SEASONS.includes(value) ? (value as GuestSeason) : null
 }
 
-/** `<html data-season>`: faqat yangi dizaynda; aks holda atribut olib tashlanadi (klassik dizayn o'zgarmaydi). */
-export function applyGuestSeason(design: 'new' | 'classic'): GuestSeason | null {
-  const season =
-    design === 'new' && typeof window !== 'undefined' ? parseGuestSeason(window.__GULISTON_SESSION__?.season) : null
+/** `<html data-season>`. Egasi qarori: imkoniyatlar dizayn tartibiga (`guest_design`) bog'liq emas; fasl yo'q/noto'g'ri bo'lsa atribut olib tashlanadi. */
+export function applyGuestSeason(): GuestSeason | null {
+  const season = typeof window !== 'undefined' ? parseGuestSeason(window.__GULISTON_SESSION__?.season) : null
   if (typeof document !== 'undefined') {
     if (season) document.documentElement.dataset.season = season
     else delete document.documentElement.dataset.season

@@ -100,7 +100,7 @@ export const NFCGatewayModal: React.FC = () => {
           <div className="qr-view-body">
             <div className="qr-frame-box">
               <div className="qr-simulated-image">
-                <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="1.8">
+                <svg width="90" height="90" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--brand-primary)' }} strokeWidth="1.8">
                   <rect width="6" height="6" x="2" y="2" rx="1" />
                   <rect width="6" height="6" x="16" y="2" rx="1" />
                   <rect width="6" height="6" x="2" y="16" rx="1" />

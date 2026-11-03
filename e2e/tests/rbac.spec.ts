@@ -7,10 +7,13 @@ import { API, PASSWORD, USERNAMES, adminLink, apiJson, authFile, csrfToken, expe
 test.describe('(b) ofitsiant', () => {
   test.use({ storageState: authFile('waiter') });
 
-  test('b) ofitsiant /ra/ da "Bugungi tushum"ni ko\'rmaydi, API javobida today_revenue yo\'q', async ({ page, monitor }) => {
-    const summaryResponse = page.waitForResponse((r) => r.url().includes(`${API}/dashboard/summary/`));
+  test('b) ofitsiant /ra/ ni ocha olmaydi (o\'z paneliga yo\'naltiriladi), API javobida pul raqamlari yo\'q', async ({ page, monitor }) => {
+    // Boshqaruv paneli faqat egasi/boshqaruvchiga: ofitsiant /ra/ ochsa o'z ish sahifasiga o'tadi
     await page.goto('/ra/');
-    const response = await summaryResponse;
+    await expect(page).toHaveURL(/\/waiter\/panel\/?$/);
+
+    // Chuqur himoya: API'ga to'g'ridan-to'g'ri murojaat qilganda ham pul raqamlari yuborilmaydi
+    const response = await page.request.get(`${API}/dashboard/summary/`);
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(Object.keys(body)).toContain('active_orders'); // javob haqiqatan dashboard xulosasi
@@ -18,15 +21,7 @@ test.describe('(b) ofitsiant', () => {
     expect(body, 'average_check ham pul raqami').not.toHaveProperty('average_check');
     for (const dish of body.top_dishes) expect(dish).not.toHaveProperty('total_sum');
 
-    // Dashboard to'liq chizilgan (pul bo'lmagan karta ko'rinadi), lekin pul kartalari yo'q
-    await expect(page.getByText('Faol buyurtmalar')).toBeVisible();
-    await expect(page.getByText('Bugungi tushum')).toHaveCount(0);
-    await expect(page.getByText("O'rtacha chek")).toHaveCount(0);
-
-    // Moliya bo'limi yo'nalishda ham, API'da ham yopiq
-    await expect(adminLink(page, '')).toBeVisible();
-    await expect(adminLink(page, 'finance')).toHaveCount(0);
-    await expect(adminLink(page, 'menu')).toHaveCount(0);
+    // Moliya bo'limi API'da yopiq
     expect((await page.request.get(`${API}/finance/summary/`)).status()).toBe(403);
 
     expect(monitor.consoleErrors).toEqual([]);

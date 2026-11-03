@@ -12,12 +12,13 @@ test('d) egasi yangi taom qo\'shadi -> ro\'yxatda ko\'rinadi -> qidiruvda topila
   await expect(page.getByText('Palov', { exact: true })).toBeVisible(); // seed taomlari yuklandi
 
   await page.getByRole('button', { name: "Taom qo'shish" }).click();
-  const form = page.locator('form').filter({ has: page.locator('input[type="number"][required]') });
-  await form.locator('input[type="text"][required]').fill(dishName);
-  await form.locator('input[type="number"][required]').fill('41000');
-  await form.locator('select').selectOption({ label: 'Milliy taomlar' });
+  // Yangi forma (rasm bloki + maydonlar): maydonlar yorliq matni bo'yicha topiladi
+  const form = page.locator('form').filter({ has: page.getByRole('button', { name: 'Saqlash' }) });
+  await form.getByLabel(/^Taom nomi/).fill(dishName);
+  await form.getByLabel(/^Narxi/).fill('41000');
+  await form.getByLabel(/^Kategoriya/).selectOption({ label: 'Milliy taomlar' });
   const created = page.waitForResponse((r) => r.url().includes(`${API}/menu/products/`) && r.request().method() === 'POST');
-  await form.locator('button[type="submit"]').click();
+  await form.getByRole('button', { name: 'Saqlash' }).click();
   expect((await created).status(), 'taom yaratish API javobi').toBe(201);
 
   // Ro'yxatda ko'rinadi (modal yopiladi)

@@ -27,7 +27,9 @@ export interface ServerSession {
   demo: boolean;
   /** Mehmon sahifalari dizayni (admin sozlamasi `guest_design`): 'new' — yangi, 'classic' — eski */
   design?: 'new' | 'classic';
-  /** Fasl rangi (restoran sozlamasi `guest_season`); faqat mehmon va yangi dizaynda, o'chiq bo'lsa kalit yo'q */
+  /** Ranglar palitrasi (restoran sozlamasi `guest_palette`): faqat 'orange' (muqobil) bo'lganda keladi; standart — klassik (yashil + krem), kalit yo'q */
+  palette?: 'orange';
+  /** Fasl rangi (restoran sozlamasi `guest_season`); o'chiq bo'lsa kalit yo'q (egasi qarori: dizaynga bog'liq emas) */
   season?: 'kuz' | 'qish' | 'bahor' | 'yoz';
   /** Animatsiya darajasi (restoran sozlamasi `guest_motion`); standart `full` bo'lsa kalit yo'q */
   motion?: 'light' | 'off';

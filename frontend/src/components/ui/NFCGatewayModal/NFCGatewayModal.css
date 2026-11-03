@@ -224,7 +224,7 @@
 }
 
 .nfc-tbl-chip.free .tbl-status-indicator { background: #16a34a; }
-.nfc-tbl-chip.occupied .tbl-status-indicator { background: #e11d48; }
+.nfc-tbl-chip.occupied .tbl-status-indicator { background: var(--brand-accent); }
 .nfc-tbl-chip.bill_requested .tbl-status-indicator { background: #d97706; }
 .nfc-tbl-chip.reserved .tbl-status-indicator { background: #2563eb; }
 
@@ -252,6 +252,6 @@
   border-radius: 50%;
 }
 .legend-dot.free { background: #16a34a; }
-.legend-dot.occupied { background: #e11d48; }
+.legend-dot.occupied { background: var(--brand-accent); }
 .legend-dot.bill_requested { background: #d97706; }
 .legend-dot.reserved { background: #2563eb; }

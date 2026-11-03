@@ -1,14 +1,13 @@
 // Animatsiya qatlami uchun umumiy qoidalar: BARCHA effektlar shu yerdagi shartlardan o'tadi.
-//   fxEnabled()    — A qatlami (CSS/WAAPI/canvas): yangi dizayn, `data-motion` != off, tizimda "harakatni kamaytirish" yo'q
+//   fxEnabled()    — A qatlami (CSS/WAAPI/canvas): `data-motion` != off, tizimda "harakatni kamaytirish" yo'q (dizayn tartibidan qat'i nazar)
 //   threeEnabled() — B qatlami (three.js): fxEnabled + daraja `full` (zaif qurilmada utils/guestMotion.ts o'zi `light` ga tushiradi) + WebGL bor
 // Daraja admin sozlamasi `guest_motion` (full | light | off) dan keladi: kodni o'zgartirmasdan o'chiriladi (AGENTS 4-qoida).
 import type { GuestMotion } from '../utils/guestMotion'
 
 export function motionLevel(): GuestMotion {
   if (typeof document === 'undefined') return 'off'
-  const root = document.documentElement
-  if (root.dataset.design !== 'new') return 'off'
-  const level = root.dataset.motion
+  // Egasi qarori: animatsiya dizayn tartibiga (`guest_design`) bog'liq emas — faqat `data-motion` hal qiladi
+  const level = document.documentElement.dataset.motion
   return level === 'light' || level === 'off' ? level : 'full'
 }
 
@@ -39,15 +38,16 @@ export function threeEnabled(): boolean {
   return fxEnabled() && motionLevel() === 'full' && webglSupported()
 }
 
-/** Brend ranglarini CSS tokenlaridan o'qiydi: yangi rang qo'shilmaydi (bitta dizayn tili). */
+/** Brend ranglarini CSS tokenlaridan o'qiydi (palitra almashsa o'zi almashadi): yangi rang qo'shilmaydi (bitta dizayn tili).
+ *  Zaxira qiymatlar (token topilmasa) — standart klassik palitra: yashil, oltin, terrakota, muvaffaqiyat yashili. */
 export function brandPalette(): string[] {
   const css = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement)
   const read = (name: string, fallback: string) => css?.getPropertyValue(name).trim() || fallback
   return [
-    read('--brand-primary', '#EA580C'),
-    read('--brand-warm', '#FB923C'),
-    read('--brand-accent', '#E11D48'),
-    read('--status-success', '#16A34A'),
+    read('--brand-primary', '#2F4836'),
+    read('--brand-warm', '#C29026'),
+    read('--brand-accent', '#A9501A'),
+    read('--status-success', '#2E7D46'),
     '#FFFFFF',
   ]
 }

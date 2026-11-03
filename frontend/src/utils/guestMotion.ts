@@ -33,15 +33,15 @@ export function resolveGuestMotion(setting: GuestMotion, weakDevice: boolean): G
   return setting === 'full' && weakDevice ? 'light' : setting
 }
 
-/** `<html data-motion>`: faqat yangi dizaynda; klassik dizaynda atribut olib tashlanadi (o'zgarmaydi). */
-export function applyGuestMotion(design: 'new' | 'classic'): GuestMotion | null {
+/**
+ * `<html data-motion>`. Egasi qarori: imkoniyatlar (animatsiya, kun/tun, fasl, taom oynasi) dizayn tartibiga (`guest_design`)
+ * BOG'LIQ EMAS — yangi ham, eski tartib ham bir xil animatsiyalarni oladi; faqat `guest_motion` sozlamasi boshqaradi.
+ */
+export function applyGuestMotion(): GuestMotion {
   const mode =
-    design === 'new' && typeof window !== 'undefined'
+    typeof window !== 'undefined'
       ? resolveGuestMotion(parseGuestMotion(window.__GULISTON_SESSION__?.motion), isWeakDevice())
-      : null
-  if (typeof document !== 'undefined') {
-    if (mode) document.documentElement.dataset.motion = mode
-    else delete document.documentElement.dataset.motion
-  }
+      : 'full'
+  if (typeof document !== 'undefined') document.documentElement.dataset.motion = mode
   return mode
 }

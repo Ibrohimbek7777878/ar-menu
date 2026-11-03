@@ -12,8 +12,13 @@ for (const role of ROLES) {
     await page.locator('input[name="password"]').fill(PASSWORD);
     await page.locator('button[type="submit"]').click();
 
-    await page.waitForURL(/\/ra\/?$/);
-    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible(); // SPA ishga tushdi
+    if (role === 'waiter') {
+      // Boshqaruv paneli (/ra/) faqat egasi/boshqaruvchiga: ofitsiant `?next=/ra/` bilan kirsa ham o'z ish sahifasiga yo'naltiriladi
+      await page.waitForURL(/\/waiter\/panel\/?$/);
+    } else {
+      await page.waitForURL(/\/ra\/?$/);
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible(); // SPA ishga tushdi
+    }
     await context.storageState({ path: authFile(role) });
   });
 }

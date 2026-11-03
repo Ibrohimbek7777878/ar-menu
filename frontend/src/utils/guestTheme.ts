@@ -4,7 +4,9 @@
 //   night — yangi mehmon "Tun" ko'radi
 //   auto  — telefon (Telegram'da — Telegram) mavzusiga ergashadi
 // Mehmonning o'z tanlovi (Kun / Tun / Avto) brauzerda eslab qolinadi va sozlamadan ustun turadi.
-// `<html data-theme="light|dark">` qiymati styles/darkTheme.css da ishlatiladi. Faqat yangi dizaynda (klassik dizayn o'zgarmaydi).
+// `<html data-theme="light|dark">` qiymati styles/darkTheme.css da ishlatiladi. Egasi qarori: dizayn tartibiga (`guest_design`) bog'liq emas.
+import { currentPalette, PALETTE_CHROME } from './guestPalette.ts'
+
 export type ThemeSetting = 'off' | 'day' | 'night' | 'auto'
 export type ThemePref = 'day' | 'night' | 'auto'
 export type ResolvedTheme = 'light' | 'dark'
@@ -48,11 +50,6 @@ function systemIsDark(): boolean {
   return Boolean(window.matchMedia?.('(prefers-color-scheme: dark)').matches)
 }
 
-const TG_CHROME: Record<ResolvedTheme, { header: string; background: string }> = {
-  light: { header: '#FFFFFF', background: '#FAF8F5' },
-  dark: { header: '#1B1714', background: '#141110' },
-}
-
 function paint(): void {
   const root = document.documentElement
   if (setting === 'off') {
@@ -62,18 +59,20 @@ function paint(): void {
     resolved = resolveTheme(pref, systemIsDark())
     root.dataset.theme = resolved
   }
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', TG_CHROME[resolved].header)
+  // Telegram sarlavhasi / orqa foni va brauzer `theme-color`: palitraga (klassik yashil-krem yoki apelsin) mos
+  const chrome = PALETTE_CHROME[currentPalette()][resolved]
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chrome.header)
   if (setting !== 'off') {
     const tg = window.Telegram?.WebApp
-    tg?.setHeaderColor?.(TG_CHROME[resolved].header)
-    tg?.setBackgroundColor?.(TG_CHROME[resolved].background)
+    tg?.setHeaderColor?.(chrome.header)
+    tg?.setBackgroundColor?.(chrome.background)
   }
   listeners.forEach((l) => l())
 }
 
 /** Ilova ishga tushganda: sozlama + saqlangan tanlov -> `<html data-theme>`; "Avto" bo'lsa tizim o'zgarishini kuzatadi. */
-export function applyGuestTheme(design: 'new' | 'classic'): ResolvedTheme {
-  setting = design === 'new' && typeof window !== 'undefined' ? parseThemeSetting(window.__GULISTON_SESSION__?.theme) : 'off'
+export function applyGuestTheme(): ResolvedTheme {
+  setting = typeof window !== 'undefined' ? parseThemeSetting(window.__GULISTON_SESSION__?.theme) : 'off'
   pref = (setting === 'off' ? null : readStored()) ?? (setting === 'off' ? 'day' : (setting as ThemePref))
   if (typeof document === 'undefined') return 'light'
   paint()

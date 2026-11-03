@@ -23,25 +23,27 @@ test('parseGuestSeason: faqat 4 ta fasl nomi qabul qilinadi', () => {
   }
 });
 
-test('applyGuestSeason: yangi dizaynda fasl <html data-season> ga qo\'yiladi', () => {
+test('applyGuestSeason: fasl <html data-season> ga qo\'yiladi', () => {
   withDom('qish', (html) => {
-    assert.equal(applyGuestSeason('new'), 'qish');
+    assert.equal(applyGuestSeason(), 'qish');
     assert.equal(html.dataset.season, 'qish');
   });
 });
 
-test('applyGuestSeason: klassik dizaynda fasl qo\'yilmaydi va eski atribut olib tashlanadi', () => {
+// Egasi qarori: imkoniyatlar dizaynga (`guest_design`) bog'liq emas — klassik tartibda ham fasl rangi ishlaydi.
+test('applyGuestSeason: klassik tartibda (design=classic) ham fasl qo\'yiladi — egasi qarori: imkoniyatlar dizaynga bog\'liq emas', () => {
   withDom('qish', (html) => {
+    (g.window as { __GULISTON_SESSION__: Record<string, unknown> }).__GULISTON_SESSION__.design = 'classic';
     html.dataset.season = 'yoz';
-    assert.equal(applyGuestSeason('classic'), null);
-    assert.equal('season' in html.dataset, false);
+    assert.equal(applyGuestSeason(), 'qish');
+    assert.equal(html.dataset.season, 'qish');
   });
 });
 
 test('applyGuestSeason: fasl yo\'q yoki noto\'g\'ri bo\'lsa atribut yo\'q (ranglar o\'zgarmaydi)', () => {
   for (const season of [undefined, 'off', 'neon']) {
     withDom(season, (html) => {
-      assert.equal(applyGuestSeason('new'), null);
+      assert.equal(applyGuestSeason(), null);
       assert.equal('season' in html.dataset, false);
     });
   }

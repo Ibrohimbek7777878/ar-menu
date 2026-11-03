@@ -15,7 +15,6 @@ import { matchUzbekQuery } from '../../utils/uzbekSearch';
 import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { DishSheet } from '../../components/ui/DishSheet/DishSheet';
-import { getGuestDesign } from '../../utils/guestDesign';
 import { enrichDishWith3D } from '../../services/Smart3DMatcher';
 import { getLang, t } from '../../i18n';
 import { dishName } from '../../utils/dishText';
@@ -95,8 +94,8 @@ export const MenuPage: React.FC = () => {
   
   // 3D Modal state
   const [selected3DProduct, setSelected3DProduct] = useState<Product | null>(null);
-  // Taom oynasi: faqat yangi dizaynda va restoran o'chirmagan bo'lsa (eski xatti-harakat saqlanadi, AGENTS 4-qoida)
-  const dishSheetOn = getGuestDesign() === 'new' && window.__GULISTON_SESSION__?.dishSheet !== 'off';
+  // Taom oynasi: restoran o'chirmagan bo'lsa (egasi qarori: dizayn tartibiga bog'liq emas; o'chirilsa eski xatti-harakat qaytadi, AGENTS 4-qoida)
+  const dishSheetOn = window.__GULISTON_SESSION__?.dishSheet !== 'off';
   const [sheetProduct, setSheetProduct] = useState<Product | null>(null);
   const [is3DOpen, setIs3DOpen] = useState(false);
 

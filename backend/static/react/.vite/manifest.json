@@ -1,6 +1,6 @@
 {
-  "_HeroPlate3D-ChLf7zhH.js": {
-    "file": "assets/HeroPlate3D-ChLf7zhH.js",
+  "_HeroPlate3D-BMTIjrhc.js": {
+    "file": "assets/HeroPlate3D-BMTIjrhc.js",
     "name": "HeroPlate3D",
     "imports": [
       "index.html"
@@ -17,12 +17,12 @@
     "file": "assets/mockDishes-Ct1bRflm.js",
     "name": "mockDishes"
   },
-  "_motion-DoaWjDpE.js": {
-    "file": "assets/motion-DoaWjDpE.js",
+  "_motion-B6z3knLi.js": {
+    "file": "assets/motion-B6z3knLi.js",
     "name": "motion",
     "imports": [
       "index.html",
-      "_HeroPlate3D-ChLf7zhH.js"
+      "_HeroPlate3D-BMTIjrhc.js"
     ]
   },
   "_three.module-VGYe9TAt.js": {
@@ -34,7 +34,7 @@
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-BiAzAOpE.js",
+    "file": "assets/index-tdnJLKqF.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -61,7 +61,10 @@
       "assets/outfit-latin-ext-wght-normal-DdQaqQDo.woff2",
       "assets/outfit-latin-wght-normal-Bc-8i84L.woff2",
       "assets/plus-jakarta-sans-latin-ext-wght-normal-DmpS2jIq.woff2",
-      "assets/plus-jakarta-sans-latin-wght-normal-eXO_dkmS.woff2"
+      "assets/plus-jakarta-sans-latin-wght-normal-eXO_dkmS.woff2",
+      "assets/playfair-display-cyrillic-wght-normal-5WvUvBgz.woff2",
+      "assets/playfair-display-latin-ext-wght-normal-CT1r92Rl.woff2",
+      "assets/playfair-display-latin-wght-normal-BOwq7MWX.woff2"
     ]
   },
   "node_modules/@fontsource-variable/outfit/files/outfit-latin-ext-wght-normal.woff2": {
@@ -72,6 +75,18 @@
     "file": "assets/outfit-latin-wght-normal-Bc-8i84L.woff2",
     "src": "node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2"
   },
+  "node_modules/@fontsource-variable/playfair-display/files/playfair-display-cyrillic-wght-normal.woff2": {
+    "file": "assets/playfair-display-cyrillic-wght-normal-5WvUvBgz.woff2",
+    "src": "node_modules/@fontsource-variable/playfair-display/files/playfair-display-cyrillic-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-ext-wght-normal.woff2": {
+    "file": "assets/playfair-display-latin-ext-wght-normal-CT1r92Rl.woff2",
+    "src": "node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2": {
+    "file": "assets/playfair-display-latin-wght-normal-BOwq7MWX.woff2",
+    "src": "node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2"
+  },
   "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-wght-normal.woff2": {
     "file": "assets/plus-jakarta-sans-latin-ext-wght-normal-DmpS2jIq.woff2",
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-wght-normal.woff2"
@@ -81,7 +96,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-DhrDMbQA.js",
+    "file": "assets/model-viewer-D_Mw_e-U.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -91,7 +106,7 @@
     ]
   },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-DXnV1t8c.js",
+    "file": "assets/PhotogrammetryStudioModal-BvfufzfU.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -101,7 +116,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-C7Nloqj2.js",
+    "file": "assets/QRGeneratorModal-DZfiPIqv.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -122,7 +137,7 @@
     "isDynamicEntry": true
   },
   "src/motion/three/celebrationScene.ts": {
-    "file": "assets/celebrationScene-BQGbuidC.js",
+    "file": "assets/celebrationScene-CpKusbLk.js",
     "name": "celebrationScene",
     "src": "src/motion/three/celebrationScene.ts",
     "isDynamicEntry": true,
@@ -132,7 +147,7 @@
     ]
   },
   "src/motion/three/heroPlateScene.ts": {
-    "file": "assets/heroPlateScene-CTgMcIf_.js",
+    "file": "assets/heroPlateScene-wCwIKl7u.js",
     "name": "heroPlateScene",
     "src": "src/motion/three/heroPlateScene.ts",
     "isDynamicEntry": true,
@@ -142,7 +157,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-CZuExSm2.js",
+    "file": "assets/ARMenuPage-mwZLaLKr.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -154,7 +169,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-C1kfWGgE.js",
+    "file": "assets/AdminDashboardPage-DCqWwrrk.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -166,7 +181,7 @@
     ]
   },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-Caic0AOi.js",
+    "file": "assets/CartPage-DMuEAwzY.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -175,20 +190,20 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-D74IdfL9.js",
+    "file": "assets/CheckoutPage-B-4_Zk6m.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-DoaWjDpE.js"
+      "_motion-B6z3knLi.js"
     ],
     "dynamicImports": [
       "src/motion/three/celebrationScene.ts"
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-BW8cfuVA.js",
+    "file": "assets/HostessDeskPage-BcCO6cvn.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -197,7 +212,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-D4wW9rmJ.js",
+    "file": "assets/MenuPage-B3mCpa1N.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -209,17 +224,17 @@
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-N58Unuir.js",
+    "file": "assets/OrdersPage-BsxJ7-uS.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-DoaWjDpE.js"
+      "_motion-B6z3knLi.js"
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-Bt9jolgX.js",
+    "file": "assets/ReservationPage-Cyabe1EH.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -228,7 +243,7 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-D8PRDXYY.js",
+    "file": "assets/TableHubPage-bUOh3f7w.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
@@ -237,7 +252,7 @@
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-CahSMrQo.js",
+    "file": "assets/WaiterPanelPage-Cva9gJj_.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -246,17 +261,17 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-_sUtiQJG.js",
+    "file": "assets/WelcomePage-BPZ8hJ3X.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_HeroPlate3D-ChLf7zhH.js"
+      "_HeroPlate3D-BMTIjrhc.js"
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-BFkpDWP0.js",
+    "file": "assets/ComponentShowcase-CW-79LKS.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
@@ -266,7 +281,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-BALZYF4X.css",
+    "file": "assets/style-CmY910gL.css",
     "src": "style.css"
   }
 }

@@ -3,10 +3,12 @@
  *
  * Faqat Telegram ichida ochilganda ishlaydi:
  * - WebApp.ready() va WebApp.expand()
- * - Brend ranglari (#FFFFFF / #FAF7F2)
+ * - Brend ranglari (palitraga mos: klassik #FFFFFF / #F7F3EA, apelsin #FFFFFF / #FAF7F2)
  * - start_param orqali stolni aniqlash (t_<token>)
  * - BackButton boshqaruvi
  */
+
+import { BOOT_BACKGROUND_ORANGE, currentPalette, PALETTE_CHROME } from './guestPalette.ts';
 
 const HEX32 = /^[0-9a-f]{32}$/;
 const UUID_DASHED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -85,11 +87,13 @@ export function initTelegramWebApp(): void {
     tg.ready();
     tg.expand();
 
+    // Boshlang'ich (kunduzgi) rang — palitraga mos; kun/tun yoqilgan bo'lsa guestTheme keyin o'z rangini qo'yadi
+    const palette = currentPalette();
     if (typeof tg.setHeaderColor === 'function') {
-      tg.setHeaderColor('#FFFFFF');
+      tg.setHeaderColor(PALETTE_CHROME[palette].light.header);
     }
     if (typeof tg.setBackgroundColor === 'function') {
-      tg.setBackgroundColor('#FAF7F2');
+      tg.setBackgroundColor(palette === 'orange' ? BOOT_BACKGROUND_ORANGE : PALETTE_CHROME.classic.light.background);
     }
 
     // start_param orqali stol QR tokenini aniqlash (t_<token>)

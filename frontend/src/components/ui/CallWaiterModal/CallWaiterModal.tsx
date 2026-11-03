@@ -34,7 +34,7 @@ const CALL_OPTIONS: CallOption[] = [
     icon: '🧾',
     title: tr('Hisob-kitob (Chek)'),
     desc: tr("To'lov uchun yakuniy hisobni olib kelish"),
-    color: '#E11D48',
+    color: 'var(--brand-accent)',
   },
   {
     type: 'waiter',

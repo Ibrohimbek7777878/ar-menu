@@ -1,6 +1,6 @@
 /* Fasl ranglari. Restoran sozlamasi `guest_season` (`/ra/settings` -> "Fasl rangi") tanlaydi, server `auto` ni oyga qarab
-   (Toshkent vaqti) kuz/qish/bahor/yoz ga aylantiradi. JS `<html data-season>` ni faqat yangi dizaynda (`data-design="new"`)
-   qo'yadi: klassik dizayn o'zgarmaydi. Fasl o'chiq bo'lsa `data-season` yo'q va bu fayl hech narsa qilmaydi, ya'ni
+   (Toshkent vaqti) kuz/qish/bahor/yoz ga aylantiradi. JS `<html data-season>` ni dizayn tartibidan qat'i nazar (egasi qarori)
+   qo'yadi. Fasl o'chiq bo'lsa `data-season` yo'q va bu fayl hech narsa qilmaydi, ya'ni
    ko'rinish avvalgisi bilan piksel-piksel bir xil.
    Qiymatlar maketdan (docs/dizayn). `--brand-primary` (tugma, narx, havola) har faslda oq matn bilan >= 4.5:1:
    kuz 5.18, qish 7.77, bahor 5.04, yoz 5.02. Faqat index.css dagi brend o'zgaruvchilari almashadi; neytral ranglar,

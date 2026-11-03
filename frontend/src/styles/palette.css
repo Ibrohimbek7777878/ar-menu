@@ -1,0 +1,179 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Mehmon sayti palitrasi (`<html data-palette="classic|orange">`; restoran sozlamasi `guest_palette`).
+   Dizayn TARTIBI (`data-design`: new | classic) bilan aralashmaydi: tartib = joylashuv, palitra = ranglar va shrift.
+
+     orange  — muqobil: olovrang apelsin + Outfit. Hech narsa o'zgartirilmagan: index.css dagi `:root` qiymatlari aynan shu
+               palitra; bu fayl `orange` da umuman ishlamaydi (hamma qoida `[data-palette='classic']` ostida).
+     classic — STANDART: yashil + krem + serif sarlavha (eski login / base_tma.html dizayn tili). Atribut yo'q bo'lsa ham
+               ilova (main.tsx) 'classic' qo'yadi.
+
+   Fayl tartibi: seasons.css dan KEYIN, darkTheme.css dan OLDIN (cssOrder.ts).
+   Fasl (`data-season`): fasl yoqilganda BREND tokenlarini fasl beradi (`:not([data-season])` bilan klassik brend o'chadi), neytral
+   (krem fon, matn, chegara) esa klassik bo'lib qoladi: fasl rangi klassik asosida ishlaydi.
+
+   Kontrast (WCAG, python bilan hisoblangan; matn >= 4.5:1, katta/ikonka >= 3:1) — hisobotda jadval:
+     kun:  matn #2C2A26 / #4F4A42 / #6B6559 krem #F7F3EA ustida 12.9 / 7.9 / 5.2; oq ustida 14.3 / 8.8 / 5.8
+           oq matn yashil tugmada #2F4836: 10.0 (hover #24382A: 12.5); yashil matn kremda 9.0
+           aksent #A9501A: oq matn 5.5, krem ustida 4.9;  muvaffaqiyat #2A7541: oq 5.7, och fonda 5.0;  xavf #B42318: oq 6.6
+     tun:  matn #F1EEE6 / #CFCABD / #98A094 sirt #17201A ustida 14.4 / 10.2 / 6.2; brend matn #8FBF9A 8.0 (ichki sirt 7.1)
+           oq matn tugmada #3E6B4A: 6.2 (hover #35593F: 7.9)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. KLASSIK, KUN: neytral tokenlar, holat ranglari, soyalar (fasldan mustaqil) ── */
+html[data-palette='classic'] {
+  --bg-primary: #F7F3EA;                 /* krem fon */
+  --bg-surface: #FFFFFF;                 /* karta */
+  --bg-surface-subtle: #FAF7F0;          /* yumshoq krem: kiritish maydoni, belgi, ichki sirt */
+  --bg-surface-dark: #1F2D23;            /* to'q yashil-qora yorliq (Hit, 360°) — oq matn bilan 14:1 */
+
+  --border-subtle: #E8E0CF;              /* karta chegarasi (eski `border-cream`) */
+  --border-strong: #D9CFB8;              /* kiritish maydoni / hover chegarasi */
+
+  --text-primary: #2C2A26;
+  --text-secondary: #4F4A42;
+  --text-muted: #6B6559;                 /* eski "xira" matn; #9E978B (och matn) faqat bezak: 2.6:1, matn uchun ishlatilmaydi */
+  --text-inverse: #FFFFFF;
+
+  /* Aksent (terrakota) — eski `accent-terracotta` #B85D19 kremda 4.1:1 edi, #A9501A: krem 4.9, oq matn bilan 5.5 */
+  --brand-accent: #A9501A;
+  --brand-accent-light: #F8EEE4;
+  --brand-accent-subtle: #F0DCC8;
+
+  --status-success: #2A7541;
+  --status-success-light: #E8F3EA;
+  --status-danger: #B42318;
+
+  /* Soyalar iliq `rgba(44,42,38,…)` (eski `shadow-soft` / `shadow-card`) */
+  --shadow-tint-rgb: 44 42 38;
+  --shadow-sm: 0 1px 3px rgba(44, 42, 38, 0.05);
+  --shadow-card: 0 4px 20px -2px rgba(44, 42, 38, 0.05), 0 1px 3px rgba(44, 42, 38, 0.04);
+  --shadow-hover: 0 10px 30px -4px rgba(44, 42, 38, 0.1), 0 4px 10px -2px rgba(44, 42, 38, 0.05);
+  --shadow-modal: 0 25px 50px -12px rgba(44, 42, 38, 0.28);
+
+  --radius-lg: 18px;                     /* eski radius-xl; 14 (md) va 24 (kartalar) o'zgarmaydi */
+}
+
+/* Klassik BREND (yashil). Fasl yoqilgan bo'lsa bu blok ishlamaydi — brend tokenlarini seasons.css beradi */
+html[data-palette='classic']:not([data-season]) {
+  --brand-primary: #2F4836;
+  --brand-primary-hover: #24382A;
+  --brand-primary-light: #EBF1EC;
+  --brand-primary-subtle: #D9E5DC;
+  --brand-tint-2: #C2D4C7;
+  --brand-tint-3: #9FB8A6;
+  --brand-warm: #C29026;                 /* oltin: faqat bezak (gradient, uchqun, konfetti) */
+  --brand-deep: #1D3023;
+  --brand-primary-rgb: 47 72 54;
+}
+
+/* ── 2. KLASSIK, TUN: yashil tusli to'q (apelsin-to'q `darkTheme.css` 1-bo'limida, `:not([data-palette='classic'])`) ── */
+html[data-theme='dark'][data-palette='classic'] {
+  --bg-primary: #0F1511;
+  --bg-surface: #17201A;
+  --bg-surface-subtle: #1F2A22;
+  --bg-surface-dark: #0A0F0C;
+
+  --border-subtle: #2A3A2F;
+  --border-strong: #3A4D3F;
+
+  --text-primary: #F1EEE6;
+  --text-secondary: #CFCABD;
+  --text-muted: #98A094;
+
+  --brand-accent-light: #2B2018;
+  --brand-accent-subtle: #3A2A1D;
+  --status-success-light: #11261A;
+
+  /* Yarim shaffof qatlamlar uchun rang uchliklari (darkTheme.css qoidalari ishlatadi) */
+  --dk-surface-rgb: 23 32 26;
+  --dk-bg-rgb: 15 21 17;
+  --dk-ink-rgb: 241 238 230;
+  --dk-hover: #26342B;
+  --dk-accent-text: #E8A877;             /* terrakota matn sifatida (sirt 8.2:1) */
+  --dk-brand-text: #8FBF9A;              /* yashil matn/ikonka: sirt 8.0:1, ichki sirt 7.1:1, hover sirt 6.3:1 */
+}
+
+/* Brend: tugma foni to'q fonda ko'rinadigan yashil (oq matn 6.2:1); matn va ikonkalar `--dk-brand-text` orqali (darkTheme.css 12-bo'lim) */
+html[data-theme='dark'][data-palette='classic']:not([data-season]) {
+  --brand-primary: #3E6B4A;
+  --brand-primary-hover: #35593F;
+  --brand-primary-light: #1C2B21;
+  --brand-primary-subtle: #243629;
+  --brand-tint-2: #2F4A37;
+  --brand-tint-3: #3F6149;
+  --brand-warm: #D9AE4E;
+  --brand-deep: #A9D4B3;
+  --brand-primary-rgb: 62 107 74;
+}
+
+/* ── 3. Shrift: sarlavha — Playfair Display (serif, lokal), matn/raqam/tugma — Plus Jakarta Sans ──
+   Qaror: eski sayt sarlavhani serif, qolgan hamma narsani (narx, tugma, belgi, raqam) Plus Jakarta Sans bilan yozgan.
+   Playfair raqamlari narx va vaqtda "o'ynoqi" (kichik o'lchamda o'qish qiyin), shuning uchun narx/raqam Jakarta'da qoladi;
+   Outfit faqat apelsin palitrada. Salbiy harf oralig'i (-0.02em) serif'ga yarashmaydi -> 0. */
+html[data-palette='classic'] :is(h1, h2, h3, h4, h5, h6, .brand-font, .brand-name, .brand-crest, .dish-card-title, .empty-title,
+  .modal-dish-name, .welcome-hero-title, .ar-empty-title, .summary-card-title, .checkout-page-title, .table-hub-title,
+  .orders-page-title, .empty-orders-title, .cart-title-main, .ds-title, .ds-rail-title, .ds-placeholder, .ds-mini-letter,
+  .wn-root h1, .wn-root h2, .wn-root h3) {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-variant-numeric: lining-nums;     /* Playfair raqamlari standartda eski uslubda (pastga tushgan): "Stol #1", "#GLS-2026..." uchun to'g'ri chiziqli raqam */
+  letter-spacing: 0;
+}
+html[data-palette='classic'] .dish-card-placeholder::before { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-weight: 700; }
+/* Narx, miqdor, jami summa: Plus Jakarta Sans (tabular raqamlar) */
+html[data-palette='classic'] :is(.price-val, .wn-price, .ds-price, .ds-tile b, .ds-stepper span, .checkout-item-total, .checkout-item-avatar) {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0;
+}
+
+/* ── 4. Yangi bosh sahifa (`wn-*`): mahalliy o'zgaruvchilar klassik tokenlarga ulanadi ── */
+html[data-palette='classic'] .wn-root {
+  --wn-muted: var(--text-secondary);
+  --wn-line: var(--border-subtle);
+}
+/* Playfair 800 juda og'ir ko'rinadi — sarlavhalar 700 */
+html[data-palette='classic'] .wn-title,
+html[data-palette='classic'] .wn-head h2,
+html[data-palette='classic'] .wn-banner h2 { font-weight: 700; }
+
+/* ── 5. Faol toifa chipi: klassik palitrada yashil (eski dizayn tili) ──
+   designNew.css maketdagi "to'q" chipni beradi (apelsin palitra uchun o'zgarmaydi); klassikda brend yashili + oq matn (kontrast 10:1; tunda 6.2:1) */
+html[data-palette='classic'][data-design='new'] .chip-pill.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgb(var(--brand-primary-rgb) / 0.3);
+}
+html[data-theme='dark'][data-palette='classic'][data-design='new'] .chip-pill.active { color: #FFFFFF; }
+html[data-theme='dark'][data-palette='classic'][data-design='new'] .chip-pill.active .chip-counter { background: rgb(255 255 255 / 0.2); color: #FFFFFF; }
+
+/* ── 6. Rasmsiz taom bosh harfi va "Halol" belgisi (kunduzgi kontrast; tunda darkTheme.css o'z qoidasi bilan bosadi) ──
+   Bosh harf: brend rangining 55% shaffofligi yashil-kulrang fonda 2.5:1 edi -> 80% (>= 3:1, katta matn) */
+html[data-palette='classic'] :is(.ds-placeholder, .ds-mini-letter) { color: rgb(var(--brand-primary-rgb) / 0.85); }
+html[data-palette='classic'][data-design='new'] .dish-card-placeholder::before { opacity: 0.8; }
+/* "Halol": #16A34A / #F0FDF4 (3.2:1) o'rniga muvaffaqiyat tokenlari (5.0:1) */
+html[data-palette='classic'] .tag-halal { background: var(--status-success-light); color: var(--status-success); border-color: #CFE6D5; }
+
+/* ── 7. Ofitsiantni chaqirish va stol almashtirish (NFC) oynalari: sovuq slate (#0f172a, #64748b, #e2e8f0 ...) -> klassik tokenlar ──
+   Tunda darkTheme.css 10-bo'limi xuddi shu sinflarni o'z qoidalari bilan bosadi (ustuvorlik teng, fayl keyin). */
+html[data-palette='classic'] :is(.call-waiter-close, .nfc-modal-close) { border-color: var(--border-subtle); background: var(--bg-surface-subtle); color: var(--text-muted); }
+html[data-palette='classic'] :is(.call-waiter-close, .nfc-modal-close):hover { background: var(--bg-primary); color: var(--text-primary); }
+html[data-palette='classic'] :is(.call-waiter-title, .nfc-title, .call-opt-title, .tbl-name) { color: var(--text-primary); }
+html[data-palette='classic'] :is(.call-waiter-desc, .call-opt-desc, .nfc-subtitle, .legend-item, .nfc-tab-btn) { color: var(--text-muted); }
+html[data-palette='classic'] :is(.call-note-label, .nfc-select-label) { color: var(--text-secondary); }
+html[data-palette='classic'] :is(.call-opt-card, .nfc-tbl-chip) { border-color: var(--border-subtle); }
+html[data-palette='classic'] .call-opt-card:hover { border-color: var(--border-strong); background: var(--bg-surface-subtle); }
+html[data-palette='classic'] :is(.call-opt-card.active, .nfc-tbl-chip.selected) { background: var(--brand-primary-light); }
+html[data-palette='classic'] .call-opt-radio { border-color: var(--border-strong); }
+html[data-palette='classic'] .call-note-input { border-color: var(--border-subtle); color: var(--text-primary); background: var(--bg-surface-subtle); }
+html[data-palette='classic'] .call-note-input:focus { background: var(--bg-surface); }
+html[data-palette='classic'] .nfc-tab-switch { background: var(--bg-primary); }
+html[data-palette='classic'] .qr-frame-box { background: var(--bg-surface-subtle); }
+html[data-palette='classic'] .nfc-legend { border-top-color: var(--border-subtle); }
+html[data-palette='classic'] .tbl-status-indicator { background: var(--text-muted); }
+html[data-palette='classic'] :is(.nfc-tbl-chip.free .tbl-status-indicator, .legend-dot.free) { background: var(--status-success); }
+html[data-palette='classic'] .success-icon-bubble { background: var(--status-success); }
+/* Stol belgisi "Bo'sh": #64748B / #F1F5F9 (4.3:1) */
+html[data-palette='classic'] .pill-free { background: var(--bg-surface-subtle); color: var(--text-muted); }
+
+/* ── 8. Tun: brend kartadagi shaffof oq belgi tugma-yashil ustida 4.49:1 edi (11px matn) -> qoraytirilgan pilyulya (7.6:1) ── */
+html[data-theme='dark'][data-palette='classic'] .ar-hero-badge { background: rgb(0 0 0 / 0.18); }

@@ -1,13 +1,14 @@
-/* A/B qatlam animatsiyalari (src/motion). Faqat yangi dizayn; ranglar faqat index.css tokenlaridan.
+/* A/B qatlam animatsiyalari (src/motion). Egasi qarori: dizayn tartibiga (`guest_design`) bog'liq emas (oldin `[data-design='new']` edi; `:root` o'sha ustuvorlikni (0,2,0) saqlaydi);
+   ranglar faqat index.css / palette.css tokenlaridan.
    Daraja `<html data-motion>`: full = hammasi, light = faqat bir martalik effektlar (cheksiz animatsiyasiz), off = hech narsa.
    Faqat `transform` / `opacity` / `stroke-dashoffset` animatsiya qilinadi. */
 
 /* ── Tugma holati (setButtonState): yozuv joyida qoladi, ustida aylana / ✓ / ✕ ───────────────────────── */
-[data-design='new'] [data-fx-state] { position: relative; overflow: hidden; }
-[data-design='new'] [data-fx-state] > :not(.fx-ind) { transition: opacity 0.15s ease; }
-[data-design='new'] [data-fx-state='loading'] > :not(.fx-ind),
-[data-design='new'] [data-fx-state='success'] > :not(.fx-ind),
-[data-design='new'] [data-fx-state='error'] > :not(.fx-ind) { opacity: 0; }
+:root [data-fx-state] { position: relative; overflow: hidden; }
+:root [data-fx-state] > :not(.fx-ind) { transition: opacity 0.15s ease; }
+:root [data-fx-state='loading'] > :not(.fx-ind),
+:root [data-fx-state='success'] > :not(.fx-ind),
+:root [data-fx-state='error'] > :not(.fx-ind) { opacity: 0; }
 
 .fx-ind { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: #fff; }
 .fx-ind svg { grid-area: 1 / 1; width: 22px; height: 22px; opacity: 0; }
@@ -16,8 +17,8 @@
 [data-fx-state='error'] .fx-cross { opacity: 1; }
 [data-fx-state='success'] .fx-check path,
 [data-fx-state='error'] .fx-cross path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: fx-draw 0.38s 0.06s ease-out forwards; }
-[data-design='new'] [data-fx-state='success'] { background: var(--status-success) !important; box-shadow: 0 4px 14px rgb(22 163 74 / 0.35) !important; }
-[data-design='new'] [data-fx-state='error'] { background: var(--status-danger) !important; box-shadow: 0 4px 14px rgb(220 38 38 / 0.35) !important; }
+:root [data-fx-state='success'] { background: var(--status-success) !important; box-shadow: 0 4px 14px rgb(22 163 74 / 0.35) !important; }
+:root [data-fx-state='error'] { background: var(--status-danger) !important; box-shadow: 0 4px 14px rgb(220 38 38 / 0.35) !important; }
 
 @keyframes fx-rot { to { transform: rotate(360deg); } }
 @keyframes fx-draw { to { stroke-dashoffset: 0; } }
@@ -83,13 +84,13 @@
 
 /* ── Ilovaga ulanish uchun moslashtirish ──────────────────────────────────────────────────────────── */
 /* "Yuborilmoqda" paytida tugma o'chirilgan (disabled) bo'ladi: aylana/✓ xira ko'rinmasin */
-[data-design='new'] [data-fx-state]:disabled { opacity: 1; cursor: progress; }
+:root [data-fx-state]:disabled { opacity: 1; cursor: progress; }
 
 /* Welcome: 3D sahna eski CSS sahna o'rnida (stage ichida to'liq maydon) */
 .wn-stage > .mx-hero3d.wn-hero3d { position: absolute; inset: 0; width: auto; aspect-ratio: auto; }
 
 /* Buyurtmalar: kartochka sarlavhasida va modal tepasida holat sahnasi */
-[data-design='new'] .order-card-header { align-items: center; }
-[data-design='new'] .order-card-header > .fx-scene { flex: none; margin-right: 10px; }
-[data-design='new'] .order-card-header .order-card-id { margin-right: auto; }
-[data-design='new'] .modal-status-hero > .fx-scene { margin: 0 auto 8px; }
+:root .order-card-header { align-items: center; }
+:root .order-card-header > .fx-scene { flex: none; margin-right: 10px; }
+:root .order-card-header .order-card-id { margin-right: auto; }
+:root .modal-status-hero > .fx-scene { margin: 0 auto 8px; }

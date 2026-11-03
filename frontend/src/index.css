@@ -30,6 +30,8 @@
   --brand-warm: #FB923C;
   --brand-deep: #9A3412;
   --brand-primary-rgb: 234 88 12;
+  /* Soya rangi uchligi (taom kartasi / bosh sahifa soyalari): apelsin palitrada iliq jigarrang; klassikda styles/palette.css almashtiradi */
+  --shadow-tint-rgb: 124 45 18;
 
   --brand-accent: #E11D48;           /* Pishgan anor va qizil sous aktsenti */
   --brand-accent-light: #FFF1F2;

@@ -8,12 +8,12 @@
   --wn-brand-hover: var(--brand-primary-hover);
   --wn-brand-light: var(--brand-primary-light);
   --wn-brand-subtle: var(--brand-primary-subtle);
-  --wn-accent: #E11D48;
+  --wn-accent: var(--brand-accent);
   --wn-ink: var(--text-primary, #1C1917);
   --wn-muted: #57534E;
   --wn-line: #E7E5E4;
   --wn-radius: 20px;
-  --wn-shadow: 0 10px 30px -12px rgba(124, 45, 18, 0.25);
+  --wn-shadow: 0 10px 30px -12px rgb(var(--shadow-tint-rgb) / 0.25);
   min-height: 100vh;
   background: var(--bg-primary, #FAF7F2);
   color: var(--wn-ink);
@@ -56,7 +56,7 @@
 .wn-stage { position: relative; aspect-ratio: 1 / 1; max-width: 620px; width: 100%; margin-inline: auto; transition: transform 0.25s ease-out; }
 .wn-stage::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--brand-primary-subtle), var(--brand-tint-2) 60%, var(--brand-tint-3)); }
 .wn-ring { position: absolute; inset: 1%; border-radius: 50%; border: 2px dashed rgb(var(--brand-primary-rgb) / 0.45); animation: wn-spin 40s linear infinite; }
-.wn-main-dish { position: absolute; inset: 11%; border-radius: 50%; overflow: hidden; box-shadow: 0 40px 60px -25px rgba(124, 45, 18, 0.55); animation: wn-float 6s ease-in-out infinite; border: 8px solid #fff; }
+.wn-main-dish { position: absolute; inset: 11%; border-radius: 50%; overflow: hidden; box-shadow: 0 40px 60px -25px rgb(var(--shadow-tint-rgb) / 0.55); animation: wn-float 6s ease-in-out infinite; border: 8px solid #fff; }
 .wn-main-dish img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); }
 .wn-steam { position: absolute; top: 4%; left: 42%; width: 16%; height: 24%; pointer-events: none; }
 .wn-steam i { position: absolute; bottom: 0; width: 30%; height: 100%; border-radius: 50%; background: rgba(255, 255, 255, 0.7); filter: blur(10px); animation: wn-steam 3.6s ease-in infinite; opacity: 0; }

@@ -16,7 +16,7 @@
 .lab-note { margin: 0; font-size: 13px; color: var(--text-muted); }
 .lab-wide { grid-column: 1 / -1; }
 .lab-stage { border-radius: 24px; background: radial-gradient(circle at 50% 40%, var(--brand-primary-light), var(--brand-primary-subtle)); max-width: 420px; width: 100%; margin: 0 auto; }
-.lab-dish { position: absolute; inset: 12%; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #FED7AA, var(--brand-warm)); font-family: 'Outfit', sans-serif; font-size: 72px; font-weight: 700; color: rgb(255 255 255 / 0.85); box-shadow: 0 30px 40px -24px rgb(var(--brand-primary-rgb) / 0.5); }
+.lab-dish { position: absolute; inset: 12%; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--brand-tint-2), var(--brand-warm)); font-family: 'Outfit', sans-serif; font-size: 72px; font-weight: 700; color: rgb(255 255 255 / 0.85); box-shadow: 0 30px 40px -24px rgb(var(--brand-primary-rgb) / 0.5); }
 .lab-row { display: flex; align-items: center; gap: 12px; }
 .lab-cart { position: relative; width: 44px; height: 44px; border-radius: 14px; background: var(--bg-surface-subtle); display: grid; place-items: center; flex: none; }
 .lab-cart b { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--brand-primary); color: #fff; font-size: 12px; display: grid; place-items: center; }

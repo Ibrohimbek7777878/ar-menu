@@ -55,9 +55,32 @@ test('Telegram WebApp mavjud bo\'lganda ready() va expand() chaqiriladi', () => 
 
   assert.equal(readyCalled, true);
   assert.equal(expandCalled, true);
+  // standart palitra — klassik (yashil + krem): Telegram foni krem #F7F3EA
+  assert.equal(headerColor, '#FFFFFF');
+  assert.equal(bgColor, '#F7F3EA');
+  assert.equal(hapticStyle, 'medium');
+});
+
+test('Telegram rangi muqobil (apelsin) palitrada avvalgidek: #FFFFFF / #FAF7F2', () => {
+  let headerColor = '';
+  let bgColor = '';
+  // @ts-ignore
+  global.window = {
+    location: { pathname: '/restaurant/', replace: () => {} },
+    addEventListener: () => {},
+    __GULISTON_SESSION__: { palette: 'orange' },
+    Telegram: {
+      WebApp: {
+        ready: () => {},
+        expand: () => {},
+        setHeaderColor: (c: string) => { headerColor = c; },
+        setBackgroundColor: (c: string) => { bgColor = c; },
+      },
+    },
+  };
+  initTelegramWebApp();
   assert.equal(headerColor, '#FFFFFF');
   assert.equal(bgColor, '#FAF7F2');
-  assert.equal(hapticStyle, 'medium');
 });
 
 // ── start_param -> stol tokeni (TZ C7): backend `t/<uuid:token>/` faqat kichik harfli tireli UUID kutadi ──

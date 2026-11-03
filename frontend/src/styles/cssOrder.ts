@@ -47,5 +47,7 @@ import './seasons.css'
 import './motion.css'
 // Animatsiya qatlami (A: tugma holati, holat sahnalari; B: 3D sahna konteyneri) — src/motion
 import '../motion/fx.css'
+// Palitra (admin sozlamasi `guest_palette`): klassik yashil-krem (standart) tokenlari; `orange` da hech narsa qilmaydi
+import './palette.css'
 // Kun/tun rejimi (admin sozlamasi `guest_theme`): faqat `html[data-theme='dark']` bo'lganda ishlaydi, eng oxirida
 import './darkTheme.css'

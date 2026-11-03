@@ -1,9 +1,9 @@
 /* F5: ishtaha qatlami va animatsiya darajasi (admin sozlamasi `guest_motion`: full | light | off).
-   Faqat yangi dizayn. Yangi effektlar faqat `transform` va `opacity` ni animatsiya qiladi (GPU), box-shadow/filter yo'q.
+   Dizayn tartibidan (new/classic) qat'i nazar (egasi qarori; oldin `[data-design='new']`, endi `:root` — ustuvorlik bir xil). Yangi effektlar faqat `transform` va `opacity` ni animatsiya qiladi (GPU), box-shadow/filter yo'q.
    `<html data-motion>`: 'full' (standart), 'light' (cheksiz animatsiyasiz; zaif qurilmada avtomatik), 'off' (animatsiyasiz). */
 
 /* 1. Yaltirash: birinchi 8 taom kartasi rasmida 1 marta yorug' chiziq o'tadi (pishgan, yaltiroq taom taassuroti) */
-[data-design='new'] .menu-dishes-grid .dish-card:nth-child(-n + 8) .dish-card-media::after {
+:root .menu-dishes-grid .dish-card:nth-child(-n + 8) .dish-card-media::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -18,8 +18,8 @@
 }
 
 /* 2. 360° undovi: belgidagi ikonka 2 marta aylanib to'xtaydi (3D ochilishini rag'batlantiradi) */
-[data-design='new'] .badge-3d-clean svg,
-[data-design='new'] .btn-trigger-3d svg {
+:root .badge-3d-clean svg,
+:root .btn-trigger-3d svg {
   animation: dn-spin-hint 1.1s 1.2s ease-in-out 2 both;
 }
 @keyframes dn-spin-hint {
@@ -49,9 +49,9 @@
 
 /* Tizim sozlamasi `prefers-reduced-motion` hamma yangi effektni ham o'chiradi */
 @media (prefers-reduced-motion: reduce) {
-  [data-design='new'] .menu-dishes-grid .dish-card .dish-card-media::after,
-  [data-design='new'] .badge-3d-clean svg,
-  [data-design='new'] .btn-trigger-3d svg {
+  :root .menu-dishes-grid .dish-card .dish-card-media::after,
+  :root .badge-3d-clean svg,
+  :root .btn-trigger-3d svg {
     animation: none;
   }
 }
