@@ -105,7 +105,7 @@ Sotuvchi mahsulot qo'shsa — avtomatik ikkala joyda ham paydo bo'ladi. O'zgarti
 - [ ] Sotuvchi do'konni 1 daqiqada nom/logo bilan yarata oladi, mahsulot qo'shsa ikkala joyda ko'rinadi
 - [ ] Do'koni yo'q sotuvchiga 10 marta ogohlantirish emas, bitta to'liq onboarding chiqadi
 - [ ] `user`/`seller` `/admin/login/` ga kirsa — darhol blok, xabar: *“Faqat super-admin”*, logda `tenant_violation`
-- [ ] Faqat `super_admin` + to'g'ri `ADMIN_PANEL_PASSWORD=GulistonAdmin2026!` bilan admin kira oladi
+- [ ] Faqat `super_admin` + to'g'ri `ADMIN_PANEL_PASSWORD=<ADMIN_PANEL_PASSWORD>` bilan admin kira oladi
 
 ---
 
