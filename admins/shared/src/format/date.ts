@@ -7,7 +7,11 @@
  * - Oy nomlari qo'lda yozilgan: `Intl` o'zbek lokaliga tayanilmaydi (brauzerdan brauzerga farq qiladi).
  * - Bugun -> "bugun 13:44", kecha -> "kecha 18:20", boshqa kun -> "26-sentabr",
  *   yil boshqa bo'lsa -> "26-sentabr 2025".
+ * - Matnlar tanlangan tilga o'giriladi (t): rus "сегодня 13:44", "26 сентября 2025"; ingliz "today 13:44", "September 26, 2025".
+ *   O'zbekchada natija avvalgidek. UZ_MONTHS o'zbekcha asl nomlar (tarjima kaliti).
  */
+
+import { t } from '../i18n/engine.ts';
 
 export const UZ_MONTHS = [
   'yanvar',
@@ -66,13 +70,16 @@ export function formatHumanDateTime(
   const dayIndex = Math.floor((ms + TASHKENT_OFFSET_MS) / DAY_MS);
   const nowDayIndex = Math.floor((nowMs + TASHKENT_OFFSET_MS) / DAY_MS);
 
-  if (dayIndex === nowDayIndex) return `bugun ${time}`;
-  if (dayIndex === nowDayIndex - 1) return `kecha ${time}`;
+  if (dayIndex === nowDayIndex) return t('bugun {time}', { time });
+  if (dayIndex === nowDayIndex - 1) return t('kecha {time}', { time });
 
-  let text = `${local.getUTCDate()}-${UZ_MONTHS[local.getUTCMonth()]}`;
-  if (local.getUTCFullYear() !== localNow.getUTCFullYear()) {
-    text += ` ${local.getUTCFullYear()}`;
-  }
+  const day = local.getUTCDate();
+  const month = t(UZ_MONTHS[local.getUTCMonth()]);
+  const year = local.getUTCFullYear();
+  let text =
+    year !== localNow.getUTCFullYear()
+      ? t('{day}-{month} {year}', { day, month, year })
+      : t('{day}-{month}', { day, month });
   if (options.alwaysTime) text += ` ${time}`;
   return text;
 }

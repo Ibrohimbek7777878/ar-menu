@@ -1,11 +1,95 @@
-/* Resto Admin: dizayn tokenlari.
-   BITTA DIZAYN TILI: qiymatlar va shriftlar mehmon saytidagi bilan bir xil (frontend/src/index.css): iliq oq fon,
-   apelsin urg'u, Outfit (sarlavha, raqam) + Plus Jakarta Sans (matn). Yangi rang qo'shilmagan.
-   O'zgaruvchi NOMLARI avvalgidek (sahifalar shularni ishlatadi, `accent-emerald` = muvaffaqiyat, `accent-amber` = urg'u/ogohlantirish,
-   `accent-rose` = xavf), faqat qiymatlari mehmon paletasidan. Eski to'q ko'k/zumrad/Inter tili shu faylda almashtirildi. */
+/* Resto Admin: dizayn tokenlari. BITTA joyda: bu fayl. Ranglar, shriftlar, radius va soyalar FAQAT CSS o'zgaruvchilari orqali ishlatiladi
+   (komponent va sahifalarda qattiq yozilgan rang bo'lmasligi shart: tests/palette.test.ts shared komponentlarni tekshiradi).
+
+   PALITRA: <html data-palette="classic|orange">; standart `classic` (atribut bo'lmasa ham). Qiymatni server shablonlari yozadi
+   (`{% gulistan_palette %}`). Mehmon sayti ham xuddi shu ikki palitrada (frontend/src/styles/palette.css), qiymatlar BIR XIL.
+     classic — yashil + krem + serif sarlavha (Playfair Display): eski kirish sahifasi va TMA shablonlari qiymatlari. STANDART.
+     orange  — apelsin + iliq oq (Outfit): avvalgi "yangi dizayn" qiymatlari. O'chirilmagan, muqobil palitra (AGENTS 4).
+   KUN/TUN: <html data-theme="light|dark"> (ui/../theme, kalit `guliston.theme`). Har palitraning o'z tun bloki bor:
+     orange-dark = mehmon sayti frontend/src/styles/darkTheme.css qiymatlari; classic-dark = yashil tusli to'q (quyida).
+   Yangi palitra qo'shish = faqat shu yerga 2 ta blok (kun + tun) qo'shish: `html[data-palette='nom']` va `html[data-theme='dark'][data-palette='nom']`.
+
+   Blok tartibi va ustuvorlik: 1) :root = klassik kun (0,1,0); 2) orange kun (0,1,1); 3) klassik tun (0,2,1), orange palitrada o'chiq (:not);
+   4) orange tun (0,2,1). Har blok BIR XIL tokenlar to'plamini aniqlaydi (boshqasidan qiymat "sizib" o'tmasin).
+   Kontrast (WCAG): hisoblangan jadval hisobotda; matn juftliklari >= 4.5:1, istisnolar har blok izohida.
+
+   Token nomlari (sahifalar ishlatadi): `accent-emerald` = muvaffaqiyat, `accent-amber` = ogohlantirish/urg'u, `accent-rose` = xavf,
+   `accent-indigo` = neytral. Qo'shilganlar: `brand*` (faol band, havola: klassikda yashil, apelsinda apelsin), `accent-rose-solid`
+   (qizil TO'LDIRISH, oq matn bilan; `accent-rose` tunda matn uchun ochroq), `text-inverse`, `scrim`, `focus-ring`. */
 @import './fonts.css';
 
-:root[data-design='new'], [data-design='new'] {
+/* ═══════════ 1) KLASSIK — kun (STANDART) ═══════════
+   Manba: backend/templates/restaurant_admin/login.html va tma/base_tma.html (eski dizayn) + mehmon frontend/src/styles/palette.css.
+   "mehmon X" izohi = o'sha qiymat mehmon saytida aynan shunday (tests/palette.test.ts solishtiradi); "hosila" = faqat adminga kerak, qo'lda hisoblangan. */
+:root {
+  color-scheme: light;
+
+  --bg-primary: #F7F3EA;          /* krem fon */
+  --bg-surface: #FFFFFF;          /* karta */
+  --bg-surface-hover: #F0EADF;    /* admin: ustiga olib borilganda (mehmonda yo'q) */
+  --bg-elevated: #FAF7F0;         /* mehmon --bg-surface-subtle: karta ichidagi ichki sirt, kiritish maydoni */
+  --border-subtle: #E8E0CF;       /* mehmon --border-subtle: karta chegarasi */
+  --border-strong: #D9CFB8;       /* mehmon --border-strong: kiritish maydoni */
+
+  --text-main: #2C2A26;
+  --text-muted: #4F4A42;          /* mehmon --text-secondary */
+  --text-dim: #6B6559;            /* mehmon --text-muted: oq ustida 5.8:1, krem ustida 5.2:1 ("och matn" #9E978B matn uchun yaramaydi: 2.6:1) */
+  --text-inverse: #FFFFFF;
+
+  /* Muvaffaqiyat (bor, ochiq, to'langan) */
+  --accent-emerald: #2A7541;      /* mehmon --status-success: oq ustida 5.7:1, krem 5.1:1; oq matn bilan to'ldirishda 5.7:1 */
+  --accent-emerald-hover: #226035;  /* hosila: 18% to'qroq */
+  --accent-emerald-bg: #E8F3EA;   /* mehmon --status-success-light: matn 5.0:1 */
+  --accent-emerald-border: #B8D4C0;  /* hosila */
+
+  /* Ogohlantirish (kutilmoqda, diqqat): terrakota */
+  --accent-amber: #A9501A;        /* mehmon --brand-accent: oq 5.5:1, krem 4.9:1 (eski #B85D19 kremda 4.1:1 edi) */
+  --accent-amber-hover: #904416;  /* hosila */
+  --accent-amber-bg: #F8EEE4;     /* mehmon --brand-accent-light */
+  --accent-amber-border: #F0DCC8; /* mehmon --brand-accent-subtle */
+
+  /* Xavf (tugadi, bekor, xato); to'ldirish ham shu */
+  --accent-rose: #B42318;         /* mehmon --status-danger: oq 6.6:1, krem 5.9:1 */
+  --accent-rose-hover: #D92D20;   /* hosila */
+  --accent-rose-bg: #FAF0EF;      /* hosila */
+  --accent-rose-border: #F3DCDA;  /* hosila */
+  --accent-rose-solid: #B42318;
+
+  /* Neytral urg'u (ma'lumot, rol): matn rangi */
+  --accent-indigo: #2C2A26;
+  --accent-indigo-hover: #4F4A42;
+  --accent-indigo-bg: #F0EADF;
+
+  /* Asosiy amal (birlamchi tugma): yashil (mehmon --brand-primary), oq matn bilan 10.0:1 */
+  --action: #2F4836;
+  --action-hover: #24382A;        /* mehmon --brand-primary-hover */
+  /* Faol band, havola, fokus: brend rangi */
+  --brand: #2F4836;
+  --brand-hover: #24382A;
+  --brand-bg: #EBF1EC;            /* mehmon --brand-primary-light */
+  --brand-border: #C2D4C7;        /* mehmon --brand-tint-2 */
+  --focus-ring: #2F4836;
+
+  --scrim: rgb(44 42 38 / 0.65);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;              /* mehmon klassik --radius-lg */
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(44, 42, 38, 0.05);
+  --shadow-md: 0 4px 20px -2px rgba(44, 42, 38, 0.05), 0 1px 3px rgba(44, 42, 38, 0.04);  /* mehmon --shadow-card */
+  --shadow-lg: 0 25px 50px -12px rgba(44, 42, 38, 0.28);                                  /* mehmon --shadow-modal */
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;   /* faqat sarlavha (h1-h4) */
+  --font-numeric: var(--font-sans);                                          /* narx, son, vaqt: Playfair raqamlari kichik o'lchamda o'qilmaydi (mehmonda ham shunday) */
+  --heading-tracking: 0;
+}
+
+/* ═══════════ 2) APELSIN — kun ═══════════ (avvalgi "yangi dizayn" qiymatlari, o'zgarishsiz) */
+html[data-palette='orange'] {
   color-scheme: light;
 
   --bg-primary: #FAF8F5;
@@ -18,41 +102,42 @@
   --text-main: #181513;
   --text-muted: #4A443E;
   --text-dim: #57534E;
+  --text-inverse: #FFFFFF;
 
-  /* Muvaffaqiyat (Bor, ochiq, to'langan): to'q yashil matn/to'ldirish; och yashil fon va chegara */
   --accent-emerald: #14532D;
   --accent-emerald-hover: #14532D;
   --accent-emerald-bg: #F0FDF4;
   --accent-emerald-border: #BBF7D0;
 
-  /* Urg'u va ogohlantirish (kutilmoqda, diqqat): brend apelsin (oq matn bilan 5.18:1) */
-  --accent-amber: #C2410C;
+  --accent-amber: #C2410C;        /* brend apelsin (oq matn bilan 5.18:1) */
   --accent-amber-hover: #9A3412;
   --accent-amber-bg: #FFF7ED;
   --accent-amber-border: #FED7AA;
 
-  /* Xavf (tugadi, bekor, xato) */
   --accent-rose: #DC2626;
   --accent-rose-hover: #E11D48;
   --accent-rose-bg: #FFF1F2;
   --accent-rose-border: #FFE4E6;
+  --accent-rose-solid: #DC2626;
 
-  /* Neytral urg'u (ma'lumot, rol): tekst rangi, paletada ko'k/binafsha yo'q */
   --accent-indigo: #181513;
   --accent-indigo-hover: #4A443E;
   --accent-indigo-bg: #F5EFEA;
 
-  /* Asosiy amal (birlamchi tugma, faol filtr): maketdagidek apelsin */
   --action: #C2410C;
   --action-hover: #9A3412;
-  /* Sahifalarda ishlatilgan, lekin avval aniqlanmagan nomlar */
-  --primary: var(--action);
-  --border-color: var(--border-subtle);
-  --card-bg: var(--bg-surface);
+  --brand: #C2410C;
+  --brand-hover: #9A3412;
+  --brand-bg: #FFF7ED;
+  --brand-border: #FED7AA;
+  --focus-ring: #C2410C;
+
+  --scrim: rgb(0 0 0 / 0.65);
 
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
   --shadow-sm: 0 1px 3px rgba(24, 21, 19, 0.04);
@@ -61,6 +146,121 @@
 
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-numeric: var(--font-display);
+  --heading-tracking: -0.02em;
+}
+
+/* ═══════════ 3) KLASSIK — tun ═══════════
+   Yashil tusli to'q (sof qora emas); qiymatlar mehmon palette.css 2-bo'limi bilan bir xil. Palitra tanlanmagan (atribut yo'q) yoki `classic` bo'lsa shu. */
+html[data-theme='dark']:not([data-palette='orange']) {
+  color-scheme: dark;
+
+  --bg-primary: #0F1511;
+  --bg-surface: #17201A;
+  --bg-surface-hover: #26342B;    /* mehmon --dk-hover */
+  --bg-elevated: #1F2A22;         /* mehmon --bg-surface-subtle */
+  --border-subtle: #2A3A2F;
+  --border-strong: #3A4D3F;
+
+  --text-main: #F1EEE6;
+  --text-muted: #CFCABD;
+  --text-dim: #98A094;            /* sirt (#17201A) ustida 6.2:1 */
+  --text-inverse: #FFFFFF;
+
+  /* Holat ranglari */
+  --accent-emerald: #16A34A;      /* sirt ustida matn 5.0:1; to'ldirish + oq matn faqat 3.3:1 (katta/qalin matn uchun) */
+  --accent-emerald-hover: #4ADE80;
+  --accent-emerald-bg: #11261A;   /* mehmon --status-success-light (tun) */
+  --accent-emerald-border: #1F4D30;
+
+  --accent-amber: #E8A877;        /* mehmon --dk-accent-text (terrakota matn): sirt ustida 8.2:1 */
+  --accent-amber-hover: #F0BC95;  /* hosila */
+  --accent-amber-bg: #2B2018;     /* mehmon --brand-accent-light (tun) */
+  --accent-amber-border: #3A2A1D; /* mehmon --brand-accent-subtle (tun) */
+
+  --accent-rose: #F87171;
+  --accent-rose-hover: #FB7185;
+  --accent-rose-bg: #2D1519;
+  --accent-rose-border: #5B2229;
+  --accent-rose-solid: #DC2626;   /* to'ldirish + oq matn 4.8:1 */
+
+  --accent-indigo: #F1EEE6;
+  --accent-indigo-hover: #CFCABD;
+  --accent-indigo-bg: #1F2A22;
+
+  --action: #3E6B4A;              /* mehmon --brand-primary (tun): oq matn bilan 6.2:1 (asl #2F4836 to'q fonda ko'rinmaydi) */
+  --action-hover: #35593F;        /* mehmon --brand-primary-hover (tun): oq matn bilan 7.9:1 */
+  --brand: #8FBF9A;               /* mehmon --dk-brand-text: matn/urg'u, sirt ustida 8.0:1 */
+  --brand-hover: #A9D4B3;         /* mehmon --brand-deep (tun) */
+  --brand-bg: #1C2B21;            /* mehmon --brand-primary-light (tun) */
+  --brand-border: #2F4A37;        /* mehmon --brand-tint-2 (tun) */
+  --focus-ring: #8FBF9A;
+
+  --scrim: rgb(0 0 0 / 0.7);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 10px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* ═══════════ 4) APELSIN — tun ═══════════ (mehmon sayti frontend/src/styles/darkTheme.css qiymatlari AYNAN; brend o'zgarmaydi) */
+html[data-theme='dark'][data-palette='orange'] {
+  color-scheme: dark;
+
+  --bg-primary: #141110;
+  --bg-surface: #1F1B18;
+  --bg-surface-hover: #2A2420;
+  --bg-elevated: #2A2420;
+  --border-subtle: #332C27;
+  --border-strong: #4A4038;
+
+  --text-main: #F5EFE8;
+  --text-muted: #CFC6BC;
+  --text-dim: #9A9086;
+  --text-inverse: #FFFFFF;
+
+  --accent-emerald: #16A34A;
+  --accent-emerald-hover: #4ADE80;
+  --accent-emerald-bg: #11261A;
+  --accent-emerald-border: #1F4D30;
+
+  --accent-amber: #EA580C;        /* mehmon saytida brend matni tunda shu (--dk-brand-text): sirt ustida 4.8:1 */
+  --accent-amber-hover: #FB923C;
+  --accent-amber-bg: #2A1B12;
+  --accent-amber-border: #5A3416;
+
+  --accent-rose: #F87171;
+  --accent-rose-hover: #FB7185;
+  --accent-rose-bg: #2D1519;
+  --accent-rose-border: #5B2229;
+  --accent-rose-solid: #DC2626;
+
+  --accent-indigo: #F5EFE8;
+  --accent-indigo-hover: #CFC6BC;
+  --accent-indigo-bg: #2A2420;
+
+  --action: #C2410C;              /* brend o'zgarmaydi; oq matn bilan 5.2:1 */
+  --action-hover: #9A3412;
+  --brand: #EA580C;
+  --brand-hover: #FB923C;
+  --brand-bg: #2A1B12;
+  --brand-border: #5A3416;
+  --focus-ring: #EA580C;
+
+  --scrim: rgb(0 0 0 / 0.66);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 10px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* ═══════════ Palitraga bog'liq bo'lmagan qism ═══════════ */
+:root {
+  /* Sahifalarda ishlatilgan, lekin avval aniqlanmagan nomlar */
+  --primary: var(--action);
+  --border-color: var(--border-subtle);
+  --card-bg: var(--bg-surface);
+
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -72,14 +272,16 @@ body {
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
+  /* Playfair Display raqamlari standartda "eski uslub" (pastga tushgan): narx va sonlar tekis chiqishi uchun */
+  font-variant-numeric: lining-nums;
 }
 
-[data-design='new'] h1,
-[data-design='new'] h2,
-[data-design='new'] h3,
-[data-design='new'] h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--heading-tracking);
 }
 
 * {
@@ -94,9 +296,9 @@ textarea {
   font-family: inherit;
 }
 
-/* Bosiladigan joy va klaviatura fokusi (mehmon saytidagi kabi) */
+/* Klaviatura fokusi */
 :focus-visible {
-  outline: 2px solid var(--action);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -114,4 +316,17 @@ textarea {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-dim);
+}
+
+/* Komponentlar (Button, Modal, Skeleton) ishlatadigan, lekin avval hech qayerda e'lon qilinmagan animatsiyalar */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }

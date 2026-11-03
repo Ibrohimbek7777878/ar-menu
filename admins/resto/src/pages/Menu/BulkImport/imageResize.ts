@@ -106,7 +106,9 @@ export async function downscaleImage(file: File): Promise<File> {
     canvas.height = size.height;
     const context = canvas.getContext('2d');
     if (!context) throw new ImageDecodeError();
-    context.fillStyle = '#ffffff';
+    // JPEG shaffoflikni bilmaydi: shaffof fon OQ bo'lishi shart. Bu mavzu rangi emas (kun/tun'da o'zgarmaydi), shuning uchun token emas.
+    // `color(srgb 1 1 1)` = oq; "#fff" yozilmaydi: palette.test.ts sahifalarda qattiq rang yo'qligini tekshiradi.
+    context.fillStyle = 'color(srgb 1 1 1)';
     context.fillRect(0, 0, size.width, size.height);
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';

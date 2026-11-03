@@ -28,8 +28,8 @@ export const Button: React.FC<ButtonProps> = ({
         };
       case 'danger':
         return {
-          backgroundColor: 'var(--accent-rose)',
-          color: '#ffffff',
+          backgroundColor: 'var(--accent-rose-solid)',
+          color: 'var(--text-inverse)',
           border: 'none',
         };
       case 'ghost':
@@ -42,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return {
           backgroundColor: 'var(--action)',
-          color: '#ffffff',
+          color: 'var(--text-inverse)',
           border: 'none',
         };
     }
@@ -63,6 +63,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

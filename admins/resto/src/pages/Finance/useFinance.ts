@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { t } from '@admins/shared';
 import {
   fetchFinanceSummary,
   fetchTransactions,
@@ -107,7 +108,8 @@ export function useFinance() {
       setDebtsSummary(debtsRes.summary);
       setCategories(catRes);
     } catch (err: any) {
-      setError(err?.message || 'Moliyaviy ma\'lumotlarni yuklashda xatolik yuz berdi');
+      // Server xabari ham, zaxira matn ham tanlangan tilda (kaliti yo'q server xabari o'zicha qoladi)
+      setError(err?.message ? t(err.message) : t("Moliyaviy ma'lumotlarni yuklashda xatolik yuz berdi"));
     } finally {
       setLoading(false);
     }
@@ -132,7 +134,7 @@ export function useFinance() {
       await loadData();
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Tranzaksiya saqlanmadi' };
+      return { success: false, error: err?.message ? t(err.message) : t('Tranzaksiya saqlanmadi') };
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +148,7 @@ export function useFinance() {
       await loadData();
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Tranzaksiyani bekor qilib bo\'lmadi' };
+      return { success: false, error: err?.message ? t(err.message) : t("Tranzaksiyani bekor qilib bo'lmadi") };
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +169,7 @@ export function useFinance() {
       await loadData();
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Qarz yozuvi saqlanmadi' };
+      return { success: false, error: err?.message ? t(err.message) : t('Qarz yozuvi saqlanmadi') };
     } finally {
       setSubmitting(false);
     }
@@ -181,7 +183,7 @@ export function useFinance() {
       await loadData();
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.message || 'To\'lov qabul qilinmadi' };
+      return { success: false, error: err?.message ? t(err.message) : t("To'lov qabul qilinmadi") };
     } finally {
       setSubmitting(false);
     }

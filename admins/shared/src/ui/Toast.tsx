@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { commonUz } from '../i18n/uz';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -42,8 +43,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
-          maxWidth: '360px',
+          maxWidth: 'min(360px, calc(100vw - 32px))',
         }}
+        role="status"
+        aria-live="polite"
       >
         {toasts.map((toast) => {
           const bg =
@@ -79,6 +82,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <span style={{ flex: 1 }}>{toast.message}</span>
               <button
                 onClick={() => removeToast(toast.id)}
+                aria-label={commonUz.close}
                 style={{
                   background: 'none',
                   border: 'none',

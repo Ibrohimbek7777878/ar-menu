@@ -1,7 +1,10 @@
+import { translated } from './translated.ts';
+
 /**
- * Resto Admin umumiy o'zbekcha matnlar (TZ: 1.1)
+ * Resto Admin umumiy o'zbekcha matnlar (TZ: 1.1). O'zbekcha matnlar shu yerda turadi (asl matn = tarjima kaliti);
+ * `commonUz` ularni o'qilganda joriy tilga o'giradi (ru/en: ./ru.ts, ./en.ts).
  */
-export const commonUz = {
+export const commonUzSource = {
   save: 'Saqlash',
   cancel: 'Bekor qilish',
   delete: "O'chirish",
@@ -23,3 +26,5 @@ export const commonUz = {
   profile: 'Profil',
   currency: "so'm",
 };
+
+export const commonUz = translated(commonUzSource);

@@ -8,6 +8,9 @@ import {
   Skeleton,
   EmptyState,
   commonUz,
+  t,
+  fmtNum,
+  numberLocale,
 } from '@admins/shared';
 import {
   DollarSign,
@@ -46,7 +49,7 @@ export const DashboardPage: React.FC = () => {
         <EmptyState
           icon={<AlertTriangle size={32} style={{ color: 'var(--accent-rose)' }} />}
           title={commonUz.errorOccurred}
-          description={error.message}
+          description={t(error.message)}
           action={
             <Button variant="primary" onClick={refresh} icon={<RefreshCw size={16} />}>
               {commonUz.retry}
@@ -58,7 +61,7 @@ export const DashboardPage: React.FC = () => {
   }
 
   const formatSum = (val?: number) => {
-    return `${(val || 0).toLocaleString('uz-UZ')} ${commonUz.currency}`;
+    return `${fmtNum(val || 0)} ${commonUz.currency}`;
   };
 
   return (
@@ -70,7 +73,7 @@ export const DashboardPage: React.FC = () => {
             {restoUz.dashboard}
           </h1>
           <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-            {restoUz.lastUpdated}: {new Date().toLocaleTimeString('uz-UZ')}
+            {restoUz.lastUpdated}: {new Date().toLocaleTimeString(numberLocale())}
           </p>
         </div>
         <Button
@@ -103,7 +106,7 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           title={restoUz.activeOrders}
           value={data?.active_orders ?? 0}
-          subtitle={`Jami bugun: ${data?.orders_count ?? 0} ta`}
+          subtitle={t('Jami bugun: {n} ta', { n: data?.orders_count ?? 0 })}
           icon={<ShoppingBag size={20} />}
         />
 
@@ -120,8 +123,8 @@ export const DashboardPage: React.FC = () => {
           value={`${data?.occupied_tables ?? 0} / ${data?.total_tables ?? 0}`}
           subtitle={
             data && data.out_of_stock_count > 0
-              ? `${data.out_of_stock_count} ta taom stop-listda`
-              : 'Barcha taomlar mavjud'
+              ? t('{n} ta taom stop-listda', { n: data.out_of_stock_count })
+              : t('Barcha taomlar mavjud')
           }
           icon={<Users size={20} />}
         />
@@ -137,7 +140,7 @@ export const DashboardPage: React.FC = () => {
 
           {!data?.top_dishes || data.top_dishes.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '14px' }}>
-              Bugun hali buyurtmalar rasmiylashtirilmadi.
+              {t('Bugun hali buyurtmalar rasmiylashtirilmadi.')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -207,7 +210,7 @@ export const DashboardPage: React.FC = () => {
                 borderRadius: 'var(--radius-md)',
               }}
             >
-              Hozirda barcha taomlar oshxonada yetarli! Stop-list bo'sh.
+              {t("Hozirda barcha taomlar oshxonada yetarli! Stop-list bo'sh.")}
             </div>
           ) : (
             <div
@@ -220,7 +223,7 @@ export const DashboardPage: React.FC = () => {
                 borderRadius: 'var(--radius-md)',
               }}
             >
-              {data?.out_of_stock_count} ta taom mijozlar uchun to'xtatilgan (stop-listda).
+              {t("{n} ta taom mijozlar uchun to'xtatilgan (stop-listda).", { n: data?.out_of_stock_count ?? 0 })}
             </div>
           )}
         </Card>

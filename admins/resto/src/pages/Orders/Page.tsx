@@ -8,6 +8,10 @@ import {
   StatCard,
   useToast,
   formatHumanDateTime,
+  fmtNum,
+  numberLocale,
+  t,
+  tr,
 } from '@admins/shared';
 import {
   AlertCircle,
@@ -28,53 +32,65 @@ import { OrderDTO } from './api';
 import { useOrders } from './useOrders';
 import { restoUz } from '../../i18n/uz';
 
+// Holat nomlari tr() bilan belgilangan, ko'rsatishda t() chaqiriladi (modul bir marta bajariladi: til almashganda yangilanishi uchun).
 const STATUS_CONFIG: Record<
   OrderDTO['status'],
   { label: string; bg: string; text: string; border: string }
 > = {
   pending: {
-    label: 'Kutilmoqda',
+    label: tr('Kutilmoqda'),
     bg: 'var(--accent-amber-bg)',
     text: 'var(--accent-amber)',
     border: 'var(--accent-amber-border)',
   },
   confirmed: {
-    label: 'Tasdiqlangan',
+    label: tr('Tasdiqlangan'),
     bg: 'var(--accent-indigo-bg)',
     text: 'var(--accent-indigo)',
     border: 'var(--border-strong)',
   },
   preparing: {
-    label: 'Tayyorlanmoqda',
+    label: tr('Tayyorlanmoqda'),
     bg: 'var(--bg-surface-hover)',
     text: 'var(--text-muted)',
     border: 'var(--border-strong)',
   },
   ready: {
-    label: 'Tayyor',
+    label: tr('Tayyor'),
     bg: 'var(--accent-emerald-bg)',
     text: 'var(--accent-emerald)',
     border: 'var(--accent-emerald-border)',
   },
   out_for_delivery: {
-    label: "Yo'lda",
+    label: tr("Yo'lda"),
     bg: 'var(--accent-indigo-bg)',
     text: 'var(--accent-indigo)',
     border: 'var(--border-strong)',
   },
   delivered: {
-    label: 'Berildi',
+    label: tr('Berildi'),
     bg: 'var(--accent-emerald-bg)',
     text: 'var(--accent-emerald)',
     border: 'var(--accent-emerald-border)',
   },
   cancelled: {
-    label: 'Bekor qilindi',
+    label: tr('Bekor qilindi'),
     bg: 'var(--accent-rose-bg)',
     text: 'var(--text-main)', // qizil matn kichik o'lchamda 4.4:1: to'q matn + qizil fon/chegara
     border: 'var(--accent-rose-border)',
   },
 };
+
+// To'lov holati nomlari (server matnlari bilan bir xil o'zbekcha): kod bo'yicha olinadi, shunda tarjima serverga bog'liq bo'lmaydi.
+const PAYMENT_LABELS: Record<OrderDTO['payment_status'], string> = {
+  unpaid: tr("To'lanmagan"),
+  pending: tr('Kutilmoqda'),
+  paid: tr("To'langan"),
+  refunded: tr('Qaytarilgan'),
+};
+
+const statusLabel = (order: OrderDTO): string => t(STATUS_CONFIG[order.status]?.label ?? order.status_display);
+const paymentLabel = (order: OrderDTO): string => t(PAYMENT_LABELS[order.payment_status] ?? order.payment_status_display);
 
 export const OrdersPage: React.FC = () => {
   const {
@@ -112,7 +128,7 @@ export const OrdersPage: React.FC = () => {
   // Status Change Handler with Toast
   const handleQuickStatusChange = async (order: OrderDTO, nextStatus: string) => {
     await changeStatus(order.id, nextStatus);
-    showToast(`Buyurtma #${order.order_number} holati yangilandi`, 'success');
+    showToast(t('Buyurtma #{number} holati yangilandi', { number: order.order_number }), 'success');
   };
 
   // Cancel Handler
@@ -123,11 +139,11 @@ export const OrdersPage: React.FC = () => {
     setCancelSubmitting(true);
     try {
       await changeStatus(cancellingOrder.id, 'cancelled', cancelReason.trim());
-      showToast(`Buyurtma #${cancellingOrder.order_number} bekor qilindi`, 'info');
+      showToast(t('Buyurtma #{number} bekor qilindi', { number: cancellingOrder.order_number }), 'info');
       setCancellingOrder(null);
       setCancelReason('');
     } catch {
-      showToast("Buyurtmani bekor qilib bo'lmadi", 'error');
+      showToast(t("Buyurtmani bekor qilib bo'lmadi"), 'error');
     } finally {
       setCancelSubmitting(false);
     }
@@ -136,9 +152,9 @@ export const OrdersPage: React.FC = () => {
   // Payment Status Handler
   const handleMarkAsPaid = async (order: OrderDTO) => {
     await changePayment(order.id, 'paid');
-    showToast(`Buyurtma #${order.order_number} to'langan deb belgilandi`, 'success');
+    showToast(t("Buyurtma #{number} to'langan deb belgilandi", { number: order.order_number }), 'success');
     if (selectedOrder && selectedOrder.id === order.id) {
-      setSelectedOrder({ ...selectedOrder, payment_status: 'paid', payment_status_display: "To'langan" });
+      setSelectedOrder({ ...selectedOrder, payment_status: 'paid', payment_status_display: tr("To'langan") });
     }
   };
 
@@ -170,15 +186,15 @@ export const OrdersPage: React.FC = () => {
               letterSpacing: '-0.02em',
             }}
           >
-            Buyurtmalar
+            {t('Buyurtmalar')}
           </h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>
-            Restoran va yetkazib berish buyurtmalari oqimi, oshxona nazorati va cheklar.
+            {t('Restoran va yetkazib berish buyurtmalari oqimi, oshxona nazorati va cheklar.')}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Button variant="ghost" onClick={refresh} title="Qayta yuklash">
+          <Button variant="ghost" onClick={refresh} title={t('Qayta yuklash')}>
             <RefreshCw size={18} />
           </Button>
         </div>
@@ -194,22 +210,22 @@ export const OrdersPage: React.FC = () => {
         }}
       >
         <StatCard
-          title="Bugungi Jami"
+          title={t('Bugungi Jami')}
           value={summary.today_total}
-          icon={<ShoppingBag size={22} color="var(--primary)" />}
+          icon={<ShoppingBag size={22} color="var(--brand)" />}
         />
         <StatCard
-          title="Kutilmoqda (Yangi)"
+          title={t('Kutilmoqda (Yangi)')}
           value={summary.pending}
           icon={<Clock size={22} color="var(--accent-rose)" />}
         />
         <StatCard
-          title="Oshxonada (Tayyorlanmoqda)"
+          title={t('Oshxonada (Tayyorlanmoqda)')}
           value={summary.preparing}
           icon={<Flame size={22} color="var(--accent-amber)" />}
         />
         <StatCard
-          title="Tayyor (Tortish kerak)"
+          title={t('Tayyor (Tortish kerak)')}
           value={summary.ready}
           icon={<CheckCircle2 size={22} color="var(--accent-indigo)" />}
         />
@@ -224,19 +240,19 @@ export const OrdersPage: React.FC = () => {
           flexWrap: 'wrap',
           gap: '16px',
           marginBottom: '16px',
-          borderBottom: '1px solid var(--border-color)',
+          borderBottom: '1px solid var(--border-subtle)',
           paddingBottom: '12px',
         }}
       >
         {/* Holat filtrlari */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
           {[
-            { id: 'all', label: 'Barchasi' },
-            { id: 'pending', label: `Kutilmoqda (${summary.pending})` },
-            { id: 'preparing', label: `Tayyorlanmoqda (${summary.preparing})` },
-            { id: 'ready', label: `Tayyor (${summary.ready})` },
-            { id: 'delivered', label: 'Berildi' },
-            { id: 'cancelled', label: 'Bekor qilingan' },
+            { id: 'all', label: t('Barchasi') },
+            { id: 'pending', label: t('Kutilmoqda ({n})', { n: summary.pending }) },
+            { id: 'preparing', label: t('Tayyorlanmoqda ({n})', { n: summary.preparing }) },
+            { id: 'ready', label: t('Tayyor ({n})', { n: summary.ready }) },
+            { id: 'delivered', label: t('Berildi') },
+            { id: 'cancelled', label: t('Bekor qilingan') },
           ].map((st) => (
             <button
               key={st.id}
@@ -245,8 +261,9 @@ export const OrdersPage: React.FC = () => {
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                background: statusFilter === st.id ? 'var(--text-main)' : 'var(--card-bg)',
-                color: statusFilter === st.id ? '#ffffff' : 'var(--text-muted)',
+                background: statusFilter === st.id ? 'var(--text-main)' : 'var(--bg-surface)',
+                // to'q (kun) / och (tun) to'ldirish ustida matn: sirt rangi teskari
+                color: statusFilter === st.id ? 'var(--bg-surface)' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -262,9 +279,9 @@ export const OrdersPage: React.FC = () => {
         {/* Sana tanlash */}
         <div style={{ display: 'flex', gap: '6px' }}>
           {[
-            { id: 'today', label: 'Bugun' },
-            { id: 'yesterday', label: 'Kecha' },
-            { id: 'all', label: 'Barcha Vaqt' },
+            { id: 'today', label: t('Bugun') },
+            { id: 'yesterday', label: t('Kecha') },
+            { id: 'all', label: t('Barcha Vaqt') },
           ].map((d) => (
             <button
               key={d.id}
@@ -273,9 +290,9 @@ export const OrdersPage: React.FC = () => {
                 padding: '6px 12px',
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: dateFilter === d.id ? 'var(--primary)' : 'var(--border-color)',
-                background: dateFilter === d.id ? 'var(--accent-amber-bg)' : 'transparent',
-                color: dateFilter === d.id ? 'var(--primary)' : 'var(--text-muted)',
+                borderColor: dateFilter === d.id ? 'var(--brand)' : 'var(--border-subtle)',
+                background: dateFilter === d.id ? 'var(--brand-bg)' : 'transparent',
+                color: dateFilter === d.id ? 'var(--brand)' : 'var(--text-muted)',
                 fontSize: '12px',
                 fontWeight: 500,
                 cursor: 'pointer',
@@ -302,15 +319,15 @@ export const OrdersPage: React.FC = () => {
           />
           <input
             type="text"
-            placeholder="Buyurtma raqami, stol yoki mijoz ismi..."
+            placeholder={t('Buyurtma raqami, stol yoki mijoz ismi...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
               padding: '9px 12px 9px 36px',
               borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--card-bg)',
+              border: '1px solid var(--border-strong)',
+              background: 'var(--bg-surface)',
               color: 'var(--text-main)',
               fontSize: '13px',
               outline: 'none',
@@ -322,12 +339,12 @@ export const OrdersPage: React.FC = () => {
 
       {/* Xatolik */}
       {error && (
-        <Card style={{ marginBottom: '24px', borderColor: 'rgb(220 38 38 / 0.4)' }}>
+        <Card style={{ marginBottom: '24px', borderColor: 'var(--accent-rose)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-rose)' }}>
             <AlertCircle size={20} />
-            <span>{error}</span>
+            <span>{t(error)}</span>
             <Button variant="secondary" onClick={refresh} style={{ marginLeft: 'auto' }}>
-              Qayta urinish
+              {t('Qayta urinish')}
             </Button>
           </div>
         </Card>
@@ -343,11 +360,11 @@ export const OrdersPage: React.FC = () => {
       ) : orders.length === 0 ? (
         <EmptyState
           icon={<ShoppingBag size={48} />}
-          title="Buyurtmalar mavjud emas"
+          title={t('Buyurtmalar mavjud emas')}
           description={
             searchQuery || statusFilter !== 'all'
-              ? "Qidiruv yoki filtr mezonlari bo'yicha buyurtmalar topilmadi."
-              : "Hozircha hech qanday yangi buyurtma kelib tushmagan."
+              ? t("Qidiruv yoki filtr mezonlari bo'yicha buyurtmalar topilmadi.")
+              : t('Hozircha hech qanday yangi buyurtma kelib tushmagan.')
           }
         />
       ) : (
@@ -355,9 +372,10 @@ export const OrdersPage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {orders.map((order: OrderDTO) => {
             const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-            const orderTime = new Date(order.created_at).toLocaleTimeString('uz-UZ', {
+            const orderTime = new Date(order.created_at).toLocaleTimeString(numberLocale(), {
               hour: '2-digit',
               minute: '2-digit',
+              hourCycle: 'h23',
             });
 
             return (
@@ -367,11 +385,11 @@ export const OrdersPage: React.FC = () => {
                   padding: '20px',
                   borderRadius: '12px',
                   border: `1px solid ${statusCfg.border}`,
-                  background: 'var(--card-bg)',
+                  background: 'var(--bg-surface)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '14px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  boxShadow: 'var(--shadow-md)',
                 }}
               >
                 {/* 1-qator: Sarlavha, Stol, Vaqt va Status */}
@@ -404,27 +422,27 @@ export const OrdersPage: React.FC = () => {
                           gap: '6px',
                           padding: '4px 10px',
                           borderRadius: '6px',
-                          background: 'rgb(24 21 19 / 0.04)',
+                          background: 'var(--bg-elevated)',
                           fontSize: '13px',
                           fontWeight: 600,
                           color: 'var(--text-main)',
                         }}
                       >
-                        <Armchair size={14} color="var(--primary)" />
-                        Stol #{order.table.number} ({order.table.hall_name})
+                        <Armchair size={14} color="var(--brand)" />
+                        {t('Stol #{number} ({hall})', { number: order.table.number, hall: t(order.table.hall_name) })}
                       </div>
                     ) : (
                       <div
                         style={{
                           padding: '4px 10px',
                           borderRadius: '6px',
-                          background: 'rgb(24 21 19 / 0.1)',
+                          background: 'var(--accent-indigo-bg)',
                           fontSize: '12px',
                           fontWeight: 600,
                           color: 'var(--accent-indigo)',
                         }}
                       >
-                        Olib ketish / Yetkazish
+                        {t('Olib ketish / Yetkazish')}
                       </div>
                     )}
 
@@ -444,10 +462,10 @@ export const OrdersPage: React.FC = () => {
                         fontWeight: 600,
                         background: order.payment_status === 'paid' ? 'var(--accent-emerald-bg)' : 'var(--accent-rose-bg)',
                         color: order.payment_status === 'paid' ? 'var(--accent-emerald)' : 'var(--text-main)',
-                        border: `1px solid ${order.payment_status === 'paid' ? 'rgb(22 163 74 / 0.25)' : 'rgb(220 38 38 / 0.25)'}`,
+                        border: `1px solid ${order.payment_status === 'paid' ? 'var(--accent-emerald-border)' : 'var(--accent-rose-border)'}`,
                       }}
                     >
-                      {order.payment_status_display}
+                      {paymentLabel(order)}
                     </div>
 
                     {/* Buyurtma holati */}
@@ -462,7 +480,7 @@ export const OrdersPage: React.FC = () => {
                         border: `1px solid ${statusCfg.border}`,
                       }}
                     >
-                      {statusCfg.label}
+                      {t(statusCfg.label)}
                     </div>
                   </div>
                 </div>
@@ -477,20 +495,21 @@ export const OrdersPage: React.FC = () => {
                     gap: '12px',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    background: 'rgb(24 21 19 / 0.04)',
-                    border: '1px solid var(--border-color)',
+                    // --bg-primary: izoh matni (--accent-amber) apelsin-tunda --bg-elevated ustida 4.3:1, bu fonda >= 4.5:1
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-subtle)',
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)' }}>
                       <User size={14} color="var(--text-muted)" />
-                      <strong>{order.customer_name}</strong>
+                      <strong>{t(order.customer_name)}</strong>
                       {order.customer_phone && <span style={{ color: 'var(--text-muted)' }}>({order.customer_phone})</span>}
                     </div>
 
                     {order.notes && (
                       <div style={{ fontSize: '12px', color: 'var(--accent-amber)', fontStyle: 'italic' }}>
-                        Izoh: "{order.notes}"
+                        {t('Izoh: "{notes}"', { notes: order.notes })}
                       </div>
                     )}
                   </div>
@@ -502,7 +521,7 @@ export const OrdersPage: React.FC = () => {
                         {it.quantity}x {it.product_name}
                       </span>
                     ))}
-                    {order.items.length > 3 && <span>+{order.items.length - 3} ta boshqa</span>}
+                    {order.items.length > 3 && <span>{t('+{n} ta boshqa', { n: order.items.length - 3 })}</span>}
                   </div>
                 </div>
 
@@ -514,14 +533,14 @@ export const OrdersPage: React.FC = () => {
                     alignItems: 'center',
                     flexWrap: 'wrap',
                     gap: '12px',
-                    borderTop: '1px solid var(--border-color)',
+                    borderTop: '1px solid var(--border-subtle)',
                     paddingTop: '12px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Jami:</span>
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--primary)' }}>
-                      {order.final_amount.toLocaleString('uz-UZ')} so'm
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('Jami:')}</span>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--brand)' }}>
+                      {t("{amount} so'm", { amount: fmtNum(order.final_amount) })}
                     </span>
                   </div>
 
@@ -540,7 +559,7 @@ export const OrdersPage: React.FC = () => {
                         onClick={() => handleQuickStatusChange(order, 'confirmed')}
                       >
                         <Check size={14} style={{ marginRight: '4px' }} />
-                        Tasdiqlash
+                        {t('Tasdiqlash')}
                       </Button>
                     )}
 
@@ -552,7 +571,7 @@ export const OrdersPage: React.FC = () => {
                         style={{ color: 'var(--accent-amber)' }}
                       >
                         <Flame size={14} style={{ marginRight: '4px' }} />
-                        Oshxonaga berish
+                        {t('Oshxonaga berish')}
                       </Button>
                     )}
 
@@ -564,7 +583,7 @@ export const OrdersPage: React.FC = () => {
                         style={{ color: 'var(--accent-indigo)' }}
                       >
                         <CheckCircle2 size={14} style={{ marginRight: '4px' }} />
-                        Tayyor bo'ldi
+                        {t("Tayyor bo'ldi")}
                       </Button>
                     )}
 
@@ -575,7 +594,7 @@ export const OrdersPage: React.FC = () => {
                         onClick={() => handleQuickStatusChange(order, 'delivered')}
                       >
                         <Check size={14} style={{ marginRight: '4px' }} />
-                        Mijozga berildi
+                        {t('Mijozga berildi')}
                       </Button>
                     )}
 
@@ -585,10 +604,10 @@ export const OrdersPage: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleMarkAsPaid(order)}
-                        title="To'landi deb belgilash"
+                        title={t("To'landi deb belgilash")}
                         style={{ color: 'var(--accent-emerald)' }}
                       >
-                        To'lovni qabul qilish
+                        {t("To'lovni qabul qilish")}
                       </Button>
                     )}
 
@@ -601,7 +620,7 @@ export const OrdersPage: React.FC = () => {
                         style={{ color: 'var(--accent-rose)' }}
                       >
                         <XCircle size={14} style={{ marginRight: '4px' }} />
-                        Bekor qilish
+                        {t('Bekor qilish')}
                       </Button>
                     )}
                   </div>
@@ -622,7 +641,7 @@ export const OrdersPage: React.FC = () => {
               }}
             >
               <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                Jami: {totalCount} ta buyurtma (Sahifa {page} / {totalPages})
+                {t('Jami: {n} ta buyurtma (Sahifa {page} / {pages})', { n: totalCount, page, pages: totalPages })}
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -632,7 +651,7 @@ export const OrdersPage: React.FC = () => {
                   disabled={!hasPrev}
                   onClick={() => setPage(page - 1)}
                 >
-                  Oldingi
+                  {t('Oldingi')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -640,7 +659,7 @@ export const OrdersPage: React.FC = () => {
                   disabled={!hasNext}
                   onClick={() => setPage(page + 1)}
                 >
-                  Keyingi
+                  {t('Keyingi')}
                 </Button>
               </div>
             </div>
@@ -652,7 +671,7 @@ export const OrdersPage: React.FC = () => {
       {selectedOrder && (
         <Modal
           isOpen={true}
-          title={`Buyurtma #${selectedOrder.order_number} — Chek`}
+          title={t('Buyurtma #{number} — Chek', { number: selectedOrder.order_number })}
           onClose={() => setSelectedOrder(null)}
         >
           <div style={{ padding: '8px 0' }}>
@@ -660,23 +679,23 @@ export const OrdersPage: React.FC = () => {
             <div
               id="printable-receipt"
               style={{
-                background: '#ffffff',
+                background: 'var(--bg-surface)',
                 color: 'var(--text-main)',
                 padding: '24px',
                 borderRadius: '8px',
                 fontFamily: 'monospace',
                 fontSize: '13px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                boxShadow: 'var(--shadow-md)',
                 marginBottom: '20px',
               }}
             >
               <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '1px dashed var(--text-dim)', paddingBottom: '12px' }}>
-                <div style={{ fontSize: '18px', fontWeight: 700 }}>RESTORAN CHEKI</div>
-                <div>Buyurtma #{selectedOrder.order_number}</div>
+                <div style={{ fontSize: '18px', fontWeight: 700 }}>{t('RESTORAN CHEKI')}</div>
+                <div>{t('Buyurtma #{number}', { number: selectedOrder.order_number })}</div>
                 <div>{formatHumanDateTime(selectedOrder.created_at, { alwaysTime: true })}</div>
                 {selectedOrder.table && (
                   <div style={{ fontWeight: 700, marginTop: '4px' }}>
-                    Stol #{selectedOrder.table.number} ({selectedOrder.table.hall_name})
+                    {t('Stol #{number} ({hall})', { number: selectedOrder.table.number, hall: t(selectedOrder.table.hall_name) })}
                   </div>
                 )}
               </div>
@@ -684,20 +703,20 @@ export const OrdersPage: React.FC = () => {
               {/* Taomlar jadvali */}
               <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
-                    <th style={{ padding: '6px 0' }}>Nomi</th>
-                    <th style={{ padding: '6px 0', textAlign: 'center' }}>Soni</th>
-                    <th style={{ padding: '6px 0', textAlign: 'right' }}>Narxi</th>
-                    <th style={{ padding: '6px 0', textAlign: 'right' }}>Jami</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
+                    <th style={{ padding: '6px 0' }}>{t('Nomi')}</th>
+                    <th style={{ padding: '6px 0', textAlign: 'center' }}>{t('Soni')}</th>
+                    <th style={{ padding: '6px 0', textAlign: 'right' }}>{t('Narxi')}</th>
+                    <th style={{ padding: '6px 0', textAlign: 'right' }}>{t('Jami')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedOrder.items.map((it) => (
-                    <tr key={it.id} style={{ borderBottom: '1px dashed #f3f4f6' }}>
+                    <tr key={it.id} style={{ borderBottom: '1px dashed var(--border-subtle)' }}>
                       <td style={{ padding: '6px 0' }}>{it.product_name}</td>
                       <td style={{ padding: '6px 0', textAlign: 'center' }}>{it.quantity}</td>
-                      <td style={{ padding: '6px 0', textAlign: 'right' }}>{it.price.toLocaleString('uz-UZ')}</td>
-                      <td style={{ padding: '6px 0', textAlign: 'right' }}>{it.total.toLocaleString('uz-UZ')}</td>
+                      <td style={{ padding: '6px 0', textAlign: 'right' }}>{fmtNum(it.price)}</td>
+                      <td style={{ padding: '6px 0', textAlign: 'right' }}>{fmtNum(it.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -706,27 +725,27 @@ export const OrdersPage: React.FC = () => {
               {/* Jami hisob-kitob */}
               <div style={{ borderTop: '1px dashed var(--text-dim)', paddingTop: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span>Oraliq summa:</span>
-                  <span>{selectedOrder.total_amount.toLocaleString('uz-UZ')} so'm</span>
+                  <span>{t('Oraliq summa:')}</span>
+                  <span>{t("{amount} so'm", { amount: fmtNum(selectedOrder.total_amount) })}</span>
                 </div>
                 {selectedOrder.discount_amount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--accent-rose)' }}>
-                    <span>Chegirma:</span>
-                    <span>-{selectedOrder.discount_amount.toLocaleString('uz-UZ')} so'm</span>
+                    <span>{t('Chegirma:')}</span>
+                    <span>-{t("{amount} so'm", { amount: fmtNum(selectedOrder.discount_amount) })}</span>
                   </div>
                 )}
                 {selectedOrder.delivery_fee > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span>Yetkazib berish:</span>
-                    <span>{selectedOrder.delivery_fee.toLocaleString('uz-UZ')} so'm</span>
+                    <span>{t('Yetkazib berish:')}</span>
+                    <span>{t("{amount} so'm", { amount: fmtNum(selectedOrder.delivery_fee) })}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 700, marginTop: '8px', borderTop: '1px solid var(--text-main)', paddingTop: '6px' }}>
-                  <span>JAMI:</span>
-                  <span>{selectedOrder.final_amount.toLocaleString('uz-UZ')} so'm</span>
+                  <span>{t('JAMI:')}</span>
+                  <span>{t("{amount} so'm", { amount: fmtNum(selectedOrder.final_amount) })}</span>
                 </div>
-                <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '12px', color: '#6b7280' }}>
-                  Holat: {selectedOrder.status_display} | To'lov: {selectedOrder.payment_status_display}
+                <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-dim)' }}>
+                  {t('Holat: {status}', { status: statusLabel(selectedOrder) })} | {t("To'lov: {payment}", { payment: paymentLabel(selectedOrder) })}
                 </div>
               </div>
             </div>
@@ -735,12 +754,12 @@ export const OrdersPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               {selectedOrder.payment_status === 'unpaid' && (
                 <Button variant="secondary" onClick={() => handleMarkAsPaid(selectedOrder)}>
-                  To'landi deb belgilash
+                  {t("To'landi deb belgilash")}
                 </Button>
               )}
               <Button variant="primary" onClick={handlePrintReceipt}>
                 <Printer size={16} style={{ marginRight: '6px' }} />
-                Chop etish (Print)
+                {t('Chop etish (Print)')}
               </Button>
             </div>
           </div>
@@ -751,30 +770,30 @@ export const OrdersPage: React.FC = () => {
       {cancellingOrder && (
         <Modal
           isOpen={true}
-          title={`Buyurtma #${cancellingOrder.order_number} ni Bekor Qilish`}
+          title={t('Buyurtma #{number} ni Bekor Qilish', { number: cancellingOrder.order_number })}
           onClose={() => setCancellingOrder(null)}
         >
           <form onSubmit={handleConfirmCancel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>
-              Ushbu buyurtmani bekor qilish sababini ko'rsating. Ushbu amal audit logida qayd etiladi.
+              {t("Ushbu buyurtmani bekor qilish sababini ko'rsating. Ushbu amal audit logida qayd etiladi.")}
             </p>
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Bekor qilish sababi
+                {t('Bekor qilish sababi')}
               </label>
               <textarea
                 required
                 rows={3}
-                placeholder="Masalan: Mijoz buyurtmani bekor qildi / Mahsulot tugagan..."
+                placeholder={t('Masalan: Mijoz buyurtmani bekor qildi / Mahsulot tugagan...')}
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-strong)',
+                  background: 'var(--bg-surface)',
                   color: 'var(--text-main)',
                   fontSize: '14px',
                   boxSizing: 'border-box',
@@ -784,10 +803,11 @@ export const OrdersPage: React.FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <Button variant="ghost" type="button" onClick={() => setCancellingOrder(null)}>
-                Orqaga
+                {t('Orqaga')}
               </Button>
-              <Button variant="primary" type="submit" disabled={cancelSubmitting} style={{ background: 'var(--accent-rose)' }}>
-                {cancelSubmitting ? "Bekor qilinmoqda..." : "Bekor qilishni tasdiqlash"}
+              {/* "danger": qizil to'ldirish (--accent-rose-solid) + oq matn: tunda ham AA (oddiy --accent-rose tunda matn uchun ochroq) */}
+              <Button variant="danger" type="submit" disabled={cancelSubmitting}>
+                {cancelSubmitting ? t('Bekor qilinmoqda...') : t('Bekor qilishni tasdiqlash')}
               </Button>
             </div>
           </form>

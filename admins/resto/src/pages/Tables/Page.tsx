@@ -6,6 +6,9 @@ import {
   Modal,
   Skeleton,
   StatCard,
+  fmtNum,
+  t,
+  tr,
   useToast,
 } from '@admins/shared';
 import {
@@ -33,53 +36,58 @@ import {
 } from './api';
 import { useTables } from './useTables';
 
+// Holat nomlari tr() bilan belgilangan, ko'rsatishda t() chaqiriladi (modul bir marta bajariladi: til almashganda yangilanishi uchun).
 const STATUS_CONFIG: Record<
   TableItem['status'],
   { label: string; bg: string; text: string; border: string }
 > = {
   free: {
-    label: "Bo'sh",
+    label: tr("Bo'sh"),
     bg: 'var(--accent-emerald-bg)',
     text: 'var(--accent-emerald)',
     border: 'var(--accent-emerald-border)',
   },
   occupied: {
-    label: 'Band',
+    label: tr('Band'),
     bg: 'var(--accent-amber-bg)',
     text: 'var(--accent-amber)',
     border: 'var(--accent-amber-border)',
   },
   ordering: {
-    label: 'Buyurtma',
+    label: tr('Buyurtma'),
     bg: 'var(--accent-amber-bg)',
     text: 'var(--accent-amber)',
     border: 'var(--accent-amber-border)',
   },
   waiting: {
-    label: 'Kutmoqda',
+    label: tr('Kutmoqda'),
     bg: 'var(--accent-indigo-bg)',
     text: 'var(--accent-indigo)',
     border: 'var(--border-strong)',
   },
   ready: {
-    label: 'Tayyor',
+    label: tr('Tayyor'),
     bg: 'var(--accent-emerald-bg)',
     text: 'var(--accent-emerald)',
     border: 'var(--accent-emerald-border)',
   },
   bill: {
-    label: 'Hisob',
+    label: tr('Hisob'),
     bg: 'var(--accent-rose-bg)',
     text: 'var(--text-main)', // qizil matn kichik o'lchamda 4.4:1: to'q matn + qizil fon/chegara
     border: 'var(--accent-rose-border)',
   },
   cleaning: {
-    label: 'Tozalanmoqda',
+    label: tr('Tozalanmoqda'),
     bg: 'var(--bg-surface-hover)',
     text: 'var(--text-muted)',
     border: 'var(--border-strong)',
   },
 };
+
+// QR kodning "qog'ozi": server QR ni shaffof fonda qora modullar bilan beradi (segno), skaner o'qishi uchun fon HAR DOIM oq bo'lishi shart
+// (tun rejimida ham). `--text-inverse` barcha to'rt palitrada sof oq, shuning uchun qattiq rang yozilmaydi.
+const QR_PAPER = 'var(--text-inverse)';
 
 export const TablesPage: React.FC = () => {
   const {
@@ -133,7 +141,7 @@ export const TablesPage: React.FC = () => {
   const handleCopyLink = (url: string) => {
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
-    showToast("Stol menyusi havolasi nusxalandi", "success");
+    showToast(t('Stol menyusi havolasi nusxalandi'), "success");
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
@@ -167,7 +175,7 @@ export const TablesPage: React.FC = () => {
   const handleTableSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tableForm.number.trim()) {
-      setTableFormError("Stol raqami kiritilishi shart");
+      setTableFormError(tr('Stol raqami kiritilishi shart'));
       return;
     }
 
@@ -182,7 +190,7 @@ export const TablesPage: React.FC = () => {
           capacity: tableForm.capacity,
           shape: tableForm.shape,
         });
-        showToast(`"${tableForm.number}" raqamli stol yangilandi`, "success");
+        showToast(t('"{number}" raqamli stol yangilandi', { number: tableForm.number }), "success");
       } else {
         await createTable({
           number: tableForm.number.trim(),
@@ -190,12 +198,13 @@ export const TablesPage: React.FC = () => {
           capacity: tableForm.capacity,
           shape: tableForm.shape,
         });
-        showToast(`"${tableForm.number}" raqamli yangi stol yaratildi`, "success");
+        showToast(t('"{number}" raqamli yangi stol yaratildi', { number: tableForm.number }), "success");
       }
       setTableModalOpen(false);
       refresh();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Xatolik yuz berdi";
+      // Xabar server (o'zbekcha) yoki shu yerdagi zaxira matni: ko'rsatishda t() bilan tarjima qilinadi
+      const msg = err instanceof Error ? err.message : tr('Xatolik yuz berdi');
       setTableFormError(msg);
     } finally {
       setTableFormSubmitting(false);
@@ -206,7 +215,7 @@ export const TablesPage: React.FC = () => {
   const handleHallSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hallForm.name.trim()) {
-      setHallFormError("Zal nomi kiritilishi shart");
+      setHallFormError(tr('Zal nomi kiritilishi shart'));
       return;
     }
 
@@ -218,12 +227,12 @@ export const TablesPage: React.FC = () => {
         name: hallForm.name.trim(),
         order: Number(hallForm.order) || 0,
       });
-      showToast(`"${hallForm.name}" zali qo'shildi`, "success");
+      showToast(t('"{name}" zali qo\'shildi', { name: hallForm.name }), "success");
       setHallModalOpen(false);
       setHallForm({ name: '', order: 0 });
       refresh();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Xatolik yuz berdi";
+      const msg = err instanceof Error ? err.message : tr('Xatolik yuz berdi');
       setHallFormError(msg);
     } finally {
       setHallFormSubmitting(false);
@@ -233,7 +242,7 @@ export const TablesPage: React.FC = () => {
   // Handle QR Rotate
   const handleRotateQr = async () => {
     if (!qrModalTable) return;
-    if (!window.confirm("Haqiqatan ham ushbu stolning QR kodini yangilamoqchimisiz? Eski QR kod 24 soatdan so'ng to'xtaydi.")) {
+    if (!window.confirm(t("Haqiqatan ham ushbu stolning QR kodini yangilamoqchimisiz? Eski QR kod 24 soatdan so'ng to'xtaydi."))) {
       return;
     }
 
@@ -241,13 +250,25 @@ export const TablesPage: React.FC = () => {
     try {
       const res = await rotateQr(qrModalTable.id);
       setQrModalTable((prev) => (prev ? { ...prev, qr_token: res.qr_token, qr_url: res.qr_url, qr_path: res.qr_path } : null));
-      showToast("QR token yangilandi", "success");
+      showToast(t('QR token yangilandi'), "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "QR tokenini yangilab bo'lmadi";
+      const msg = err instanceof Error ? t(err.message) : t("QR tokenini yangilab bo'lmadi");
       showToast(msg, "error");
     } finally {
       setQrRotating(false);
     }
+  };
+
+  // Maydon uslublari (forma: kiritish maydoni chegarasi --border-strong, DishForm namunasi)
+  const fieldStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    border: '1px solid var(--border-strong)',
+    background: 'var(--bg-surface)',
+    color: 'var(--text-main)',
+    fontSize: '14px',
+    boxSizing: 'border-box',
   };
 
   return (
@@ -273,24 +294,24 @@ export const TablesPage: React.FC = () => {
               letterSpacing: '-0.02em',
             }}
           >
-            Stollar va QR Kodlar
+            {t('Stollar va QR Kodlar')}
           </h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>
-            Zallar tartibi, jonli hisob-kitoblar va bosma QR menyu kartalari boshqaruvi.
+            {t('Zallar tartibi, jonli hisob-kitoblar va bosma QR menyu kartalari boshqaruvi.')}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Button variant="ghost" onClick={refresh} title="Qayta yuklash">
+          <Button variant="ghost" onClick={refresh} title={t('Qayta yuklash')}>
             <RefreshCw size={18} />
           </Button>
           <Button variant="secondary" onClick={() => setHallModalOpen(true)}>
             <Layers size={18} style={{ marginRight: '6px' }} />
-            Yangi Zal
+            {t('Yangi Zal')}
           </Button>
           <Button variant="primary" onClick={handleOpenCreateTable}>
             <Plus size={18} style={{ marginRight: '6px' }} />
-            Yangi Stol
+            {t('Yangi Stol')}
           </Button>
         </div>
       </div>
@@ -305,27 +326,27 @@ export const TablesPage: React.FC = () => {
         }}
       >
         <StatCard
-          title="Jami Stollar"
+          title={t('Jami Stollar')}
           value={summary.total}
           icon={<Armchair size={22} />}
         />
         <StatCard
-          title="Bo'sh Stollar"
+          title={t("Bo'sh Stollar")}
           value={summary.free}
           icon={<Armchair size={22} color="var(--accent-emerald)" />}
         />
         <StatCard
-          title="Band / Buyurtma"
+          title={t('Band / Buyurtma')}
           value={summary.occupied}
           icon={<Armchair size={22} color="var(--accent-amber)" />}
         />
         <StatCard
-          title="Hisob Kutilmoqda"
+          title={t('Hisob Kutilmoqda')}
           value={summary.bill}
           icon={<Armchair size={22} color="var(--accent-indigo)" />}
         />
         <StatCard
-          title="Tozalanmoqda"
+          title={t('Tozalanmoqda')}
           value={summary.cleaning}
           icon={<Armchair size={22} color="var(--text-dim)" />}
         />
@@ -339,7 +360,7 @@ export const TablesPage: React.FC = () => {
           overflowX: 'auto',
           paddingBottom: '8px',
           marginBottom: '16px',
-          borderBottom: '1px solid var(--border-color)',
+          borderBottom: '1px solid var(--border-subtle)',
         }}
       >
         <button
@@ -348,8 +369,8 @@ export const TablesPage: React.FC = () => {
             padding: '8px 16px',
             borderRadius: '8px',
             border: 'none',
-            background: selectedHall === 'all' ? 'var(--primary)' : 'var(--card-bg)',
-            color: selectedHall === 'all' ? '#ffffff' : 'var(--text-muted)',
+            background: selectedHall === 'all' ? 'var(--action)' : 'var(--bg-surface)',
+            color: selectedHall === 'all' ? 'var(--text-inverse)' : 'var(--text-muted)',
             fontWeight: 600,
             fontSize: '13px',
             cursor: 'pointer',
@@ -357,7 +378,7 @@ export const TablesPage: React.FC = () => {
             whiteSpace: 'nowrap',
           }}
         >
-          Barcha Zallar ({summary.total})
+          {t('Barcha Zallar ({n})', { n: summary.total })}
         </button>
         {halls.map((h: HallItem) => (
           <button
@@ -367,8 +388,9 @@ export const TablesPage: React.FC = () => {
               padding: '8px 16px',
               borderRadius: '8px',
               border: 'none',
-              background: selectedHall === h.id ? 'var(--text-main)' : 'var(--card-bg)',
-              color: selectedHall === h.id ? '#ffffff' : 'var(--text-muted)',
+              background: selectedHall === h.id ? 'var(--text-main)' : 'var(--bg-surface)',
+              // to'q (kun) / och (tun) to'ldirish ustida matn: sirt rangi teskari
+              color: selectedHall === h.id ? 'var(--bg-surface)' : 'var(--text-muted)',
               fontWeight: 600,
               fontSize: '13px',
               cursor: 'pointer',
@@ -376,7 +398,7 @@ export const TablesPage: React.FC = () => {
               whiteSpace: 'nowrap',
             }}
           >
-            {h.name} ({h.tables_count})
+            {t(h.name)} ({h.tables_count})
           </button>
         ))}
       </div>
@@ -394,12 +416,12 @@ export const TablesPage: React.FC = () => {
       >
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {[
-            { id: 'all', label: 'Barchasi' },
-            { id: 'free', label: "Bo'sh" },
-            { id: 'occupied', label: 'Band' },
-            { id: 'bill', label: 'Hisob' },
-            { id: 'cleaning', label: 'Tozalanmoqda' },
-            { id: 'deleted', label: 'Arxiv' },
+            { id: 'all', label: t('Barchasi') },
+            { id: 'free', label: t("Bo'sh") },
+            { id: 'occupied', label: t('Band') },
+            { id: 'bill', label: t('Hisob') },
+            { id: 'cleaning', label: t('Tozalanmoqda') },
+            { id: 'deleted', label: t('Arxiv') },
           ].map((st) => (
             <button
               key={st.id}
@@ -408,9 +430,9 @@ export const TablesPage: React.FC = () => {
                 padding: '6px 14px',
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: statusFilter === st.id ? 'var(--primary)' : 'var(--border-color)',
-                background: statusFilter === st.id ? 'var(--accent-amber-bg)' : 'transparent',
-                color: statusFilter === st.id ? 'var(--primary)' : 'var(--text-muted)',
+                borderColor: statusFilter === st.id ? 'var(--brand)' : 'var(--border-subtle)',
+                background: statusFilter === st.id ? 'var(--brand-bg)' : 'transparent',
+                color: statusFilter === st.id ? 'var(--brand)' : 'var(--text-muted)',
                 fontWeight: 500,
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -434,15 +456,15 @@ export const TablesPage: React.FC = () => {
           />
           <input
             type="text"
-            placeholder="Stol raqami bo'yicha..."
+            placeholder={t("Stol raqami bo'yicha...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
               padding: '8px 12px 8px 36px',
               borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--card-bg)',
+              border: '1px solid var(--border-strong)',
+              background: 'var(--bg-surface)',
               color: 'var(--text-main)',
               fontSize: '13px',
               outline: 'none',
@@ -454,12 +476,12 @@ export const TablesPage: React.FC = () => {
 
       {/* Xatolik xabari */}
       {error && (
-        <Card style={{ marginBottom: '24px', borderColor: 'rgb(220 38 38 / 0.4)' }}>
+        <Card style={{ marginBottom: '24px', borderColor: 'var(--accent-rose)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-rose)' }}>
             <AlertCircle size={20} />
-            <span>{error}</span>
+            <span>{t(error)}</span>
             <Button variant="secondary" onClick={refresh} style={{ marginLeft: 'auto' }}>
-              Qayta urinish
+              {t('Qayta urinish')}
             </Button>
           </div>
         </Card>
@@ -481,16 +503,16 @@ export const TablesPage: React.FC = () => {
       ) : tables.length === 0 ? (
         <EmptyState
           icon={<Armchair size={48} />}
-          title="Stollar topilmadi"
+          title={t('Stollar topilmadi')}
           description={
             searchQuery || statusFilter !== 'all'
-              ? "Qidiruv yoki filtr bo'yicha hech qanday stol topilmadi."
-              : "Restoraningizda hali stollar mavjud emas. Yangi stol qo'shing."
+              ? t("Qidiruv yoki filtr bo'yicha hech qanday stol topilmadi.")
+              : t("Restoraningizda hali stollar mavjud emas. Yangi stol qo'shing.")
           }
           action={
             <Button variant="primary" onClick={handleOpenCreateTable}>
               <Plus size={18} style={{ marginRight: '6px' }} />
-              Birinchi stolni qo'shish
+              {t("Birinchi stolni qo'shish")}
             </Button>
           }
         />
@@ -503,12 +525,12 @@ export const TablesPage: React.FC = () => {
             gap: '16px',
           }}
         >
-          {tables.map((t: TableItem) => {
-            const statusCfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.free;
+          {tables.map((table: TableItem) => {
+            const statusCfg = STATUS_CONFIG[table.status] || STATUS_CONFIG.free;
 
             return (
               <Card
-                key={t.id}
+                key={table.id}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -517,8 +539,8 @@ export const TablesPage: React.FC = () => {
                   borderRadius: '12px',
                   border: `1px solid ${statusCfg.border}`,
                   position: 'relative',
-                  background: 'var(--card-bg)',
-                  opacity: t.is_deleted ? 0.6 : 1,
+                  background: 'var(--bg-surface)',
+                  opacity: table.is_deleted ? 0.6 : 1,
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                 }}
               >
@@ -541,7 +563,7 @@ export const TablesPage: React.FC = () => {
                           letterSpacing: '-0.02em',
                         }}
                       >
-                        Stol #{t.number}
+                        {t('Stol #{number}', { number: table.number })}
                       </div>
                       <div
                         style={{
@@ -550,7 +572,7 @@ export const TablesPage: React.FC = () => {
                           marginTop: '2px',
                         }}
                       >
-                        {t.hall_name}
+                        {t(table.hall_name)}
                       </div>
                     </div>
 
@@ -566,7 +588,7 @@ export const TablesPage: React.FC = () => {
                         border: `1px solid ${statusCfg.border}`,
                       }}
                     >
-                      {statusCfg.label}
+                      {t(statusCfg.label)}
                     </div>
                   </div>
 
@@ -583,27 +605,27 @@ export const TablesPage: React.FC = () => {
                   >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Users size={15} />
-                      {t.capacity} kishi
+                      {t('{n} kishi', { n: table.capacity })}
                     </span>
-                    <span>{t.shape === 'round' ? '⭕ Doira' : '⬛ To\'rtburchak'}</span>
+                    <span>{table.shape === 'round' ? `⭕ ${t('Doira')}` : `⬛ ${t("To'rtburchak")}`}</span>
                   </div>
 
                   {/* Faol hisob va buyurtmalar */}
-                  {t.total_bill > 0 && (
+                  {table.total_bill > 0 && (
                     <div
                       style={{
                         padding: '8px 12px',
                         borderRadius: '8px',
-                        background: 'rgb(24 21 19 / 0.08)',
-                        border: '1px solid rgb(24 21 19 / 0.2)',
+                        background: 'var(--bg-surface-hover)',
+                        border: '1px solid var(--border-strong)',
                         marginBottom: '14px',
                       }}
                     >
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Ochiq hisob ({t.active_orders_count} buyurtma):
+                        {t('Ochiq hisob ({n} buyurtma):', { n: table.active_orders_count })}
                       </div>
                       <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-indigo)' }}>
-                        {t.total_bill.toLocaleString('uz-UZ')} so'm
+                        {t("{amount} so'm", { amount: fmtNum(table.total_bill) })}
                       </div>
                     </div>
                   )}
@@ -612,27 +634,27 @@ export const TablesPage: React.FC = () => {
                 {/* Pastki tugmalar va holat o'zgartirish */}
                 <div>
                   {/* Tezkor holat select */}
-                  {!t.is_deleted && (
+                  {!table.is_deleted && (
                     <div style={{ marginBottom: '12px' }}>
                       <select
-                        value={t.status}
-                        onChange={(e) => changeStatus(t.id, e.target.value)}
+                        value={table.status}
+                        onChange={(e) => changeStatus(table.id, e.target.value)}
                         style={{
                           width: '100%',
                           padding: '6px 10px',
                           borderRadius: '6px',
-                          border: '1px solid var(--border-color)',
-                          background: 'rgb(24 21 19 / 0.04)',
+                          border: '1px solid var(--border-strong)',
+                          background: 'var(--bg-elevated)',
                           color: 'var(--text-main)',
                           fontSize: '12px',
                           fontWeight: 500,
                           cursor: 'pointer',
                         }}
                       >
-                        <option value="free">Holat: Bo'sh</option>
-                        <option value="occupied">Holat: Band</option>
-                        <option value="bill">Holat: Hisob</option>
-                        <option value="cleaning">Holat: Tozalanmoqda</option>
+                        <option value="free">{t('Holat: {status}', { status: t("Bo'sh") })}</option>
+                        <option value="occupied">{t('Holat: {status}', { status: t('Band') })}</option>
+                        <option value="bill">{t('Holat: {status}', { status: t('Hisob') })}</option>
+                        <option value="cleaning">{t('Holat: {status}', { status: t('Tozalanmoqda') })}</option>
                       </select>
                     </div>
                   )}
@@ -643,27 +665,27 @@ export const TablesPage: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      borderTop: '1px solid var(--border-color)',
+                      borderTop: '1px solid var(--border-subtle)',
                       paddingTop: '12px',
                     }}
                   >
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => setQrModalTable(t)}
+                      onClick={() => setQrModalTable(table)}
                       style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
                     >
                       <QrCode size={14} style={{ marginRight: '4px' }} />
-                      QR Kod
+                      {t('QR Kod')}
                     </Button>
 
-                    {!t.is_deleted ? (
+                    {!table.is_deleted ? (
                       <>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleOpenEditTable(t)}
-                          title="Tahrirlash"
+                          onClick={() => handleOpenEditTable(table)}
+                          title={t('Tahrirlash')}
                         >
                           <Edit2 size={15} />
                         </Button>
@@ -671,11 +693,11 @@ export const TablesPage: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (window.confirm(`"${t.number}" raqamli stolni arxivlamoqchimisiz?`)) {
-                              removeTable(t.id);
+                            if (window.confirm(t('"{number}" raqamli stolni arxivlamoqchimisiz?', { number: table.number }))) {
+                              removeTable(table.id);
                             }
                           }}
-                          title="Arxivlash"
+                          title={t('Arxivlash')}
                           style={{ color: 'var(--accent-rose)' }}
                         >
                           <Trash2 size={15} />
@@ -685,12 +707,12 @@ export const TablesPage: React.FC = () => {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => restoreDeletedTable(t.id)}
-                        title="Tiklash"
+                        onClick={() => restoreDeletedTable(table.id)}
+                        title={t('Tiklash')}
                         style={{ color: 'var(--accent-emerald)' }}
                       >
                         <RotateCcw size={14} style={{ marginRight: '4px' }} />
-                        Tiklash
+                        {t('Tiklash')}
                       </Button>
                     )}
                   </div>
@@ -705,12 +727,12 @@ export const TablesPage: React.FC = () => {
       {qrModalTable && (
         <Modal
           isOpen={true}
-          title={`Stol #${qrModalTable.number} — QR Kod`}
+          title={t('Stol #{number} — QR Kod', { number: qrModalTable.number })}
           onClose={() => setQrModalTable(null)}
         >
           <div style={{ textAlign: 'center', padding: '12px 0' }}>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Zal: <strong>{qrModalTable.hall_name}</strong> | Sig'im: <strong>{qrModalTable.capacity} kishi</strong>
+              {t('Zal:')} <strong>{t(qrModalTable.hall_name)}</strong> | {t("Sig'im:")} <strong>{t('{n} kishi', { n: qrModalTable.capacity })}</strong>
             </div>
 
             {/* SVG QR Rasm */}
@@ -718,15 +740,15 @@ export const TablesPage: React.FC = () => {
               style={{
                 display: 'inline-block',
                 padding: '16px',
-                background: '#ffffff',
+                background: QR_PAPER,
                 borderRadius: '12px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                boxShadow: 'var(--shadow-lg)',
                 marginBottom: '20px',
               }}
             >
               <img
                 src={qrModalTable.qr_svg_url}
-                alt={`QR Code Stol ${qrModalTable.number}`}
+                alt={t('QR Code Stol {number}', { number: qrModalTable.number })}
                 style={{ width: '220px', height: '220px', display: 'block' }}
               />
             </div>
@@ -739,8 +761,8 @@ export const TablesPage: React.FC = () => {
                 gap: '8px',
                 padding: '8px 12px',
                 borderRadius: '8px',
-                background: 'rgb(24 21 19 / 0.04)',
-                border: '1px solid var(--border-color)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-subtle)',
                 fontSize: '12px',
                 color: 'var(--text-muted)',
                 marginBottom: '20px',
@@ -752,7 +774,7 @@ export const TablesPage: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleCopyLink(qrModalTable.qr_url)}
-                title="Havoladan nusxa olish"
+                title={t('Havoladan nusxa olish')}
               >
                 {copiedLink ? <Check size={16} color="var(--accent-emerald)" /> : <Copy size={16} />}
               </Button>
@@ -767,7 +789,7 @@ export const TablesPage: React.FC = () => {
               >
                 <Button variant="primary">
                   <Printer size={16} style={{ marginRight: '6px' }} />
-                  SVG Yuklab olish
+                  {t('SVG Yuklab olish')}
                 </Button>
               </a>
 
@@ -775,7 +797,7 @@ export const TablesPage: React.FC = () => {
                 variant="secondary"
                 onClick={handleRotateQr}
                 disabled={qrRotating}
-                title="Xavfsizlik uchun yangi QR token olish"
+                title={t('Xavfsizlik uchun yangi QR token olish')}
               >
                 <RefreshCw
                   size={16}
@@ -784,7 +806,7 @@ export const TablesPage: React.FC = () => {
                     animation: qrRotating ? 'spin 1s linear infinite' : undefined,
                   }}
                 />
-                QR ni Yangilash
+                {t('QR ni Yangilash')}
               </Button>
             </div>
           </div>
@@ -795,7 +817,7 @@ export const TablesPage: React.FC = () => {
       {tableModalOpen && (
         <Modal
           isOpen={true}
-          title={editingTable ? `Stol #${editingTable.number} ni Tahrirlash` : "Yangi Stol Qo'shish"}
+          title={editingTable ? t('Stol #{number} ni Tahrirlash', { number: editingTable.number }) : t("Yangi Stol Qo'shish")}
           onClose={() => setTableModalOpen(false)}
         >
           <form onSubmit={handleTableSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -805,59 +827,41 @@ export const TablesPage: React.FC = () => {
                   padding: '10px 14px',
                   borderRadius: '8px',
                   background: 'var(--accent-rose-bg)',
-                  border: '1px solid rgb(220 38 38 / 0.3)',
-                  color: 'var(--accent-rose)',
+                  border: '1px solid var(--accent-rose-border)',
+                  color: 'var(--text-main)', // qizil matn och-qizil fonda kichik o'lchamda AA dan past: to'q matn + qizil fon/chegara
                   fontSize: '13px',
                 }}
               >
-                {tableFormError}
+                {t(tableFormError)}
               </div>
             )}
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Stol Raqami *
+                {t('Stol Raqami *')}
               </label>
               <input
                 type="text"
                 required
-                placeholder="Masalan: 1, 2, VIP-1"
+                placeholder={t('Masalan: 1, 2, VIP-1')}
                 value={tableForm.number}
                 onChange={(e) => setTableForm({ ...tableForm, number: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '14px',
-                  boxSizing: 'border-box',
-                }}
+                style={fieldStyle}
               />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Zal
+                {t('Zal')}
               </label>
               <select
                 value={tableForm.hall_id}
                 onChange={(e) => setTableForm({ ...tableForm, hall_id: e.target.value ? Number(e.target.value) : '' })}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '14px',
-                  boxSizing: 'border-box',
-                }}
+                style={fieldStyle}
               >
                 {halls.map((h: HallItem) => (
                   <option key={h.id} value={h.id}>
-                    {h.name}
+                    {t(h.name)}
                   </option>
                 ))}
               </select>
@@ -866,7 +870,7 @@ export const TablesPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  Sig'imi (kishi)
+                  {t("Sig'imi (kishi)")}
                 </label>
                 <input
                   type="number"
@@ -874,49 +878,31 @@ export const TablesPage: React.FC = () => {
                   max="100"
                   value={tableForm.capacity}
                   onChange={(e) => setTableForm({ ...tableForm, capacity: Number(e.target.value) || 4 })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-main)',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
+                  style={fieldStyle}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  Shakli
+                  {t('Shakli')}
                 </label>
                 <select
                   value={tableForm.shape}
                   onChange={(e) => setTableForm({ ...tableForm, shape: e.target.value as 'rect' | 'round' })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-main)',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
+                  style={fieldStyle}
                 >
-                  <option value="rect">⬛ To'rtburchak</option>
-                  <option value="round">⭕ Doira</option>
+                  <option value="rect">{`⬛ ${t("To'rtburchak")}`}</option>
+                  <option value="round">{`⭕ ${t('Doira')}`}</option>
                 </select>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
               <Button variant="ghost" type="button" onClick={() => setTableModalOpen(false)}>
-                Bekor qilish
+                {t('Bekor qilish')}
               </Button>
               <Button variant="primary" type="submit" disabled={tableFormSubmitting}>
-                {tableFormSubmitting ? "Saqlanmoqda..." : editingTable ? "O'zgarishlarni saqlash" : "Stolni yaratish"}
+                {tableFormSubmitting ? t('Saqlanmoqda...') : editingTable ? t("O'zgarishlarni saqlash") : t('Stolni yaratish')}
               </Button>
             </div>
           </form>
@@ -925,7 +911,7 @@ export const TablesPage: React.FC = () => {
 
       {/* Zal Yaratish Modali */}
       {hallModalOpen && (
-        <Modal isOpen={true} title="Yangi Zal Qo'shish" onClose={() => setHallModalOpen(false)}>
+        <Modal isOpen={true} title={t("Yangi Zal Qo'shish")} onClose={() => setHallModalOpen(false)}>
           <form onSubmit={handleHallSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {hallFormError && (
               <div
@@ -933,65 +919,47 @@ export const TablesPage: React.FC = () => {
                   padding: '10px 14px',
                   borderRadius: '8px',
                   background: 'var(--accent-rose-bg)',
-                  border: '1px solid rgb(220 38 38 / 0.3)',
-                  color: 'var(--accent-rose)',
+                  border: '1px solid var(--accent-rose-border)',
+                  color: 'var(--text-main)', // qizil matn och-qizil fonda kichik o'lchamda AA dan past: to'q matn + qizil fon/chegara
                   fontSize: '13px',
                 }}
               >
-                {hallFormError}
+                {t(hallFormError)}
               </div>
             )}
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Zal Nomi *
+                {t('Zal Nomi *')}
               </label>
               <input
                 type="text"
                 required
-                placeholder="Masalan: Yozgi Terrasa, VIP Xona, 2-qavat"
+                placeholder={t('Masalan: Yozgi Terrasa, VIP Xona, 2-qavat')}
                 value={hallForm.name}
                 onChange={(e) => setHallForm({ ...hallForm, name: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '14px',
-                  boxSizing: 'border-box',
-                }}
+                style={fieldStyle}
               />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Tartib Raqami
+                {t('Tartib Raqami')}
               </label>
               <input
                 type="number"
                 value={hallForm.order}
                 onChange={(e) => setHallForm({ ...hallForm, order: Number(e.target.value) || 0 })}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '14px',
-                  boxSizing: 'border-box',
-                }}
+                style={fieldStyle}
               />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
               <Button variant="ghost" type="button" onClick={() => setHallModalOpen(false)}>
-                Bekor qilish
+                {t('Bekor qilish')}
               </Button>
               <Button variant="primary" type="submit" disabled={hallFormSubmitting}>
-                {hallFormSubmitting ? "Saqlanmoqda..." : "Zalni qo'shish"}
+                {hallFormSubmitting ? t('Saqlanmoqda...') : t("Zalni qo'shish")}
               </Button>
             </div>
           </form>

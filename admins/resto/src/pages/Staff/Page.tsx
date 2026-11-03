@@ -6,27 +6,29 @@ import {
   Modal,
   Skeleton,
   StatCard,
+  t,
+  useSession,
   useToast,
   formatHumanDateTime,
 } from '@admins/shared';
 import {
   AlertCircle,
   Ban,
-  Check,
   CheckCircle2,
-  Copy,
   Edit2,
   KeyRound,
+  Link2,
   Plus,
   RefreshCw,
   Search,
   Shield,
-  ShieldCheck,
   User,
   Users,
   UtensilsCrossed,
 } from 'lucide-react';
 import { StaffItem } from './api';
+import { StaffAccess, TAP_TARGET } from './StaffAccess';
+import { StaffCredentials, type CredentialsState } from './StaffCredentials';
 import { useStaff } from './useStaff';
 import { restoUz, roleLabel } from '../../i18n/uz';
 
@@ -34,27 +36,27 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
   shop_owner: {
     bg: 'var(--accent-emerald-bg)',
     text: 'var(--accent-emerald)',
-    border: 'rgb(22 163 74 / 0.3)',
+    border: 'var(--accent-emerald-border)',
   },
   shop_manager: {
     bg: 'var(--accent-indigo-bg)',
     text: 'var(--accent-indigo)',
-    border: 'rgb(24 21 19 / 0.3)',
+    border: 'var(--border-strong)',
   },
   waiter: {
     bg: 'var(--accent-indigo-bg)',
     text: 'var(--accent-indigo)',
-    border: 'rgb(24 21 19 / 0.3)',
+    border: 'var(--border-strong)',
   },
   kitchen: {
     bg: 'var(--accent-amber-bg)',
     text: 'var(--accent-amber)',
-    border: 'rgb(194 65 12 / 0.35)',
+    border: 'var(--accent-amber-border)',
   },
   hostess: {
     bg: 'var(--accent-indigo-bg)',
     text: 'var(--accent-indigo)',
-    border: 'rgb(24 21 19 / 0.3)',
+    border: 'var(--border-strong)',
   },
 };
 
@@ -76,6 +78,8 @@ export const StaffPage: React.FC = () => {
   } = useStaff();
 
   const { showToast } = useToast();
+  const { session } = useSession();
+  const restaurantName = session?.tenant?.name?.trim() || '';
 
   // Create / Edit Modal
   const [staffModalOpen, setStaffModalOpen] = useState(false);
@@ -90,12 +94,11 @@ export const StaffPage: React.FC = () => {
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Password Reveal Modal (One-time password view)
-  const [revealModal, setRevealModal] = useState<{
-    username: string;
-    password: string;
-  } | null>(null);
-  const [copiedPass, setCopiedPass] = useState(false);
+  // Bir martalik oyna: xodim qo'shildi / parol yangilandi (parol faqat shu yerda ko'rinadi) + tayyor xabar
+  const [revealModal, setRevealModal] = useState<CredentialsState | null>(null);
+
+  // Kirish oynasi: xodim qayerdan va qanday kiradi (havola, ulashish, yo'riqnoma)
+  const [accessStaff, setAccessStaff] = useState<StaffItem | null>(null);
 
   // Reset Password Modal
   const [resetModalStaff, setResetModalStaff] = useState<StaffItem | null>(null);
@@ -143,7 +146,7 @@ export const StaffPage: React.FC = () => {
           full_name: form.full_name.trim(),
           phone: form.phone.trim(),
         });
-        showToast(`"${form.full_name || form.username}" ma'lumotlari yangilandi`, 'success');
+        showToast(t('"{name}" ma\'lumotlari yangilandi', { name: form.full_name || form.username }), 'success');
         setStaffModalOpen(false);
       } else {
         const res = await addStaff({
@@ -157,15 +160,18 @@ export const StaffPage: React.FC = () => {
 
         if (res.generated_password) {
           setRevealModal({
+            mode: 'created',
+            staff: res,
             username: res.username,
             password: res.generated_password,
           });
         } else {
-          showToast(`"${res.username}" xodimi yaratildi`, 'success');
+          showToast(t('"{name}" xodimi yaratildi', { name: res.username }), 'success');
+          setAccessStaff(res);
         }
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Xatolik yuz berdi";
+      const msg = err instanceof Error ? t(err.message) : t('Xatolik yuz berdi');
       setFormError(msg);
     } finally {
       setFormSubmitting(false);
@@ -174,8 +180,10 @@ export const StaffPage: React.FC = () => {
 
   // Handle Block / Unblock
   const handleToggleBlock = async (user: StaffItem) => {
-    const actionName = user.is_active ? 'bloklamoqchimisiz' : 'faollashtirmoqchimisiz';
-    if (!window.confirm(`Haqiqatan ham "${user.username}" xodimini ${actionName}?`)) {
+    const question = user.is_active
+      ? t('Haqiqatan ham "{name}" xodimini bloklamoqchimisiz?', { name: user.username })
+      : t('Haqiqatan ham "{name}" xodimini faollashtirmoqchimisiz?', { name: user.username });
+    if (!window.confirm(question)) {
       return;
     }
 
@@ -183,12 +191,12 @@ export const StaffPage: React.FC = () => {
       await toggleBlock(user.id, user.is_active);
       showToast(
         user.is_active
-          ? `"${user.username}" bloklandi (sessiyalari yakunlandi)`
-          : `"${user.username}" faollashtirildi`,
+          ? t('"{name}" bloklandi (sessiyalari yakunlandi)', { name: user.username })
+          : t('"{name}" faollashtirildi', { name: user.username }),
         user.is_active ? 'info' : 'success'
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Amalni bajarib bo'lmadi";
+      const msg = err instanceof Error ? t(err.message) : t("Amalni bajarib bo'lmadi");
       showToast(msg, 'error');
     }
   };
@@ -206,27 +214,27 @@ export const StaffPage: React.FC = () => {
 
       if (res.generated_password) {
         setRevealModal({
+          mode: 'password_reset',
+          staff: resetModalStaff,
           username: res.username,
           password: res.generated_password,
         });
       } else {
-        showToast(`"${resetModalStaff.username}" paroli yangilandi`, 'success');
+        showToast(t('"{name}" paroli yangilandi', { name: resetModalStaff.username }), 'success');
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Parolni yangilab bo'lmadi";
+      const msg = err instanceof Error ? t(err.message) : t("Parolni yangilab bo'lmadi");
       showToast(msg, 'error');
     } finally {
       setResetSubmitting(false);
     }
   };
 
-  // Copy password to clipboard
-  const handleCopyPassword = () => {
-    if (!revealModal) return;
-    navigator.clipboard.writeText(revealModal.password);
-    setCopiedPass(true);
-    showToast("Parol nusxalandi", 'success');
-    setTimeout(() => setCopiedPass(false), 2000);
+  // Profildan "Parolni almashtirish": tahrirlash/kirish oynasi yopilib, parol oynasi ochiladi
+  const handleChangePasswordFrom = (user: StaffItem) => {
+    setStaffModalOpen(false);
+    setAccessStaff(null);
+    setResetModalStaff(user);
   };
 
   return (
@@ -252,20 +260,20 @@ export const StaffPage: React.FC = () => {
               letterSpacing: '-0.02em',
             }}
           >
-            Xodimlar Boshqaruvi
+            {t('Xodimlar Boshqaruvi')}
           </h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>
-            Restoran xodimlari, ofitsiantlar, oshpazlar, rollar va xavfsiz kirish parollari.
+            {t('Restoran xodimlari, ofitsiantlar, oshpazlar, rollar va xavfsiz kirish parollari.')}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Button variant="ghost" onClick={refresh} title="Qayta yuklash">
+          <Button variant="ghost" onClick={refresh} title={t('Qayta yuklash')}>
             <RefreshCw size={18} />
           </Button>
           <Button variant="primary" onClick={handleOpenCreate}>
             <Plus size={18} style={{ marginRight: '6px' }} />
-            Yangi Xodim
+            {t('Yangi Xodim')}
           </Button>
         </div>
       </div>
@@ -280,12 +288,12 @@ export const StaffPage: React.FC = () => {
         }}
       >
         <StatCard
-          title="Jami Xodimlar"
+          title={t('Jami Xodimlar')}
           value={summary.total}
           icon={<Users size={22} color="var(--primary)" />}
         />
         <StatCard
-          title="Ofitsiantlar"
+          title={t('Ofitsiantlar')}
           value={summary.waiters}
           icon={<User size={22} color="var(--accent-indigo)" />}
         />
@@ -295,7 +303,7 @@ export const StaffPage: React.FC = () => {
           icon={<UtensilsCrossed size={22} color="var(--accent-amber)" />}
         />
         <StatCard
-          title="Menejerlar"
+          title={t('Menejerlar')}
           value={summary.managers}
           icon={<Shield size={22} color="var(--accent-emerald)" />}
         />
@@ -314,12 +322,12 @@ export const StaffPage: React.FC = () => {
       >
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
           {[
-            { id: 'all', label: `Barchasi (${summary.total})` },
-            { id: 'waiter', label: `Ofitsiantlar (${summary.waiters})` },
-            { id: 'kitchen', label: `Oshpazlar (${summary.kitchen})` },
-            { id: 'hostess', label: 'Hostess' },
-            { id: 'shop_manager', label: `Menejerlar (${summary.managers})` },
-            { id: 'blocked', label: `Bloklanganlar (${summary.blocked})` },
+            { id: 'all', label: t('Barchasi ({n})', { n: summary.total }) },
+            { id: 'waiter', label: t('Ofitsiantlar ({n})', { n: summary.waiters }) },
+            { id: 'kitchen', label: t('Oshpazlar ({n})', { n: summary.kitchen }) },
+            { id: 'hostess', label: t('Hostess') },
+            { id: 'shop_manager', label: t('Menejerlar ({n})', { n: summary.managers }) },
+            { id: 'blocked', label: t('Bloklanganlar ({n})', { n: summary.blocked }) },
           ].map((r) => (
             <button
               key={r.id}
@@ -329,7 +337,7 @@ export const StaffPage: React.FC = () => {
                 borderRadius: '8px',
                 border: 'none',
                 background: roleFilter === r.id ? 'var(--text-main)' : 'var(--card-bg)',
-                color: roleFilter === r.id ? '#ffffff' : 'var(--text-muted)',
+                color: roleFilter === r.id ? 'var(--bg-surface)' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -355,7 +363,7 @@ export const StaffPage: React.FC = () => {
           />
           <input
             type="text"
-            placeholder="Ism, login yoki telefon..."
+            placeholder={t('Ism, login yoki telefon...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -375,12 +383,12 @@ export const StaffPage: React.FC = () => {
 
       {/* Xatolik */}
       {error && (
-        <Card style={{ marginBottom: '24px', borderColor: 'rgb(220 38 38 / 0.4)' }}>
+        <Card style={{ marginBottom: '24px', borderColor: 'var(--accent-rose)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-rose)' }}>
             <AlertCircle size={20} />
             <span>{error}</span>
             <Button variant="secondary" onClick={refresh} style={{ marginLeft: 'auto' }}>
-              Qayta urinish
+              {t('Qayta urinish')}
             </Button>
           </div>
         </Card>
@@ -396,16 +404,16 @@ export const StaffPage: React.FC = () => {
       ) : staff.length === 0 ? (
         <EmptyState
           icon={<Users size={48} />}
-          title="Xodimlar topilmadi"
+          title={t('Xodimlar topilmadi')}
           description={
             searchQuery || roleFilter !== 'all'
-              ? "Qidiruv yoki filtr mezonlari bo'yicha xodimlar topilmadi."
-              : "Hozircha birorta xodim qo'shilmagan. Yangi xodim yarating."
+              ? t("Qidiruv yoki filtr mezonlari bo'yicha xodimlar topilmadi.")
+              : t("Hozircha birorta xodim qo'shilmagan. Yangi xodim yarating.")
           }
           action={
             <Button variant="primary" onClick={handleOpenCreate}>
               <Plus size={18} style={{ marginRight: '6px' }} />
-              Birinchi xodimni qo'shish
+              {t("Birinchi xodimni qo'shish")}
             </Button>
           }
         />
@@ -429,7 +437,7 @@ export const StaffPage: React.FC = () => {
                 style={{
                   padding: '20px',
                   borderRadius: '12px',
-                  border: `1px solid ${user.is_active ? 'var(--border-color)' : 'rgb(220 38 38 / 0.3)'}`,
+                  border: `1px solid ${user.is_active ? 'var(--border-color)' : 'var(--accent-rose-border)'}`,
                   background: 'var(--card-bg)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -486,10 +494,10 @@ export const StaffPage: React.FC = () => {
                         fontWeight: 600,
                         background: user.is_active ? 'var(--accent-emerald-bg)' : 'var(--accent-rose-bg)',
                         color: user.is_active ? 'var(--accent-emerald)' : 'var(--accent-rose)',
-                        border: `1px solid ${user.is_active ? 'rgb(22 163 74 / 0.3)' : 'rgb(220 38 38 / 0.3)'}`,
+                        border: `1px solid ${user.is_active ? 'var(--accent-emerald-border)' : 'var(--accent-rose-border)'}`,
                       }}
                     >
-                      {user.is_active ? 'Faol' : 'Bloklangan'}
+                      {user.is_active ? t('Faol') : t('Bloklangan')}
                     </div>
                   </div>
 
@@ -523,6 +531,36 @@ export const StaffPage: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Kirish: qaysi sahifaga kiradi va havola */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      flexWrap: 'wrap',
+                      padding: '10px 12px',
+                      marginBottom: '16px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', minWidth: 0 }}>
+                      {restoUz.staffPage.access.panelLabel}:{' '}
+                      <strong style={{ color: 'var(--text-main)' }}>{user.panel_label || '—'}</strong>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setAccessStaff(user)}
+                      style={TAP_TARGET}
+                    >
+                      <Link2 size={16} />
+                      {restoUz.staffPage.access.openButton}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Harakatlar tugmalari */}
@@ -539,18 +577,19 @@ export const StaffPage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleOpenEdit(user)}
-                    title="Tahrirlash"
-                    style={{ flex: 1 }}
+                    title={t('Tahrirlash')}
+                    style={{ ...TAP_TARGET, flex: 1 }}
                   >
                     <Edit2 size={14} style={{ marginRight: '4px' }} />
-                    Tahrirlash
+                    {t('Tahrirlash')}
                   </Button>
 
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setResetModalStaff(user)}
-                    title="Parolni yangilash"
+                    title={t('Parolni yangilash')}
+                    style={TAP_TARGET}
                   >
                     <KeyRound size={15} />
                   </Button>
@@ -560,8 +599,8 @@ export const StaffPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToggleBlock(user)}
-                      title={user.is_active ? 'Xodimni bloklash' : 'Blokdan chiqarish'}
-                      style={{ color: user.is_active ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}
+                      title={user.is_active ? t('Xodimni bloklash') : t('Blokdan chiqarish')}
+                      style={{ ...TAP_TARGET, color: user.is_active ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}
                     >
                       {user.is_active ? <Ban size={15} /> : <CheckCircle2 size={15} />}
                     </Button>
@@ -577,7 +616,11 @@ export const StaffPage: React.FC = () => {
       {staffModalOpen && (
         <Modal
           isOpen={true}
-          title={editingStaff ? `Xodimni Tahrirlash (@${editingStaff.username})` : "Yangi Xodim Qo'shish"}
+          title={
+            editingStaff
+              ? t('Xodimni Tahrirlash (@{username})', { username: editingStaff.username })
+              : t("Yangi Xodim Qo'shish")
+          }
           onClose={() => setStaffModalOpen(false)}
         >
           <form onSubmit={handleSubmitForm} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -587,7 +630,7 @@ export const StaffPage: React.FC = () => {
                   padding: '10px 14px',
                   borderRadius: '8px',
                   background: 'var(--accent-rose-bg)',
-                  border: '1px solid rgb(220 38 38 / 0.3)',
+                  border: '1px solid var(--accent-rose-border)',
                   color: 'var(--accent-rose)',
                   fontSize: '13px',
                 }}
@@ -599,12 +642,12 @@ export const StaffPage: React.FC = () => {
             {!editingStaff && (
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  Login (Username) *
+                  {t('Login (Username) *')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Masalan: ali_waiter, zarina_hostess"
+                  placeholder={t('Masalan: ali_waiter, zarina_hostess')}
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
                   style={{
@@ -623,11 +666,11 @@ export const StaffPage: React.FC = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                To'liq Ism
+                {t("To'liq Ism")}
               </label>
               <input
                 type="text"
-                placeholder="Masalan: Ali Valiyev"
+                placeholder={t('Masalan: Ali Valiyev')}
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                 style={{
@@ -645,7 +688,7 @@ export const StaffPage: React.FC = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Telefon Raqami
+                {t('Telefon Raqami')}
               </label>
               <input
                 type="text"
@@ -667,11 +710,12 @@ export const StaffPage: React.FC = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Rol *
+                {t('Rol *')}
               </label>
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
+                disabled={editingStaff?.role === 'shop_owner'}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -683,21 +727,68 @@ export const StaffPage: React.FC = () => {
                   boxSizing: 'border-box',
                 }}
               >
-                <option value="waiter">Ofitsiant (Buyurtmalar, stollar)</option>
+                <option value="waiter">{t('Ofitsiant (Buyurtmalar, stollar)')}</option>
                 <option value="kitchen">{restoUz.staffPage.kitchenRoleOption}</option>
-                <option value="hostess">Hostess (Qabulxona, bronlar)</option>
-                <option value="shop_manager">Menejer (Boshqaruv, hisobotlar)</option>
+                <option value="hostess">{t('Hostess (Qabulxona, bronlar)')}</option>
+                <option value="shop_manager">{t('Menejer (Boshqaruv, hisobotlar)')}</option>
+                {/* Egasi rolini o'zgartirib bo'lmaydi: tanlov egasini to'g'ri ko'rsatadi (avval "Ofitsiant" ko'rinardi) */}
+                {editingStaff?.role === 'shop_owner' && <option value="shop_owner">{roleLabel('shop_owner')}</option>}
               </select>
             </div>
+
+            {editingStaff && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  padding: '12px 14px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
+                  {restoUz.staffPage.access.sectionTitle}
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {restoUz.staffPage.access.panelLabel}:{' '}
+                  <strong style={{ color: 'var(--text-main)' }}>{editingStaff.panel_label || '—'}</strong>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    style={TAP_TARGET}
+                    onClick={() => {
+                      setStaffModalOpen(false);
+                      setAccessStaff(editingStaff);
+                    }}
+                  >
+                    <Link2 size={18} />
+                    {restoUz.staffPage.access.openButton}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    style={TAP_TARGET}
+                    onClick={() => handleChangePasswordFrom(editingStaff)}
+                  >
+                    <KeyRound size={18} />
+                    {restoUz.staffPage.access.changePassword}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {!editingStaff && (
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  Parol (ixtiyoriy)
+                  {t('Parol (ixtiyoriy)')}
                 </label>
                 <input
                   type="password"
-                  placeholder="Bo'sh qoldirilsa xavfsiz parol avtomatik yaratiladi"
+                  placeholder={t("Bo'sh qoldirilsa xavfsiz parol avtomatik yaratiladi")}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   style={{
@@ -716,88 +807,39 @@ export const StaffPage: React.FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
               <Button variant="ghost" type="button" onClick={() => setStaffModalOpen(false)}>
-                Bekor qilish
+                {t('Bekor qilish')}
               </Button>
               <Button variant="primary" type="submit" disabled={formSubmitting}>
-                {formSubmitting ? "Saqlanmoqda..." : editingStaff ? "O'zgarishlarni saqlash" : "Xodimni yaratish"}
+                {formSubmitting ? t('Saqlanmoqda...') : editingStaff ? t("O'zgarishlarni saqlash") : t('Xodimni yaratish')}
               </Button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Bir martalik Parol Ko'rsatish Modali (Reveal Modal) */}
+      {/* Xodim qo'shildi / parol yangilandi: bir martalik parol, kirish havolasi va tayyor xabar */}
       {revealModal && (
+        <StaffCredentials
+          state={revealModal}
+          restaurantName={restaurantName}
+          onClose={() => setRevealModal(null)}
+        />
+      )}
+
+      {/* Kirish oynasi: xodim qayerdan va qanday kiradi */}
+      {accessStaff && (
         <Modal
           isOpen={true}
-          title="Xodim uchun Kirish Ma'lumotlari"
-          onClose={() => setRevealModal(null)}
+          title={`${restoUz.staffPage.access.modalTitle}: ${accessStaff.full_name || accessStaff.username}`}
+          onClose={() => setAccessStaff(null)}
+          maxWidth="560px"
         >
-          <div style={{ textAlign: 'center', padding: '12px 0' }}>
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background: 'var(--accent-emerald-bg)',
-                color: 'var(--accent-emerald)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px auto',
-              }}
-            >
-              <ShieldCheck size={32} />
-            </div>
-
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--text-main)' }}>
-              Akkaunt Muvaffaqiyatli Tayyorlandi!
-            </h3>
-            <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Ushbu parol faqat <strong>BIR MARTA</strong> ko'rsatiladi. Uni darhol xodimga yetkazing yoki saqlab oling.
-            </p>
-
-            <div
-              style={{
-                background: 'rgb(24 21 19 / 0.04)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '10px',
-                padding: '16px',
-                textAlign: 'left',
-                marginBottom: '20px',
-              }}
-            >
-              <div style={{ marginBottom: '10px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block' }}>Login:</span>
-                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)' }}>
-                  {revealModal.username}
-                </span>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block' }}>Parol:</span>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                  <code
-                    style={{
-                      fontSize: '18px',
-                      fontWeight: 700,
-                      color: 'var(--primary)',
-                      fontFamily: 'monospace',
-                      letterSpacing: '1px',
-                    }}
-                  >
-                    {revealModal.password}
-                  </code>
-                  <Button variant="ghost" size="sm" onClick={handleCopyPassword} title="Nusxalash">
-                    {copiedPass ? <Check size={16} color="var(--accent-emerald)" /> : <Copy size={16} />}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <Button variant="primary" onClick={() => setRevealModal(null)} style={{ width: '100%' }}>
-              Tushundim, Saqlab Oldim
-            </Button>
+          <div style={{ maxHeight: 'calc(100dvh - 140px)', overflowY: 'auto' }}>
+            <StaffAccess
+              staff={accessStaff}
+              restaurantName={restaurantName}
+              onChangePassword={() => handleChangePasswordFrom(accessStaff)}
+            />
           </div>
         </Modal>
       )}
@@ -806,21 +848,21 @@ export const StaffPage: React.FC = () => {
       {resetModalStaff && (
         <Modal
           isOpen={true}
-          title={`Parolni Yangilash (@${resetModalStaff.username})`}
+          title={t('Parolni Yangilash (@{username})', { username: resetModalStaff.username })}
           onClose={() => setResetModalStaff(null)}
         >
           <form onSubmit={handleConfirmResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-              Xodim uchun yangi parol o'rnating yoki bo'sh qoldirsangiz avtomatik xavfsiz parol yaratiladi. Xodimning joriy barcha ochiq sessiyalari tugatiladi.
+              {t("Xodim uchun yangi parol o'rnating yoki bo'sh qoldirsangiz avtomatik xavfsiz parol yaratiladi. Xodimning joriy barcha ochiq sessiyalari tugatiladi.")}
             </p>
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                Yangi Parol (ixtiyoriy)
+                {t('Yangi Parol (ixtiyoriy)')}
               </label>
               <input
                 type="password"
-                placeholder="Avtomatik generatsiya qilish uchun bo'sh qoldiring"
+                placeholder={t("Avtomatik generatsiya qilish uchun bo'sh qoldiring")}
                 value={customPassword}
                 onChange={(e) => setCustomPassword(e.target.value)}
                 style={{
@@ -838,10 +880,10 @@ export const StaffPage: React.FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
               <Button variant="ghost" type="button" onClick={() => setResetModalStaff(null)}>
-                Bekor qilish
+                {t('Bekor qilish')}
               </Button>
               <Button variant="primary" type="submit" disabled={resetSubmitting}>
-                {resetSubmitting ? "Yangilanmoqda..." : "Parolni Yangilash"}
+                {resetSubmitting ? t('Yangilanmoqda...') : t('Parolni Yangilash')}
               </Button>
             </div>
           </form>

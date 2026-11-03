@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { t } from '@admins/shared';
 import { fetchSettings, updateSettings, type ShopSettings, type ShopSettingsPayload } from './api';
 
 export function useSettings() {
@@ -15,7 +16,7 @@ export function useSettings() {
       const data = await fetchSettings();
       setSettings(data);
     } catch (err: any) {
-      setError(err?.message || 'Sozlamalarni yuklab bo\'lmadi');
+      setError(err?.message ? t(err.message) : t("Sozlamalarni yuklab bo'lmadi"));
     } finally {
       setLoading(false);
     }
@@ -32,11 +33,11 @@ export function useSettings() {
       setSuccessMessage(null);
       const updated = await updateSettings(data);
       setSettings(updated);
-      setSuccessMessage('Sozlamalar muvaffaqiyatli saqlandi');
+      setSuccessMessage(t('Sozlamalar muvaffaqiyatli saqlandi'));
       setTimeout(() => setSuccessMessage(null), 4000);
       return { success: true };
     } catch (err: any) {
-      const msg = err?.message || 'Sozlamalarni saqlashda xatolik yuz berdi';
+      const msg = err?.message ? t(err.message) : t('Sozlamalarni saqlashda xatolik yuz berdi');
       setError(msg);
       return { success: false, error: msg };
     } finally {

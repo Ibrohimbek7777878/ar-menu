@@ -5,3 +5,4 @@ export * from './Toast';
 export * from './StatCard';
 export * from './EmptyState';
 export * from './Skeleton';
+export * from './AppearanceMenu';

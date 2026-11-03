@@ -1,0 +1,264 @@
+/* Admin qobig'i: yon panel (kompyuter) / yuqori panel + yondan ochiladigan drawer (telefon, < 768 px).
+   Faqat palitra tokenlari (shared/src/ui/tokens.css): qattiq rang yo'q. */
+.ra-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg-primary);
+}
+
+.ra-sidebar {
+  position: sticky;
+  top: 0;
+  width: 240px;
+  height: 100vh;
+  height: 100dvh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.ra-main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.ra-topbar,
+.ra-backdrop {
+  display: none;
+}
+
+.ra-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ra-brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--brand-bg);
+  color: var(--brand);
+}
+.ra-brand-text {
+  min-width: 0;
+}
+.ra-brand-name {
+  margin: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ra-brand-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.ra-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+}
+.ra-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.ra-nav-link:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-main);
+}
+.ra-nav-link[aria-current='page'] {
+  background-color: var(--brand-bg);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.ra-classic-wrap {
+  padding: 0 8px 12px;
+}
+.ra-classic-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-elevated);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+}
+.ra-classic-link:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.ra-user {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.ra-user-text {
+  flex: 1;
+  min-width: 0;
+}
+.ra-user-name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ra-user-role {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+/* Sidebar pastida oyna tugmaga emas, butun pastki qatorga tayanadi (240 px ichida sig'sin) */
+.ra-user .ra-appearance {
+  position: static;
+}
+.ra-user .ra-appearance .ra-appearance-panel[role='dialog'] {
+  right: 8px;
+  left: 8px;
+  width: auto;
+}
+.ra-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: none;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+.ra-icon-btn--danger {
+  color: var(--accent-rose);
+}
+.ra-icon-btn--danger:hover {
+  background-color: var(--accent-rose-bg);
+}
+
+@media (max-width: 767px) {
+  .ra-shell {
+    flex-direction: column;
+  }
+  .ra-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 60px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .ra-topbar-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ra-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    cursor: pointer;
+  }
+  /* Drawer: yopiq holatda ko'rinmaydi va fokus olmaydi (visibility), ochilganda chapdan suriladi */
+  .ra-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    width: min(280px, 85vw);
+    height: auto;
+    visibility: hidden;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+    transition: transform 200ms ease, visibility 0s linear 200ms;
+  }
+  .ra-sidebar[data-open='true'] {
+    visibility: visible;
+    transform: none;
+    transition: transform 200ms ease;
+  }
+  .ra-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 950;
+    display: block;
+    background-color: var(--scrim);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .ra-backdrop[data-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .ra-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .ra-classic-link {
+    min-height: 44px;
+  }
+}
+
+@media (min-width: 768px) {
+  .ra-menu-btn {
+    display: none;
+  }
+}

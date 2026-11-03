@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { tr } from '@admins/shared';
 import {
   fetchOrders,
   OrderDTO,
@@ -55,7 +56,8 @@ export function useOrders() {
 
         setData(res);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Buyurtmalarni yuklashda xatolik yuz berdi";
+        // Xabar o'zbekcha saqlanadi, sahifa uni ko'rsatishda t() bilan tarjima qiladi (til almashganda ham to'g'ri chiqadi)
+        const msg = err instanceof Error ? err.message : tr('Buyurtmalarni yuklashda xatolik yuz berdi');
         setError(msg);
       } finally {
         if (!isBackground) setLoading(false);
@@ -110,7 +112,7 @@ export function useOrders() {
       await updateOrderStatus(orderId, newStatus, cancelReason);
       await loadData(true);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Buyurtma holatini o'zgartirib bo'lmadi";
+      const msg = err instanceof Error ? err.message : tr("Buyurtma holatini o'zgartirib bo'lmadi");
       setError(msg);
       await loadData(true);
     }
@@ -129,7 +131,7 @@ export function useOrders() {
       await updateOrderPayment(orderId, newPayment);
       await loadData(true);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "To'lov holatini o'zgartirib bo'lmadi";
+      const msg = err instanceof Error ? err.message : tr("To'lov holatini o'zgartirib bo'lmadi");
       setError(msg);
       await loadData(true);
     }

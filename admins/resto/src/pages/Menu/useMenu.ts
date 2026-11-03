@@ -13,7 +13,7 @@ import {
   updateMenuProduct,
   createMenuCategory,
 } from './api';
-import { fetchWithSWR, invalidateCache, useToast } from '@admins/shared';
+import { fetchWithSWR, invalidateCache, t, useToast } from '@admins/shared';
 
 export type StatusFilter = 'all' | 'on' | 'off' | 'featured' | 'hidden';
 
@@ -21,6 +21,9 @@ export function useMenu() {
   const { showToast } = useToast();
   const [products, setProducts] = useState<MenuProduct[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
+  // Kategoriya qo'shishda eng yangi ro'yxatni tekshirish uchun (yopilma eskirgan bo'lishi mumkin)
+  const categoriesRef = useRef<MenuCategory[]>([]);
+  categoriesRef.current = categories;
   const [selectedCategory, setSelectedCategory] = useState<number | string>('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,7 +108,9 @@ export function useMenu() {
       await toggleMenuProductAvailability(product.id, nextVal);
       invalidateCache('resto:menu:');
       showToast(
-        nextVal ? `"${product.name}" sotuvga qo'shildi` : `"${product.name}" stop-listga olindi`,
+        nextVal
+          ? t('"{name}" sotuvga qo\'shildi', { name: product.name })
+          : t('"{name}" stop-listga olindi', { name: product.name }),
         'success'
       );
     } catch {
@@ -113,7 +118,7 @@ export function useMenu() {
       setProducts((prev) =>
         prev.map((p) => (p.id === product.id ? { ...p, is_available: !nextVal } : p))
       );
-      showToast("Holatni o'zgartirib bo'lmadi", 'error');
+      showToast(t("Holatni o'zgartirib bo'lmadi"), 'error');
     }
   };
 
@@ -127,14 +132,14 @@ export function useMenu() {
       await toggleMenuProductFeature(product.id, nextVal);
       invalidateCache('resto:menu:');
       showToast(
-        nextVal ? `"${product.name}" tavsiya etilganlarga qo'shildi` : `Tavsiya bekor qilindi`,
+        nextVal ? t('"{name}" tavsiya etilganlarga qo\'shildi', { name: product.name }) : t('Tavsiya bekor qilindi'),
         'info'
       );
     } catch {
       setProducts((prev) =>
         prev.map((p) => (p.id === product.id ? { ...p, is_featured: !nextVal } : p))
       );
-      showToast("Tavsiya holatini o'zgartirib bo'lmadi", 'error');
+      showToast(t("Tavsiya holatini o'zgartirib bo'lmadi"), 'error');
     }
   };
 
@@ -144,9 +149,9 @@ export function useMenu() {
       const duplicated = await duplicateMenuProduct(product.id);
       invalidateCache('resto:menu:');
       setProducts((prev) => [duplicated, ...prev]);
-      showToast(`"${product.name}" nusxalandi`, 'success');
+      showToast(t('"{name}" nusxalandi', { name: product.name }), 'success');
     } catch {
-      showToast("Taomdan nusxa olib bo'lmadi", 'error');
+      showToast(t("Taomdan nusxa olib bo'lmadi"), 'error');
     }
   };
 
@@ -156,9 +161,9 @@ export function useMenu() {
       await deleteMenuProduct(product.id);
       invalidateCache('resto:menu:');
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
-      showToast(`"${product.name}" yashirildi (arxivlandi)`, 'info');
+      showToast(t('"{name}" yashirildi (arxivlandi)', { name: product.name }), 'info');
     } catch {
-      showToast("Taomni yashirib bo'lmadi", 'error');
+      showToast(t("Taomni yashirib bo'lmadi"), 'error');
     }
   };
 
@@ -168,9 +173,9 @@ export function useMenu() {
       await restoreMenuProduct(product.id);
       invalidateCache('resto:menu:');
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
-      showToast(`"${product.name}" qayta tiklandi`, 'success');
+      showToast(t('"{name}" qayta tiklandi', { name: product.name }), 'success');
     } catch {
-      showToast("Taomni tiklab bo'lmadi", 'error');
+      showToast(t("Taomni tiklab bo'lmadi"), 'error');
     }
   };
 
@@ -180,22 +185,26 @@ export function useMenu() {
       const updated = await updateMenuProduct(id, formData);
       invalidateCache('resto:menu:');
       setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
-      showToast(`"${updated.name}" saqlandi`, 'success');
+      showToast(t('"{name}" saqlandi', { name: updated.name }), 'success');
       return updated;
     } else {
       const created = await createMenuProduct(formData);
       invalidateCache('resto:menu:');
       setProducts((prev) => [created, ...prev]);
-      showToast(`"${created.name}" qo'shildi`, 'success');
+      showToast(t('"{name}" qo\'shildi', { name: created.name }), 'success');
       return created;
     }
   };
 
-  // Yangi kategoriya yaratish
+  // Yangi kategoriya yaratish. Server bir xil nomli kategoriya bo'lsa mavjudini qaytaradi: u ro'yxatga ikkinchi marta qo'shilmaydi
   const handleAddCategory = async (name: string) => {
     const cat = await createMenuCategory(name);
-    setCategories((prev) => [...prev, cat]);
-    showToast(`"${cat.name}" kategoriyasi yaratildi`, 'success');
+    const existed = categoriesRef.current.some((c) => c.id === cat.id);
+    if (!existed) setCategories((prev) => (prev.some((c) => c.id === cat.id) ? prev : [...prev, cat]));
+    showToast(
+      existed ? t('"{name}" kategoriyasi bor edi', { name: cat.name }) : t('"{name}" kategoriyasi yaratildi', { name: cat.name }),
+      existed ? 'info' : 'success',
+    );
     return cat;
   };
 

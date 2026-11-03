@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { commonUz } from '../i18n/uz';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -37,13 +38,16 @@ export const Modal: React.FC<ModalProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backgroundColor: 'var(--scrim)',
         backdropFilter: 'blur(4px)',
         padding: '16px',
       }}
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         style={{
           width: '100%',
           maxWidth,
@@ -68,6 +72,7 @@ export const Modal: React.FC<ModalProps> = ({
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>{title}</h3>
           <button
             onClick={onClose}
+            aria-label={commonUz.close}
             style={{
               background: 'transparent',
               border: 'none',

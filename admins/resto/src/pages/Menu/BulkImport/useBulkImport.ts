@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { invalidateCache } from '@admins/shared';
+import { invalidateCache, t as tx } from '@admins/shared';
 import { restoUz } from '../../../i18n/uz';
 import { fetchMenuCategories } from '../api';
 import { commitImport, parseImport, undoImport } from './api';
@@ -83,6 +83,37 @@ function fileProblemMessage(verdict: Exclude<FileVerdict, { ok: true }>, isImage
   }
 }
 
+/** Server javobiga qarab ko'rsatiladigan izohlar (server izohlari, AI/OCR ogohlantirishi, kesilgan ro'yxat). */
+function responseNotes(response: ParseResponse): string[] {
+  const result: string[] = [];
+  // Server izohlari o'zbekcha keladi: tarjimasi bo'lsa joriy tilga o'giriladi, bo'lmasa (qiymatli matnlar) o'zi qoladi
+  for (const raw of response.notes ?? []) {
+    const note = raw ? tx(raw) : raw;
+    if (note && !result.includes(note)) result.push(note);
+  }
+  if (response.engine === 'ai' && !result.includes(t.review.engineAi)) result.push(t.review.engineAi);
+  if (response.engine === 'ocr' && !result.includes(t.review.engineOcr)) result.push(t.review.engineOcr);
+  if (response.truncated) result.push(fill(t.review.truncated, { n: MAX_ROWS }));
+  return result;
+}
+
+interface Seed {
+  rows: ReviewRow[];
+  notes: string[];
+  newCategoryNames: string[];
+}
+
+/**
+ * Tayyor o'qish natijasidan boshlang'ich holat (masalan, taom formasi menyu suratini o'qigan). Natija bo'sh bo'lsa null:
+ * ekran odatdagidek "Tashlang" bosqichida ochiladi. Yangi bo'limlar serverning `existing_category_id` iga qarab aniqlanadi.
+ */
+function seedFromParse(initial: ParseResponse | undefined): Seed | null {
+  if (!initial) return null;
+  const rows = rowsFromParse(initial, { startNumber: 1 });
+  if (rows.length === 0) return null;
+  return { rows, notes: responseNotes(initial), newCategoryNames: collectNewCategoryNames(rows, []) };
+}
+
 /** Nomlar ro'yxatiga yangilarini qo'shadi (harf registriga qaramay takrorsiz). */
 function mergeNames(current: string[], extra: string[]): string[] {
   const result = [...current];
@@ -93,13 +124,15 @@ function mergeNames(current: string[], extra: string[]): string[] {
 }
 
 /** Ommaviy qo'shish ekranining butun holati: o'qish navbati, qatorlar, tasdiqlash va qaytarish. */
-export function useBulkImport() {
-  const [step, setStep] = useState<Step>('input');
-  const [rows, setRows] = useState<ReviewRow[]>([]);
+export function useBulkImport(initial?: ParseResponse) {
+  // Tayyor natija berilsa (taom formasidagi menyu surati) ekran darrov "Tekshiring" bosqichida ochiladi
+  const [seed] = useState<Seed | null>(() => seedFromParse(initial));
+  const [step, setStep] = useState<Step>(seed ? 'review' : 'input');
+  const [rows, setRows] = useState<ReviewRow[]>(seed?.rows ?? []);
   const [existingCategories, setExistingCategories] = useState<CategoryOption[]>([]);
   const [categoriesFailed, setCategoriesFailed] = useState(false);
-  const [newCategoryNames, setNewCategoryNames] = useState<string[]>([]);
-  const [notes, setNotes] = useState<string[]>([]);
+  const [newCategoryNames, setNewCategoryNames] = useState<string[]>(seed?.newCategoryNames ?? []);
+  const [notes, setNotes] = useState<string[]>(seed?.notes ?? []);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [parsing, setParsing] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -115,7 +148,7 @@ export function useBulkImport() {
   const abortRef = useRef<AbortController | null>(null);
   const parsingRef = useRef(false);
   const committingRef = useRef(false);
-  const nextNumberRef = useRef(1);
+  const nextNumberRef = useRef(seed ? seed.rows.length + 1 : 1);
   const submissionIdRef = useRef<string | null>(null);
   const previewUrlsRef = useRef<string[]>([]);
   const existingRef = useRef<CategoryOption[]>([]);
@@ -263,10 +296,7 @@ export function useBulkImport() {
           number += mapped.length;
           found.push(...mapped);
 
-          for (const note of response.notes ?? []) if (note && !newNotes.includes(note)) newNotes.push(note);
-          if (response.engine === 'ai' && !newNotes.includes(t.review.engineAi)) newNotes.push(t.review.engineAi);
-          if (response.engine === 'ocr' && !newNotes.includes(t.review.engineOcr)) newNotes.push(t.review.engineOcr);
-          if (response.truncated) newNotes.push(fill(t.review.truncated, { n: MAX_ROWS }));
+          for (const note of responseNotes(response)) if (!newNotes.includes(note)) newNotes.push(note);
           if (sources.length > 1) newNotes.push(fill(t.review.fileCount, { name: source.name, n: mapped.length }));
         } catch (error) {
           if (error instanceof PrepareError) {
@@ -280,7 +310,7 @@ export function useBulkImport() {
           }
           newProblems.push({
             name: source.name,
-            message: failureMessage(failure, t.failures),
+            message: tx(failureMessage(failure, t.failures)),
           });
           // Urinishlar chegarasiga yetildi: qolganlarini ham urib ko'rishdan foyda yo'q
           if (failureKind(failure) === 'rate_limited') {
@@ -412,7 +442,10 @@ export function useBulkImport() {
       if (hasRowErrors(failure)) {
         // Hech narsa yozilmagan: qator-qator xato ko'rsatiladi; yuk o'zgaradi, kalit yangilanadi
         submissionIdRef.current = null;
-        const grouped = groupRowErrors(failure.rows, rows);
+        const grouped = groupRowErrors(
+          failure.rows.map((row) => ({ ...row, message: tx(row.message) })),
+          rows,
+        );
         setRowErrors(grouped.byRow);
         setOtherErrors(grouped.orphans.map((e) => describeRowError(e, t.fieldLabels)));
         setCommitMessage(fill(t.commit.failedRows, { n: Object.keys(grouped.byRow).length + grouped.orphans.length }));
@@ -425,7 +458,7 @@ export function useBulkImport() {
         return 'rows';
       } else {
         if (failure.status >= 400 && failure.status < 500) submissionIdRef.current = null;
-        setCommitMessage(fill(t.commit.failedGeneral, { message: failureMessage(failure, t.failures) }));
+        setCommitMessage(fill(t.commit.failedGeneral, { message: tx(failureMessage(failure, t.failures)) }));
       }
       return 'failed';
     } finally {
@@ -451,7 +484,7 @@ export function useBulkImport() {
     } catch (error) {
       const failure = extractFailure(error);
       const message =
-        failureKind(failure) === 'not_found' ? t.done.undoNotFound : failureMessage(failure, t.failures);
+        failureKind(failure) === 'not_found' ? t.done.undoNotFound : tx(failureMessage(failure, t.failures));
       if (mountedRef.current) setUndo({ status: 'error', message });
     }
   }, [result, undo.status]);

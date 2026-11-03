@@ -3,6 +3,9 @@ import {
   Card,
   Button,
   Modal,
+  t,
+  fmtNum,
+  getLang,
 } from '@admins/shared';
 import {
   TrendingUp,
@@ -25,8 +28,9 @@ import { getExportCsvUrl, type FinanceTransaction, type DebtItem } from './api';
 import { restoUz } from '../../i18n/uz';
 
 function formatSum(n: number | undefined | null): string {
-  if (n === undefined || n === null) return '0 so\'m';
-  return Math.round(n).toLocaleString('uz-UZ').replace(/,/g, ' ') + ' so\'m';
+  const digits = fmtNum(Math.round(n ?? 0));
+  // O'zbekcha: brauzerda uz-UZ bo'lmasa, vergulli ko'rinish bo'sh joyga almashadi (avvalgi xatti-harakat); ru/en o'z guruhlashi bilan
+  return `${getLang() === 'uz' ? digits.replace(/,/g, ' ') : digits} ${t("so'm")}`;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -124,11 +128,11 @@ export function FinancePage() {
     setTxFormError(null);
     const amt = parseFloat(newTxAmount.replace(/\s/g, ''));
     if (!amt || amt <= 0) {
-      setTxFormError('To\'g\'ri summa kiriting');
+      setTxFormError(t("To'g'ri summa kiriting"));
       return;
     }
     if (!newTxTitle.trim()) {
-      setTxFormError('Tranzaksiya mazmunini kiriting');
+      setTxFormError(t('Tranzaksiya mazmunini kiriting'));
       return;
     }
 
@@ -145,7 +149,7 @@ export function FinancePage() {
       setNewTxTitle('');
       setNewTxAmount('');
     } else {
-      setTxFormError(res.error || 'Xatolik yuz berdi');
+      setTxFormError(res.error || t('Xatolik yuz berdi'));
     }
   };
 
@@ -155,11 +159,11 @@ export function FinancePage() {
     setDebtFormError(null);
     const amt = parseFloat(newDebtAmount.replace(/\s/g, ''));
     if (!amt || amt <= 0) {
-      setDebtFormError('To\'g\'ri qarz summasini kiriting');
+      setDebtFormError(t("To'g'ri qarz summasini kiriting"));
       return;
     }
     if (!newDebtPerson.trim()) {
-      setDebtFormError('Shaxs yoki tashkilot ismini kiriting');
+      setDebtFormError(t('Shaxs yoki tashkilot ismini kiriting'));
       return;
     }
 
@@ -180,7 +184,7 @@ export function FinancePage() {
       setNewDebtDueDate('');
       setNewDebtNotes('');
     } else {
-      setDebtFormError(res.error || 'Xatolik yuz berdi');
+      setDebtFormError(res.error || t('Xatolik yuz berdi'));
     }
   };
 
@@ -190,7 +194,7 @@ export function FinancePage() {
     if (!cancellingTx) return;
     setCancelError(null);
     if (!cancelReason.trim()) {
-      setCancelError('Bekor qilish sababini ko\'rsatish shart');
+      setCancelError(t("Bekor qilish sababini ko'rsatish shart"));
       return;
     }
 
@@ -199,7 +203,7 @@ export function FinancePage() {
       setCancellingTx(null);
       setCancelReason('');
     } else {
-      setCancelError(res.error || 'Bekor qilib bo\'lmadi');
+      setCancelError(res.error || t("Bekor qilib bo'lmadi"));
     }
   };
 
@@ -210,11 +214,11 @@ export function FinancePage() {
     setPayError(null);
     const amt = parseFloat(payAmount.replace(/\s/g, ''));
     if (!amt || amt <= 0) {
-      setPayError('To\'g\'ri to\'lov summasini kiriting');
+      setPayError(t("To'g'ri to'lov summasini kiriting"));
       return;
     }
     if (amt > payingDebt.remaining_amount) {
-      setPayError(`To'lov summasi qoldiqdan (${formatSum(payingDebt.remaining_amount)}) oshmasligi kerak`);
+      setPayError(t("To'lov summasi qoldiqdan ({sum}) oshmasligi kerak", { sum: formatSum(payingDebt.remaining_amount) }));
       return;
     }
 
@@ -229,7 +233,7 @@ export function FinancePage() {
       setPayAmount('');
       setPayNote('');
     } else {
-      setPayError(res.error || 'To\'lov amalga oshmadi');
+      setPayError(res.error || t("To'lov amalga oshmadi"));
     }
   };
 
@@ -239,7 +243,7 @@ export function FinancePage() {
       <Card style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            Moliya va Kassa
+            {t('Moliya va Kassa')}
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>
             {restoUz.financePage.subtitle}
@@ -261,11 +265,11 @@ export function FinancePage() {
                   border: 'none',
                   cursor: 'pointer',
                   backgroundColor: preset === p ? 'var(--text-main)' : 'transparent',
-                  color: preset === p ? '#ffffff' : 'var(--text-muted)',
+                  color: preset === p ? 'var(--bg-primary)' : 'var(--text-muted)',
                   transition: 'all var(--transition-fast)',
                 }}
               >
-                {p === 'today' ? 'Bugun' : p === 'week' ? '7 kun' : '30 kun'}
+                {p === 'today' ? t('Bugun') : p === 'week' ? t('7 kun') : t('30 kun')}
               </button>
             ))}
           </div>
@@ -362,7 +366,7 @@ export function FinancePage() {
         >
           <span>{error}</span>
           <Button variant="ghost" size="sm" onClick={refresh}>
-            Qayta yuklash
+            {t('Qayta yuklash')}
           </Button>
         </div>
       )}
@@ -379,7 +383,7 @@ export function FinancePage() {
         <Card hoverable>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-              Jami Tushum (Kirim)
+              {t('Jami Tushum (Kirim)')}
             </span>
             <div
               style={{
@@ -397,9 +401,9 @@ export function FinancePage() {
             {formatSum(summary?.income)}
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '6px', fontSize: '11px', color: 'var(--text-dim)' }}>
-            <span>Naqd: {formatSum(summary?.income_cash)}</span>
+            <span>{t('Naqd: {sum}', { sum: formatSum(summary?.income_cash) })}</span>
             <span>•</span>
-            <span>Karta: {formatSum(summary?.income_card)}</span>
+            <span>{t('Karta: {sum}', { sum: formatSum(summary?.income_card) })}</span>
           </div>
         </Card>
 
@@ -407,7 +411,7 @@ export function FinancePage() {
         <Card hoverable>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-              Xarajatlar (Chiqim)
+              {t('Xarajatlar (Chiqim)')}
             </span>
             <div
               style={{
@@ -425,7 +429,7 @@ export function FinancePage() {
             {formatSum(summary?.expense)}
           </div>
           <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
-            Kassadan to'langan xarajatlar
+            {t("Kassadan to'langan xarajatlar")}
           </p>
         </Card>
 
@@ -466,7 +470,7 @@ export function FinancePage() {
         <Card hoverable>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-              Kassa qoldig'i
+              {t("Kassa qoldig'i")}
             </span>
             <div
               style={{
@@ -484,7 +488,7 @@ export function FinancePage() {
             {formatSum(summary?.cash_balance)}
           </div>
           <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
-            Kassadagi jami naqd pul
+            {t('Kassadagi jami naqd pul')}
           </p>
         </Card>
 
@@ -492,7 +496,7 @@ export function FinancePage() {
         <Card hoverable>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-              O'rtacha chek
+              {t("O'rtacha chek")}
             </span>
             <div
               style={{
@@ -510,7 +514,7 @@ export function FinancePage() {
             {formatSum(summary?.average_check)}
           </div>
           <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--text-dim)' }}>
-            {summary?.orders_count || 0} ta buyurtma asosida
+            {t('{n} ta buyurtma asosida', { n: summary?.orders_count || 0 })}
           </p>
         </Card>
       </div>
@@ -542,7 +546,7 @@ export function FinancePage() {
               transition: 'all var(--transition-fast)',
             }}
           >
-            Kassa Operatsiyalari (Kirim / Chiqim)
+            {t('Kassa Operatsiyalari (Kirim / Chiqim)')}
           </button>
           <button
             onClick={() => setActiveTab('debts')}
@@ -565,12 +569,12 @@ export function FinancePage() {
         {activeTab === 'transactions' ? (
           <Button variant="primary" size="sm" onClick={() => setShowTxModal(true)}>
             <Plus size={16} />
-            <span>Kirim / Chiqim qo'shish</span>
+            <span>{t("Kirim / Chiqim qo'shish")}</span>
           </Button>
         ) : (
-          <Button variant="primary" size="sm" onClick={() => setShowDebtModal(true)} style={{ backgroundColor: '#2563eb' }}>
+          <Button variant="primary" size="sm" onClick={() => setShowDebtModal(true)}>
             <Plus size={16} />
-            <span>Yangi Qarz / Nasiya ochish</span>
+            <span>{t('Yangi Qarz / Nasiya ochish')}</span>
           </Button>
         )}
       </div>
@@ -581,10 +585,10 @@ export function FinancePage() {
           {/* Filtrlar va Qidiruv */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
-              {(['all', 'income', 'expense'] as const).map((t) => (
+              {(['all', 'income', 'expense'] as const).map((kind) => (
                 <button
-                  key={t}
-                  onClick={() => setTxType(t)}
+                  key={kind}
+                  onClick={() => setTxType(kind)}
                   style={{
                     padding: '6px 14px',
                     fontSize: '12px',
@@ -592,12 +596,12 @@ export function FinancePage() {
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-subtle)',
                     cursor: 'pointer',
-                    backgroundColor: txType === t ? 'var(--text-main)' : 'var(--bg-elevated)',
-                    color: txType === t ? '#ffffff' : 'var(--text-muted)',
+                    backgroundColor: txType === kind ? 'var(--text-main)' : 'var(--bg-elevated)',
+                    color: txType === kind ? 'var(--bg-primary)' : 'var(--text-muted)',
                     transition: 'all var(--transition-fast)',
                   }}
                 >
-                  {t === 'all' ? 'Barchasi' : t === 'income' ? 'Faqat Kirim' : 'Faqat Chiqim'}
+                  {kind === 'all' ? t('Barchasi') : kind === 'income' ? t('Faqat Kirim') : t('Faqat Chiqim')}
                 </button>
               ))}
             </div>
@@ -617,7 +621,7 @@ export function FinancePage() {
                 type="text"
                 value={txSearch}
                 onChange={(e) => setTxSearch(e.target.value)}
-                placeholder="Mazmuni yoki izohi bo'yicha qidirish..."
+                placeholder={t("Mazmuni yoki izohi bo'yicha qidirish...")}
                 style={{
                   ...inputStyle,
                   paddingLeft: '34px',
@@ -630,24 +634,24 @@ export function FinancePage() {
           <Card style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
               <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-                Ma'lumotlar yuklanmoqda...
+                {t("Ma'lumotlar yuklanmoqda...")}
               </div>
             ) : transactions.length === 0 ? (
               <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-                Ushbu davrda kassa operatsiyalari topilmadi.
+                {t('Ushbu davrda kassa operatsiyalari topilmadi.')}
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Sana</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Mazmuni</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Kategoriya</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>To'lov Usuli</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Summa</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Holati</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amal</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Sana')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Mazmuni')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Kategoriya')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t("To'lov Usuli")}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Summa')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Holati')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>{t('Amal')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -668,15 +672,15 @@ export function FinancePage() {
                           <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{tx.title}</div>
                           {tx.source_type !== 'manual' && (
                             <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                              {tx.source_type === 'receipt' ? 'Chek tushumi' : 'Qarz to\'lovi'}
+                              {tx.source_type === 'receipt' ? t('Chek tushumi') : t("Qarz to'lovi")}
                             </span>
                           )}
                         </td>
                         <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
-                          {tx.category_name}
+                          {t(tx.category_name)}
                         </td>
                         <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
-                          {tx.payment_method_display}
+                          {t(tx.payment_method_display)}
                         </td>
                         <td style={{ padding: '12px 16px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                           <span style={{ color: tx.type === 'income' ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
@@ -688,18 +692,18 @@ export function FinancePage() {
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-rose)' }}>
                                 <Ban size={12} />
-                                Bekor qilingan (Storno)
+                                {t('Bekor qilingan (Storno)')}
                               </span>
                               {tx.cancel_reason && (
                                 <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                                  Sabab: {tx.cancel_reason}
+                                  {t('Sabab: {reason}', { reason: tx.cancel_reason })}
                                 </span>
                               )}
                             </div>
                           ) : (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
                               <CheckCircle2 size={12} />
-                              Faol
+                              {t('Faol')}
                             </span>
                           )}
                         </td>
@@ -715,7 +719,7 @@ export function FinancePage() {
                               }}
                               style={{ color: 'var(--accent-rose)' }}
                             >
-                              Storno qilish
+                              {t('Storno qilish')}
                             </Button>
                           )}
                         </td>
@@ -738,7 +742,7 @@ export function FinancePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
                   <ArrowDownLeft size={18} />
-                  Mijoz Nasiyalari (Bizga to'lanishi kerak)
+                  {t("Mijoz Nasiyalari (Bizga to'lanishi kerak)")}
                 </span>
                 <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-emerald)' }}>
                   {formatSum(debtsSummary.open_receivable)}
@@ -750,7 +754,7 @@ export function FinancePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-amber)' }}>
                   <ArrowUpRight size={18} />
-                  Bizning qarzimiz (Yetkazib beruvchilarga)
+                  {t('Bizning qarzimiz (Yetkazib beruvchilarga)')}
                 </span>
                 <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-amber)' }}>
                   {formatSum(debtsSummary.open_payable)}
@@ -762,10 +766,10 @@ export function FinancePage() {
           {/* Filtrlar va Qidiruv */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {(['all', 'customer', 'supplier'] as const).map((t) => (
+              {(['all', 'customer', 'supplier'] as const).map((kind) => (
                 <button
-                  key={t}
-                  onClick={() => setDebtType(t)}
+                  key={kind}
+                  onClick={() => setDebtType(kind)}
                   style={{
                     padding: '6px 14px',
                     fontSize: '12px',
@@ -773,12 +777,12 @@ export function FinancePage() {
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid var(--border-subtle)',
                     cursor: 'pointer',
-                    backgroundColor: debtType === t ? 'var(--text-main)' : 'var(--bg-elevated)',
-                    color: debtType === t ? '#ffffff' : 'var(--text-muted)',
+                    backgroundColor: debtType === kind ? 'var(--text-main)' : 'var(--bg-elevated)',
+                    color: debtType === kind ? 'var(--bg-primary)' : 'var(--text-muted)',
                     transition: 'all var(--transition-fast)',
                   }}
                 >
-                  {t === 'all' ? 'Barcha qarzlar' : t === 'customer' ? 'Mijoz nasiyasi' : 'Yetkazib beruvchi'}
+                  {kind === 'all' ? t('Barcha qarzlar') : kind === 'customer' ? t('Mijoz nasiyasi') : t('Yetkazib beruvchi')}
                 </button>
               ))}
 
@@ -791,9 +795,9 @@ export function FinancePage() {
                   padding: '6px 12px',
                 }}
               >
-                <option value="all">Barcha holatlar</option>
-                <option value="open">Ochiq (To'lanmagan)</option>
-                <option value="settled">To'liq yopilgan</option>
+                <option value="all">{t('Barcha holatlar')}</option>
+                <option value="open">{t("Ochiq (To'lanmagan)")}</option>
+                <option value="settled">{t("To'liq yopilgan")}</option>
               </select>
             </div>
 
@@ -812,7 +816,7 @@ export function FinancePage() {
                 type="text"
                 value={debtSearch}
                 onChange={(e) => setDebtSearch(e.target.value)}
-                placeholder="Shaxs yoki telefon bo'yicha qidirish..."
+                placeholder={t("Shaxs yoki telefon bo'yicha qidirish...")}
                 style={{
                   ...inputStyle,
                   paddingLeft: '34px',
@@ -825,25 +829,25 @@ export function FinancePage() {
           <Card style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
               <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-                Qarzlar daftari yuklanmoqda...
+                {t('Qarzlar daftari yuklanmoqda...')}
               </div>
             ) : debts.length === 0 ? (
               <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-                Ushbu mezon bo'yicha qarz yoki nasiyalar topilmadi.
+                {t("Ushbu mezon bo'yicha qarz yoki nasiyalar topilmadi.")}
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Shaxs / Tashkilot</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Turi</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Boshlang'ich Summa</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>To'langan</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Qoldiq</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Qaytarish Muddati</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>Holati</th>
-                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>Amal</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Shaxs / Tashkilot')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Turi')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t("Boshlang'ich Summa")}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t("To'langan")}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Qoldiq')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Qaytarish Muddati')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}>{t('Holati')}</th>
+                      <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', textAlign: 'right' }}>{t('Amal')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -865,7 +869,7 @@ export function FinancePage() {
                               color: d.debt_type === 'customer' ? 'var(--accent-emerald)' : 'var(--accent-amber)',
                             }}
                           >
-                            {d.debt_type_display}
+                            {t(d.debt_type_display)}
                           </span>
                         </td>
                         <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
@@ -884,12 +888,12 @@ export function FinancePage() {
                           {d.is_settled ? (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-emerald)' }}>
                               <CheckCircle2 size={14} />
-                              To'liq yopilgan
+                              {t("To'liq yopilgan")}
                             </span>
                           ) : (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: 'var(--accent-amber)' }}>
                               <AlertTriangle size={14} />
-                              Ochiq qarz
+                              {t('Ochiq qarz')}
                             </span>
                           )}
                         </td>
@@ -906,7 +910,7 @@ export function FinancePage() {
                                 setPayError(null);
                               }}
                             >
-                              To'lov qabul qilish
+                              {t("To'lov qabul qilish")}
                             </Button>
                           )}
                         </td>
@@ -924,7 +928,7 @@ export function FinancePage() {
       <Modal
         isOpen={showTxModal}
         onClose={() => setShowTxModal(false)}
-        title="Kassaga Kirim / Chiqim kiritish"
+        title={t('Kassaga Kirim / Chiqim kiritish')}
       >
         <form onSubmit={submitTx} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {txFormError && (
@@ -934,7 +938,7 @@ export function FinancePage() {
           )}
 
           <div>
-            <label style={labelStyle}>Operatsiya turi</label>
+            <label style={labelStyle}>{t('Operatsiya turi')}</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
                 type="button"
@@ -950,7 +954,7 @@ export function FinancePage() {
                   cursor: 'pointer',
                 }}
               >
-                + Kirim (Tushum)
+                {t('+ Kirim (Tushum)')}
               </button>
               <button
                 type="button"
@@ -966,26 +970,26 @@ export function FinancePage() {
                   cursor: 'pointer',
                 }}
               >
-                - Chiqim (Xarajat)
+                {t('- Chiqim (Xarajat)')}
               </button>
             </div>
           </div>
 
           <div>
-            <label style={labelStyle}>Mazmuni / Sarlavha</label>
+            <label style={labelStyle}>{t('Mazmuni / Sarlavha')}</label>
             <input
               type="text"
               required
               value={newTxTitle}
               onChange={(e) => setNewTxTitle(e.target.value)}
-              placeholder="Masalan: Bozorlik xaridi, Go'sht, Kassa to'ldirish..."
+              placeholder={t("Masalan: Bozorlik xaridi, Go'sht, Kassa to'ldirish...")}
               style={inputStyle}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Summa (so'm)</label>
+              <label style={labelStyle}>{t("Summa (so'm)")}</label>
               <input
                 type="number"
                 required
@@ -998,31 +1002,31 @@ export function FinancePage() {
             </div>
 
             <div>
-              <label style={labelStyle}>To'lov usuli</label>
+              <label style={labelStyle}>{t("To'lov usuli")}</label>
               <select
                 value={newTxMethod}
                 onChange={(e) => setNewTxMethod(e.target.value)}
                 style={inputStyle}
               >
-                <option value="cash">Naqd pul</option>
-                <option value="card">Plastik / Karta</option>
-                <option value="bank">Bank hisobi</option>
+                <option value="cash">{t('Naqd pul')}</option>
+                <option value="card">{t('Plastik / Karta')}</option>
+                <option value="bank">{t('Bank hisobi')}</option>
               </select>
             </div>
           </div>
 
           {categories.length > 0 && (
             <div>
-              <label style={labelStyle}>Kategoriya (Ixtiyoriy)</label>
+              <label style={labelStyle}>{t('Kategoriya (Ixtiyoriy)')}</label>
               <select
                 value={newTxCatId || ''}
                 onChange={(e) => setNewTxCatId(e.target.value ? Number(e.target.value) : undefined)}
                 style={inputStyle}
               >
-                <option value="">Umumiy</option>
+                <option value="">{t('Umumiy')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {t(c.name)}
                   </option>
                 ))}
               </select>
@@ -1031,10 +1035,10 @@ export function FinancePage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
             <Button type="button" variant="ghost" onClick={() => setShowTxModal(false)}>
-              Bekor qilish
+              {t('Bekor qilish')}
             </Button>
             <Button type="submit" variant="primary" loading={submitting}>
-              Saqlash
+              {t('Saqlash')}
             </Button>
           </div>
         </form>
@@ -1044,19 +1048,18 @@ export function FinancePage() {
       <Modal
         isOpen={!!cancellingTx}
         onClose={() => setCancellingTx(null)}
-        title="Tranzaksiyani storno qilish"
+        title={t('Tranzaksiyani storno qilish')}
       >
         <form onSubmit={submitCancel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-            Ushbu tranzaksiya o'chirilmaydi. U storno belgisi bilan bekor qilinadi va umumiy hisob-kitobdan
-            chiqariladi. Bekor qilish sababini yozing:
+            {t("Ushbu tranzaksiya o'chirilmaydi. U storno belgisi bilan bekor qilinadi va umumiy hisob-kitobdan chiqariladi. Bekor qilish sababini yozing:")}
           </p>
 
           {cancellingTx && (
             <div style={{ padding: '12px', backgroundColor: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div><strong>Mazmuni:</strong> {cancellingTx.title}</div>
-              <div><strong>Summa:</strong> {formatSum(cancellingTx.amount)} ({cancellingTx.type_display})</div>
-              <div><strong>Sana:</strong> {cancellingTx.tx_date}</div>
+              <div><strong>{t('Mazmuni:')}</strong> {cancellingTx.title}</div>
+              <div><strong>{t('Summa:')}</strong> {formatSum(cancellingTx.amount)} ({t(cancellingTx.type_display)})</div>
+              <div><strong>{t('Sana:')}</strong> {cancellingTx.tx_date}</div>
             </div>
           )}
 
@@ -1067,23 +1070,23 @@ export function FinancePage() {
           )}
 
           <div>
-            <label style={labelStyle}>Bekor qilish sababi (Majburiy)</label>
+            <label style={labelStyle}>{t('Bekor qilish sababi (Majburiy)')}</label>
             <input
               type="text"
               required
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Masalan: Adashib noto'g'ri summa kiritilgan..."
+              placeholder={t("Masalan: Adashib noto'g'ri summa kiritilgan...")}
               style={inputStyle}
             />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
             <Button type="button" variant="ghost" onClick={() => setCancellingTx(null)}>
-              Qaytish
+              {t('Qaytish')}
             </Button>
             <Button type="submit" variant="danger" loading={submitting}>
-              Tasdiqlayman (Storno)
+              {t('Tasdiqlayman (Storno)')}
             </Button>
           </div>
         </form>
@@ -1093,7 +1096,7 @@ export function FinancePage() {
       <Modal
         isOpen={showDebtModal}
         onClose={() => setShowDebtModal(false)}
-        title="Yangi Qarz / Nasiya ochish"
+        title={t('Yangi Qarz / Nasiya ochish')}
       >
         <form onSubmit={submitDebt} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {debtFormError && (
@@ -1103,7 +1106,7 @@ export function FinancePage() {
           )}
 
           <div>
-            <label style={labelStyle}>Qarz yo'nalishi</label>
+            <label style={labelStyle}>{t("Qarz yo'nalishi")}</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
                 type="button"
@@ -1119,7 +1122,7 @@ export function FinancePage() {
                   cursor: 'pointer',
                 }}
               >
-                Mijoz Nasiyasi (Bizga beradi)
+                {t('Mijoz Nasiyasi (Bizga beradi)')}
               </button>
               <button
                 type="button"
@@ -1135,26 +1138,26 @@ export function FinancePage() {
                   cursor: 'pointer',
                 }}
               >
-                Bizning qarzimiz (Yetkazib beruvchiga)
+                {t('Bizning qarzimiz (Yetkazib beruvchiga)')}
               </button>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Shaxs / Tashkilot nomi</label>
+              <label style={labelStyle}>{t('Shaxs / Tashkilot nomi')}</label>
               <input
                 type="text"
                 required
                 value={newDebtPerson}
                 onChange={(e) => setNewDebtPerson(e.target.value)}
-                placeholder="Anvar aka, Go'sht do'koni..."
+                placeholder={t("Anvar aka, Go'sht do'koni...")}
                 style={inputStyle}
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Telefon raqami (Ixtiyoriy)</label>
+              <label style={labelStyle}>{t('Telefon raqami (Ixtiyoriy)')}</label>
               <input
                 type="text"
                 value={newDebtPhone}
@@ -1167,7 +1170,7 @@ export function FinancePage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Qarz summasi (so'm)</label>
+              <label style={labelStyle}>{t("Qarz summasi (so'm)")}</label>
               <input
                 type="number"
                 required
@@ -1180,7 +1183,7 @@ export function FinancePage() {
             </div>
 
             <div>
-              <label style={labelStyle}>Qaytarish muddati</label>
+              <label style={labelStyle}>{t('Qaytarish muddati')}</label>
               <input
                 type="date"
                 value={newDebtDueDate}
@@ -1191,22 +1194,22 @@ export function FinancePage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Izoh / Tafsilot</label>
+            <label style={labelStyle}>{t('Izoh / Tafsilot')}</label>
             <textarea
               value={newDebtNotes}
               onChange={(e) => setNewDebtNotes(e.target.value)}
               rows={2}
-              placeholder="Ziyofat uchun nasiya..."
+              placeholder={t('Ziyofat uchun nasiya...')}
               style={{ ...inputStyle, resize: 'vertical' }}
             />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
             <Button type="button" variant="ghost" onClick={() => setShowDebtModal(false)}>
-              Bekor qilish
+              {t('Bekor qilish')}
             </Button>
             <Button type="submit" variant="primary" loading={submitting}>
-              Qarzni ochish
+              {t('Qarzni ochish')}
             </Button>
           </div>
         </form>
@@ -1216,15 +1219,15 @@ export function FinancePage() {
       <Modal
         isOpen={!!payingDebt}
         onClose={() => setPayingDebt(null)}
-        title="Qarz to'lovini qabul qilish"
+        title={t("Qarz to'lovini qabul qilish")}
       >
         <form onSubmit={submitPayDebt} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {payingDebt && (
             <div style={{ padding: '12px', backgroundColor: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div><strong>Mijoz / Shaxs:</strong> {payingDebt.person_name}</div>
-              <div><strong>Jami qarz:</strong> {formatSum(payingDebt.initial_amount)}</div>
+              <div><strong>{t('Mijoz / Shaxs:')}</strong> {payingDebt.person_name}</div>
+              <div><strong>{t('Jami qarz:')}</strong> {formatSum(payingDebt.initial_amount)}</div>
               <div>
-                <strong>Hozirgi qoldiq:</strong>{' '}
+                <strong>{t('Hozirgi qoldiq:')}</strong>{' '}
                 <span style={{ fontWeight: 700, color: 'var(--accent-emerald)', fontFamily: 'monospace' }}>
                   {formatSum(payingDebt.remaining_amount)}
                 </span>
@@ -1240,7 +1243,7 @@ export function FinancePage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>To'lov summasi (so'm)</label>
+              <label style={labelStyle}>{t("To'lov summasi (so'm)")}</label>
               <input
                 type="number"
                 required
@@ -1253,36 +1256,36 @@ export function FinancePage() {
             </div>
 
             <div>
-              <label style={labelStyle}>To'lov usuli</label>
+              <label style={labelStyle}>{t("To'lov usuli")}</label>
               <select
                 value={payMethod}
                 onChange={(e) => setPayMethod(e.target.value)}
                 style={inputStyle}
               >
-                <option value="cash">Naqd pul</option>
-                <option value="card">Plastik / Karta</option>
-                <option value="bank">Bank hisobi</option>
+                <option value="cash">{t('Naqd pul')}</option>
+                <option value="card">{t('Plastik / Karta')}</option>
+                <option value="bank">{t('Bank hisobi')}</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label style={labelStyle}>Izoh (Ixtiyoriy)</label>
+            <label style={labelStyle}>{t('Izoh (Ixtiyoriy)')}</label>
             <input
               type="text"
               value={payNote}
               onChange={(e) => setPayNote(e.target.value)}
-              placeholder="Qisman to'lov..."
+              placeholder={t("Qisman to'lov...")}
               style={inputStyle}
             />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
             <Button type="button" variant="ghost" onClick={() => setPayingDebt(null)}>
-              Bekor qilish
+              {t('Bekor qilish')}
             </Button>
             <Button type="submit" variant="primary" loading={submitting}>
-              To'lovni kiritish
+              {t("To'lovni kiritish")}
             </Button>
           </div>
         </form>

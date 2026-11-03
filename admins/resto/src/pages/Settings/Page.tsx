@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button } from '@admins/shared';
+import { Card, Button, t } from '@admins/shared';
 import {
   Building2,
   Clock,
@@ -18,6 +18,7 @@ import { useSettings } from './useSettings';
 import type {
   GuestDishSheetSetting,
   GuestMotionSetting,
+  GuestPaletteSetting,
   GuestSeasonSetting,
   GuestThemeSetting,
   MenuImportAiSetting,
@@ -76,13 +77,15 @@ export function SettingsPage() {
   const [workingHours, setWorkingHours] = useState('08:00-23:00');
   const [workingDays, setWorkingDays] = useState('Dush-Yak');
   const [isOpen, setIsOpen] = useState(true);
-  const [colorPrimary, setColorPrimary] = useState('#16a34a');
+  // Server har doim rang qaytaradi (bo'sh bo'lsa ham standartini beradi), shuning uchun bu yerda qattiq rang yozilmaydi
+  const [colorPrimary, setColorPrimary] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
   const [serviceFeePercent, setServiceFeePercent] = useState<number>(0);
   const [kdsWarningMinutes, setKdsWarningMinutes] = useState<number>(15);
   const [kdsCriticalMinutes, setKdsCriticalMinutes] = useState<number>(30);
   const [telegramChatId, setTelegramChatId] = useState('');
   const [autoAcceptOrders, setAutoAcceptOrders] = useState(false);
+  const [guestPalette, setGuestPalette] = useState<GuestPaletteSetting>('classic');
   const [guestSeason, setGuestSeason] = useState<GuestSeasonSetting>('off');
   const [guestMotion, setGuestMotion] = useState<GuestMotionSetting>('full');
   const [guestDishSheet, setGuestDishSheet] = useState<GuestDishSheetSetting>('on');
@@ -100,13 +103,14 @@ export function SettingsPage() {
       setWorkingHours(settings.working_hours || '08:00-23:00');
       setWorkingDays(settings.working_days || 'Dush-Yak');
       setIsOpen(Boolean(settings.is_open));
-      setColorPrimary(settings.color_primary || '#16a34a');
+      setColorPrimary(settings.color_primary || '');
       setInstagramUrl(settings.instagram_url || '');
       setServiceFeePercent(settings.service_fee_percent ?? 0);
       setKdsWarningMinutes(settings.kds_warning_minutes ?? 15);
       setKdsCriticalMinutes(settings.kds_critical_minutes ?? 30);
       setTelegramChatId(settings.telegram_chat_id || '');
       setAutoAcceptOrders(Boolean(settings.auto_accept_orders));
+      setGuestPalette(settings.guest_palette ?? 'classic');
       setGuestSeason(settings.guest_season ?? 'off');
       setGuestMotion(settings.guest_motion ?? 'full');
       setGuestDishSheet(settings.guest_dish_sheet ?? 'on');
@@ -118,7 +122,7 @@ export function SettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await saveSettings({
+    const result = await saveSettings({
       name: name.trim(),
       description: description.trim(),
       address: address.trim(),
@@ -134,6 +138,7 @@ export function SettingsPage() {
       kds_critical_minutes: kdsCriticalMinutes,
       telegram_chat_id: telegramChatId.trim(),
       auto_accept_orders: autoAcceptOrders,
+      guest_palette: guestPalette,
       guest_season: guestSeason,
       guest_motion: guestMotion,
       guest_dish_sheet: guestDishSheet,
@@ -141,12 +146,14 @@ export function SettingsPage() {
       guest_languages: guestLanguages,
       menu_import_ai: menuImportAi,
     });
+    // Saqlandi: tanlangan palitra shu sahifaning o'zida darrov ko'rinadi (qayta yuklashsiz); mehmon sayti va kirish sahifasi serverdan oladi
+    if (result.success) document.documentElement.dataset.palette = guestPalette;
   };
 
   if (loading && !settings) {
     return (
       <div style={{ padding: '48px', textAlign: 'center', fontSize: '14px', color: 'var(--text-dim)' }}>
-        Restoran sozlamalari yuklanmoqda...
+        {t('Restoran sozlamalari yuklanmoqda...')}
       </div>
     );
   }
@@ -165,7 +172,7 @@ export function SettingsPage() {
       >
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 4px', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            Restoran Sozlamalari
+            {t('Restoran Sozlamalari')}
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>
             {restoUz.settingsPage.subtitle}
@@ -174,7 +181,7 @@ export function SettingsPage() {
 
         <Button type="button" variant="ghost" onClick={refresh} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <RotateCcw size={15} />
-          <span>Qayta yuklash</span>
+          <span>{t('Qayta yuklash')}</span>
         </Button>
       </Card>
 
@@ -233,18 +240,18 @@ export function SettingsPage() {
             }}
           >
             <Building2 size={18} color="var(--accent-emerald)" />
-            <span>Restoran Asosiy Profili</span>
+            <span>{t('Restoran Asosiy Profili')}</span>
           </div>
 
           <div style={gridTwoCol}>
             <div>
-              <label style={labelStyle}>Restoran nomi *</label>
+              <label style={labelStyle}>{t('Restoran nomi *')}</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Rayhon Milliy Taomlar"
+                placeholder={t('Rayhon Milliy Taomlar')}
                 style={inputStyle}
               />
             </div>
@@ -261,19 +268,19 @@ export function SettingsPage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Manzil</label>
+            <label style={labelStyle}>{t('Manzil')}</label>
             <input
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Toshkent sh., Chilonzor tumani, 9-mavze"
+              placeholder={t('Toshkent sh., Chilonzor tumani, 9-mavze')}
               style={inputStyle}
             />
           </div>
 
           <div style={gridTwoCol}>
             <div>
-              <label style={labelStyle}>Asosiy telefon</label>
+              <label style={labelStyle}>{t('Asosiy telefon')}</label>
               <input
                 type="text"
                 value={phone}
@@ -284,7 +291,7 @@ export function SettingsPage() {
             </div>
 
             <div>
-              <label style={labelStyle}>Qo'shimcha telefon</label>
+              <label style={labelStyle}>{t("Qo'shimcha telefon")}</label>
               <input
                 type="text"
                 value={phone2}
@@ -296,12 +303,12 @@ export function SettingsPage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Restoran tavsifi (Mehmon menyusida ko'rinadi)</label>
+            <label style={labelStyle}>{t("Restoran tavsifi (Mehmon menyusida ko'rinadi)")}</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Shinam muhit va milliy taomlar restorani..."
+              placeholder={t('Shinam muhit va milliy taomlar restorani...')}
               style={{ ...inputStyle, resize: 'vertical' }}
             />
           </div>
@@ -322,7 +329,7 @@ export function SettingsPage() {
             }}
           >
             <Clock size={18} color="var(--accent-indigo)" />
-            <span>Ish Tartibi va Faollik</span>
+            <span>{t('Ish Tartibi va Faollik')}</span>
           </div>
 
           {/* Restoran Ochiq/Yopiq Switch */}
@@ -334,7 +341,7 @@ export function SettingsPage() {
               padding: '16px',
               borderRadius: 'var(--radius-md)',
               backgroundColor: isOpen ? 'var(--accent-emerald-bg)' : 'var(--accent-rose-bg)',
-              border: `1px solid ${isOpen ? 'rgb(22 163 74 / 0.3)' : 'rgb(220 38 38 / 0.3)'}`,
+              border: `1px solid ${isOpen ? 'var(--accent-emerald-border)' : 'var(--accent-rose-border)'}`,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -346,7 +353,9 @@ export function SettingsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: isOpen ? 'rgb(22 163 74 / 0.2)' : 'rgb(220 38 38 / 0.2)',
+                  backgroundColor: isOpen
+                    ? 'color-mix(in srgb, var(--accent-emerald) 20%, transparent)'
+                    : 'color-mix(in srgb, var(--accent-rose) 20%, transparent)',
                   color: isOpen ? 'var(--accent-emerald)' : 'var(--accent-rose)',
                 }}
               >
@@ -354,10 +363,10 @@ export function SettingsPage() {
               </div>
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
-                  Restoran hozir {isOpen ? 'Ochiq (Mijozlarni qabul qilmoqda)' : 'Yopiq (Buyurtma qabul qilinmaydi)'}
+                  {isOpen ? t('Restoran hozir Ochiq (Mijozlarni qabul qilmoqda)') : t('Restoran hozir Yopiq (Buyurtma qabul qilinmaydi)')}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>
-                  QR menyu orqali yangi mehmon buyurtmalarini qabul qilishni yoqish yoki to'xtatish
+                  {t("QR menyu orqali yangi mehmon buyurtmalarini qabul qilishni yoqish yoki to'xtatish")}
                 </div>
               </div>
             </div>
@@ -386,7 +395,7 @@ export function SettingsPage() {
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--text-inverse)',
                   transform: isOpen ? 'translateX(20px)' : 'translateX(0)',
                   transition: 'transform var(--transition-fast)',
                 }}
@@ -396,7 +405,7 @@ export function SettingsPage() {
 
           <div style={gridTwoCol}>
             <div>
-              <label style={labelStyle}>Ish soatlari</label>
+              <label style={labelStyle}>{t('Ish soatlari')}</label>
               <input
                 type="text"
                 value={workingHours}
@@ -407,12 +416,12 @@ export function SettingsPage() {
             </div>
 
             <div>
-              <label style={labelStyle}>Ish kunlari</label>
+              <label style={labelStyle}>{t('Ish kunlari')}</label>
               <input
                 type="text"
                 value={workingDays}
                 onChange={(e) => setWorkingDays(e.target.value)}
-                placeholder="Dushanba - Yakshanba (Har kuni)"
+                placeholder={t('Dushanba - Yakshanba (Har kuni)')}
                 style={inputStyle}
               />
             </div>
@@ -434,12 +443,12 @@ export function SettingsPage() {
             }}
           >
             <Percent size={18} color="var(--accent-amber)" />
-            <span>Xizmat Haqi va Buyurtmalar Oqimi</span>
+            <span>{t('Xizmat Haqi va Buyurtmalar Oqimi')}</span>
           </div>
 
           <div style={gridTwoCol}>
             <div>
-              <label style={labelStyle}>Xizmat haqi (Servis) foizi (%)</label>
+              <label style={labelStyle}>{t('Xizmat haqi (Servis) foizi (%)')}</label>
               <input
                 type="number"
                 min="0"
@@ -450,7 +459,7 @@ export function SettingsPage() {
                 style={inputStyle}
               />
               <p style={helpTextStyle}>
-                Chekdagi taomlar summasiga qo'shiladigan xizmat haqi (masalan 10%)
+                {t("Chekdagi taomlar summasiga qo'shiladigan xizmat haqi (masalan 10%)")}
               </p>
             </div>
 
@@ -468,10 +477,10 @@ export function SettingsPage() {
             >
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
-                  Avtomatik qabul qilish
+                  {t('Avtomatik qabul qilish')}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px' }}>
-                  Stoldan yuborilgan buyurtma to'g'ridan-to'g'ri oshxonaga o'tadi
+                  {t("Stoldan yuborilgan buyurtma to'g'ridan-to'g'ri oshxonaga o'tadi")}
                 </div>
               </div>
 
@@ -500,7 +509,7 @@ export function SettingsPage() {
                     width: '18px',
                     height: '18px',
                     borderRadius: '50%',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--text-inverse)',
                     transform: autoAcceptOrders ? 'translateX(20px)' : 'translateX(0)',
                     transition: 'transform var(--transition-fast)',
                   }}
@@ -526,6 +535,25 @@ export function SettingsPage() {
           >
             <Palette size={18} color="var(--accent-amber)" />
             <span>{restoUz.settingsPage.seasonTitle}</span>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="guest-palette">
+              {restoUz.settingsPage.paletteLabel}
+            </label>
+            <select
+              id="guest-palette"
+              value={guestPalette}
+              onChange={(e) => setGuestPalette(e.target.value as GuestPaletteSetting)}
+              style={inputStyle}
+            >
+              {(Object.keys(restoUz.settingsPage.paletteOptions) as GuestPaletteSetting[]).map((key) => (
+                <option key={key} value={key}>
+                  {restoUz.settingsPage.paletteOptions[key]}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.paletteHint}</p>
           </div>
 
           <div>
@@ -687,7 +715,7 @@ export function SettingsPage() {
           <div style={gridTwoCol}>
             <div>
               <label style={{ ...labelStyle, color: 'var(--accent-amber)' }}>
-                Sariq ogohlantirish (Daqiqa)
+                {t('Sariq ogohlantirish (Daqiqa)')}
               </label>
               <input
                 type="number"
@@ -697,12 +725,12 @@ export function SettingsPage() {
                 onChange={(e) => setKdsWarningMinutes(parseInt(e.target.value) || 15)}
                 style={inputStyle}
               />
-              <p style={helpTextStyle}>Ushbu vaqtdan oshsa kartochka sariq rangga kiradi</p>
+              <p style={helpTextStyle}>{t('Ushbu vaqtdan oshsa kartochka sariq rangga kiradi')}</p>
             </div>
 
             <div>
               <label style={{ ...labelStyle, color: 'var(--accent-rose)' }}>
-                Qizil krizis va kechikish (Daqiqa)
+                {t('Qizil krizis va kechikish (Daqiqa)')}
               </label>
               <input
                 type="number"
@@ -712,7 +740,7 @@ export function SettingsPage() {
                 onChange={(e) => setKdsCriticalMinutes(parseInt(e.target.value) || 30)}
                 style={inputStyle}
               />
-              <p style={helpTextStyle}>Ushbu vaqtdan oshsa buyurtma kechikkan deb hisoblanadi</p>
+              <p style={helpTextStyle}>{t('Ushbu vaqtdan oshsa buyurtma kechikkan deb hisoblanadi')}</p>
             </div>
           </div>
         </Card>
@@ -732,12 +760,12 @@ export function SettingsPage() {
             }}
           >
             <Send size={18} color="var(--accent-indigo)" />
-            <span>Telegram va Tashqi Havolalar</span>
+            <span>{t('Telegram va Tashqi Havolalar')}</span>
           </div>
 
           <div style={gridTwoCol}>
             <div>
-              <label style={labelStyle}>Telegram Chat / Guruh ID</label>
+              <label style={labelStyle}>{t('Telegram Chat / Guruh ID')}</label>
               <input
                 type="text"
                 value={telegramChatId}
@@ -746,24 +774,24 @@ export function SettingsPage() {
                 style={inputStyle}
               />
               <p style={helpTextStyle}>
-                Yangi buyurtmalar va hisobotlar yuboriladigan Telegram guruhi
+                {t('Yangi buyurtmalar va hisobotlar yuboriladigan Telegram guruhi')}
               </p>
             </div>
 
             <div>
-              <label style={labelStyle}>Instagram havolasi</label>
+              <label style={labelStyle}>{t('Instagram havolasi')}</label>
               <input
                 type="url"
                 value={instagramUrl}
                 onChange={(e) => setInstagramUrl(e.target.value)}
-                placeholder="https://instagram.com/restoran_nomi"
+                placeholder={t('https://instagram.com/restoran_nomi')}
                 style={inputStyle}
               />
             </div>
           </div>
 
           <div style={{ maxWidth: '320px' }}>
-            <label style={labelStyle}>Asosiy brend rangi</label>
+            <label style={labelStyle}>{t('Asosiy brend rangi')}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
                 type="color"
@@ -798,7 +826,7 @@ export function SettingsPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 28px', fontSize: '14px' }}
           >
             <Save size={18} />
-            <span>{saving ? 'Saqlanmoqda...' : "O'zgarishlarni saqlash"}</span>
+            <span>{saving ? t('Saqlanmoqda...') : t("O'zgarishlarni saqlash")}</span>
           </Button>
         </div>
       </form>

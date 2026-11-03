@@ -9,6 +9,7 @@ import { SummaryDialog } from './SummaryDialog';
 import { TAP, mutedTextStyle } from './styles';
 import { useBulkImport } from './useBulkImport';
 import type { Step } from './useBulkImport';
+import type { ParseResponse } from './types';
 
 const t = restoUz.bulkImport;
 
@@ -17,11 +18,13 @@ const STEP_ORDER: Step[] = ['input', 'review', 'done'];
 interface BulkImportScreenProps {
   /** Menyu ro'yxatiga qaytish (ro'yxat qayta yuklanadi: yangi taomlar va bo'limlar ko'rinadi). */
   onClose: () => void;
+  /** Tayyor o'qish natijasi (taom formasi menyu suratini o'qigan): ekran darrov "Tekshiring" bosqichida ochiladi. */
+  initial?: ParseResponse;
 }
 
 /** "Ommaviy qo'shish": 1) fayl/rasm/matn tashlash -> 2) tekshirish jadvali -> 3) tasdiqlash va natija. */
-export const BulkImportScreen: React.FC<BulkImportScreenProps> = ({ onClose }) => {
-  const bulk = useBulkImport();
+export const BulkImportScreen: React.FC<BulkImportScreenProps> = ({ onClose, initial }) => {
+  const bulk = useBulkImport(initial);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const topRef = useRef<HTMLDivElement | null>(null);
 
@@ -82,7 +85,7 @@ export const BulkImportScreen: React.FC<BulkImportScreenProps> = ({ onClose }) =
                 fontWeight: 600,
                 border: '1px solid var(--border-subtle)',
                 backgroundColor: active ? 'var(--action)' : passed ? 'var(--accent-emerald-bg)' : 'var(--bg-surface)',
-                color: active ? '#ffffff' : passed ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                color: active ? 'var(--text-inverse)' : passed ? 'var(--accent-emerald)' : 'var(--text-muted)',
               }}
             >
               {index + 1}. {t.steps[step]}

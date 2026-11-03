@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { tr } from '@admins/shared';
 import {
   deleteTable,
   fetchTables,
@@ -48,7 +49,8 @@ export function useTables() {
 
       setData(res);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Stollarni yuklashda xatolik yuz berdi";
+      // Xabar o'zbekcha saqlanadi, sahifa uni ko'rsatishda t() bilan tarjima qiladi (til almashganda ham to'g'ri chiqadi)
+      const msg = err instanceof Error ? err.message : tr('Stollarni yuklashda xatolik yuz berdi');
       setError(msg);
     } finally {
       if (!isBackground) setLoading(false);
@@ -93,14 +95,14 @@ export function useTables() {
     // 1. Optimistic UI update
     setData((prev) => ({
       ...prev,
-      items: prev.items.map((t) => (t.id === tableId ? { ...t, status: newStatus as TableItem['status'] } : t)),
+      items: prev.items.map((row) => (row.id === tableId ? { ...row, status: newStatus as TableItem['status'] } : row)),
     }));
 
     try {
       await updateTableStatus(tableId, newStatus);
       await loadData(true);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Holatni o'zgartirib bo'lmadi";
+      const msg = err instanceof Error ? err.message : tr("Holatni o'zgartirib bo'lmadi");
       setError(msg);
       await loadData(true); // rollback
     }
@@ -111,16 +113,16 @@ export function useTables() {
     const res = await rotateTableQr(tableId);
     setData((prev) => ({
       ...prev,
-      items: prev.items.map((t) =>
-        t.id === tableId
+      items: prev.items.map((row) =>
+        row.id === tableId
           ? {
-              ...t,
+              ...row,
               qr_token: res.qr_token,
               qr_path: res.qr_path,
               qr_url: res.qr_url,
               qr_svg_url: res.qr_svg_url,
             }
-          : t
+          : row
       ),
     }));
     return res;

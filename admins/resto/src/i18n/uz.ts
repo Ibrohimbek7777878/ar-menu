@@ -1,7 +1,14 @@
+import { translated } from '../../../shared/src/i18n/translated.ts';
+
 /**
- * Resto Admin restoranga xos o'zbekcha matnlar (TZ: 1.1, 1.3)
+ * Resto Admin restoranga xos o'zbekcha matnlar (TZ: 1.1, 1.3).
+ * O'zbekcha matnlar shu yerda, O'ZGARISHSIZ turadi (asl matn = tarjima kaliti). Ishlatiladigan obyekt `restoUz` — shu manbaning
+ * "tarjima proksisi": har bir matn bargi o'qilganda joriy tilga o'giriladi (ru: ./ru/*.ts, en: ./en/*.ts), shuning uchun
+ * `restoUz.xxx` ishlatilgan hamma joy kodni o'zgartirmasdan uch tilda ishlaydi. Yangi matn qo'shsangiz: shu yerga o'zbekchasini
+ * yozing va ru/en fayllariga tarjimasini qo'shing (i18n.test.ts yetishmayotganini ko'rsatadi).
+ * Diqqat: modul darajasida `const X = restoUz.a.b` yozmang (til almashganda yangilanmaydi): komponent ichida o'qing.
  */
-export const restoUz = {
+export const restoUzSource = {
   appName: 'Resto Admin',
   dashboard: 'Boshqaruv Markazi',
   orders: 'Buyurtmalar',
@@ -43,6 +50,44 @@ export const restoUz = {
     cooksCard: 'Oshpazlar',
     kitchenRoleOption: 'Oshpaz (oshxona ekrani)',
     lastLogin: 'Oxirgi kirish',
+    // Xodim qayerdan va qanday kiradi: kirish havolasi, ulashish va yo'riqnoma (admins/resto/src/pages/Staff/StaffAccess.tsx)
+    access: {
+      sectionTitle: 'Kirish',
+      openButton: 'Kirish havolasi',
+      modalTitle: 'Kirish',
+      panelLabel: 'Kirgach ochiladigan sahifa',
+      linkLabel: 'Kirish havolasi',
+      copyLink: 'Havolani nusxalash',
+      copied: 'Nusxalandi',
+      copyFailed: "Nusxalab bo'lmadi. Havolani belgilab, qo'lda nusxalang.",
+      noLink: 'Hozircha kirish havolasi mavjud emas.',
+      share: 'Ulashish',
+      shareTitle: 'Restoranga kirish',
+      shareFailed: "Ulashib bo'lmadi. Havolani nusxalab yuboring.",
+      loginLabel: 'Login',
+      passwordHelp:
+        "Parol: xodim yaratilganda siz belgilagan. Unutsa, «Parolni almashtirish» orqali yangisini bering.",
+      changePassword: 'Parolni almashtirish',
+      stepsTitle: 'Xodim qanday kiradi',
+      steps: [
+        'Havolani telefonda oching',
+        'Login va parolni kiriting',
+        "Brauzer menyusidan «Bosh ekranga qo'shish» — ilova kabi ochiladi",
+      ],
+      createdTitle: "Xodim qo'shildi",
+      passwordResetTitle: 'Parol yangilandi',
+      oneTimeNote:
+        "Parol faqat hozir ko'rinadi, keyin ko'rsatilmaydi. Uni xodimga hoziroq yuboring.",
+      passwordLabel: 'Parol',
+      copyPassword: 'Parolni nusxalash',
+      includePassword: "Parolni xabarga qo'shish",
+      includePasswordHint:
+        "Yoqilsa, parol xabar matniga yoziladi. Telegram havolasiga parol qo'shilmaydi: uni «Hammasini nusxalash» bilan yuboring.",
+      messageLabel: 'Xodimga yuboriladigan xabar',
+      copyAll: 'Hammasini nusxalash',
+      done: 'Tayyor',
+      noRestaurantName: 'restoran',
+    },
   },
   financePage: {
     exportButton: 'Excel uchun yuklab olish',
@@ -66,6 +111,109 @@ export const restoUz = {
     descriptionRuPlaceholder: 'Masalan: Рис, мясо, морковь, нут',
     descriptionEnPlaceholder: 'Masalan: Rice, beef, carrots, chickpeas',
     saveFailed: "Saqlab bo'lmadi",
+  },
+  // Taom qo'shish / tahrirlash oynasi (admins/resto/src/pages/Menu/DishForm): rasm yuklash, rasmdan o'qish, internetdan taklif
+  dishForm: {
+    discardConfirm: "Kiritilgan ma'lumotlar saqlanmaydi. Oynani yopamizmi?",
+    nameRequired: 'Taom nomini yozing',
+    priceRequired: 'Narxini yozing',
+    network: "Internet bilan aloqa yo'q. Ulanishni tekshirib, qayta urinib ko'ring.",
+    photo: {
+      upload: 'Rasm yuklash',
+      replace: 'Rasmni almashtirish',
+      remove: 'Olib tashlash',
+      emptyTitle: 'Taom suratini yuklang',
+      emptyHintNew: "Tizim suratdan taom nomi va tarkibini o'zi o'qib, maydonlarni to'ldirib beradi.",
+      emptyHintEdit: "Taom surati hali yo'q.",
+      alt: 'Taom surati',
+      sheetTitle: 'Rasmni qayerdan olamiz?',
+      camera: 'Kamera',
+      cameraHint: 'Hozir suratga olish',
+      gallery: 'Galereya',
+      galleryHint: 'Telefondagi suratlardan tanlash',
+      sheetCancel: 'Bekor qilish',
+      reading: "Rasm o'qilmoqda…",
+      stopReading: "O'qishni to'xtatish",
+      ownPhoto: 'Sizning suratingiz',
+      current: 'Hozirgi rasm',
+      currentFromInternet: 'Hozirgi rasm: internetdan (namuna) — {credit}',
+      fromInternet: "Internetdan (namuna) — {credit}. Imkon bo'lsa, o'zingizning rasmingizni yuklang.",
+      sourceLink: 'Manba',
+      sourceLinkAria: 'Rasm manbasini yangi oynada ochish',
+      findOnline: 'Internetdan rasm topish',
+      findOnlineOther: 'Internetdan boshqa rasm topish',
+      prepareFailed: "Rasmni tayyorlab bo'lmadi. JPG yoki PNG rasm tanlang.",
+      expired: 'Rasmning muddati tugagan. Rasmni qaytadan tanlang.',
+    },
+    read: {
+      badge: "rasmdan o'qildi — tekshiring",
+      failed: "Rasmni o'qib bo'lmadi, ma'lumotni o'zingiz yozing.",
+      limited: "Bir soatda juda ko'p rasm o'qildi. Ma'lumotni o'zingiz yozing yoki birozdan keyin urinib ko'ring.",
+      stopped: "O'qish to'xtatildi. Ma'lumotni o'zingiz yozing.",
+      priceHint: 'Narxini yozing',
+      menuSingle: "Bu menyu surati ekan: nom, narx va kategoriya o'qildi. Rasm taom surati sifatida qo'yilmadi.",
+      keepAnyway: "Baribir shu rasmni qo'yish",
+      menuMany: 'Bu menyu surati ekan: {n} ta taom topildi',
+      menuManyHint: "Hammasini birdan tekshirib qo'shish mumkin. Bu oynada yozganlaringiz saqlanmaydi.",
+      goBulk: "Ommaviy qo'shishga o'tish",
+    },
+    preview: {
+      title: "Mehmon shunday ko'radi",
+      namePlaceholder: 'Taom nomi',
+      pricePlaceholder: 'Narxi',
+    },
+    fields: {
+      name: 'Taom nomi *',
+      namePlaceholder: "Masalan: To'y oshi",
+      price: "Narxi (so'm) *",
+      pricePlaceholder: '35000',
+      priceShown: "{price} so'm",
+      prep: 'Tayyorlanish vaqti (daqiqa)',
+      category: 'Kategoriya',
+      description: 'Tavsif / Tarkibi',
+      descriptionPlaceholder: "Masalan: Mol go'shti, devzira guruch, zira...",
+    },
+    category: {
+      none: 'Kategoriyasiz',
+      addOption: "＋ Yangi kategoriya qo'shish",
+      newLabel: 'Yangi kategoriya nomi',
+      newPlaceholder: 'Masalan: Desertlar',
+      add: "Qo'shish",
+      cancel: 'Bekor',
+      suggested: 'Taklif: «{name}»',
+      createSuggested: 'Yaratib tanlash',
+      dismissSuggested: 'Taklifni yopish',
+      alreadyExists: '«{name}» kategoriyasi bor edi: uni tanladik.',
+      createFailed: "Kategoriyani qo'shib bo'lmadi. Qayta urinib ko'ring.",
+    },
+    suggest: {
+      title: "«{name}» bo'yicha topilgan rasmlar — qaysi birini qo'yamiz?",
+      loading: 'Internetdan rasm qidirilmoqda…',
+      empty: "«{name}» bo'yicha rasm topilmadi. Boshqa nom yozib ko'ring.",
+      down: "Hozir internet qidiruvi ishlamayapti. O'z rasmingizni yuklashingiz mumkin.",
+      limited: "Qidiruv chegarasi tugadi. Birozdan keyin urinib ko'ring yoki o'z rasmingizni yuklang.",
+      picking: 'Olinmoqda…',
+      pickFailed: "Bu rasmni olib bo'lmadi. Boshqasini tanlang.",
+      close: 'Takliflarni yopish',
+      chooseAria: 'Shu rasmni tanlash: {title}',
+      untitled: 'rasm',
+    },
+    // Server xabaridagi xom maydon nomi («prep_minutes») o'rniga ko'rsatiladi
+    errorLabels: {
+      name: 'Taom nomi',
+      price: 'Narx',
+      old_price: 'Eski narx',
+      prep_minutes: 'Tayyorlanish vaqti',
+      cook_min: 'Tayyorlanish vaqti',
+      category_id: 'Kategoriya',
+      description: 'Tavsif',
+      name_ru: 'Ruscha nom',
+      name_en: 'Inglizcha nom',
+      description_ru: 'Ruscha tavsif',
+      description_en: 'Inglizcha tavsif',
+      image: 'Rasm',
+      image_token: 'Rasm',
+    },
   },
   // Menyuni ommaviy kiritish: fayl / rasm / matn -> tekshirish -> tasdiqlash (admins/resto/src/pages/Menu/BulkImport)
   bulkImport: {
@@ -305,6 +453,12 @@ export const restoUz = {
     kitchenTimersHint:
       'Oshxona ekranida taomlar tayyorlanish vaqtiga qarab kartochka rangi sariq va qizilga aylanadi:',
     seasonTitle: 'Mehmon menyusi: rang va animatsiya',
+    paletteLabel: 'Ranglar',
+    paletteHint: 'Mehmon sayti, admin panel va kirish sahifasi shu ranglarda ko\'rinadi. Saqlangach sahifani yangilang.',
+    paletteOptions: {
+      classic: 'Klassik: yashil + krem (standart)',
+      orange: 'Apelsin',
+    },
     seasonLabel: 'Fasl rangi',
     seasonHint:
       "Mehmon menyusidagi tugma, narx va urg'u ranglari. «Avtomatik» da rang oyga qarab o'zi almashadi: dekabr–fevral qish, mart–may bahor, iyun–avgust yoz, sentabr–noyabr kuz. Eski (klassik) dizaynga ta'sir qilmaydi.",
@@ -351,6 +505,8 @@ export const restoUz = {
     },
   },
 };
+
+export const restoUz = translated(restoUzSource);
 
 /**
  * Rol kodini (`shop_owner`, `waiter`, ...) odam tilidagi nomga aylantiradi.

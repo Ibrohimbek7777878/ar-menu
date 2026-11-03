@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   BrowserRouter,
@@ -6,15 +6,23 @@ import {
   Route,
   NavLink,
   Outlet,
+  useLocation,
 } from 'react-router-dom';
 import {
   SessionProvider,
   ToastProvider,
+  AppearanceMenu,
+  LangBoundary,
   useSession,
   commonUz,
+  initLang,
+  initTheme,
+  t,
   Skeleton,
 } from '@admins/shared';
 import '@admins/shared/ui/tokens.css';
+import './shell.css';
+import './i18n/register';
 import { restoUz, roleLabel } from './i18n/uz';
 import { adminRoutes } from './routes';
 import {
@@ -28,10 +36,67 @@ import {
   LogOut,
   Store,
   ArrowLeftRight,
+  Menu as MenuIcon,
+  X,
 } from 'lucide-react';
+
+/** Telefon: 768 px dan tor ekranda yon panel yashirinadi va hamburger bilan ochiladigan drawerga aylanadi (shell.css bilan bir xil chegara). */
+const NARROW_QUERY = '(max-width: 767px)';
+
+function subscribeNarrow(callback: () => void): () => void {
+  const media = window.matchMedia(NARROW_QUERY);
+  media.addEventListener('change', callback);
+  return () => media.removeEventListener('change', callback);
+}
+
+function useIsNarrow(): boolean {
+  return useSyncExternalStore(
+    subscribeNarrow,
+    () => window.matchMedia(NARROW_QUERY).matches,
+    () => false,
+  );
+}
 
 const AppLayout: React.FC = () => {
   const { session, logout, hasCapability } = useSession();
+  const location = useLocation();
+  const narrow = useIsNarrow();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  const open = drawerOpen && narrow;
+
+  const closeDrawer = useCallback((restoreFocus: boolean) => {
+    setDrawerOpen(false);
+    if (restoreFocus) menuBtnRef.current?.focus();
+  }, []);
+
+  // Sahifaga o'tilganda (bandni bosganda) drawer yopiladi
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  // Drawer ochiq: Esc yopadi, orqa fon aylanmaydi, fokus birinchi bandga o'tadi
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeDrawer(true);
+    };
+    document.addEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    sidebarRef.current?.querySelector<HTMLElement>('a[href]')?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open, closeDrawer]);
+
+  // Brauzer sarlavhasi tanlangan tilda (til almashganda daraxt qayta ulanadi, shuning uchun bu yerda yangilanadi)
+  useEffect(() => {
+    document.title = `${restoUz.appName} — ${restoUz.dashboard}`;
+  }, []);
 
   const navItems = [
     { to: '', label: restoUz.dashboard, icon: LayoutDashboard, cap: 'kds' },
@@ -43,164 +108,97 @@ const AppLayout: React.FC = () => {
     { to: 'settings', label: restoUz.settings, icon: Settings, cap: 'menu_admin' },
   ];
 
+  const shopName = session?.tenant?.name || restoUz.appName;
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Sidebar */}
+    <div className="ra-shell">
+      {/* Telefon: yuqori panel (kompyuterda yashirin) */}
+      <header className="ra-topbar">
+        <button
+          ref={menuBtnRef}
+          type="button"
+          className="ra-menu-btn"
+          aria-label={open ? t('Menyuni yopish') : t('Menyuni ochish')}
+          aria-expanded={open}
+          aria-controls="ra-sidebar"
+          onClick={() => setDrawerOpen((v) => !v)}
+        >
+          {open ? <X size={22} aria-hidden="true" /> : <MenuIcon size={22} aria-hidden="true" />}
+        </button>
+        <div className="ra-topbar-title">{shopName}</div>
+        <AppearanceMenu placement="down" align="end" />
+      </header>
+
+      <div className="ra-backdrop" data-open={open} aria-hidden="true" onClick={() => closeDrawer(true)} />
+
+      {/* Yon panel (kompyuter) / drawer (telefon) */}
       <aside
-        style={{
-          width: '240px',
-          backgroundColor: 'var(--bg-surface)',
-          borderRight: '1px solid var(--border-subtle)',
-          display: 'flex',
-          flexDirection: 'column',
-          flexShrink: 0,
+        id="ra-sidebar"
+        ref={sidebarRef}
+        className="ra-sidebar"
+        data-open={open}
+        onBlur={(e) => {
+          // Fokus drawer'dan tashqariga chiqsa (Tab) drawer yopiladi: fokus tuzog'i yo'q
+          const next = e.relatedTarget;
+          if (open && next instanceof Node && !sidebarRef.current?.contains(next) && next !== menuBtnRef.current) {
+            setDrawerOpen(false);
+          }
         }}
       >
         {/* Do'kon sarlavhasi */}
-        <div
-          style={{
-            padding: '20px 16px',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--accent-emerald-bg)',
-              color: 'var(--accent-emerald)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Store size={20} />
+        <div className="ra-brand">
+          <div className="ra-brand-icon">
+            <Store size={20} aria-hidden="true" />
           </div>
-          <div style={{ overflow: 'hidden' }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: '15px',
-                fontWeight: 700,
-                color: 'var(--text-main)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {session?.tenant?.name || restoUz.appName}
-            </h2>
-            <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-              {restoUz.appName}
-            </span>
+          <div className="ra-brand-text">
+            <h2 className="ra-brand-name">{shopName}</h2>
+            <span className="ra-brand-sub">{restoUz.appName}</span>
           </div>
         </div>
 
         {/* Navigatsiya menyusi */}
-        <nav style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+        <nav className="ra-nav" aria-label={t('Asosiy menyu')}>
           {navItems
             .filter((item) => hasCapability(item.cap))
             .map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === ''}
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: isActive ? 'var(--accent-amber)' : 'var(--text-muted)',
-                  backgroundColor: isActive ? 'var(--accent-amber-bg)' : 'transparent',
-                  transition: 'all var(--transition-fast)',
-                })}
-              >
-                <item.icon size={18} />
+              <NavLink key={item.to} to={item.to} end={item.to === ''} className="ra-nav-link">
+                <item.icon size={18} aria-hidden="true" />
                 <span>{item.label}</span>
               </NavLink>
             ))}
         </nav>
 
         {/* Strangler Fig: Klassik boshqaruvga o'tish */}
-        <div style={{ padding: '0 8px 12px 8px' }}>
-          <a
-            href="/seller/tables/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              borderRadius: 'var(--radius-md)',
-              textDecoration: 'none',
-              fontSize: '12px',
-              fontWeight: 500,
-              color: 'var(--text-dim)',
-              backgroundColor: 'var(--bg-elevated)',
-              border: '1px solid var(--border-subtle)',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            <ArrowLeftRight size={14} />
-            <span>Klassik panelga o'tish</span>
+        <div className="ra-classic-wrap">
+          <a href="/seller/tables/" className="ra-classic-link">
+            <ArrowLeftRight size={14} aria-hidden="true" />
+            <span>{t("Klassik panelga o'tish")}</span>
           </a>
         </div>
 
-        {/* Xodim profili va chiqish */}
-        <div
-          style={{
-            padding: '16px',
-            borderTop: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ overflow: 'hidden' }}>
-            <div
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {session?.user.name}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-dim)', textTransform: 'capitalize' }}>
+        {/* Xodim profili, til/kun-tun va chiqish */}
+        <div className="ra-user">
+          <div className="ra-user-text">
+            <div className="ra-user-name">{session?.user.name}</div>
+            <div className="ra-user-role" style={{ textTransform: 'capitalize' }}>
               {session ? roleLabel(session.user.role) : ''}
             </div>
           </div>
+          <AppearanceMenu placement="up" align="start" />
           <button
+            type="button"
+            className="ra-icon-btn ra-icon-btn--danger"
             onClick={logout}
             title={commonUz.logout}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-rose)',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-            }}
+            aria-label={commonUz.logout}
           >
-            <LogOut size={18} />
+            <LogOut size={18} aria-hidden="true" />
           </button>
         </div>
       </aside>
 
       {/* Asosiy kontent maydoni */}
-      <main style={{ flex: 1, overflowY: 'auto' }}>
+      <main className="ra-main">
         <Suspense
           fallback={
             <div style={{ padding: '32px' }}>
@@ -224,13 +222,16 @@ export const App: React.FC = () => {
     <BrowserRouter basename={basename}>
       <SessionProvider>
         <ToastProvider>
-          <Routes>
-            <Route path="/" element={<AppLayout />}>
-              {adminRoutes.map((r, i) => (
-                <Route key={i} path={r.path} element={r.element} />
-              ))}
-            </Route>
-          </Routes>
+          {/* Til almashganda shu yerdan pastki daraxt qayta ulanadi; router, sessiya va xabarlar saqlanadi */}
+          <LangBoundary>
+            <Routes>
+              <Route path="/" element={<AppLayout />}>
+                {adminRoutes.map((r, i) => (
+                  <Route key={i} path={r.path} element={r.element} />
+                ))}
+              </Route>
+            </Routes>
+          </LangBoundary>
         </ToastProvider>
       </SessionProvider>
     </BrowserRouter>
@@ -239,9 +240,13 @@ export const App: React.FC = () => {
 
 const rootEl = document.getElementById('root');
 if (rootEl) {
-  ReactDOM.createRoot(rootEl).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
+  // Kun/tun (data-theme) va til: birinchi chizishdan oldin. Til lug'ati yuklanmaguncha chizilmaydi (o'zbekcha yonib o'chmasin).
+  initTheme();
+  void initLang().finally(() => {
+    ReactDOM.createRoot(rootEl).render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>,
+    );
+  });
 }

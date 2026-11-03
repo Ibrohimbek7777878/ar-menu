@@ -1,3 +1,5 @@
+import { t } from '../i18n/engine.ts';
+
 /**
  * Resto Admin umumiy API client'i (TZ: 1.1, 3.3).
  * - CSRF token qo'shadi (cookie yoki session).
@@ -10,6 +12,8 @@ export interface ApiProblemDetails {
   title?: string;
   status?: number;
   detail?: string;
+  /** Ko'plab backend javoblari `{error: "...", field?: "..."}` shaklida (DRF `detail` emas) — ularning xabari ham ko'rsatiladi */
+  error?: string;
   errors?: Record<string, string[]>;
 }
 
@@ -57,7 +61,7 @@ export async function apiClient<T>(
       const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `/admin/login/?next=${currentUrl}`;
     }
-    throw new ApiError(401, 'Tizimga kirish talab etiladi.');
+    throw new ApiError(401, t('Tizimga kirish talab etiladi.'));
   }
 
   if (!response.ok) {
@@ -68,7 +72,7 @@ export async function apiClient<T>(
       // not a json response
     }
 
-    const message = problem?.detail || problem?.title || `So'rov muvaffaqiyatsiz tugadi (${response.status})`;
+    const message = problem?.detail || problem?.error || problem?.title || t("So'rov muvaffaqiyatsiz tugadi ({status})", { status: response.status });
     throw new ApiError(response.status, message, problem);
   }
 

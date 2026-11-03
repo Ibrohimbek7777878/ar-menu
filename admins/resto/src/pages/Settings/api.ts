@@ -1,5 +1,8 @@
 import { apiClient } from '@admins/shared';
 
+/** Ranglar palitrasi: classic — yashil + krem (standart), orange — apelsin. Mehmon sayti, admin panel va kirish sahifasiga ta'sir qiladi (backend: shops/guest_palette.py) */
+export type GuestPaletteSetting = 'classic' | 'orange';
+
 /** Mehmon sayti fasl rangi: off — hozirgi ranglar, auto — oyga qarab (backend: shops/guest_season.py) */
 export type GuestSeasonSetting = 'off' | 'auto' | 'kuz' | 'qish' | 'bahor' | 'yoz';
 
@@ -37,6 +40,7 @@ export interface ShopSettings {
   kds_critical_minutes: number;
   telegram_chat_id: string;
   auto_accept_orders: boolean;
+  guest_palette: GuestPaletteSetting;
   guest_season: GuestSeasonSetting;
   guest_motion: GuestMotionSetting;
   guest_dish_sheet: GuestDishSheetSetting;

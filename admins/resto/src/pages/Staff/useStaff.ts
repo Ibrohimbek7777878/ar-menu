@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { t } from '@admins/shared';
 import {
   blockStaff,
   createStaff,
@@ -26,7 +27,7 @@ export function useStaff() {
       const res = await fetchStaff();
       setStaffList(res);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Xodimlarni yuklashda xatolik yuz berdi";
+      const msg = err instanceof Error ? t(err.message) : t('Xodimlarni yuklashda xatolik yuz berdi');
       setError(msg);
     } finally {
       setLoading(false);

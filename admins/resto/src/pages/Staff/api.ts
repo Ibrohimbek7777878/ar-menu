@@ -10,6 +10,13 @@ export interface StaffItem {
   is_active: boolean;
   date_joined: string | null;
   last_login: string | null;
+  // Serverda hisoblanadi (accounts/staff_access.py): xodim qaysi havola bilan kiradi va qaysi sahifaga tushadi
+  panel_path?: string | null;
+  panel_label?: string | null;
+  /** To'liq havola (`https://domen/admin/login/?next=…`); xodim kira olmasa null. */
+  login_url?: string | null;
+  /** Havola yo'qligining sababi (bloklangan va h.k.). */
+  login_unavailable_reason?: string | null;
 }
 
 export interface StaffPayload {
