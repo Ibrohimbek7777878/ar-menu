@@ -3,6 +3,7 @@ import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { Icon } from '../../components/ui/Icon/Icon';
 import { useNavigation } from '../../context/NavigationContext';
 import { roleService } from '../../core/auth/RoleService';
+import { HeroPlate3D } from '../../motion/HeroPlate3D';
 
 interface FeaturedDish {
   id: number;
@@ -152,8 +153,16 @@ export const WelcomePageNew: React.FC = () => {
               <div className="wn-rise" style={{ ['--i' as string]: 2 }}>
                 <div className="wn-stage" ref={stageRef} onMouseMove={handleStageMove} onMouseLeave={handleStageLeave} aria-hidden="true">
                   <div className="wn-ring" />
-                  <div className="wn-main-dish"><img src={hero.image} alt="" /></div>
-                  <div className="wn-steam"><i /><i /><i /></div>
+                  <HeroPlate3D
+                    className="wn-hero3d"
+                    photoUrl={hero.image || undefined}
+                    fallback={
+                      <>
+                        <div className="wn-main-dish"><img src={hero.image} alt="" /></div>
+                        <div className="wn-steam"><i /><i /><i /></div>
+                      </>
+                    }
+                  />
                   {minis.map((dish, index) => (
                     <div key={dish.id} className={`wn-mini wn-mini-${index + 1}`}><img src={dish.image} alt="" loading="lazy" /></div>
                   ))}

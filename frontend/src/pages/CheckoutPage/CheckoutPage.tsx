@@ -8,6 +8,7 @@ import {
 } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { getGuestDesign } from '../../utils/guestDesign';
+import { bounceIcon, celebrateOrder, fxEnabled, setButtonState } from '../../motion';
 import './CheckoutPage.css';
 
 interface InitialCheckoutData {
@@ -58,6 +59,7 @@ export const CheckoutPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'click' | 'payme'>('cash');
   const [notes, setNotes] = useState(savedNote);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   // Toast
   const [toastMsg, setToastMsg] = useState('');
@@ -69,6 +71,12 @@ export const CheckoutPage: React.FC = () => {
     setToastIcon(icon);
     setToastVisible(true);
     setTimeout(() => setToastVisible(false), 2400);
+  };
+
+  /** Xato bo'lsa tugma qisqa qizarib silkinadi, so'ng qayta bosishga tayyor bo'ladi (ko'rinish; mantiq o'zgarmaydi). */
+  const flashSubmitError = () => {
+    setButtonState(submitRef.current, 'error');
+    window.setTimeout(() => setButtonState(submitRef.current, 'idle'), 1500);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,6 +105,7 @@ export const CheckoutPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setButtonState(submitRef.current, 'loading');
     showToast("Buyurtma yuborilmoqda...");
 
     const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
@@ -134,20 +143,25 @@ export const CheckoutPage: React.FC = () => {
         if (data?.code === 'submission_conflict') submissionId.current = newSubmissionId();
         showToast(data?.error || "Buyurtmani yuborib bo'lmadi. Qayta urinib ko'ring.");
         setIsSubmitting(false);
+        flashSubmitError();
         return;
       }
 
       sessionStorage.removeItem('order_note');
       clearCart();
       showToast("Buyurtmangiz qabul qilindi!");
+      setButtonState(submitRef.current, 'success');
+      void celebrateOrder(submitRef.current);
+      // Kutlov ko'rinib ulgursin: animatsiya yoqilgan bo'lsa yo'naltirish biroz kechikadi (o'chiq bo'lsa avvalgidek)
       setTimeout(() => {
         window.location.assign(data.redirect || '/orders/');
-      }, 600);
+      }, fxEnabled() ? 1900 : 600);
     } catch {
       window.clearTimeout(timer);
       // Buyurtma serverga yetib borgan bo'lishi mumkin. Kalit o'zgarmaydi: qayta yuborsangiz ikkinchi buyurtma yaratilmaydi.
       showToast("Aloqa uzildi. Qayta yuboring: buyurtma ikki marta yaratilmaydi.");
       setIsSubmitting(false);
+      flashSubmitError();
     }
   };
 
@@ -192,7 +206,7 @@ export const CheckoutPage: React.FC = () => {
             <div className="service-types-grid">
               <div
                 className={`service-type-option ${serviceType === 'table' ? 'active' : ''}`}
-                onClick={() => setServiceType('table')}
+                onClick={(e) => { setServiceType('table'); bounceIcon(e.currentTarget.querySelector('.service-opt-icon')); }}
               >
                 <div className="service-opt-icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -207,7 +221,7 @@ export const CheckoutPage: React.FC = () => {
 
               <div
                 className={`service-type-option ${serviceType === 'pickup' ? 'active' : ''}`}
-                onClick={() => setServiceType('pickup')}
+                onClick={(e) => { setServiceType('pickup'); bounceIcon(e.currentTarget.querySelector('.service-opt-icon')); }}
               >
                 <div className="service-opt-icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -224,7 +238,7 @@ export const CheckoutPage: React.FC = () => {
 
               <div
                 className={`service-type-option ${serviceType === 'delivery' ? 'active' : ''}`}
-                onClick={() => setServiceType('delivery')}
+                onClick={(e) => { setServiceType('delivery'); bounceIcon(e.currentTarget.querySelector('.service-opt-icon')); }}
               >
                 <div className="service-opt-icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -401,6 +415,7 @@ export const CheckoutPage: React.FC = () => {
 
           <button
             type="submit"
+            ref={submitRef}
             className="btn-submit-order"
             disabled={isSubmitting || items.length === 0 || isClosed}
           >

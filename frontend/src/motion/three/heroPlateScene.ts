@@ -114,7 +114,7 @@ export function mountHeroPlate(container: HTMLElement, options: HeroPlateOptions
 
   const scene = new Scene()
   const camera = new PerspectiveCamera(26, 1, 0.1, 50)
-  camera.position.set(0, 4.7, 6.6)
+  camera.position.set(0, 5.4, 7.6)
   camera.lookAt(0, 0.2, 0)
 
   scene.add(new HemisphereLight(0xfff1e0, 0xb98a63, 1.5))
@@ -145,43 +145,57 @@ export function mountHeroPlate(container: HTMLElement, options: HeroPlateOptions
   tilt.add(plate)
   scene.add(tilt)
 
-  // Likopcha: profili aylantirib yasaladi (x = radius, y = balandlik)
-  const profile = [
-    [0, 0], [0.8, 0], [1.2, 0.04], [1.55, 0.2], [1.64, 0.27], [1.61, 0.3], [1.5, 0.28], [1.2, 0.13], [0.9, 0.09], [0, 0.09],
-  ].map(([x, y]) => new Vector2(x, y))
-  plate.add(
-    new Mesh(own(new LatheGeometry(profile, 72)), own(new MeshStandardMaterial({ color: 0xfffaf4, roughness: 0.3, metalness: 0.02 }))),
-  )
-  const ring = new Mesh(
-    own(new TorusGeometry(1.5, 0.026, 12, 96)),
-    own(new MeshStandardMaterial({ color: new Color(brandPalette()[0]), roughness: 0.45 })),
-  )
-  ring.rotation.x = Math.PI / 2
-  ring.position.y = 0.27
-  plate.add(ring)
+  const photoMode = Boolean(options.photoUrl)
+  const ringMaterial = own(new MeshStandardMaterial({ color: new Color(brandPalette()[0]), roughness: 0.45 }))
+  const ceramic = own(new MeshStandardMaterial({ color: 0xfffaf4, roughness: 0.3, metalness: 0.02 }))
+  if (photoMode) {
+    // Haqiqiy taom rasmi bor: yupqa dumaloq lagan, ustida rasm (asosiy narsa rasm, likopcha emas)
+    const tray = new Mesh(own(new CylinderGeometry(1.5, 1.5, 0.16, 96)), ceramic)
+    tray.position.y = 0.08
+    plate.add(tray)
+    const trayRim = new Mesh(own(new TorusGeometry(1.5, 0.028, 12, 96)), ringMaterial)
+    trayRim.rotation.x = Math.PI / 2
+    trayRim.position.y = 0.16
+    plate.add(trayRim)
+  } else {
+    // Rasm yo'q: likopcha (profili aylantirib yasaladi: x = radius, y = balandlik) va ustida kodda chizilgan palov
+    const profile = [
+      [0, 0], [0.8, 0], [1.2, 0.04], [1.55, 0.2], [1.64, 0.27], [1.61, 0.3], [1.5, 0.28], [1.2, 0.13], [0.9, 0.09], [0, 0.09],
+    ].map(([x, y]) => new Vector2(x, y))
+    plate.add(new Mesh(own(new LatheGeometry(profile, 72)), ceramic))
+    const ring = new Mesh(own(new TorusGeometry(1.5, 0.026, 12, 96)), ringMaterial)
+    ring.rotation.x = Math.PI / 2
+    ring.position.y = 0.27
+    plate.add(ring)
+  }
 
-  // Taom: rasm bo'lsa tekis disk, bo'lmasa guruch uyumi (tepadan tekis proyeksiya bilan teksturalanadi)
-  const foodMap = own(foodTexture())
-  const foodMaterial = own(new MeshStandardMaterial({ map: foodMap, roughness: 0.6 }))
+  // Taom: rasm bo'lsa tekis disk (rangi aslidek: yoritish va ton o'zgartirishsiz), bo'lmasa guruch uyumi
   let food: Mesh
+  // Rasm berilgan bo'lsa: u yuklanmaguncha sahna ko'rsatilmaydi (CSS sahna turadi); yuklanmasa zaxiraga qaytamiz
+  let photoPending = photoMode
+  let foodMaterial: MeshStandardMaterial | null = null
   if (options.photoUrl) {
-    food = new Mesh(own(new CircleGeometry(1.05, 72)), foodMaterial)
+    const photoMaterial = own(new MeshBasicMaterial({ color: 0xffffff, toneMapped: false }))
+    food = new Mesh(own(new CircleGeometry(1.42, 96)), photoMaterial)
     food.rotation.x = -Math.PI / 2
-    food.position.y = 0.115
+    food.position.y = 0.165
     const loader = new TextureLoader()
     loader.setCrossOrigin('anonymous')
     loader.load(
       options.photoUrl,
       (photo) => {
         photo.colorSpace = SRGBColorSpace
+        photo.anisotropy = 4
         own(photo)
-        foodMaterial.map = photo
-        foodMaterial.needsUpdate = true
+        photoMaterial.map = photo
+        photoMaterial.needsUpdate = true
+        photoPending = false
       },
       undefined,
-      () => undefined, // rasm yuklanmasa, kodda chizilgan taom qoladi
+      () => degrade(), // rasm yuklanmadi: boshqa (soxta) taom emas, haqiqiy rasmli CSS sahna qoladi
     )
   } else {
+    foodMaterial = own(new MeshStandardMaterial({ map: own(foodTexture()), roughness: 0.6 }))
     const dome = own(new SphereGeometry(1, 56, 28, 0, Math.PI * 2, 0, Math.PI / 2))
     const pos = dome.attributes.position
     const uv = dome.attributes.uv
@@ -292,7 +306,9 @@ export function mountHeroPlate(container: HTMLElement, options: HeroPlateOptions
       slow = 0
     }
 
-    plate.rotation.y += dt * 0.42
+    // Rasmli rejimda rasm aylanib ketmaydi (o'qib bo'lmay qoladi): u yoqdan bu yoqqa yengil tebranadi
+    if (photoMode) plate.rotation.y = Math.sin(t * 0.6) * 0.55
+    else plate.rotation.y += dt * 0.42
     plate.position.y = Math.sin(t * 1.3) * 0.025
     tilt.rotation.x += (tiltX - tilt.rotation.x) * Math.min(1, dt * 4)
     tilt.rotation.z += (tiltZ - tilt.rotation.z) * Math.min(1, dt * 4)
@@ -302,11 +318,11 @@ export function mountHeroPlate(container: HTMLElement, options: HeroPlateOptions
       s.sprite.position.set(s.x + Math.sin(t * 0.9 + s.drift) * 0.18 * p, 0.55 + p * 1.9, Math.cos(s.drift) * 0.25)
       const scale = 0.6 + p * 1.0
       s.sprite.scale.set(scale, scale, 1)
-      s.material.opacity = Math.sin(p * Math.PI) * 0.62
+      s.material.opacity = Math.sin(p * Math.PI) * (photoMode ? 0.4 : 0.62)
     }
 
     renderer.render(scene, camera)
-    if (!ready) {
+    if (!ready && !photoPending) {
       ready = true
       options.onReady?.()
     }

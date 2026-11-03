@@ -80,3 +80,16 @@
   .fx-scene { animation: none !important; }
   .fx-scene .draw, [data-fx-state] path { stroke-dashoffset: 0 !important; }
 }
+
+/* ── Ilovaga ulanish uchun moslashtirish ──────────────────────────────────────────────────────────── */
+/* "Yuborilmoqda" paytida tugma o'chirilgan (disabled) bo'ladi: aylana/✓ xira ko'rinmasin */
+[data-design='new'] [data-fx-state]:disabled { opacity: 1; cursor: progress; }
+
+/* Welcome: 3D sahna eski CSS sahna o'rnida (stage ichida to'liq maydon) */
+.wn-stage > .mx-hero3d.wn-hero3d { position: absolute; inset: 0; width: auto; aspect-ratio: auto; }
+
+/* Buyurtmalar: kartochka sarlavhasida va modal tepasida holat sahnasi */
+[data-design='new'] .order-card-header { align-items: center; }
+[data-design='new'] .order-card-header > .fx-scene { flex: none; margin-right: 10px; }
+[data-design='new'] .order-card-header .order-card-id { margin-right: auto; }
+[data-design='new'] .modal-status-hero > .fx-scene { margin: 0 auto 8px; }

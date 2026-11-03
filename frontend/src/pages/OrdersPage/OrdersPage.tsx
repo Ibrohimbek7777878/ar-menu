@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
+import { StatusScene } from '../../motion';
+import type { OrderStatusKey } from '../../motion';
 import './OrdersPage.css';
 
 export interface OrderItem {
@@ -29,6 +31,10 @@ interface InitialOrdersData {
   cartCount?: number;
   onlinePayment?: boolean;
 }
+
+/** Holat -> animatsion sahna: "completed" yetkazilgan sahnasi bilan; bekor qilinganda sahna yo'q. */
+const sceneOf = (status: OrderData['status']): OrderStatusKey | null =>
+  status === 'cancelled' ? null : status === 'completed' ? 'delivered' : status;
 
 // Server holatlari (orders.Order.STATUS_CHOICES): 'delivered' va 'out_for_delivery' avval filtrda yo'q edi
 const ACTIVE_STATUSES: OrderData['status'][] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'];
@@ -442,6 +448,7 @@ export const OrdersPage: React.FC = () => {
                 onClick={() => setSelectedOrder(order)}
               >
                 <div className="order-card-header">
+                  {sceneOf(order.status) && <StatusScene status={sceneOf(order.status)!} size={44} />}
                   <div className="order-card-id">
                     <span className="order-num tabular-nums">№{order.order_number}</span>
                     <span className="order-time">{order.created_at}</span>
@@ -500,6 +507,7 @@ export const OrdersPage: React.FC = () => {
             </button>
 
             <div className="modal-status-hero">
+              {sceneOf(selectedOrder.status) && <StatusScene status={sceneOf(selectedOrder.status)!} size={96} />}
               <h2 className="modal-order-number tabular-nums">
                 Buyurtma #{selectedOrder.order_number}
               </h2>

@@ -25,7 +25,7 @@ import {
 } from 'three'
 import { brandPalette } from '../env'
 
-const DURATION = 2.6
+const DURATION = 2.2
 const COUNT = 110
 const FOV = 40
 const DISTANCE = 14

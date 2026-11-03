@@ -43,3 +43,5 @@ import './designNew.css'
 import './seasons.css'
 // Ishtaha qatlami va animatsiya darajasi (`guest_motion`)
 import './motion.css'
+// Animatsiya qatlami (A: tugma holati, holat sahnalari; B: 3D sahna konteyneri) — src/motion
+import '../motion/fx.css'

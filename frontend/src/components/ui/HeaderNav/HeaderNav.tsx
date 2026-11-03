@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigation } from '../../../context/NavigationContext';
+import { pop } from '../../../motion/fx';
 import './HeaderNav.css';
 
 export interface HeaderNavProps {
@@ -28,6 +29,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
   const tableNumber = propTable !== undefined ? propTable : ctxTable;
   const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
+
+  // Savatga taom qo'shilganda (flyToCart tugagach) son belgisi "pop" qiladi
+  const badgeRef = useRef<HTMLSpanElement>(null);
+  const prevCount = useRef(cartCount);
+  useEffect(() => {
+    if (cartCount > prevCount.current) {
+      prevCount.current = cartCount;
+      const t = window.setTimeout(() => pop(badgeRef.current), 480);
+      return () => window.clearTimeout(t);
+    }
+    prevCount.current = cartCount;
+  }, [cartCount]);
 
   const navLinks = [
     { path: '/', label: 'Asosiy' },
@@ -117,7 +130,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
             </svg>
             {cartCount > 0 && (
-              <span className="cart-badge tabular-nums">{cartCount}</span>
+              <span className="cart-badge tabular-nums" ref={badgeRef}>{cartCount}</span>
             )}
           </button>
         </div>

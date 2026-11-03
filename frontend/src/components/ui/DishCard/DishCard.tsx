@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Product } from '../../../types/dish';
 import './DishCard.css';
 import { flyToCart } from '../../../utils/cartFly';
+import { spin3d } from '../../../motion/fx';
 
 export interface DishCardProps {
   product: Product;
@@ -107,6 +108,7 @@ export const DishCard: React.FC<DishCardProps> = ({
             className="btn-trigger-3d"
             onClick={(e) => {
               e.stopPropagation();
+              spin3d(e.currentTarget.querySelector('svg'));
               if (onOpen3D) onOpen3D(product);
             }}
             title="Taomni 360 daraja aylantirib ko'rish"
