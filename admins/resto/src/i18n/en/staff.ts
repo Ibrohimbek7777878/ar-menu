@@ -1,6 +1,8 @@
 // Staff page (pages/Staff): visible texts. The key is the Uzbek text, the value is the translation.
 // "Faol", "Hostess", "Bekor qilish", "Tahrirlash", "Qayta yuklash", "Qayta urinish", "Saqlanmoqda..." live in other files (finance.ts, core.ts, shared).
 export default {
+  'Ochish': 'Open',
+  "Xodim ko'rinishini tekshirish uchun yashirin (inkognito) oynada oching: siz hozir o'z hisobingizda turibsiz.": 'To see what the staff member sees, open it in a private window: you are signed in to your own account right now.',
   'Xodimlar Boshqaruvi': 'Staff management',
   'Restoran xodimlari, ofitsiantlar, oshpazlar, rollar va xavfsiz kirish parollari.': 'Restaurant staff, waiters, cooks, roles and secure sign-in passwords.',
   'Yangi Xodim': 'New staff member',

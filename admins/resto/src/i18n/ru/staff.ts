@@ -1,6 +1,8 @@
 // Xodimlar sahifasi (pages/Staff): ko'rinadigan matnlar. Kalit — o'zbekcha matn, qiymat — tarjima.
 // «Faol», «Hostess», «Bekor qilish», «Tahrirlash», «Qayta yuklash», «Qayta urinish», «Saqlanmoqda...» boshqa fayllarda (finance.ts, core.ts, shared) bor.
 export default {
+  'Ochish': 'Открыть',
+  "Xodim ko'rinishini tekshirish uchun yashirin (inkognito) oynada oching: siz hozir o'z hisobingizda turibsiz.": 'Чтобы проверить, как видит сотрудник, откройте в приватном окне: сейчас вы вошли под своей учётной записью.',
   'Xodimlar Boshqaruvi': 'Управление сотрудниками',
   'Restoran xodimlari, ofitsiantlar, oshpazlar, rollar va xavfsiz kirish parollari.': 'Сотрудники ресторана, официанты, повара, роли и безопасные пароли для входа.',
   'Yangi Xodim': 'Новый сотрудник',

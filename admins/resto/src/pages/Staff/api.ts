@@ -17,6 +17,23 @@ export interface StaffItem {
   login_url?: string | null;
   /** Havola yo'qligining sababi (bloklangan va h.k.). */
   login_unavailable_reason?: string | null;
+  // Profil (ruxsatlar yangilanishi): server bularni bermasa (eski javob) profil mavjud maydonlar bilan ishlayveradi
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  /** Ro'yxatdagi qator hozirgi foydalanuvchining o'zi (server aytadi). */
+  is_self?: boolean;
+  permissions?: StaffPermissions | null;
+  /** Shu xodimning ruxsatlarini hozirgi foydalanuvchi o'zgartira oladimi (egasi, o'zi, huquqsiz bo'lsa — yo'q). */
+  editable_permissions?: boolean;
+}
+
+/** Serverda hisoblangan ruxsatlar: samarali = (rol standarti + qo'shimcha) - olib tashlangan. */
+export interface StaffPermissions {
+  role_defaults: string[];
+  extra: string[];
+  revoked: string[];
+  effective: string[];
 }
 
 export interface StaffPayload {
@@ -31,6 +48,28 @@ export interface StaffCreateResponse extends StaffItem {
   generated_password?: string | null;
 }
 
+/** PATCH /staff/<id>/: faqat o'zgargan maydonlar yuboriladi. */
+export interface StaffPatch {
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  email?: string;
+  username?: string;
+  role?: string;
+  extra_capabilities?: string[];
+  revoked_capabilities?: string[];
+}
+
+/** GET /staff/permissions/catalog/ — xom javob (`permissions.normalizeCatalog` tozalaydi). */
+export interface PermissionCatalogResponse {
+  capabilities: unknown;
+  role_defaults: unknown;
+  /** Hozirgi foydalanuvchi boshqalarga bera oladigan kalitlar. */
+  grantable?: unknown;
+  is_owner?: unknown;
+}
+
 export async function fetchStaff(): Promise<StaffItem[]> {
   return apiClient<StaffItem[]>('/api/restaurant/admin/v1/staff/');
 }
@@ -42,7 +81,7 @@ export async function createStaff(data: StaffPayload): Promise<StaffCreateRespon
   });
 }
 
-export async function updateStaff(id: number, data: Partial<StaffPayload>): Promise<StaffItem> {
+export async function updateStaff(id: number, data: StaffPatch): Promise<StaffItem> {
   return apiClient<StaffItem>(`/api/restaurant/admin/v1/staff/${id}/`, {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -72,4 +111,25 @@ export async function resetStaffPassword(
       body: JSON.stringify({ password }),
     }
   );
+}
+
+export async function fetchPermissionCatalog(): Promise<PermissionCatalogResponse> {
+  return apiClient<PermissionCatalogResponse>('/api/restaurant/admin/v1/staff/permissions/catalog/');
+}
+
+/**
+ * Yangi parol o'rnatish. Muvaffaqiyatda `{status: 'password_changed', ...}`; kuchsiz parol — 400 `{error, field:'password'}`.
+ * O'z parolingizni almashtirishda JORIY parol (`current_password`) ham yuboriladi (server talab qiladi).
+ */
+export async function setStaffPassword(
+  id: number,
+  password: string,
+  currentPassword?: string,
+): Promise<{ status?: string; ok?: boolean }> {
+  const body: Record<string, string> = { password };
+  if (currentPassword !== undefined) body.current_password = currentPassword;
+  return apiClient<{ status?: string; ok?: boolean }>(`/api/restaurant/admin/v1/staff/${id}/set-password/`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 }

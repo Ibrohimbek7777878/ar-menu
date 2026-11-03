@@ -5,8 +5,10 @@ import {
   createStaff,
   fetchStaff,
   resetStaffPassword,
+  setStaffPassword,
   StaffCreateResponse,
   StaffItem,
+  StaffPatch,
   StaffPayload,
   unblockStaff,
   updateStaff,
@@ -46,7 +48,7 @@ export function useStaff() {
   };
 
   // Edit staff
-  const editStaff = async (id: number, data: Partial<StaffPayload>): Promise<StaffItem> => {
+  const editStaff = async (id: number, data: StaffPatch): Promise<StaffItem> => {
     const res = await updateStaff(id, data);
     await loadData();
     return res;
@@ -65,6 +67,11 @@ export function useStaff() {
   // Reset password
   const resetPassword = async (id: number, password?: string) => {
     return resetStaffPassword(id, password);
+  };
+
+  // Yangi parol o'rnatish (profil oynasi): ro'yxat o'zgarmaydi, qayta yuklash kerak emas
+  const setPassword = async (id: number, password: string, currentPassword?: string): Promise<void> => {
+    await setStaffPassword(id, password, currentPassword);
   };
 
   // Filtered staff
@@ -109,6 +116,7 @@ export function useStaff() {
     editStaff,
     toggleBlock,
     resetPassword,
+    setPassword,
     refresh: loadData,
   };
 }

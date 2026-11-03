@@ -5,7 +5,7 @@ import { staffRoute } from './route.ts';
 test('staffRoute has correct path and capability', () => {
   assert.equal(staffRoute.path, 'staff');
   assert.equal(staffRoute.title, 'Xodimlar');
-  assert.equal(staffRoute.capability, 'menu_admin');
+  assert.equal(staffRoute.capability, 'staff_admin');
 });
 
 test('creatable roles coverage', () => {

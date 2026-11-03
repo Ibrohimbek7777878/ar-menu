@@ -1,5 +1,5 @@
 export const staffRoute = {
   path: 'staff',
   title: 'Xodimlar',
-  capability: 'menu_admin',
+  capability: 'staff_admin',
 };

@@ -46,7 +46,7 @@ export const adminRoutes: RouteObject[] = [
   {
     path: 'staff',
     element: (
-      <CapabilityGuard capability="menu_admin">
+      <CapabilityGuard capability="staff_admin">
         <StaffPage />
       </CapabilityGuard>
     ),
@@ -62,7 +62,7 @@ export const adminRoutes: RouteObject[] = [
   {
     path: 'settings',
     element: (
-      <CapabilityGuard capability="menu_admin">
+      <CapabilityGuard capability="settings_admin">
         <SettingsPage />
       </CapabilityGuard>
     ),

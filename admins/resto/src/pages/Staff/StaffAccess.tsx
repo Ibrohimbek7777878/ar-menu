@@ -5,7 +5,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, t, useToast } from '@admins/shared';
-import { Check, Copy, KeyRound, Share2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, KeyRound, Share2 } from 'lucide-react';
 import type { StaffItem } from './api';
 import { buildShareTexts, copyText, planShare } from './access';
 import { browserCopyEnv, canNativeShare, nativeShare, openExternal } from './accessBrowser';
@@ -168,11 +168,20 @@ export const StaffAccess: React.FC<StaffAccessProps> = ({
               {copied ? <Check size={18} /> : <Copy size={18} />}
               {copied ? A.copied : A.copyLink}
             </Button>
+            <Button
+              variant="secondary"
+              onClick={() => window.open(loginUrl, '_blank', 'noopener,noreferrer')}
+              style={{ ...TAP_TARGET, flex: '1 1 150px' }}
+            >
+              <ExternalLink size={18} />
+              {A.openLink}
+            </Button>
             <Button variant="secondary" onClick={handleShare} style={{ ...TAP_TARGET, flex: '1 1 120px' }}>
               <Share2 size={18} />
               {A.share}
             </Button>
           </div>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>{A.openHint}</p>
         </div>
       ) : (
         <div

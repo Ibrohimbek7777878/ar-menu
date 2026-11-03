@@ -29,8 +29,16 @@ import {
 import { StaffItem } from './api';
 import { StaffAccess, TAP_TARGET } from './StaffAccess';
 import { StaffCredentials, type CredentialsState } from './StaffCredentials';
+import { overrideCounts } from './permissions';
+import { StaffProfile } from './StaffProfile';
 import { useStaff } from './useStaff';
 import { restoUz, roleLabel } from '../../i18n/uz';
+
+/**
+ * Eski "Tahrirlash" oynasi (ism, telefon, rol) o'chirilmagan, faqat yashirilgan (AGENTS 4-qoida): uning hammasi endi profil oynasida
+ * (ma'lumotlar, login va parol, rol va ruxsatlar). Yangi xodim yaratish shu oynada qoladi.
+ */
+const LEGACY_EDIT_FORM: boolean = false;
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   shop_owner: {
@@ -63,6 +71,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
 export const StaffPage: React.FC = () => {
   const {
     staff,
+    allStaff,
     summary,
     loading,
     error,
@@ -74,6 +83,7 @@ export const StaffPage: React.FC = () => {
     editStaff,
     toggleBlock,
     resetPassword,
+    setPassword,
     refresh,
   } = useStaff();
 
@@ -100,6 +110,10 @@ export const StaffPage: React.FC = () => {
   // Kirish oynasi: xodim qayerdan va qanday kiradi (havola, ulashish, yo'riqnoma)
   const [accessStaff, setAccessStaff] = useState<StaffItem | null>(null);
 
+  // Xodim profili (ma'lumotlar, login va parol, rol va ruxsatlar): ro'yxatdagi xodim id'si. Ro'yxat filtri xodimni yashirsa ham profil ochiq qoladi.
+  const [profileId, setProfileId] = useState<number | null>(null);
+  const profileStaff = profileId === null ? null : (allStaff.find((s) => s.id === profileId) ?? null);
+
   // Reset Password Modal
   const [resetModalStaff, setResetModalStaff] = useState<StaffItem | null>(null);
   const [customPassword, setCustomPassword] = useState('');
@@ -121,6 +135,10 @@ export const StaffPage: React.FC = () => {
 
   // Open Edit
   const handleOpenEdit = (user: StaffItem) => {
+    if (!LEGACY_EDIT_FORM) {
+      setProfileId(user.id);
+      return;
+    }
     setEditingStaff(user);
     setForm({
       username: user.username,
@@ -525,6 +543,45 @@ export const StaffPage: React.FC = () => {
                       )}
                     </div>
 
+                    {(() => {
+                      const counts = overrideCounts(user.permissions);
+                      if (counts.extra === 0 && counts.revoked === 0) return null;
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {counts.extra > 0 && (
+                            <span
+                              style={{
+                                padding: '2px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                background: 'var(--accent-emerald-bg)',
+                                color: 'var(--accent-emerald)',
+                                border: '1px solid var(--accent-emerald-border)',
+                              }}
+                            >
+                              {t("+{n} qo'shimcha ruxsat", { n: counts.extra })}
+                            </span>
+                          )}
+                          {counts.revoked > 0 && (
+                            <span
+                              style={{
+                                padding: '2px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                background: 'var(--accent-rose-bg)',
+                                color: 'var(--accent-rose)',
+                                border: '1px solid var(--accent-rose-border)',
+                              }}
+                            >
+                              {t('{n} cheklangan', { n: counts.revoked })}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {user.last_login && (
                       <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
                         {restoUz.staffPage.lastLogin}: {formatHumanDateTime(user.last_login)}
@@ -581,7 +638,7 @@ export const StaffPage: React.FC = () => {
                     style={{ ...TAP_TARGET, flex: 1 }}
                   >
                     <Edit2 size={14} style={{ marginRight: '4px' }} />
-                    {t('Tahrirlash')}
+                    {t('Profil va ruxsatlar')}
                   </Button>
 
                   <Button
@@ -815,6 +872,23 @@ export const StaffPage: React.FC = () => {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Xodim profili: ma'lumotlar, login va parol, rol va ruxsatlar. Bir martalik parol / parolni almashtirish oynasi ochilganda yashiriladi. */}
+      {profileStaff && (
+        <StaffProfile
+          staff={profileStaff}
+          allStaff={allStaff}
+          restaurantName={restaurantName}
+          hidden={Boolean(revealModal || resetModalStaff || accessStaff)}
+          onClose={() => setProfileId(null)}
+          onSave={editStaff}
+          onSetPassword={setPassword}
+          onPasswordSet={(user, password) =>
+            setRevealModal({ mode: 'password_reset', staff: user, username: user.username, password })
+          }
+          onServerReset={(user) => setResetModalStaff(user)}
+        />
       )}
 
       {/* Xodim qo'shildi / parol yangilandi: bir martalik parol, kirish havolasi va tayyor xabar */}

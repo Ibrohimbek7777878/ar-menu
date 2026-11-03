@@ -59,6 +59,9 @@ export const restoUzSource = {
       linkLabel: 'Kirish havolasi',
       copyLink: 'Havolani nusxalash',
       copied: 'Nusxalandi',
+      openLink: 'Ochish',
+      openHint:
+        "Xodim ko'rinishini tekshirish uchun yashirin (inkognito) oynada oching: siz hozir o'z hisobingizda turibsiz.",
       copyFailed: "Nusxalab bo'lmadi. Havolani belgilab, qo'lda nusxalang.",
       noLink: 'Hozircha kirish havolasi mavjud emas.',
       share: 'Ulashish',

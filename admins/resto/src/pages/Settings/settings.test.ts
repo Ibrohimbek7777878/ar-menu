@@ -5,7 +5,7 @@ import { settingsRoute } from './route.ts';
 test('settingsRoute has correct path and capability', () => {
   assert.equal(settingsRoute.path, 'settings');
   assert.equal(settingsRoute.title, 'Restoran Sozlamalari');
-  assert.equal(settingsRoute.capability, 'menu_admin');
+  assert.equal(settingsRoute.capability, 'settings_admin');
 });
 
 test('service fee percent bounds validation', () => {
