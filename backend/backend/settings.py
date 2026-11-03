@@ -555,6 +555,24 @@ UZCARD_CALLBACK_URL = os.environ.get('UZCARD_CALLBACK_URL', '')
 # ─── AI ───────────────────────────────────────────────────────────────
 AI_PROVIDER = os.environ.get('AI_PROVIDER', 'openai')
 AI_API_KEY = os.environ.get('AI_API_KEY', '')
+# Menyu rasmini o'qish (ommaviy qo'shish): rasm tushunadigan model. Groq'da sinab ko'rilgan: qwen/qwen3.8-27b
+AI_VISION_MODEL = os.environ.get('AI_VISION_MODEL', 'qwen/qwen3.8-27b')
+# Menyu importi vaqtinchalik rasmlari: MEDIA_ROOT'DAN TASHQARIDA (media ochiq beriladi), Docker'da yoziladigan hajm CACHE_DIR.
+# Testlarda har ishga tushirishda alohida vaqtinchalik papka (haqiqiy papkaga yozilmaydi).
+if RUNNING_TESTS:
+    import tempfile
+    MENU_IMPORT_TMP_DIR = tempfile.mkdtemp(prefix='menu_import_tmp_')
+else:
+    MENU_IMPORT_TMP_DIR = os.environ.get('MENU_IMPORT_TMP_DIR') or os.path.join(
+        os.environ.get('CACHE_DIR', str(BASE_DIR / 'cache')), 'import_tmp')
+# Internetdan tanlangan menyu rasmini server yuklab oladigan saytlar (SSRF himoyasi: boshqa host rad etiladi).
+# `*.domen` — pastki domenlar; vergul bilan ajratilgan env bilan almashtiriladi.
+MENU_IMAGE_ALLOWED_HOSTS = [
+    h.strip().lower() for h in os.environ.get('MENU_IMAGE_ALLOWED_HOSTS', '').split(',') if h.strip()
+] or [
+    'upload.wikimedia.org', 'commons.wikimedia.org', '*.wikimedia.org',
+    'live.staticflickr.com', '*.staticflickr.com', 'images.pexels.com',
+]
 AI_TEXT_MODEL_FAST = os.environ.get('AI_TEXT_MODEL_FAST', 'gpt-4o-mini')
 AI_TEXT_MODEL_QUALITY = os.environ.get('AI_TEXT_MODEL_QUALITY', 'gpt-4o')
 AI_IMAGE_MODEL = os.environ.get('AI_IMAGE_MODEL', 'dall-e-3')

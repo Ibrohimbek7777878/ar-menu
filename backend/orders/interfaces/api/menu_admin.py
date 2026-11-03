@@ -4,8 +4,10 @@ Faqat restoran boshqaruvchilari (super_admin, shop_owner, shop_manager) uchun ru
 Ofitsiant, oshpaz va hostess rollariga taqiqlangan (403 Forbidden).
 Barcha amallar qat'iy tenant isolation (IDOR himoyasi) va AuditLog bilan bajariladi.
 """
+from collections import namedtuple
 from uuid import uuid4
 
+from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, Paginator
 from django.db import transaction
 from django.db.models import Q
@@ -33,6 +35,7 @@ from orders.interfaces.api.permissions import (
     capability,
 )
 from products.ar_validation import ArModelError, validate_ar_model_ref
+from products.menu_import import image_tokens
 from products.models import Product
 from web.restaurant_auth import staff_shop
 
@@ -41,6 +44,7 @@ NAME_MAX = 200                     # Product.name / Category.name uzunligi
 DESCRIPTION_MAX = 5000
 LIST_ITEM_MAX = 50                 # allergen / diet tag uzunligi
 LIST_ITEMS_MAX = 30
+IMAGE_TOKEN_MAX = 128               # image_tokens: 32 belgi; ortiqchasi shubhali kirish
 # Mehmon menyusi tarjimalari (ixtiyoriy; bo'sh bo'lsa mehmon o'zbekcha nom/tavsifni ko'radi): (maydon, xabardagi nomi, chegara)
 TRANSLATION_FIELDS = (
     ('name_ru', 'Ruscha nom', NAME_MAX),
@@ -134,6 +138,39 @@ def _clean_translations(data):
     return cleaned
 
 
+_TokenPhoto = namedtuple('_TokenPhoto', 'file real_photo credit source_url')
+_IMAGE_TOKEN_EXPIRED = "Rasm tokeni yaroqsiz, muddati o'tgan (2 soat), allaqachon ishlatilgan yoki boshqa restoranniki. Rasmni qaytadan tanlang."
+
+
+def _clean_image_token(data, shop):
+    """`image_token` (ixtiyoriy): bo'sh → None; mavjud, shu restoranniki va muddati o'tmagan bo'lsa token, aks holda 400 `image_token`.
+    Bu faqat tekshiruv — token hali ISTE'MOL QILINMAYDI (taom saqlanishidan oldin boshqa maydon xato bersa token yonib ketmasin)."""
+    if 'image_token' not in data:
+        return None
+    token = parse_text(data.get('image_token'), 'image_token', max_length=IMAGE_TOKEN_MAX)
+    if not token:
+        return None
+    if image_tokens.peek_temp_image(token, shop.id) is None:
+        raise InputError(_IMAGE_TOKEN_EXPIRED, 'image_token')
+    return token
+
+
+def _take_image_token(token, shop):
+    """Tokenni bir martalik iste'mol qiladi → rasm fayli va manba ma'lumoti.
+    O'z rasmi (`real_photo`) bo'lsa kredit/manba bo'sh; internetdan olingan bo'lsa kredit va manba havolasi saqlanadi."""
+    taken = image_tokens.consume_temp_image(token, shop.id)
+    content = taken and (taken.get('bytes') or taken.get('data'))
+    if not content:
+        raise InputError(_IMAGE_TOKEN_EXPIRED, 'image_token')
+    real_photo = bool(taken.get('real_photo', True))
+    return _TokenPhoto(
+        file=ContentFile(content, name=f'{uuid4().hex}.jpg'),
+        real_photo=real_photo,
+        credit='' if real_photo else str(taken.get('credit') or '')[:255],
+        source_url='' if real_photo else str(taken.get('source_url') or '')[:500],
+    )
+
+
 def _serialize_product(p):
     """Mahsulotni to'liq va xavfsiz JSON ko'rinishida formatlash."""
     return {
@@ -153,6 +190,8 @@ def _serialize_product(p):
         } if p.category else None,
         'category_id': p.category_id,
         'image': p.image.url if p.image else None,
+        'image_credit': p.image_credit or '',
+        'image_source_url': p.image_source_url or '',
         'ar_model': p.ar_model or None,
         'has_3d': bool(p.has_3d),
         'is_available': bool(p.is_available),
@@ -261,7 +300,10 @@ class MenuProductListCreateView(RestoAdminAPIView):
         has_3d = bool(ar_model) or (parse_bool(data.get('has_3d'), 'has_3d') if 'has_3d' in data else False)
 
         has_real_photo = False
+        image_token = _clean_image_token(data, shop)
         image_file = request.FILES.get('image')
+        if image_file and image_token:
+            raise InputError("Rasm faylini ham, image_token ni ham bir vaqtda yuborib bo'lmaydi — bittasini tanlang", 'image_token')
         if image_file:
             err = validate_uploaded_file(image_file)
             if err:
@@ -269,6 +311,9 @@ class MenuProductListCreateView(RestoAdminAPIView):
             has_real_photo = True
 
         with transaction.atomic():
+            photo = _take_image_token(image_token, shop) if image_token else None
+            if photo:
+                has_real_photo = photo.real_photo
             product = Product(
                 shop=shop,
                 name=name,
@@ -285,8 +330,12 @@ class MenuProductListCreateView(RestoAdminAPIView):
                 diet_tags=diet_tags,
                 ar_model=ar_model,
                 has_3d=has_3d,
+                image_credit=photo.credit if photo else '',
+                image_source_url=photo.source_url if photo else '',
             )
-            if image_file:
+            if photo:
+                product.image = photo.file
+            elif image_file:
                 product.image = image_file
             product.save()
 
@@ -296,7 +345,8 @@ class MenuProductListCreateView(RestoAdminAPIView):
                 actor=request.user,
                 target_type='product',
                 target_id=product.id,
-                new_value={'action': 'create', 'name': product.name, 'price': price, **translation_audit},
+                new_value={'action': 'create', 'name': product.name, 'price': price, **translation_audit,
+                           **({'image': 'own' if photo.real_photo else 'internet'} if photo else {})},
             )
 
         return Response(_serialize_product(product), status=status.HTTP_201_CREATED)
@@ -377,15 +427,26 @@ class MenuProductDetailView(RestoAdminAPIView):
         if 'has_3d' in data:
             product.has_3d = parse_bool(data.get('has_3d'), 'has_3d')
 
+        image_token = _clean_image_token(data, shop)
         image_file = request.FILES.get('image')
+        if image_file and image_token:
+            raise InputError("Rasm faylini ham, image_token ni ham bir vaqtda yuborib bo'lmaydi — bittasini tanlang", 'image_token')
         if image_file:
             err = validate_uploaded_file(image_file)
             if err:
                 return _error(err)
             product.image = image_file
             product.has_real_photo = True
+            product.image_credit = ''           # haqiqiy rasm yuklandi: internetdan olingan namuna kredit/manbasi endi yolg'on bo'lardi
+            product.image_source_url = ''
 
         with transaction.atomic():
+            photo = _take_image_token(image_token, shop) if image_token else None
+            if photo:
+                product.image = photo.file
+                product.has_real_photo = photo.real_photo
+                product.image_credit = photo.credit
+                product.image_source_url = photo.source_url
             product.save()
             log_audit(
                 'stock_change',
@@ -397,6 +458,7 @@ class MenuProductDetailView(RestoAdminAPIView):
                 new_value={
                     'action': 'update', 'name': product.name, 'price': int(product.price), 'is_available': product.is_available,
                     **({'translations_changed': changed_translations} if changed_translations else {}),
+                    **({'image': 'own' if photo.real_photo else 'internet'} if photo else {}),
                 },
             )
 
@@ -453,6 +515,8 @@ class MenuProductDuplicateView(RestoAdminAPIView):
                 prep_minutes=product.prep_minutes,
                 cook_min=product.cook_min,
                 has_real_photo=product.has_real_photo,
+                image_credit=product.image_credit,          # nusxa ham xuddi shu rasmni ishlatadi: muallif ko'rsatilishi yo'qolmasin
+                image_source_url=product.image_source_url,
                 allergens=list(product.allergens or []),
                 diet_tags=list(product.diet_tags or []),
                 is_available=True,

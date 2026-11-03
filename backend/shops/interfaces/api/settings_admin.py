@@ -26,6 +26,7 @@ from shops.guest_languages import is_valid_languages, normalize_languages
 from shops.guest_motion import MOTION_CHOICES, normalize_motion
 from shops.guest_theme import THEME_CHOICES, normalize_theme
 from shops.guest_season import SEASON_CHOICES, normalize_season
+from shops.menu_import_ai import MENU_IMPORT_AI_CHOICES, normalize_menu_import_ai
 from web.restaurant_auth import staff_shop
 
 
@@ -68,6 +69,7 @@ class SettingsAdminView(RestoAdminAPIView):
             'guest_dish_sheet': normalize_dish_sheet(bp.get('guest_dish_sheet')),
             'guest_theme': normalize_theme(bp.get('guest_theme')),
             'guest_languages': normalize_languages(bp.get('guest_languages')),
+            'menu_import_ai': normalize_menu_import_ai(bp.get('menu_import_ai')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -163,6 +165,13 @@ class SettingsAdminView(RestoAdminAPIView):
             if sheet not in DISH_SHEET_CHOICES:
                 raise InputError("Taom oynasi: on yoki off bo'lishi kerak", 'guest_dish_sheet')
             bp['guest_dish_sheet'] = sheet
+            bp_changed = True
+
+        if 'menu_import_ai' in data:
+            import_ai = parse_text(data['menu_import_ai'], 'menu_import_ai', max_length=10).strip().lower()
+            if import_ai not in MENU_IMPORT_AI_CHOICES:
+                raise InputError("Menyuni AI orqali o'qish: on yoki off bo'lishi kerak", 'menu_import_ai')
+            bp['menu_import_ai'] = import_ai
             bp_changed = True
 
         if 'guest_theme' in data:

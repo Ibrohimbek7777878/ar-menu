@@ -22,6 +22,12 @@ class Product(SoftDeleteBehaviour, models.Model):
     )
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, allow_unicode=True)
+    # Internetdan olingan namuna rasm: muallif/litsenziya matni (mehmon taom oynasida kichik yozuv) va manba havolasi.
+    # Bo'sh = egasining o'z rasmi. Haqiqiy rasm yuklansa tozalanadi.
+    image_credit = models.CharField(max_length=255, blank=True, default='')
+    image_source_url = models.URLField(max_length=500, blank=True, default='')
+    # Ommaviy qo'shish (fayl/matn/rasm) partiyasi: "oxirgi importni qaytarish" uchun
+    import_batch = models.CharField(max_length=36, blank=True, default='', db_index=True)
     description = models.TextField(blank=True)
     # Mehmon menyusi tarjimalari (ixtiyoriy). Bo'sh bo'lsa mehmon o'zbekcha `name` / `description` ni ko'radi.
     name_ru = models.CharField('Nomi (ruscha)', max_length=200, blank=True)

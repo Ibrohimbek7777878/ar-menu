@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from orders.interfaces.api.menu_admin import (
     MenuCategoryListCreateView,
     MenuProductAvailabilityView,
@@ -17,4 +17,7 @@ urlpatterns = [
     path('products/<int:pk>/feature/', MenuProductFeatureView.as_view(), name='menu_admin_product_feature'),
     path('products/<int:pk>/restore/', MenuProductRestoreView.as_view(), name='menu_admin_product_restore'),
     path('categories/', MenuCategoryListCreateView.as_view(), name='menu_admin_categories'),
+    # Ommaviy qo'shish (fayl/matn/rasm) va internetdan rasm topish — docs/.../TZ_OMMAVIY_MENYU_KIRITISH_2026-11-03.md
+    path('import/', include('orders.interfaces.api.menu_import_urls')),
+    path('image-search/', include('orders.interfaces.api.menu_images_urls')),
 ]

@@ -62,10 +62,25 @@ def guest_category_translations(category):
     return result
 
 
+def guest_image_credit(product):
+    """Internetdan olingan namuna rasm uchun muallif/litsenziya: `image_credit` ("Muallif · CC BY") va manba havolasi `image_source_url`.
+
+    Faqat to'ldirilganda qaytariladi (restoranning o'z rasmida kalit umuman yo'q). Havola faqat http(s) bo'lsa beriladi."""
+    credit = _clean(getattr(product, 'image_credit', ''))
+    if not credit:
+        return {}
+    result = {'image_credit': credit}
+    source_url = _clean(getattr(product, 'image_source_url', ''))
+    if source_url.lower().startswith(('https://', 'http://')):
+        result['image_source_url'] = source_url
+    return result
+
+
 def guest_dish_extras(product, new_cutoff=None):
     category = product.category
     return {
         **guest_dish_translations(product),
+        **guest_image_credit(product),
         'images': [f.url for f in (product.image, product.image2, product.image3, product.image4) if f],
         'weight': weight_label(product.weight_g),
         'prep_time': f'~{product.prep_minutes} daq' if product.prep_minutes else '',
