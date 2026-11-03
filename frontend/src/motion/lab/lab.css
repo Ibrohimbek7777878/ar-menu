@@ -1,0 +1,34 @@
+/* Animatsiya maketi (M0) uchun joylashuv. Ranglar, radius va soyalar faqat index.css tokenlaridan. */
+.lab { max-width: 980px; margin: 0 auto; padding: 20px 16px 80px; color: var(--text-primary); }
+.lab h1 { font-family: 'Outfit', sans-serif; font-size: 28px; margin: 0 0 4px; }
+.lab-sub { color: var(--text-secondary); margin: 0 0 16px; font-size: 14px; }
+.lab-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px; }
+.lab-seg { display: inline-flex; background: var(--bg-surface-subtle); border-radius: 999px; padding: 4px; gap: 2px; }
+.lab-seg button { border: 0; background: transparent; padding: 8px 14px; border-radius: 999px; font: inherit; font-weight: 600; font-size: 13px; color: var(--text-secondary); cursor: pointer; min-height: 40px; }
+.lab-seg button[aria-pressed='true'] { background: var(--bg-surface-dark); color: #fff; }
+.lab-chip { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: var(--bg-surface); border: 1px solid rgb(24 21 19 / 0.1); color: var(--text-secondary); }
+.lab-chip[data-ok='true'] { border-color: var(--status-success); color: var(--text-primary); }
+.lab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.lab-card { background: var(--bg-surface); border-radius: var(--radius-lg, 20px); padding: 18px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 12px; }
+.lab-card h2 { font-family: 'Outfit', sans-serif; font-size: 17px; margin: 0; }
+.lab-tag { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 6px; background: var(--brand-primary-subtle); color: var(--brand-deep); }
+.lab-tag.b { background: var(--bg-surface-dark); color: #fff; }
+.lab-note { margin: 0; font-size: 13px; color: var(--text-muted); }
+.lab-wide { grid-column: 1 / -1; }
+.lab-stage { border-radius: 24px; background: radial-gradient(circle at 50% 40%, var(--brand-primary-light), var(--brand-primary-subtle)); max-width: 420px; width: 100%; margin: 0 auto; }
+.lab-dish { position: absolute; inset: 12%; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #FED7AA, var(--brand-warm)); font-family: 'Outfit', sans-serif; font-size: 72px; font-weight: 700; color: rgb(255 255 255 / 0.85); box-shadow: 0 30px 40px -24px rgb(var(--brand-primary-rgb) / 0.5); }
+.lab-row { display: flex; align-items: center; gap: 12px; }
+.lab-cart { position: relative; width: 44px; height: 44px; border-radius: 14px; background: var(--bg-surface-subtle); display: grid; place-items: center; flex: none; }
+.lab-cart b { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--brand-primary); color: #fff; font-size: 12px; display: grid; place-items: center; }
+.lab-dishcard { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.lab-price { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--brand-primary-hover); }
+.lab-bell { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--brand-primary-light); color: var(--brand-primary-hover); flex: none; }
+.lab-btn { border: 0; border-radius: 12px; min-height: 44px; padding: 0 16px; font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.lab-btn.ghost { background: var(--bg-surface-subtle); color: var(--text-primary); }
+.lab-btn.danger { background: var(--brand-accent-light); color: var(--status-danger); border: 1px solid rgb(220 38 38 / 0.25); width: 100%; }
+.lab-btn.danger[data-armed='true'] { background: var(--status-danger); color: #fff; }
+.lab-svc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lab-svc button { border: 1.5px solid rgb(24 21 19 / 0.1); background: var(--bg-surface); border-radius: 14px; padding: 12px 6px; font: inherit; font-weight: 600; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; min-height: 72px; }
+.lab-svc button[aria-pressed='true'] { border-color: var(--brand-primary); background: var(--brand-primary-light); color: var(--brand-primary-hover); }
+.lab-scenes { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.lab-scenes figure { margin: 0; display: grid; justify-items: center; gap: 6px; }

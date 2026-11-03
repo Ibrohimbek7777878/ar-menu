@@ -1,0 +1,82 @@
+/* A/B qatlam animatsiyalari (src/motion). Faqat yangi dizayn; ranglar faqat index.css tokenlaridan.
+   Daraja `<html data-motion>`: full = hammasi, light = faqat bir martalik effektlar (cheksiz animatsiyasiz), off = hech narsa.
+   Faqat `transform` / `opacity` / `stroke-dashoffset` animatsiya qilinadi. */
+
+/* ── Tugma holati (setButtonState): yozuv joyida qoladi, ustida aylana / ✓ / ✕ ───────────────────────── */
+[data-design='new'] [data-fx-state] { position: relative; overflow: hidden; }
+[data-design='new'] [data-fx-state] > :not(.fx-ind) { transition: opacity 0.15s ease; }
+[data-design='new'] [data-fx-state='loading'] > :not(.fx-ind),
+[data-design='new'] [data-fx-state='success'] > :not(.fx-ind),
+[data-design='new'] [data-fx-state='error'] > :not(.fx-ind) { opacity: 0; }
+
+.fx-ind { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: #fff; }
+.fx-ind svg { grid-area: 1 / 1; width: 22px; height: 22px; opacity: 0; }
+[data-fx-state='loading'] .fx-spin { opacity: 1; animation: fx-rot 0.8s linear infinite; }
+[data-fx-state='success'] .fx-check,
+[data-fx-state='error'] .fx-cross { opacity: 1; }
+[data-fx-state='success'] .fx-check path,
+[data-fx-state='error'] .fx-cross path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: fx-draw 0.38s 0.06s ease-out forwards; }
+[data-design='new'] [data-fx-state='success'] { background: var(--status-success) !important; box-shadow: 0 4px 14px rgb(22 163 74 / 0.35) !important; }
+[data-design='new'] [data-fx-state='error'] { background: var(--status-danger) !important; box-shadow: 0 4px 14px rgb(220 38 38 / 0.35) !important; }
+
+@keyframes fx-rot { to { transform: rotate(360deg); } }
+@keyframes fx-draw { to { stroke-dashoffset: 0; } }
+
+/* ── Buyurtma holati sahnalari (StatusScene) ───────────────────────────────────────────────────────── */
+.fx-scene { display: block; overflow: visible; }
+.fx-scene .bg { fill: var(--brand-primary-light); }
+.fx-scene .line { fill: none; stroke: var(--brand-primary); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.fx-scene .solid { fill: var(--brand-primary); }
+.fx-scene .deep { fill: var(--brand-deep); }
+.fx-scene .paper { fill: #fff; stroke: var(--brand-primary); stroke-width: 4; }
+.fx-scene .ok { fill: none; stroke: var(--status-success); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.fx-scene .muted { fill: none; stroke: var(--text-muted); stroke-width: 3; stroke-linecap: round; opacity: 0.55; }
+.fx-scene .spark { fill: none; stroke: var(--brand-warm); stroke-width: 3; stroke-linecap: round; }
+.fx-scene .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: fx-draw 0.7s 0.15s ease-out forwards; }
+.fx-scene .pivot { transform-origin: 48px 48px; }
+.fx-scene .hang { transform-origin: 48px 22px; }
+.fx-scene .rise { animation: fx-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) backwards; transform-origin: 48px 60px; }
+@keyframes fx-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Cheksiz harakat faqat `full` darajada */
+[data-motion='full'] .fx-scene-pending .hand-m { animation: fx-rot 4s linear infinite; }
+[data-motion='full'] .fx-scene-pending .hand-h { animation: fx-rot 48s linear infinite; }
+[data-motion='full'] .fx-scene-preparing .lid { animation: fx-lid 1.1s ease-in-out infinite; transform-origin: 70px 50px; }
+[data-motion='full'] .fx-scene-preparing .steam { animation: fx-steam 2.2s ease-out infinite; }
+[data-motion='full'] .fx-scene-preparing .steam.s2 { animation-delay: 0.7s; }
+[data-motion='full'] .fx-scene-preparing .steam.s3 { animation-delay: 1.4s; }
+[data-motion='full'] .fx-scene-preparing .flame { animation: fx-flame 0.5s ease-in-out infinite alternate; transform-origin: 48px 86px; }
+[data-motion='full'] .fx-scene-ready .bell { animation: fx-bell 2.4s ease-in-out infinite; }
+[data-motion='full'] .fx-scene-ready .spark { animation: fx-twinkle 1.6s ease-in-out infinite; }
+[data-motion='full'] .fx-scene-ready .spark.b { animation-delay: 0.5s; }
+[data-motion='full'] .fx-scene-ready .spark.c { animation-delay: 1s; }
+[data-motion='full'] .fx-scene-out_for_delivery .route { animation: fx-route 1.1s linear infinite; }
+[data-motion='full'] .fx-scene-out_for_delivery .pin { animation: fx-bob 1.4s ease-in-out infinite; }
+/* `light`: bir martalik holat saqlanadi, bug' va qo'ng'iroq tinch turadi */
+[data-motion='light'] .fx-scene-preparing .steam { opacity: 0.6; }
+
+.fx-scene-preparing .steam { fill: none; stroke: var(--text-muted); stroke-width: 3.5; stroke-linecap: round; opacity: 0.55; }
+.fx-scene-out_for_delivery .route { fill: none; stroke: var(--text-muted); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 8; opacity: 0.7; }
+
+@keyframes fx-lid { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-5deg) translateY(-2px); } }
+@keyframes fx-steam { 0% { transform: translateY(8px); opacity: 0; } 30% { opacity: 0.7; } 100% { transform: translateY(-14px); opacity: 0; } }
+@keyframes fx-flame { from { transform: scaleY(0.85); } to { transform: scaleY(1.12); } }
+@keyframes fx-bell { 0%, 55%, 100% { transform: rotate(0); } 10% { transform: rotate(-16deg); } 22% { transform: rotate(13deg); } 34% { transform: rotate(-8deg); } 45% { transform: rotate(4deg); } }
+@keyframes fx-twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes fx-route { to { stroke-dashoffset: -20; } }
+@keyframes fx-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* ── 3D sahna konteyneri (HeroPlate): three.js tayyor bo'lguncha zaxira (CSS) ko'rinib turadi ───────────── */
+.mx-hero3d { position: relative; width: 100%; aspect-ratio: 1; }
+.mx-hero3d > .mx-fallback { position: absolute; inset: 0; transition: opacity 0.4s ease; }
+.mx-hero3d > canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s ease; touch-action: pan-y; }
+.mx-hero3d[data-ready='true'] > canvas { opacity: 1; }
+.mx-hero3d[data-ready='true'] > .mx-fallback { opacity: 0; pointer-events: none; }
+
+/* Tizimda "harakatni kamaytirish": hamma yangi effekt o'chadi (holat belgilari statik qoladi) */
+@media (prefers-reduced-motion: reduce) {
+  [data-fx-state] .fx-spin,
+  .fx-scene *,
+  .fx-scene { animation: none !important; }
+  .fx-scene .draw, [data-fx-state] path { stroke-dashoffset: 0 !important; }
+}
