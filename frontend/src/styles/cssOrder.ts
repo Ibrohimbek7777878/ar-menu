@@ -20,6 +20,7 @@ import '../components/ui/Toast/Toast.css'
 import '../components/ui/StaffNavHeader/StaffNavHeader.css'
 import '../components/ui/CallWaiterModal/CallWaiterModal.css'
 import '../components/ui/DishSheet/DishSheet.css'
+import '../components/ui/SettingsSheet/SettingsSheet.css'
 import '../components/ui/NFCGatewayModal/NFCGatewayModal.css'
 import '../components/ui/QRGeneratorModal/QRGeneratorModal.css'
 import '../components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.css'
@@ -46,3 +47,5 @@ import './seasons.css'
 import './motion.css'
 // Animatsiya qatlami (A: tugma holati, holat sahnalari; B: 3D sahna konteyneri) — src/motion
 import '../motion/fx.css'
+// Kun/tun rejimi (admin sozlamasi `guest_theme`): faqat `html[data-theme='dark']` bo'lganda ishlaydi, eng oxirida
+import './darkTheme.css'

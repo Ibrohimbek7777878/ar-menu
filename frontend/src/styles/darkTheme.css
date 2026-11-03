@@ -1,0 +1,514 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Tun rejimi (admin sozlamasi `guest_theme`; mehmon: sozlamalar -> Kun / Tun / Avto).
+   Faqat `html[data-theme='dark']` bo'lganda ishlaydi — kunduzgi ko'rinish bu fayl bilan umuman o'zgarmaydi.
+   BITTA dizayn tili: xuddi shu olovrang apelsin, xuddi shu shriftlar, radiuslar va tartib; faqat fon, sirt va matn
+   ranglari iliq to'q jigarrangga o'tadi (sof qora emas: "ishtaha" iliqligi saqlanadi).
+   1) Tokenlar — index.css dagi o'zgaruvchilarning tun qiymatlari.
+   2) Qattiq yozilgan ranglar — token ishlatilmagan joylar uchun alohida qoidalar (pastda).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-primary: #141110;
+  --bg-surface: #1F1B18;
+  --bg-surface-subtle: #2A2420;
+  --bg-surface-dark: #0E0C0B;
+
+  --border-subtle: #332C27;
+  --border-strong: #4A4038;
+
+  --text-primary: #F5EFE8;
+  --text-secondary: #CFC6BC;
+  --text-muted: #9A9086;
+  --text-inverse: #FFFFFF;
+
+  /* Brend rangi o'zgarmaydi (bitta dizayn tili); och pog'onalar to'q fonda to'q apelsin tusiga o'tadi */
+  --brand-primary-light: #2A1B12;
+  --brand-primary-subtle: #3A2314;
+  --brand-tint-2: #5A3416;
+  --brand-tint-3: #7C4A22;
+  --brand-deep: #FDBA74;
+
+  --brand-accent-light: #2D1519;
+  --brand-accent-subtle: #3B1B21;
+  --status-success-light: #11261A;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 2px 10px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 10px 25px -4px rgb(var(--brand-primary-rgb) / 0.22), 0 4px 10px -2px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   1b) Qo'shimcha tun tokenlari — holat ranglari (muvaffaqiyat / ogohlantirish / xavf / ma'lumot) va hover sirti.
+   Kunduzgi och fon + to'q matn juftliklarining tundagi o'rni: to'q fon + och matn. Hammasi WCAG AA (>= 4.5:1),
+   hisoblangan qiymatlar hisobotda. `--dk-brand-text` — brend rangidagi MATN uchun (fasl ranglarida alohida, pastda).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] {
+  --dk-ok-bg: #11261A;      --dk-ok-text: #4ADE80;      --dk-ok-border: #1F4D30;
+  --dk-warn-bg: #2B2008;    --dk-warn-text: #FBBF24;    --dk-warn-border: #5B4310;
+  --dk-danger-bg: #2D1519;  --dk-danger-text: #F87171;  --dk-danger-border: #5B2229;
+  --dk-info-bg: #1B2038;    --dk-info-text: #A5B4FC;    --dk-info-border: #343C6B;
+  --dk-accent-text: #FB7185;                              /* --brand-accent (anor-qizil) matn sifatida */
+  --dk-hover: #332C27;                                    /* och hover sirtlar (#E5ECE7, #F8F5EE ...) o'rniga */
+  --dk-scrim: rgb(0 0 0 / 0.66);                          /* modal orqa fon (to'q sahifa ustida kunduzgidan kuchliroq) */
+  --dk-brand-text: var(--brand-primary);
+}
+
+/* Eslatma (ustuvorlik): bu fayldagi `html[data-theme='dark'] .sinf` = (0,2,1) — oddiy `.sinf` (0,1,0), `[data-design='new'] .sinf` (0,2,0)
+   va `.sinf.active` (0,2,0) dan kuchli. Lekin ASOSIY holatni bosganda unga tegishli hover/active/focus qoidasi (0,2,0) yo'qolib
+   qolmasligi uchun, qayerda asosiy holat bosilsa o'sha holatlar ham shu yerda qayta yoziladi. */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   2) Umumiy: kiritish maydonlari, o'rin belgisi (placeholder)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder { color: var(--text-muted); opacity: 1; }   /* #9A9086: 5.5:1 (sirt), 4.9:1 (ichki sirt) */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   3) Sarlavha, pastki navigatsiya, stol belgisi
+   ═══════════════════════════════════════════════════════════════════════════════ */
+/* designNew.css: rgba(255,255,255,.85) shaffof oq -> to'q shaffof sirt */
+html[data-theme='dark'] .header-nav { background: rgb(31 27 24 / 0.88); border-bottom-color: var(--border-subtle); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); }
+html[data-theme='dark'] .bottom-nav { box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4); }
+@media (min-width: 768px) {
+  /* faol havola: oq tabletka -> sirt (konteyner sahifa foni #141110 dan yorug'roq; brend matn 4.8:1, ichki sirtda esa 4.30 edi) */
+  html[data-theme='dark'] .desktop-nav-item.active { background: var(--bg-surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
+}
+html[data-theme='dark'] .react-table-badge.status-available { border-color: var(--dk-ok-border); background: var(--dk-ok-bg); }
+html[data-theme='dark'] .react-table-badge.status-occupied { background: var(--dk-warn-bg); }
+html[data-theme='dark'] .react-table-badge,
+html[data-theme='dark'] .react-search-bar,
+html[data-theme='dark'] .react-order-summary { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   4) Taom kartasi, toifa chiplari, qidiruv, miqdor tugmalari
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'][data-design='new'] .dish-card:hover { box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7); }
+html[data-theme='dark'] .tag-halal { background: var(--dk-ok-bg); color: var(--dk-ok-text); border-color: var(--dk-ok-border); }
+/* "360° aylantirish": oq shisha tugma -> to'q shisha (matn tokeni och, shuning uchun fon to'q bo'lishi shart) */
+html[data-theme='dark'] .btn-trigger-3d { background: rgb(31 27 24 / 0.92); }
+html[data-theme='dark'] .btn-trigger-3d:hover { background: var(--brand-primary); color: #FFFFFF; border-color: var(--brand-primary); }
+/* kartadagi miqdor tugmasi (+ / -) */
+html[data-theme='dark'] .stepper-btn { background: var(--bg-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+html[data-theme='dark'] .stepper-btn:hover { background: var(--brand-primary); color: #FFFFFF; }
+
+/* Faol toifa chipi: maketda "to'q" (text-primary fon) — tunda text-primary och bo'ladi, shuning uchun matn to'q (kontrast 16:1) */
+html[data-theme='dark'][data-design='new'] .chip-pill.active { color: var(--bg-primary); }
+html[data-theme='dark'] .chip-counter { background: rgb(255 255 255 / 0.08); }
+html[data-theme='dark'][data-design='new'] .chip-pill.active .chip-counter { background: rgb(20 17 16 / 0.14); color: var(--bg-primary); }
+html[data-theme='dark'] .chip-pill.active { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45); }
+
+html[data-theme='dark'] .search-clear-cross { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .search-clear-cross:hover { background: var(--brand-primary); color: #FFFFFF; }
+html[data-theme='dark'] .react-search-bar:focus-within { box-shadow: 0 0 0 3px rgb(var(--brand-primary-rgb) / 0.22); }
+
+/* QuantityStepper (eski yashil palitrali: #FAF7F0, #2F4836 ...) */
+html[data-theme='dark'] .react-stepper { background: var(--bg-surface-subtle); border-color: var(--border-subtle); }
+html[data-theme='dark'] .stepper-action-btn { background: var(--bg-surface); color: var(--dk-brand-text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); }
+html[data-theme='dark'] .stepper-action-btn:hover:not(:disabled) { background: var(--brand-primary); color: #FFFFFF; }
+html[data-theme='dark'] .stepper-display-value { color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   5) Tugmalar (Button.css) va belgilar (Badge.css)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .btn-primary:hover { background: var(--brand-primary-hover); }
+html[data-theme='dark'] .btn-secondary { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .btn-secondary:hover { background: var(--dk-hover); }
+html[data-theme='dark'] .btn-outline:hover { background: var(--bg-surface-subtle); border-color: var(--brand-primary); }
+html[data-theme='dark'] .btn-ghost:hover { background: rgb(255 255 255 / 0.06); color: var(--text-primary); }
+html[data-theme='dark'] .badge-success { background: var(--dk-ok-bg); color: var(--dk-ok-text); }
+html[data-theme='dark'] .badge-warning { background: var(--dk-warn-bg); color: var(--dk-warn-text); }
+html[data-theme='dark'] .badge-danger { background: var(--dk-danger-bg); color: var(--dk-danger-text); }
+html[data-theme='dark'] .badge-info { background: var(--dk-info-bg); color: var(--dk-info-text); }
+html[data-theme='dark'] .badge-neutral { background: var(--bg-surface-subtle); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   6) Menyu, savat, rasmiylashtirish
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .btn-toggle-3d-filter { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+html[data-theme='dark'] .btn-toggle-3d-filter.active { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+html[data-theme='dark'] .empty-icon-circle,
+html[data-theme='dark'] .empty-cart-icon-circle,
+html[data-theme='dark'] .ar-empty-icon-circle,
+html[data-theme='dark'] .empty-orders-icon-circle,
+html[data-theme='dark'] .cart-item-media { background: var(--bg-surface-subtle); }
+
+/* orqaga tugmalari: hover fon och (#F8F5EE) edi -> brend tusli to'q (brend matn 4.67:1) */
+html[data-theme='dark'] .btn-back-to-menu:hover,
+html[data-theme='dark'] .btn-back-to-cart:hover { background: var(--brand-primary-light); }
+html[data-theme='dark'] .btn-back-to-menu,
+html[data-theme='dark'] .btn-back-to-cart,
+html[data-theme='dark'] .cart-item-card,
+html[data-theme='dark'] .cart-note-box,
+html[data-theme='dark'] .empty-cart-card,
+html[data-theme='dark'] .checkout-section-card { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+html[data-theme='dark'] .cart-item-card:hover { border-color: var(--border-strong); }
+html[data-theme='dark'] .cart-items-count-badge { background: var(--brand-accent-light); color: var(--dk-accent-text); }
+html[data-theme='dark'] .btn-remove-item { border-color: var(--dk-danger-border); background: var(--dk-danger-bg); color: var(--dk-danger-text); }
+html[data-theme='dark'] .btn-remove-item:hover { background: var(--status-danger); color: #FFFFFF; border-color: var(--status-danger); }
+html[data-theme='dark'] .btn-go-menu-primary:hover { background: var(--brand-primary-hover); }
+
+/* kiritish maydonlari: #FAF9F5 -> ichki sirt; fokusda #FFF -> asosiy sirt (brend chegara bilan) */
+html[data-theme='dark'] .cart-note-input,
+html[data-theme='dark'] .field-input-text,
+html[data-theme='dark'] .input-table-quick,
+html[data-theme='dark'] .search-field,
+html[data-theme='dark'] .call-note-input,
+html[data-theme='dark'] .form-input,
+html[data-theme='dark'] .form-select,
+html[data-theme='dark'] .form-textarea { background: var(--bg-surface-subtle); color: var(--text-primary); }
+html[data-theme='dark'] .cart-note-input:focus,
+html[data-theme='dark'] .field-input-text:focus,
+html[data-theme='dark'] .input-table-quick:focus,
+html[data-theme='dark'] .search-field:focus,
+html[data-theme='dark'] .call-note-input:focus,
+html[data-theme='dark'] .form-input:focus,
+html[data-theme='dark'] .form-select:focus,
+html[data-theme='dark'] .form-textarea:focus { background: var(--bg-primary); }
+
+/* xizmat turi / to'lov usuli kartalari */
+html[data-theme='dark'] .service-type-option,
+html[data-theme='dark'] .payment-opt-card { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .service-type-option:hover,
+html[data-theme='dark'] .payment-opt-card:hover { background: var(--dk-hover); border-color: var(--border-strong); }
+html[data-theme='dark'] .service-type-option.active,
+html[data-theme='dark'] .payment-opt-card.active { background: var(--brand-primary-light); border-color: var(--brand-primary); }
+html[data-theme='dark'] .service-opt-icon,
+html[data-theme='dark'] .payment-opt-icon { background: var(--bg-surface); }
+html[data-theme='dark'] .btn-submit-order { box-shadow: 0 4px 14px rgb(var(--brand-primary-rgb) / 0.3); }
+html[data-theme='dark'] .btn-submit-order:hover:not(:disabled) { background: var(--brand-primary-hover); box-shadow: 0 6px 18px rgb(var(--brand-primary-rgb) / 0.4); }
+/* designNew.css "Buyurtmangiz" ro'yxati: avatar matni (brend-hover to'q) -> och apelsin pog'onasi */
+html[data-theme='dark'] .checkout-item-avatar { color: var(--brand-deep); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   7) Buyurtmalar, stol markazi, bron
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .table-badge-large,
+html[data-theme='dark'] .table-current-badge,
+html[data-theme='dark'] .arrival-table-circle,
+html[data-theme='dark'] .table-generic-icon,
+html[data-theme='dark'] .service-icon,
+html[data-theme='dark'] .opt-circle-icon { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .btn-service-pill,
+html[data-theme='dark'] .btn-print-order,
+html[data-theme='dark'] .meta-box,
+html[data-theme='dark'] .info-box,
+html[data-theme='dark'] .search-tab-btn,
+html[data-theme='dark'] .guests-stepper,
+html[data-theme='dark'] .btn-modal-close-icon { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .search-tab-btn.active { background: var(--brand-primary); border-color: var(--brand-primary); color: #FFFFFF; }
+html[data-theme='dark'] .btn-service-pill:hover { background: var(--brand-primary-light); border-color: var(--brand-primary); }
+/* Brend matnli ikkilamchi tugmalar: ichki sirtda (#2A2420) brend matn 4.30:1 edi (< 4.5) -> sarlavhadagi "Chaqiruv" tugmasi kabi brend tusli fon (4.67:1),
+   hover: to'liq brend + oq (xuddi `.btn-header-call-waiter:hover` kabi) */
+html[data-theme='dark'] .btn-call-waiter,
+html[data-theme='dark'] .btn-occupy-table,
+html[data-theme='dark'] .btn-found-confirm,
+html[data-theme='dark'] .btn-modal-close { background: var(--brand-primary-light); border-color: var(--brand-primary-subtle); }
+html[data-theme='dark'] .btn-call-waiter:hover,
+html[data-theme='dark'] .btn-occupy-table:hover,
+html[data-theme='dark'] .btn-found-confirm:hover,
+html[data-theme='dark'] .btn-modal-close:hover { background: var(--brand-primary); border-color: var(--brand-primary); color: #FFFFFF; }
+html[data-theme='dark'] .btn-request-bill:hover,
+html[data-theme='dark'] .btn-confirm-and-menu:hover,
+html[data-theme='dark'] .btn-submit-reservation:hover { background: var(--brand-primary-hover); }
+html[data-theme='dark'] .btn-hub-menu-link,
+html[data-theme='dark'] .btn-confirm-and-menu,
+html[data-theme='dark'] .btn-submit-reservation { box-shadow: 0 3px 12px rgb(var(--brand-primary-rgb) / 0.3); }
+html[data-theme='dark'] .btn-hub-orders-link { background: var(--bg-surface); }
+html[data-theme='dark'] .order-card:hover { border-color: var(--border-strong); }
+html[data-theme='dark'] .order-detail-modal { background: var(--bg-surface); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); }
+html[data-theme='dark'] .order-card-items { border-bottom-color: var(--border-subtle); }
+html[data-theme='dark'] .table-live-bill-card,
+html[data-theme='dark'] .order-card,
+html[data-theme='dark'] .service-card,
+html[data-theme='dark'] .reservation-form-card,
+html[data-theme='dark'] .arrival-detail-card,
+html[data-theme='dark'] .find-search-card,
+html[data-theme='dark'] .connect-option-card { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+
+/* Holat belgilari (buyurtma, stol, bron): och fon + to'q matn -> to'q tusli fon + och matn */
+html[data-theme='dark'] .badge-status-pending { background: var(--dk-warn-bg); color: var(--dk-warn-text); }
+html[data-theme='dark'] .dot-pending { background: var(--dk-warn-text); }
+html[data-theme='dark'] .badge-status-confirmed, html[data-theme='dark'] .pill-reserved { background: var(--dk-info-bg); color: var(--dk-info-text); }
+html[data-theme='dark'] .dot-confirmed { background: var(--dk-info-text); }
+html[data-theme='dark'] .badge-status-preparing { background: var(--brand-primary-light); color: var(--dk-brand-text); }   /* kunduzgi: och yashil-kulrang + #213827 (eski palitra qoldig'i) */
+html[data-theme='dark'] .dot-preparing { background: var(--dk-brand-text); }
+html[data-theme='dark'] .badge-status-ready, html[data-theme='dark'] .found-status-tag { background: var(--dk-ok-bg); color: var(--dk-ok-text); }
+/* stol belgilari: kunduzgi AMALDAGI ko'rinish — WaiterPanelPage.css (xodim, keyinroq ulanadi) TableHubPage'dagi ranglarni bosadi: bo'sh = kulrang, band = yashil */
+html[data-theme='dark'] .pill-free { background: var(--bg-surface-subtle); color: var(--text-secondary); }
+html[data-theme='dark'] .pill-occupied { background: var(--dk-ok-bg); color: var(--dk-ok-text); }
+html[data-theme='dark'] .dot-ready { background: var(--dk-ok-text); }
+html[data-theme='dark'] .badge-status-completed { background: var(--bg-surface-subtle); color: var(--text-secondary); }
+html[data-theme='dark'] .dot-completed { background: var(--text-secondary); }
+html[data-theme='dark'] .badge-status-default { background: var(--bg-surface-subtle); color: var(--text-muted); }
+html[data-theme='dark'] .dot-default { background: var(--text-muted); }
+
+html[data-theme='dark'] .btn-leave-table:hover { background: var(--dk-danger-bg); color: var(--dk-danger-text); border-color: var(--dk-danger-border); }
+/* FinancePage.css (xodim) GLOBAL `.form-label{color:#334155}`, `.form-input{border:#cbd5e1}`, `:focus{border:#059669 (yashil)}` ni mehmon bron formasiga ham tushiradi */
+html[data-theme='dark'] .form-label { color: var(--text-secondary); }
+html[data-theme='dark'] .form-input,
+html[data-theme='dark'] .form-select,
+html[data-theme='dark'] .form-textarea { border-color: var(--border-strong); }
+html[data-theme='dark'] .form-input:focus,
+html[data-theme='dark'] .form-select:focus,
+html[data-theme='dark'] .form-textarea:focus { border-color: var(--brand-primary); }
+
+/* tab konteyneri: faol tab (--bg-surface) undan YORUG'ROQ ko'rinishi uchun konteyner sahifa fonidan ham to'q */
+html[data-theme='dark'] .hub-mode-tabs,
+html[data-theme='dark'] .res-mode-switcher { background: var(--bg-primary); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+html[data-theme='dark'] .hub-tab.active,
+html[data-theme='dark'] .mode-btn.active,
+html[data-theme='dark'] .filter-tab.active { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+html[data-theme='dark'] .table-item-card.status-occupied { background: var(--bg-surface-subtle); border-color: var(--border-subtle); }
+html[data-theme='dark'] .res-code-badge { background: var(--brand-accent-light); color: var(--dk-accent-text); }
+/* anor-qizil (--brand-accent) matn sifatida to'q sirtda 3.6:1 edi -> och pushti tus */
+html[data-theme='dark'] .orders-kicker,
+html[data-theme='dark'] .form-badge,
+html[data-theme='dark'] .res-badge,
+html[data-theme='dark'] .found-res-num { color: var(--dk-accent-text); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   8) 360° sahifa (AR)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+/* brend kartadagi tavsif matni: #C8D8CC (eski yashil palitradan, apelsin ustida 2.4:1) -> deyarli oq (kunduzda ham shunday, kunduzgi o'zgartirilmagan) */
+html[data-theme='dark'] .ar-hero-desc,
+html[data-theme='dark'] .banner-3d-text p { color: rgb(255 255 255 / 0.95); }
+/* oq tugmalar brend kartalar ustida: oq fon + brend matn 3.56:1 edi -> brend-hover matn (5.18:1); fon oq qoladi (kunduzdagidek) */
+html[data-theme='dark'] .wn-btn-white,
+html[data-theme='dark'] .btn-banner-3d-cta,
+html[data-theme='dark'] .btn-ar-action-primary { color: var(--brand-primary-hover); }
+html[data-theme='dark'] .btn-ar-action-primary:hover { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .btn-ar-action-primary { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   9) Bosh sahifa (welcomeNew.css `wn-*` va eski WelcomePage.css)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .wn-root {
+  --wn-muted: var(--text-secondary);          /* #57534E (kunduzgi) -> 10:1 */
+  --wn-line: var(--border-subtle);            /* #E7E5E4 */
+  --wn-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+}
+html[data-theme='dark'] .wn-eyebrow,
+html[data-theme='dark'] .wn-btn-ghost,
+html[data-theme='dark'] .wn-dish,
+html[data-theme='dark'] .wn-opt { background: var(--bg-surface); }
+html[data-theme='dark'] .wn-tag { background: var(--bg-surface); box-shadow: 0 0 0 1px var(--border-subtle), var(--wn-shadow); }
+/* "360°" belgisi va "Hit" yorlig'i: kunduzgida --wn-ink (to'q) fon; tunda ink och bo'ladi -> belgi to'q qoladi (oq matn 19:1) */
+html[data-theme='dark'] .wn-badge360,
+html[data-theme='dark'] .wn-pill-dark { background: var(--bg-surface-dark); box-shadow: 0 0 0 1px var(--border-strong); }
+html[data-theme='dark'] .wn-main-dish { border-color: var(--bg-surface-subtle); box-shadow: 0 40px 60px -25px rgba(0, 0, 0, 0.8); }
+html[data-theme='dark'] .wn-mini { border-color: var(--bg-surface-subtle); }
+html[data-theme='dark'] .wn-steam i { background: rgb(255 255 255 / 0.3); }
+/* 3D sahna (three.js canvas): bug' sprite'lari canvas chegarasida to'g'ri chiziq bilan kesilgan. Kunduzgi och fonda bu ko'rinmaydi,
+   tunda kulrang tutunning qirrasi bo'lib qoladi -> canvas tepa chetini yumshoq so'ndiramiz (plita o'rtada, unga tegmaydi) */
+html[data-theme='dark'] .mx-hero3d > canvas { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24%); mask-image: linear-gradient(to bottom, transparent 0, #000 24%); }
+
+html[data-theme='dark'] .welcome-hero-badge,
+html[data-theme='dark'] .welcome-modal-card { background: var(--bg-surface); }
+html[data-theme='dark'] .btn-card-action-outline,
+html[data-theme='dark'] .welcome-modal-qr-frame { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .btn-card-action-outline:hover { background: var(--brand-primary-light); border-color: var(--brand-primary); }
+html[data-theme='dark'] .connect-option-card:hover { border-color: var(--border-strong); }
+html[data-theme='dark'] .btn-table-quick-submit:hover,
+html[data-theme='dark'] .btn-modal-3d:hover { background: var(--brand-primary-hover); }
+html[data-theme='dark'] .btn-banner-3d-cta:hover { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .welcome-modal-card { box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   10) Modal va pastdan ochiladigan oynalar
+   ═══════════════════════════════════════════════════════════════════════════════ */
+/* Orqa fon (scrim): kunduzgidagi to'q kul/ko'k-qora fon to'q sahifada deyarli ko'rinmaydi -> neytral qora */
+html[data-theme='dark'] .react-modal-backdrop,
+html[data-theme='dark'] .call-waiter-overlay,
+html[data-theme='dark'] .nfc-modal-overlay,
+html[data-theme='dark'] .welcome-modal-backdrop,
+html[data-theme='dark'] .order-detail-backdrop,
+html[data-theme='dark'] .ds-backdrop,
+html[data-theme='dark'] .st-backdrop { background: var(--dk-scrim); }
+
+/* Modal3D (3D oyna) */
+html[data-theme='dark'] .react-modal-dialog { background: var(--bg-surface); box-shadow: var(--shadow-modal); }
+html[data-theme='dark'] .modal-close-round { background: rgb(31 27 24 / 0.9); }
+html[data-theme='dark'] .modal-close-round:hover { background: var(--bg-surface); color: var(--brand-primary); }
+html[data-theme='dark'] .modal-3d-viewport { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .modal-3d-buttons { background: var(--bg-surface); }
+html[data-theme='dark'] .modal-spec-chip { background: var(--bg-surface-subtle); border-color: var(--border-subtle); color: var(--text-secondary); }
+/* `.text-green { color:#15803D !important }` AdminDashboardPage.css'dan GLOBAL tarzda tushadi (xodim CSS'i mehmon sahifasiga ham ta'sir qiladi) -> !important kerak */
+html[data-theme='dark'] .modal-spec-chip.text-green { background: var(--dk-ok-bg); border-color: var(--dk-ok-border); color: var(--dk-ok-text) !important; }
+html[data-theme='dark'] .btn-modal-ar:hover { background: var(--brand-primary); border-color: var(--brand-primary); color: #FFFFFF; }
+/* 3D bo'lmasa chiqadigan rasm ko'rinishi: kod ichida inline `style` bilan #F9F8F6 va oq tabletka yozilgan -> !important kerak */
+html[data-theme='dark'] .modal-2d-fallback { background: var(--bg-surface-subtle) !important; }
+html[data-theme='dark'] .modal-2d-fallback .modal-3d-tip { background: rgb(20 17 16 / 0.85) !important; color: var(--text-primary) !important; }
+html[data-theme='dark'] .modal-2d-fallback img { filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5)) !important; }
+
+/* Rasmsiz taom: bosh harf (55% shaffof apelsin, to'q tusli fonda 2.2:1) -> 85% */
+html[data-theme='dark'] .ds-placeholder,
+html[data-theme='dark'] .ds-mini-letter { color: rgb(var(--brand-primary-rgb) / 0.85); }
+html[data-theme='dark'][data-design='new'] .dish-card-placeholder::before { opacity: 0.85; }
+
+/* Taom oynasi (DishSheet) */
+html[data-theme='dark'] .ds-grab span { background: rgb(245 239 232 / 0.28); }
+html[data-theme='dark'] .ds-close { background: rgb(31 27 24 / 0.92); }
+html[data-theme='dark'] .ds-tile { border-color: var(--border-subtle); }
+html[data-theme='dark'] .ds-bar { border-top-color: var(--border-subtle); }
+/* narx / "yana" / mini narx / miqdor: kunduzgida --brand-primary-hover (to'q) matn; tunda u to'q fonda 3.3:1 -> brend rangining o'zi (4.8:1) */
+html[data-theme='dark'] .ds-price,
+html[data-theme='dark'] .ds-more,
+html[data-theme='dark'] .ds-mini-price,
+html[data-theme='dark'] .ds-stepper button { color: var(--dk-brand-text); }
+
+/* Ofitsiantni chaqirish va stol almashtirish (NFC): kunduzgi slate (#0f172a, #64748b ...) palitrasi -> iliq to'q tokenlar */
+html[data-theme='dark'] .call-waiter-modal,
+html[data-theme='dark'] .nfc-modal-card { background: var(--bg-surface); box-shadow: var(--shadow-modal); }
+html[data-theme='dark'] .call-waiter-close,
+html[data-theme='dark'] .nfc-modal-close { border-color: var(--border-subtle); background: var(--bg-surface-subtle); color: var(--text-muted); }
+html[data-theme='dark'] .call-waiter-close:hover,
+html[data-theme='dark'] .nfc-modal-close:hover { background: var(--dk-hover); color: var(--text-primary); }
+html[data-theme='dark'] .call-waiter-title,
+html[data-theme='dark'] .nfc-title,
+html[data-theme='dark'] .call-opt-title,
+html[data-theme='dark'] .tbl-name { color: var(--text-primary); }
+html[data-theme='dark'] .call-waiter-desc,
+html[data-theme='dark'] .call-opt-desc,
+html[data-theme='dark'] .nfc-subtitle,
+html[data-theme='dark'] .legend-item,
+html[data-theme='dark'] .nfc-tab-btn { color: var(--text-muted); }
+html[data-theme='dark'] .call-note-label,
+html[data-theme='dark'] .nfc-select-label { color: var(--text-secondary); }
+html[data-theme='dark'] .call-opt-card,
+html[data-theme='dark'] .nfc-tbl-chip { border-color: var(--border-subtle); background: var(--bg-surface); }
+html[data-theme='dark'] .call-opt-card:hover { border-color: var(--border-strong); background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .nfc-tbl-chip:hover { border-color: var(--brand-primary); }
+html[data-theme='dark'] .call-opt-card.active,
+html[data-theme='dark'] .nfc-tbl-chip.selected { border-color: var(--brand-primary); background: var(--brand-primary-light); }
+html[data-theme='dark'] .call-opt-radio { border-color: var(--border-strong); }
+html[data-theme='dark'] .call-note-input { border-color: var(--border-subtle); }
+html[data-theme='dark'] .call-note-input:focus { border-color: var(--brand-primary); }
+html[data-theme='dark'] .nfc-tab-switch { background: var(--bg-primary); }
+html[data-theme='dark'] .nfc-tab-btn.active { background: var(--bg-surface); color: var(--dk-brand-text); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
+html[data-theme='dark'] .qr-frame-box { background: var(--bg-surface-subtle); }
+html[data-theme='dark'] .nfc-legend { border-top-color: var(--border-subtle); }
+/* xato matni: kodda inline `color:#B91C1C` (to'q fonda 2.9:1) */
+html[data-theme='dark'] .call-waiter-modal p[role='alert'] { color: var(--dk-danger-text) !important; }
+/* OrdersPage'dagi "Stol almashtirish" tugmasi: inline #FFFFFF fon, #475569 matn */
+html[data-theme='dark'] .btn-nfc-switch-banner { background: var(--bg-surface) !important; border-color: var(--border-subtle) !important; color: var(--text-secondary) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   11) Animatsiya qatlami (motion/fx.css): holat sahnalari
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .fx-scene .paper { fill: var(--bg-surface-subtle); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   12) Fasl ranglari (`<html data-season>`; admin sozlamasi `guest_season`) + tun rejimi
+   seasons.css faqat BRENDNING OCH pog'onalarini almashtiradi (`--brand-primary-light` #FFF7ED, `...-subtle`, `-tint-2/3`, `-deep`);
+   tun tokenlari blokida (yuqorida) bu 5 token apelsin uchun to'q tusga o'zgartirilgan — qolgan fasllar uchun o'z rangiga mos to'q tuslari.
+   `--brand-primary` (tugma fon, oq matn bilan >= 4.5:1) fasl qiymatida QOLADI. Lekin brend rangidagi MATN (narx, havola, faol tab)
+   to'q sirtda fasl rangida yetarli emas (kuz 3.3, qish 2.2, bahor 3.4, yoz 3.4 : 1) -> matn uchun faslning och `--brand-warm` toni
+   (kuz #FB923C 7.6, qish #F0A3A8 8.6, bahor #AFD57B 10.3, yoz #FCD34D 11.9 : 1, `#1F1B18` ustida). Fasl yo'q bo'lsa bu blok ishlamaydi.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html[data-theme='dark'][data-season='qish'] {
+  --brand-primary-light: #2B1317; --brand-primary-subtle: #3B1A20; --brand-tint-2: #5A2630; --brand-tint-3: #7A3340; --brand-deep: #F0A3A8;
+}
+html[data-theme='dark'][data-season='bahor'] {
+  --brand-primary-light: #16200E; --brand-primary-subtle: #202F15; --brand-tint-2: #33491E; --brand-tint-3: #4A6A2B; --brand-deep: #AFD57B;
+}
+html[data-theme='dark'][data-season='yoz'] {
+  --brand-primary-light: #2A1E0A; --brand-primary-subtle: #3A2A0C; --brand-tint-2: #5A4210; --brand-tint-3: #7C5C16; --brand-deep: #FCD34D;
+}
+/* kuz: apelsin bilan bir xil rang oilasi -> apelsinning to'q tuslari. `html[data-season='kuz']` (0,1,1) bilan `html[data-theme='dark']` (0,1,1)
+   ustuvorligi teng, ya'ni natija faqat CSS tartibiga bog'liq bo'lib qolmasin deb bu yerda (0,2,1) bilan aniq yozildi */
+html[data-theme='dark'][data-season='kuz'] {
+  --brand-primary-light: #2A1B12; --brand-primary-subtle: #3A2314; --brand-tint-2: #5A3416; --brand-tint-3: #7C4A22; --brand-deep: #FDBA74;
+}
+html[data-theme='dark'][data-season] { --dk-brand-text: var(--brand-warm); }
+
+/* brend rangidagi matn va belgilar (to'q sirt / brend tusli fon ustida) */
+html[data-theme='dark'][data-season] .desktop-nav-item:hover,
+html[data-theme='dark'][data-season] .desktop-nav-item.active,
+html[data-theme='dark'][data-season] .header-table-badge,
+html[data-theme='dark'][data-season] .btn-header-call-waiter,
+html[data-theme='dark'][data-season] .btn-header-staff:hover,
+html[data-theme='dark'][data-season] .header-cart-btn:hover,
+html[data-theme='dark'][data-season] .bottom-tab:hover,
+html[data-theme='dark'][data-season] .bottom-tab.active,
+html[data-theme='dark'][data-season] .table-badge-pin,
+html[data-theme='dark'][data-season] .row-val-total,
+html[data-theme='dark'][data-season] .price-val,
+html[data-theme='dark'][data-season] .tag-popular,
+html[data-theme='dark'][data-season] .stepper-btn,
+html[data-theme='dark'][data-season] .modal-dish-price,
+html[data-theme='dark'][data-season] .btn-modal-ar,
+html[data-theme='dark'][data-season] .modal-close-round:hover,
+html[data-theme='dark'][data-season] .call-waiter-badge,
+html[data-theme='dark'][data-season] .nfc-sensor-ring,
+html[data-theme='dark'][data-season] .nfc-tab-btn.active,
+html[data-theme='dark'][data-season] .welcome-hero-badge,
+html[data-theme='dark'][data-season] .opt-circle-icon,
+html[data-theme='dark'][data-season] .btn-card-action-outline:hover,
+html[data-theme='dark'][data-season] .btn-toggle-3d-filter:hover,
+html[data-theme='dark'][data-season] .btn-load-more-dishes,
+html[data-theme='dark'][data-season] .btn-back-to-menu,
+html[data-theme='dark'][data-season] .btn-back-to-cart,
+html[data-theme='dark'][data-season] .cart-item-total-price,
+html[data-theme='dark'][data-season] .service-opt-icon,
+html[data-theme='dark'][data-season] .payment-opt-icon,
+html[data-theme='dark'][data-season] .table-badge-num,
+html[data-theme='dark'][data-season] .bill-amount,
+html[data-theme='dark'][data-season] .btn-service-pill:hover,
+html[data-theme='dark'][data-season] .btn-call-waiter,
+html[data-theme='dark'][data-season] .filter-tab.active,
+html[data-theme='dark'][data-season] .order-total-sum,
+html[data-theme='dark'][data-season] .btn-view-details,
+html[data-theme='dark'][data-season] .modal-item-subtotal,
+html[data-theme='dark'][data-season] .modal-total-num,
+html[data-theme='dark'][data-season] .badge-num,
+html[data-theme='dark'][data-season] .table-generic-icon,
+html[data-theme='dark'][data-season] .hub-tab.active,
+html[data-theme='dark'][data-season] .service-icon,
+html[data-theme='dark'][data-season] .btn-hub-orders-link,
+html[data-theme='dark'][data-season] .btn-occupy-table,
+html[data-theme='dark'][data-season] .btn-guest-step,
+html[data-theme='dark'][data-season] .mode-btn.active,
+html[data-theme='dark'][data-season] .circle-num,
+html[data-theme='dark'][data-season] .extra-link,
+html[data-theme='dark'][data-season] .extra-btn,
+html[data-theme='dark'][data-season] .btn-found-confirm,
+html[data-theme='dark'][data-season] .btn-modal-close,
+html[data-theme='dark'][data-season] .stepper-action-btn,
+html[data-theme='dark'][data-season] .badge-status-preparing,
+html[data-theme='dark'][data-season] .wn-eyebrow,
+html[data-theme='dark'][data-season] .wn-title em,
+html[data-theme='dark'][data-season] .wn-btn-ghost:hover,
+html[data-theme='dark'][data-season] .wn-tag-dot,
+html[data-theme='dark'][data-season] .wn-link,
+html[data-theme='dark'][data-season] .wn-price,
+html[data-theme='dark'][data-season] .wn-opt-icon,
+html[data-theme='dark'][data-season] .wn-opt-action,
+html[data-theme='dark'][data-season] .dish-card-placeholder::before { color: var(--dk-brand-text); }
+/* brend fon ustida oq matn (hover) qayta tiklanadi — yuqoridagi umumiy qoida ularni bosib ketmasin */
+html[data-theme='dark'][data-season] .btn-call-waiter:hover,
+html[data-theme='dark'][data-season] .btn-occupy-table:hover,
+html[data-theme='dark'][data-season] .btn-found-confirm:hover,
+html[data-theme='dark'][data-season] .btn-modal-close:hover,
+html[data-theme='dark'][data-season] .stepper-btn:hover,
+html[data-theme='dark'][data-season] .stepper-action-btn:hover:not(:disabled),
+html[data-theme='dark'][data-season] .btn-modal-ar:hover,
+html[data-theme='dark'][data-season] .btn-load-more-dishes:hover,
+html[data-theme='dark'][data-season] .wn-opt-action:hover,
+html[data-theme='dark'][data-season] .service-type-option.active .service-opt-icon { color: #FFFFFF; }
+html[data-theme='dark'][data-season] .btn-header-call-waiter:hover { color: #FFFFFF; }
+/* 360° tugmalar: oq fonli, fasl rangi matnli tugmalar o'z holicha qoladi (fon oq) */
+html[data-theme='dark'][data-season] .wn-btn-white,
+html[data-theme='dark'][data-season] .btn-banner-3d-cta,
+html[data-theme='dark'][data-season] .btn-ar-action-primary { color: var(--brand-primary-hover); }
+/* fokus halqasi (3:1 kerak): qishda #9F1D35 to'q fonda 2.2:1 */
+html[data-theme='dark'][data-season] :focus-visible { outline-color: var(--dk-brand-text); }
+/* rasmsiz taom bosh harfi: fasl rangi to'q tusli fonda 1.8-2.4:1 edi -> faslning och toni, 70% shaffoflik (color-mix bo'lmagan brauzerda to'liq rang) */
+html[data-theme='dark'][data-season] .ds-placeholder,
+html[data-theme='dark'][data-season] .ds-mini-letter { color: var(--dk-brand-text); color: color-mix(in srgb, var(--dk-brand-text) 70%, transparent); }
+/* buyurtma holati sahnalari (SVG): chiziq va to'ldirish */
+html[data-theme='dark'][data-season] .fx-scene .line { stroke: var(--dk-brand-text); }
+html[data-theme='dark'][data-season] .fx-scene .solid { fill: var(--dk-brand-text); }
+html[data-theme='dark'][data-season] .fx-scene .paper { stroke: var(--dk-brand-text); }
+html[data-theme='dark'][data-season] .wn-ring { border-color: rgb(var(--brand-primary-rgb) / 0.7); }

@@ -3,6 +3,8 @@ import type { Product } from '../../../types/dish';
 import './DishCard.css';
 import { flyToCart } from '../../../utils/cartFly';
 import { spin3d } from '../../../motion/fx';
+import { fmtNum, getLang, t } from '../../../i18n';
+import { dishDescription, dishName, localizeMeasure } from '../../../utils/dishText';
 
 export interface DishCardProps {
   product: Product;
@@ -28,9 +30,12 @@ export const DishCard: React.FC<DishCardProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  const formattedPrice = new Intl.NumberFormat('uz-UZ').format(product.price);
+  const lang = getLang();
+  const name = dishName(product, lang);
+  const description = dishDescription(product, lang);
+  const formattedPrice = fmtNum(product.price);
   const formattedOldPrice = product.old_price
-    ? new Intl.NumberFormat('uz-UZ').format(product.old_price)
+    ? fmtNum(product.old_price)
     : null;
 
   const handleMediaClick = () => {
@@ -79,18 +84,18 @@ export const DishCard: React.FC<DishCardProps> = ({
         }}
         role="button"
         tabIndex={0}
-        aria-label={onOpenDetail ? `${product.name}: batafsil` : undefined}
+        aria-label={onOpenDetail ? t('{name}: batafsil', { name }) : undefined}
       >
         {product.image && !imgError ? (
           <img 
             src={product.image} 
-            alt={product.name} 
+            alt={name} 
             className="dish-card-img" 
             loading="lazy"
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="dish-card-placeholder" data-letter={product.name.trim().charAt(0).toUpperCase()}>
+          <div className="dish-card-placeholder" data-letter={name.trim().charAt(0).toUpperCase()}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="1.5">
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
@@ -110,16 +115,16 @@ export const DishCard: React.FC<DishCardProps> = ({
             </span>
           )}
           {!product.has_3d && (product.model_status === 'queued' || product.model_status === 'processing') && (
-            <span className="badge-tag-clean" title="Taom rasmidan 3D ko'rinish tayyorlanmoqda">3D tayyorlanmoqda…</span>
+            <span className="badge-tag-clean" title={t("Taom rasmidan 3D ko'rinish tayyorlanmoqda")}>{t('3D tayyorlanmoqda…')}</span>
           )}
           {product.is_popular && (
-            <span className="badge-tag-clean tag-popular">Hit</span>
+            <span className="badge-tag-clean tag-popular">{t('Hit')}</span>
           )}
           {product.is_new && (
-            <span className="badge-tag-clean tag-new">Yangi</span>
+            <span className="badge-tag-clean tag-new">{t('Yangi')}</span>
           )}
           {product.is_halal && (
-            <span className="badge-tag-clean tag-halal">Halol</span>
+            <span className="badge-tag-clean tag-halal">{t('Halol')}</span>
           )}
         </div>
 
@@ -133,13 +138,13 @@ export const DishCard: React.FC<DishCardProps> = ({
               spin3d(e.currentTarget.querySelector('svg'));
               if (onOpen3D) onOpen3D(product);
             }}
-            title="Taomni 360 daraja aylantirib ko'rish"
-            aria-label="360 daraja ko'rish"
+            title={t("Taomni 360 daraja aylantirib ko'rish")}
+            aria-label={t("360 daraja ko'rish")}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
-            <span>360° aylantirish</span>
+            <span>{t('360° aylantirish')}</span>
           </button>
         )}
       </div>
@@ -149,18 +154,18 @@ export const DishCard: React.FC<DishCardProps> = ({
         {/* Meta badges: time & weight */}
         {(product.prep_time || product.weight) && (
           <div className="dish-card-meta">
-            {product.prep_time && <span>{product.prep_time}</span>}
+            {product.prep_time && <span>{localizeMeasure(product.prep_time, lang)}</span>}
             {product.prep_time && product.weight && <span className="meta-sep">·</span>}
-            {product.weight && <span>{product.weight}</span>}
+            {product.weight && <span>{localizeMeasure(product.weight, lang)}</span>}
           </div>
         )}
 
-        <h3 className="dish-card-title">{product.name}</h3>
+        <h3 className="dish-card-title">{name}</h3>
         
         {/* Description strictly clamped so it fits on mobile screens */}
-        {product.description && (
+        {description && (
           <div className="dish-card-desc-wrap">
-            <p className="dish-card-desc">{product.description}</p>
+            <p className="dish-card-desc">{description}</p>
           </div>
         )}
 
@@ -168,11 +173,11 @@ export const DishCard: React.FC<DishCardProps> = ({
         <div className="dish-card-footer">
           <div className="dish-card-price-row">
             {formattedOldPrice && (
-              <span className="price-old tabular-nums">{formattedOldPrice} so'm</span>
+              <span className="price-old tabular-nums">{formattedOldPrice} {t("so'm")}</span>
             )}
             <div className="price-current">
               <span className="price-val tabular-nums">{formattedPrice}</span>
-              <span className="price-unit">so'm</span>
+              <span className="price-unit">{t("so'm")}</span>
             </div>
           </div>
 
@@ -183,7 +188,7 @@ export const DishCard: React.FC<DishCardProps> = ({
                   type="button" 
                   className="stepper-btn" 
                   onClick={handleDecrement}
-                  aria-label="Kamaytirish"
+                  aria-label={t('Kamaytirish')}
                 >
                   −
                 </button>
@@ -192,7 +197,7 @@ export const DishCard: React.FC<DishCardProps> = ({
                   type="button" 
                   className="stepper-btn" 
                   onClick={handleIncrement}
-                  aria-label="Ko'paytirish"
+                  aria-label={t("Ko'paytirish")}
                 >
                   +
                 </button>
@@ -202,12 +207,12 @@ export const DishCard: React.FC<DishCardProps> = ({
                 type="button" 
                 className="btn-add-to-cart"
                 onClick={handleAdd}
-                aria-label={`${product.name} savatga qo'shish`}
+                aria-label={t("{name} savatga qo'shish", { name })}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                <span>Qo'shish</span>
+                <span>{t("Qo'shish")}</span>
               </button>
             )}
           </div>

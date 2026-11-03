@@ -1,0 +1,22 @@
+// Umumiy so'zlar: bir nechta komponentda uchraydigan matnlar, narx birligi va mahsulot birliklari
+export default {
+  "so'm": 'UZS',
+  'dona': 'pcs',
+  'porsiya': 'serving',
+  'kg': 'kg',
+  'Yopish': 'Close',
+  'Bekor qilish': 'Cancel',
+  'Asosiy': 'Home',
+  'Menyu': 'Menu',
+  'Savat': 'Cart',
+  'Buyurtmalar': 'Orders',
+  'Hit': 'Hit',
+  'Yangi': 'New',
+  'Halol': 'Halal',
+  'Kamaytirish': 'Decrease',
+  "Ko'paytirish": 'Increase',
+  "Savatga qo'shish": 'Add to cart',
+  '{name}: batafsil': '{name}: details',
+  "{name} savatga qo'shish": 'Add {name} to cart',
+  'Stol #{num}': 'Table #{num}',
+} as Record<string, string>

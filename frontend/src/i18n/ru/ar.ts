@@ -1,0 +1,20 @@
+// 360° taomlar sahifasi (ARMenuPage)
+export default {
+  "{name} savatga qo'shildi": 'В корзину добавлено: {name}',
+  'Taom savatdan olib tashlandi': 'Блюдо удалено из корзины',
+  "360° Jonli Ko'rinish": 'Живой просмотр 360°',
+  'Taomlarni 360° Har Taraflama': 'Выбирайте блюда в формате 360°',
+  'Tanlang': 'со всех сторон',
+  "Har bir taomning porsiyasi va ko'rinishini aylantirib, stol ustida ko'rib buyurtma bering.": 'Вращайте каждое блюдо, оценивайте порцию и вид — и заказывайте прямо за столом.',
+  'Klassik menyu': 'Классическое меню',
+  'Yangi 3D/360 Taom Yaratish': 'Создать блюдо 3D/360',
+  'Taomlarni qidirish...': 'Поиск блюд...',
+  "360° Aylantirib Ko'rish Mumkin Bo'lgan Taomlar": 'Блюда, которые можно рассмотреть в 360°',
+  'Taomlar': 'Блюда',
+  '{n} ta taom': '{n} блюдо|{n} блюда|{n} блюд',
+  "Hozircha 360° taomlar yo'q": 'Пока нет блюд в 360°',
+  "Taomlarning 360° ko'rinishi tayyorlanmoqda. Hozircha butun menyuni ko'rishingiz mumkin.": 'Мы готовим просмотр блюд в 360°. Пока можно посмотреть всё меню.',
+  "Menyuni ko'rish": 'Смотреть меню',
+  "Qidiruv bo'yicha mos taom topilmadi.": 'По вашему запросу ничего не найдено.',
+  'Filtrni tozalash': 'Сбросить фильтр',
+} as Record<string, string>

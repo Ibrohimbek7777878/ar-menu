@@ -2,15 +2,18 @@
 //   pending -> soat, confirmed -> hujjat ✓, preparing -> bug'li qozon, ready -> qo'ng'iroq,
 //   out_for_delivery -> yo'ldagi belgi, delivered -> ✓ chizilgan halqa.
 // `key={status}` holat o'zgarganda sahnani qayta o'ynatadi. Daraja va `prefers-reduced-motion` styles/fx.css da.
+import { t, tr } from '../i18n'
+
 export type OrderStatusKey = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered'
 
+// Modul darajasida: `tr` faqat belgilaydi, tarjima ko'rsatishda `t(LABELS[status])` bilan (til almashganda eskirmasin)
 const LABELS: Record<OrderStatusKey, string> = {
-  pending: 'Buyurtma kutilmoqda',
-  confirmed: 'Buyurtma tasdiqlandi',
-  preparing: 'Buyurtma tayyorlanmoqda',
-  ready: 'Buyurtma tayyor',
-  out_for_delivery: "Buyurtma yo'lda",
-  delivered: 'Buyurtma yetkazildi',
+  pending: tr('Buyurtma kutilmoqda'),
+  confirmed: tr('Buyurtma tasdiqlandi'),
+  preparing: tr('Buyurtma tayyorlanmoqda'),
+  ready: tr('Buyurtma tayyor'),
+  out_for_delivery: tr("Buyurtma yo'lda"),
+  delivered: tr('Buyurtma yetkazildi'),
 }
 
 function Scene({ status }: { status: OrderStatusKey }) {
@@ -90,7 +93,7 @@ export function StatusScene({ status, size = 96 }: { status: OrderStatusKey; siz
       width={size}
       height={size}
       role="img"
-      aria-label={LABELS[status]}
+      aria-label={t(LABELS[status])}
     >
       <circle className="bg" cx="48" cy="48" r="46" />
       <Scene status={status} />

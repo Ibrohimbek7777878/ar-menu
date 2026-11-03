@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigation } from '../../../context/NavigationContext';
+import { t } from '../../../i18n';
 import './BottomNav.css';
 
 export interface BottomNavProps {
@@ -54,20 +55,20 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   };
 
   return (
-    <nav className={`bottom-nav ${className}`} aria-label="Mobil pastki navigatsiya">
+    <nav className={`bottom-nav ${className}`} aria-label={t('Mobil pastki navigatsiya')}>
       <div className="bottom-nav-container">
         {/* Asosiy */}
         <button
           type="button"
           className={`bottom-tab ${activeTab === 'home' ? 'active' : ''}`}
           onClick={() => handleTab('home')}
-          aria-label="Asosiy sahifa"
+          aria-label={t('Asosiy sahifa')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
-          <span className="bottom-tab-label">Asosiy</span>
+          <span className="bottom-tab-label">{t('Asosiy')}</span>
         </button>
 
         {/* Menyu */}
@@ -75,7 +76,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           type="button"
           className={`bottom-tab ${activeTab === 'menu' ? 'active' : ''}`}
           onClick={() => handleTab('menu')}
-          aria-label="Menyu"
+          aria-label={t('Menyu')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
@@ -84,7 +85,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <line x1="10" y1="1" x2="10" y2="4"></line>
             <line x1="14" y1="1" x2="14" y2="4"></line>
           </svg>
-          <span className="bottom-tab-label">Menyu</span>
+          <span className="bottom-tab-label">{t('Menyu')}</span>
         </button>
 
         {/* 360° Taomlar (No technical AR jargon) */}
@@ -92,14 +93,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           type="button"
           className={`bottom-tab ${activeTab === 'ar' ? 'active' : ''}`}
           onClick={() => handleTab('ar')}
-          aria-label="360 daraja taomlar"
+          aria-label={t('360 daraja taomlar')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
           </svg>
-          <span className="bottom-tab-label">360° Ko'rish</span>
+          <span className="bottom-tab-label">{t("360° Ko'rish")}</span>
         </button>
 
         {/* Savat */}
@@ -108,7 +109,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           type="button"
           className={`bottom-tab ${activeTab === 'cart' ? 'active' : ''}`}
           onClick={() => handleTab('cart')}
-          aria-label="Savat"
+          aria-label={t('Savat')}
         >
           <div className="tab-icon-wrap">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -120,7 +121,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <span className="tab-badge tabular-nums">{cartCount}</span>
             )}
           </div>
-          <span className="bottom-tab-label">Savat</span>
+          <span className="bottom-tab-label">{t('Savat')}</span>
         </button>
 
         {/* Buyurtmalar */}
@@ -128,7 +129,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           type="button"
           className={`bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
           onClick={() => handleTab('orders')}
-          aria-label="Buyurtmalar"
+          aria-label={t('Buyurtmalar')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -137,7 +138,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          <span className="bottom-tab-label">Hisob</span>
+          <span className="bottom-tab-label">{t('Hisob')}</span>
         </button>
       </div>
     </nav>

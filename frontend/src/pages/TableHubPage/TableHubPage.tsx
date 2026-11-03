@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { useNavigation } from '../../context/NavigationContext';
+import { t, tr } from '../../i18n';
 import './TableHubPage.css';
 
 export interface HallData {
@@ -31,6 +32,13 @@ export interface TableHubPageProps {
   embedded?: boolean;
 }
 
+/** Bron muvaffaqiyati xabari serverdan qiymatlar (ism, stol, kod) bilan tayyor matn bo'lib keladi: qiymatlar ajratilib tarjima shabloniga solinadi. */
+function flashText(message: string): string {
+  const m = message.match(/^Rahmat, (.+)! Stol (.+)-raqam bilan bron qilindi\. Bron kodingiz: (.+) — saqlab qo'ying\.$/);
+  if (m) return t("Rahmat, {name}! Stol {table}-raqam bilan bron qilindi. Bron kodingiz: {code} — saqlab qo'ying.", { name: m[1], table: m[2], code: m[3] });
+  return t(message);
+}
+
 export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) => {
   const { navigate, cartCount: navCartCount, setIsQrModalOpen, userRole } = useNavigation();
   // QR chop etish — xodim vositasi, mehmonga ko'rsatilmaydi (TZ: R-SEC-08)
@@ -40,9 +48,9 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
   const shopName = initialData.shop?.name || 'Guliston';
   const table = initialData.table;
   const halls = initialData.halls || [
-    { id: 1, name: 'Asosiy Zal' },
-    { id: 2, name: 'VIP Xona' },
-    { id: 3, name: 'Yozgi Ayvon' },
+    { id: 1, name: tr('Asosiy Zal') },
+    { id: 2, name: tr('VIP Xona') },
+    { id: 3, name: tr('Yozgi Ayvon') },
   ];
   const tables = initialData.tables || [
     { id: 1, number: '01', hall_id: 1, hall_name: 'Asosiy Zal', status: 'free', capacity: 4 },
@@ -86,7 +94,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
   // Avval bu xabar umuman ko'rsatilmasdi: mehmon bron qabul qilinganini ham, kodini ham bilmasdi.
   useEffect(() => {
     if (initialData.flashMsg) {
-      setToastMsg(initialData.flashMsg);
+      setToastMsg(flashText(initialData.flashMsg));
       setToastIcon('');
       setToastVisible(true);
       const timer = window.setTimeout(() => setToastVisible(false), 12000);
@@ -105,20 +113,20 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
   };
   const handleServiceCall = async (serviceName: string) => {
     if (!table?.number) {
-      showToast("Avval stol ustidagi QR kodni skanerlang — shunda ofitsiant qaysi stolga kelishini biladi");
+      showToast(t("Avval stol ustidagi QR kodni skanerlang — shunda ofitsiant qaysi stolga kelishini biladi"));
       return;
     }
     const res = await RestaurantAPI.createServiceCall(table.number, SERVICE_TYPES[serviceName] || 'waiter', serviceName);
     if (!res) {
-      showToast("Chaqiruv yuborilmadi. Aloqani tekshirib qayta urinib ko'ring");
+      showToast(t("Chaqiruv yuborilmadi. Aloqani tekshirib qayta urinib ko'ring"));
       return;
     }
-    showToast(`"${serviceName}" chaqirildi. Xizmatchi yaqinlashmoqda.`);
+    showToast(t('"{name}" chaqirildi. Xizmatchi yaqinlashmoqda.', { name: t(serviceName) }));
   };
 
   const handleSelectTable = (tbl: TableItemData) => {
     if (tbl.status === 'occupied') {
-      showToast(`Stol #${tbl.number} hozir band`);
+      showToast(t('Stol #{num} hozir band', { num: tbl.number }));
       return;
     }
     const form = document.createElement('form');
@@ -173,7 +181,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
   const handleReservationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !customerPhone.trim()) {
-      showToast('Iltimos, ism va telefon raqamingizni kiriting');
+      showToast(t('Iltimos, ism va telefon raqamingizni kiriting'));
       return;
     }
 
@@ -206,9 +214,9 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
     form.submit();
   };
 
-  const filteredTables = tables.filter((t) => {
+  const filteredTables = tables.filter((row) => {
     if (selectedHallFilter === 'all') return true;
-    return t.hall_id === selectedHallFilter;
+    return row.hall_id === selectedHallFilter;
   });
 
   return (
@@ -228,7 +236,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
         <section className="table-hub-hero">
           {table ? (
             <div className="table-current-badge">
-              <span className="badge-kicker">Stol</span>
+              <span className="badge-kicker">{t('Stol')}</span>
               <strong className="badge-num tabular-nums">{table.number}</strong>
             </div>
           ) : (
@@ -240,12 +248,12 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
           )}
 
           <h1 className="table-hub-title serif">
-            {table ? `Stol #${table.number}` : 'Stollar va bron qilish'}
+            {table ? t('Stol #{num}', { num: table.number }) : t('Stollar va bron qilish')}
           </h1>
           <p className="table-hub-desc">
             {table
-              ? `${table.hall || 'Asosiy Zal'} · Stolingiz faol ulangan`
-              : 'O\'tirish uchun bo\'sh stolni tanlang yoki oldindan bron qiling'}
+              ? t('{hall} · Stolingiz faol ulangan', { hall: table.hall ? t(table.hall) : t('Asosiy Zal') })
+              : t("O'tirish uchun bo'sh stolni tanlang yoki oldindan bron qiling")}
           </p>
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
@@ -255,7 +263,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                 className="btn-leave-table"
                 onClick={handleClearTable}
               >
-                Stoldan chiqish ↩
+                {t('Stoldan chiqish ↩')}
               </button>
             )}
             {isStaff && (
@@ -266,7 +274,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
               onClick={() => setIsQrModalOpen(true)}
             >
               <span style={{ marginRight: '6px' }}>🖨️</span>
-              QR Kodlarni chop etish
+              {t('QR Kodlarni chop etish')}
             </button>
             )}
           </div>
@@ -279,14 +287,14 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             className={`hub-tab ${activeTab === 'my-table' ? 'active' : ''}`}
             onClick={() => setActiveTab('my-table')}
           >
-            {table ? 'Stol servislari' : 'Stollar xaritasi'}
+            {table ? t('Stol servislari') : t('Stollar xaritasi')}
           </button>
           <button
             type="button"
             className={`hub-tab ${activeTab === 'reserve' ? 'active' : ''}`}
             onClick={() => setActiveTab('reserve')}
           >
-            Stolni bron qilish
+            {t('Stolni bron qilish')}
           </button>
         </div>
 
@@ -299,7 +307,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                 <div className="service-cards-grid">
                   <div
                     className="service-card card-call"
-                    onClick={() => handleServiceCall('Ofitsiant')}
+                    onClick={() => handleServiceCall(tr('Ofitsiant'))}
                   >
                     <div className="service-icon" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -307,13 +315,13 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                         <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                       </svg>
                     </div>
-                    <h3 className="service-title">Ofitsiantni chaqirish</h3>
-                    <p className="service-desc">Stolingizga xizmatchi yaqinlashadi</p>
+                    <h3 className="service-title">{t('Ofitsiantni chaqirish')}</h3>
+                    <p className="service-desc">{t('Stolingizga xizmatchi yaqinlashadi')}</p>
                   </div>
 
                   <div
                     className="service-card card-bill"
-                    onClick={() => handleServiceCall('Hisob-kitob (chek)')}
+                    onClick={() => handleServiceCall(tr('Hisob-kitob (chek)'))}
                   >
                     <div className="service-icon" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -321,13 +329,13 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                         <polyline points="14 2 14 8 20 8" />
                       </svg>
                     </div>
-                    <h3 className="service-title">Hisobni so'rash</h3>
-                    <p className="service-desc">Terminal yoki naqd pul cheki</p>
+                    <h3 className="service-title">{t("Hisobni so'rash")}</h3>
+                    <p className="service-desc">{t('Terminal yoki naqd pul cheki')}</p>
                   </div>
 
                   <div
                     className="service-card"
-                    onClick={() => handleServiceCall('Choy yangilash')}
+                    onClick={() => handleServiceCall(tr('Choy yangilash'))}
                   >
                     <div className="service-icon" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -336,13 +344,13 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                         <line x1="10" y1="2" x2="10" y2="4" />
                       </svg>
                     </div>
-                    <h3 className="service-title">Choy yangilash</h3>
-                    <p className="service-desc">Ko'k yoki qora damlangan choy</p>
+                    <h3 className="service-title">{t('Choy yangilash')}</h3>
+                    <p className="service-desc">{t("Ko'k yoki qora damlangan choy")}</p>
                   </div>
 
                   <div
                     className="service-card"
-                    onClick={() => handleServiceCall('Issiq non')}
+                    onClick={() => handleServiceCall(tr('Issiq non'))}
                   >
                     <div className="service-icon" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -350,20 +358,20 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                         <path d="M12 7v10M7 12h10" />
                       </svg>
                     </div>
-                    <h3 className="service-title">Non keltirish</h3>
-                    <p className="service-desc">Issiq tandir non yoki patir</p>
+                    <h3 className="service-title">{t('Non keltirish')}</h3>
+                    <p className="service-desc">{t('Issiq tandir non yoki patir')}</p>
                   </div>
                 </div>
 
                 <div className="hub-quick-navs">
                   <a href="/menu/" className="btn-hub-menu-link">
-                    <span>Menyuni ko'rish</span>
+                    <span>{t("Menyuni ko'rish")}</span>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </a>
                   <a href="/orders/" className="btn-hub-orders-link">
-                    <span>Buyurtmalar holati</span>
+                    <span>{t('Buyurtmalar holati')}</span>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
@@ -375,8 +383,8 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             {/* Stollar Ro'yxati / Xaritasi */}
             <div className="tables-directory-section">
               <div className="directory-header">
-                <h3 className="directory-title serif">Restorandagi stollar</h3>
-                <span className="directory-count tabular-nums">{tables.length} ta stol</span>
+                <h3 className="directory-title serif">{t('Restorandagi stollar')}</h3>
+                <span className="directory-count tabular-nums">{t('{n} ta stol', { n: tables.length })}</span>
               </div>
 
               {/* Hall Chips */}
@@ -386,7 +394,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                   className={`hall-chip ${selectedHallFilter === 'all' ? 'active' : ''}`}
                   onClick={() => setSelectedHallFilter('all')}
                 >
-                  Barcha zallar
+                  {t('Barcha zallar')}
                 </button>
                 {halls.map((h) => (
                   <button
@@ -395,7 +403,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                     className={`hall-chip ${selectedHallFilter === h.id ? 'active' : ''}`}
                     onClick={() => setSelectedHallFilter(h.id)}
                   >
-                    {h.name}
+                    {t(h.name)}
                   </button>
                 ))}
               </div>
@@ -408,18 +416,18 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                     onClick={() => handleSelectTable(tbl)}
                   >
                     <div className="table-item-top">
-                      <span className="table-item-hall">{tbl.hall_name || 'Zal'}</span>
+                      <span className="table-item-hall">{tbl.hall_name ? t(tbl.hall_name) : t('Zal')}</span>
                       <span className={`table-status-pill pill-${tbl.status}`}>
-                        {tbl.status === 'free' ? 'Bo\'sh' : tbl.status === 'occupied' ? 'Band' : 'Bron'}
+                        {tbl.status === 'free' ? t("Bo'sh") : tbl.status === 'occupied' ? t('Band') : t('Bron')}
                       </span>
                     </div>
 
                     <strong className="table-item-number tabular-nums">#{tbl.number}</strong>
-                    <span className="table-item-capacity tabular-nums">{tbl.capacity || 4} kishilik</span>
+                    <span className="table-item-capacity tabular-nums">{t('{n} kishilik', { n: tbl.capacity || 4 })}</span>
 
                     {tbl.status === 'free' && (
                       <button type="button" className="btn-occupy-table">
-                        Tanlash
+                        {t('Tanlash')}
                       </button>
                     )}
                   </div>
@@ -433,20 +441,20 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
         {activeTab === 'reserve' && (
           <form className="reservation-form-card" onSubmit={handleReservationSubmit}>
             <div className="form-header">
-              <span className="form-badge">Oldindan band qilish</span>
-              <h2 className="form-title serif">Stolni bron qilish</h2>
+              <span className="form-badge">{t('Oldindan band qilish')}</span>
+              <h2 className="form-title serif">{t('Stolni bron qilish')}</h2>
               <p className="form-desc">
-                Tantana, oila davrasi yoki do'stlar bilan uchrashuv uchun qulay stolni oldindan band qiling.
+                {t("Tantana, oila davrasi yoki do'stlar bilan uchrashuv uchun qulay stolni oldindan band qiling.")}
               </p>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Ismingiz:</label>
+                <label className="form-label">{t('Ismingiz:')}</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Ismingizni kiriting"
+                  placeholder={t('Ismingizni kiriting')}
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   required
@@ -454,7 +462,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
               </div>
 
               <div className="form-group">
-                <label className="form-label">Telefon raqamingiz:</label>
+                <label className="form-label">{t('Telefon raqamingiz:')}</label>
                 <input
                   type="tel"
                   className="form-input tabular-nums"
@@ -468,7 +476,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Sana:</label>
+                <label className="form-label">{t('Sana:')}</label>
                 <input
                   type="date"
                   className="form-input tabular-nums"
@@ -479,7 +487,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
               </div>
 
               <div className="form-group">
-                <label className="form-label">Vaqt:</label>
+                <label className="form-label">{t('Vaqt:')}</label>
                 <input
                   type="time"
                   className="form-input tabular-nums"
@@ -492,7 +500,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Mehmonlar soni:</label>
+                <label className="form-label">{t('Mehmonlar soni:')}</label>
                 <div className="guests-stepper">
                   <button
                     type="button"
@@ -501,7 +509,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
                   >
                     -
                   </button>
-                  <span className="guest-count-val tabular-nums">{guestsCount} kishi</span>
+                  <span className="guest-count-val tabular-nums">{t('{n} kishi', { n: guestsCount })}</span>
                   <button
                     type="button"
                     className="btn-guest-step"
@@ -513,16 +521,16 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
               </div>
 
               <div className="form-group">
-                <label className="form-label">Ma'qul zal:</label>
+                <label className="form-label">{t("Ma'qul zal:")}</label>
                 <select
                   className="form-select"
                   value={selectedHall}
                   onChange={(e) => setSelectedHall(e.target.value === 'any' ? 'any' : Number(e.target.value))}
                 >
-                  <option value="any">Ixtiyoriy zal</option>
+                  <option value="any">{t('Ixtiyoriy zal')}</option>
                   {halls.map((h) => (
                     <option key={h.id} value={h.id}>
-                      {h.name}
+                      {t(h.name)}
                     </option>
                   ))}
                 </select>
@@ -530,18 +538,18 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             </div>
 
             <div className="form-group">
-              <label className="form-label">Qo'shimcha istaklar:</label>
+              <label className="form-label">{t("Qo'shimcha istaklar:")}</label>
               <textarea
                 className="form-textarea"
                 rows={3}
-                placeholder="Tug'ilgan kun bezagi, bolalar o'rindig'i, tinch burchak..."
+                placeholder={t("Tug'ilgan kun bezagi, bolalar o'rindig'i, tinch burchak...")}
                 value={resNotes}
                 onChange={(e) => setResNotes(e.target.value)}
               />
             </div>
 
             <button type="submit" className="btn-submit-reservation">
-              <span>Bron qilish</span>
+              <span>{t('Bron qilish')}</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Product } from '../../../types/dish';
 import { loadModelViewer } from '../../../utils/modelViewer';
+import { fmtMoney, getLang, t } from '../../../i18n';
+import { dishDescription, dishName, localizeMeasure } from '../../../utils/dishText';
 import './Modal3D.css';
 
 export interface Modal3DProps {
@@ -45,7 +47,10 @@ export const Modal3D: React.FC<Modal3DProps> = ({
 
   if (!isOpen || !product) return null;
 
-  const formattedPrice = new Intl.NumberFormat('uz-UZ').format(product.price);
+  const lang = getLang();
+  const name = dishName(product, lang);
+  const description = dishDescription(product, lang);
+  const formattedPrice = fmtMoney(product.price);
   const modelUrl = product.ar_model || '';
   const modelFailed = Boolean(modelUrl) && failedModelUrl === modelUrl;
   const hasValid3D = Boolean(product.has_3d && modelUrl) && !modelFailed;
@@ -55,7 +60,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
     if (viewer && viewer.canActivateAR) {
       viewer.activateAR();
     } else {
-      alert("AR rejimini mobil telefon brauzeri kamerasida oching.");
+      alert(t('AR rejimini mobil telefon brauzeri kamerasida oching.'));
     }
   };
 
@@ -69,7 +74,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
   return (
     <div className="react-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
       <div className="react-modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="modal-close-round" onClick={onClose} aria-label="Yopish">
+        <button type="button" className="modal-close-round" onClick={onClose} aria-label={t('Yopish')}>
           ✕
         </button>
 
@@ -83,7 +88,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
                 ref={viewerRef}
                 src={modelUrl}
                 poster={product.image || ''}
-                alt={product.name}
+                alt={name}
                 camera-orbit="0deg 55deg auto"
                 auto-rotate
                 rotation-per-second="25deg"
@@ -99,7 +104,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
                   <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                   <path d="M21 3v5h-5" />
                 </svg>
-                <span>Barmoq bilan 360° aylantiring</span>
+                <span>{t('Barmoq bilan 360° aylantiring')}</span>
               </span>
             </>
           ) : (
@@ -107,19 +112,19 @@ export const Modal3D: React.FC<Modal3DProps> = ({
               {product.image ? (
                 <img
                   src={product.image}
-                  alt={product.name}
+                  alt={name}
                   style={{ maxWidth: '90%', maxHeight: '85%', objectFit: 'contain', borderRadius: '16px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.08))' }}
                 />
               ) : (
-                <span style={{ color: '#9CA3AF', fontSize: '15px' }}>Rasm hali qo'yilmagan</span>
+                <span style={{ color: '#9CA3AF', fontSize: '15px' }}>{t("Rasm hali qo'yilmagan")}</span>
               )}
               <span className="modal-3d-tip" style={{ background: 'rgba(255,255,255,0.92)', color: '#374151' }}>
                 <span>
                   {modelFailed
-                    ? "3D model yuklanmadi — rasm ko'rsatilmoqda"
+                    ? t("3D model yuklanmadi — rasm ko'rsatilmoqda")
                     : product.model_status === 'queued' || product.model_status === 'processing'
-                      ? '3D ko\'rinish tayyorlanmoqda…'
-                      : "📸 Real Fotosurat ko'rinishi"}
+                      ? t("3D ko'rinish tayyorlanmoqda…")
+                      : t("📸 Real Fotosurat ko'rinishi")}
                 </span>
               </span>
             </div>
@@ -129,29 +134,29 @@ export const Modal3D: React.FC<Modal3DProps> = ({
         {/* Details & Actions */}
         <div className="modal-3d-info">
           <div className="modal-info-header">
-            <h3 className="modal-dish-name">{product.name}</h3>
-            <span className="modal-dish-price tabular-nums">{formattedPrice} so'm</span>
+            <h3 className="modal-dish-name">{name}</h3>
+            <span className="modal-dish-price tabular-nums">{formattedPrice}</span>
           </div>
 
-          {product.description && (
-            <p className="modal-dish-desc">{product.description}</p>
+          {description && (
+            <p className="modal-dish-desc">{description}</p>
           )}
 
           {/* Real Taom Texnik Parametrlari */}
           <div className="modal-specs-row">
             {product.weight && (
               <span className="modal-spec-chip">
-                ⚖️ <strong>{product.weight}</strong>
+                ⚖️ <strong>{localizeMeasure(product.weight, lang)}</strong>
               </span>
             )}
             {product.prep_time && (
               <span className="modal-spec-chip">
-                ⏱️ <strong>{product.prep_time}</strong>
+                ⏱️ <strong>{localizeMeasure(product.prep_time, lang)}</strong>
               </span>
             )}
             {product.is_halal && (
               <span className="modal-spec-chip text-green">
-                🌿 Halol
+                🌿 {t('Halol')}
               </span>
             )}
           </div>
@@ -162,7 +167,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
                 <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
                 <path d="M12 18h.01" />
               </svg>
-              <span>Stol ustida ko'rish (AR)</span>
+              <span>{t("Stol ustida ko'rish (AR)")}</span>
             </button>
             <button type="button" className="btn-modal-cart" onClick={handleAdd}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -170,7 +175,7 @@ export const Modal3D: React.FC<Modal3DProps> = ({
                 <circle cx="19" cy="21" r="1" />
                 <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
               </svg>
-              <span>Savatga qo'shish</span>
+              <span>{t("Savatga qo'shish")}</span>
             </button>
           </div>
         </div>

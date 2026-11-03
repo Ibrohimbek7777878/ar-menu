@@ -1,0 +1,51 @@
+// Server xabarlari (backend): mehmonga qaytariladigan o'zbekcha xato/ogohlantirishlar. Ko'rsatilganda `t(message)` ishlatiladi
+export default {
+  // web/guest_api.py, backend/ratelimit.py
+  'Topilmadi': 'Не найдено',
+  "Juda ko'p so'rov. Keyinroq urinib ko'ring.": 'Слишком много запросов. Повторите попытку позже.',
+  "Juda ko'p so'rov yuborildi. Iltimos, keyinroq urinib ko'ring (Rate limit exceeded).": 'Слишком много запросов. Пожалуйста, повторите попытку позже.',
+  'Buyurtma topilmadi': 'Заказ не найден',
+  // web/tma_views.py: savat va buyurtma (checkout)
+  'Mahsulot topilmadi': 'Блюдо не найдено',
+  "Savat bo'sh yoki buyurtma allaqachon yuborilgan": 'Корзина пуста или заказ уже отправлен',
+  "Savatdagi taomlar endi menyuda yo'q": 'Блюд из вашей корзины больше нет в меню',
+  "Xizmat turi noto'g'ri": 'Неверный тип обслуживания',
+  'Ism, manzil yoki izoh juda uzun': 'Имя, адрес или комментарий слишком длинные',
+  "Telefon raqami noto'g'ri. Masalan: +998 90 123 45 67": 'Неверный номер телефона. Например: +998 90 123 45 67',
+  'Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling.': 'Стол не определён. Отсканируйте QR-код на столе ещё раз или обратитесь к официанту.',
+  'Yetkazib berish uchun telefon raqamingizni kiriting!': 'Для доставки укажите номер телефона!',
+  'Yetkazib berish manzilini kiriting!': 'Укажите адрес доставки!',
+  "Bu stolda ochiq buyurtmalar juda ko'p. Iltimos, ofitsiantga murojaat qiling.": 'За этим столом слишком много открытых заказов. Пожалуйста, обратитесь к официанту.',
+  "Vaqtincha xatolik, buyurtma yuborilmadi. Qayta urinib ko'ring.": 'Временная ошибка, заказ не отправлен. Повторите попытку.',
+  // shops/availability.py: restoran buyurtma qabul qila oladimi
+  'Restoran hozir buyurtma qabul qilmayapti.': 'Ресторан сейчас не принимает заказы.',
+  'Bu xizmat turi hozir mavjud emas.': 'Этот тип обслуживания сейчас недоступен.',
+  // web/tma_views.py (bron kodi bilan kelish) va tables_restaurant/reservations.py
+  "Bron topilmadi. Kodni tekshirib qayta urinib ko'ring.": 'Бронь не найдена. Проверьте код и повторите попытку.',
+  'Bu bron yakunlangan yoki bekor qilingan.': 'Эта бронь завершена или отменена.',
+  "Bronga hali stol biriktirilmagan. Iltimos, hostess bilan bog'laning.": 'К брони ещё не назначен стол. Пожалуйста, обратитесь к хостес.',
+  'Bron topilmadi': 'Бронь не найдена',
+  // orders/interfaces/api/views.py va orders/application/services.py: mehmon buyurtmasi, ofitsiant chaqiruvi
+  'Avval stol ustidagi QR kodni skanerlang': 'Сначала отсканируйте QR-код на столе',
+  "Buyurtmani qabul qilib bo'lmadi": 'Не удалось принять заказ',
+  "Taom miqdori noto'g'ri": 'Неверное количество блюда',
+  "Taom miqdori 1 dan 100 gacha bo'lishi kerak": 'Количество блюда должно быть от 1 до 100',
+  "Noto'g'ri taom ma'lumoti": 'Неверные данные блюда',
+  'Taom menyuda topilmadi': 'Блюдо не найдено в меню',
+  'Taom menyuda topilmadi yoki hozir mavjud emas': 'Блюдо не найдено в меню или сейчас недоступно',
+  "Buyurtmada taom yo'q": 'В заказе нет блюд',
+  'Taom topilmadi': 'Блюдо не найдено',
+  'Stol topilmadi': 'Стол не найден',
+  'Stol topilmadi. Stol ustidagi QR kodni qayta skanerlang.': 'Стол не найден. Отсканируйте QR-код на столе ещё раз.',
+  // orders/models.py: buyurtma holati va to'lov holati (status_display)
+  'Kutilmoqda': 'Ожидает',
+  'Tasdiqlangan': 'Подтверждён',
+  'Tayyorlanmoqda': 'Готовится',
+  'Tayyor — olib ketish': 'Готов — заберите',
+  "Yo'lda": 'В пути',
+  'Yetkazildi': 'Доставлен',
+  'Bekor qilindi': 'Отменён',
+  "To'lanmagan": 'Не оплачен',
+  "To'langan": 'Оплачен',
+  'Qaytarilgan': 'Возвращён',
+} as Record<string, string>

@@ -4,11 +4,18 @@ import { Icon } from '../../components/ui/Icon/Icon';
 import { useNavigation } from '../../context/NavigationContext';
 import { roleService } from '../../core/auth/RoleService';
 import { HeroPlate3D } from '../../motion/HeroPlate3D';
+import { fmtNum, getLang, t } from '../../i18n';
+import { dishDescription, dishName } from '../../utils/dishText';
 
 interface FeaturedDish {
   id: number;
   name: string;
+  /** Rus/ingliz tarjimalari (server yuborsa; bo'sh bo'lsa o'zbekcha ko'rinadi) */
+  name_ru?: string;
+  name_en?: string;
   description?: string;
+  desc_ru?: string;
+  desc_en?: string;
   price: number;
   image: string;
   has_3d?: boolean;
@@ -83,7 +90,7 @@ export const WelcomePageNew: React.FC = () => {
   const handleTableSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputTableNum.trim()) {
-      showToast('Iltimos, stol raqamini kiriting');
+      showToast(t('Iltimos, stol raqamini kiriting'));
       return;
     }
     setTableNumber(inputTableNum.trim());
@@ -105,7 +112,7 @@ export const WelcomePageNew: React.FC = () => {
 
   const handleAdd = (dish: FeaturedDish) => {
     addToCart(dish.id, 1);
-    showToast(`${dish.name} savatga qo'shildi`);
+    showToast(t("{name} savatga qo'shildi", { name: dishName(dish, getLang()) }));
   };
 
   return (
@@ -124,28 +131,27 @@ export const WelcomePageNew: React.FC = () => {
         <section className="wn-hero">
           <div className={`wn-wrap wn-hero-grid ${hero ? '' : 'wn-hero-solo'}`}>
             <div>
-              <span className="wn-eyebrow wn-rise" style={{ ['--i' as string]: 0 }}>Xush kelibsiz</span>
+              <span className="wn-eyebrow wn-rise" style={{ ['--i' as string]: 0 }}>{t('Xush kelibsiz')}</span>
               <h1 className="wn-title wn-rise" style={{ ['--i' as string]: 1 }}>
-                Haqiqiy o'zbek <em>ta'mi</em>,<br />stolingizda
+                {t("Haqiqiy o'zbek")} <em>{t("ta'mi")}</em>,<br />{t('stolingizda')}
               </h1>
               <p className="wn-lead wn-rise" style={{ ['--i' as string]: 2 }}>
-                Milliy taomlarimizni 360° ko'rinishda aylantirib ko'ring, tanlang va buyurtmangiz to'g'ridan-to'g'ri
-                oshxonaga tushadi. Kutish ham, qog'oz menyu ham yo'q.
+                {t("Milliy taomlarimizni 360° ko'rinishda aylantirib ko'ring, tanlang va buyurtmangiz to'g'ridan-to'g'ri oshxonaga tushadi. Kutish ham, qog'oz menyu ham yo'q.")}
               </p>
               <div className="wn-cta wn-rise" style={{ ['--i' as string]: 3 }}>
                 <button type="button" className="wn-btn wn-btn-primary" onClick={() => navigate('/menu')}>
-                  <span>Menyuni ko'rish</span>
+                  <span>{t("Menyuni ko'rish")}</span>
                   <Icon name="arrow" size={18} strokeWidth={2.5} />
                 </button>
                 <button type="button" className="wn-btn wn-btn-ghost" onClick={() => navigate('/ar')}>
                   <Icon name="rotate" size={18} />
-                  <span>360° taomlar</span>
+                  <span>{t('360° taomlar')}</span>
                 </button>
               </div>
               <ul className="wn-trust wn-rise" style={{ ['--i' as string]: 4 }}>
-                <li><Icon name="check" size={15} strokeWidth={3} />Halol</li>
-                <li><Icon name="check" size={15} strokeWidth={3} />Yangi mahsulotlar</li>
-                <li><Icon name="check" size={15} strokeWidth={3} />Buyurtma 1 daqiqada</li>
+                <li><Icon name="check" size={15} strokeWidth={3} />{t('Halol')}</li>
+                <li><Icon name="check" size={15} strokeWidth={3} />{t('Yangi mahsulotlar')}</li>
+                <li><Icon name="check" size={15} strokeWidth={3} />{t('Buyurtma 1 daqiqada')}</li>
               </ul>
             </div>
 
@@ -171,11 +177,11 @@ export const WelcomePageNew: React.FC = () => {
                   )}
                   <div className="wn-tag wn-tag-1">
                     <span className="wn-tag-dot"><Icon name="star" size={16} /></span>
-                    <div>{hero.is_popular ? 'Tavsiya' : 'Bugungi tanlov'}<small>{hero.name}</small></div>
+                    <div>{hero.is_popular ? t('Tavsiya') : t('Bugungi tanlov')}<small>{dishName(hero, getLang())}</small></div>
                   </div>
                   <div className="wn-tag wn-tag-2">
                     <span className="wn-tag-dot"><Icon name="clock" size={16} /></span>
-                    <div>~ 15 daqiqa<small>tayyorlanish vaqti</small></div>
+                    <div>{t('~ 15 daqiqa')}<small>{t('tayyorlanish vaqti')}</small></div>
                   </div>
                 </div>
               </div>
@@ -189,27 +195,27 @@ export const WelcomePageNew: React.FC = () => {
             <div className="wn-wrap">
               <div className="wn-head wn-reveal">
                 <div>
-                  <h2>Mashhur taomlar</h2>
-                  <p>Mehmonlarimiz eng ko'p buyurtma qiladiganlar</p>
+                  <h2>{t('Mashhur taomlar')}</h2>
+                  <p>{t("Mehmonlarimiz eng ko'p buyurtma qiladiganlar")}</p>
                 </div>
-                <button type="button" className="wn-link" onClick={() => navigate('/menu')}>Hammasini ko'rish →</button>
+                <button type="button" className="wn-link" onClick={() => navigate('/menu')}>{t("Hammasini ko'rish →")}</button>
               </div>
               <div className="wn-scroller">
                 {featured.slice(0, 5).map((dish, index) => (
                   <article key={dish.id} className="wn-dish wn-reveal" style={{ ['--i' as string]: index }}>
-                    <button type="button" className="wn-dish-photo" onClick={() => navigate('/menu')} aria-label={`${dish.name} — menyuda ko'rish`}>
-                      <img src={dish.image} alt={dish.name} loading="lazy" />
+                    <button type="button" className="wn-dish-photo" onClick={() => navigate('/menu')} aria-label={t("{name} — menyuda ko'rish", { name: dishName(dish, getLang()) })}>
+                      <img src={dish.image} alt={dishName(dish, getLang())} loading="lazy" />
                       {dish.has_3d && <span className="wn-pill wn-pill-dark">360°</span>}
-                      {dish.is_popular && <span className="wn-pill wn-pill-hot">Tavsiya</span>}
+                      {dish.is_popular && <span className="wn-pill wn-pill-hot">{t('Tavsiya')}</span>}
                     </button>
                     <div className="wn-dish-body">
-                      <h3>{dish.name}</h3>
-                      {dish.description && <p>{dish.description}</p>}
+                      <h3>{dishName(dish, getLang())}</h3>
+                      {dishDescription(dish, getLang()) && <p>{dishDescription(dish, getLang())}</p>}
                       <div className="wn-dish-row">
-                        <span className="wn-price">{new Intl.NumberFormat('uz-UZ').format(dish.price)} <small>so'm</small></span>
+                        <span className="wn-price">{fmtNum(dish.price)} <small>{t("so'm")}</small></span>
                         <button type="button" className="wn-add" onClick={() => handleAdd(dish)}>
                           <Icon name="plus" size={15} strokeWidth={2.5} />
-                          <span>Qo'shish</span>
+                          <span>{t("Qo'shish")}</span>
                         </button>
                       </div>
                     </div>
@@ -225,10 +231,10 @@ export const WelcomePageNew: React.FC = () => {
           <div className="wn-wrap">
             <div className="wn-banner wn-reveal">
               <div>
-                <h2>Taomni buyurtmadan oldin ko'ring</h2>
-                <p>Har bir taomni telefon yoki kompyuterda barmoq bilan aylantirib, hajmi va tarkibini ko'zingiz bilan baholang.</p>
+                <h2>{t("Taomni buyurtmadan oldin ko'ring")}</h2>
+                <p>{t("Har bir taomni telefon yoki kompyuterda barmoq bilan aylantirib, hajmi va tarkibini ko'zingiz bilan baholang.")}</p>
                 <button type="button" className="wn-btn wn-btn-white" onClick={() => navigate('/ar')}>
-                  <span>360° taomlarni ko'rish</span>
+                  <span>{t("360° taomlarni ko'rish")}</span>
                   <Icon name="arrow" size={16} strokeWidth={2.5} />
                 </button>
               </div>
@@ -244,18 +250,18 @@ export const WelcomePageNew: React.FC = () => {
           <div className="wn-wrap">
             <div className="wn-head wn-reveal">
               <div>
-                <h2>Stolga ulanish</h2>
-                <p>O'zingizga qulay usulni tanlang</p>
+                <h2>{t('Stolga ulanish')}</h2>
+                <p>{t("O'zingizga qulay usulni tanlang")}</p>
               </div>
             </div>
             <div className="wn-connect">
               <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 0 }}>
                 <span className="wn-opt-icon"><Icon name="qr" size={24} /></span>
                 <div>
-                  <h3>QR kodni skanerlash</h3>
-                  <p>Stol ustidagi QR kodga telefon kamerangizni qarating.</p>
+                  <h3>{t('QR kodni skanerlash')}</h3>
+                  <p>{t('Stol ustidagi QR kodga telefon kamerangizni qarating.')}</p>
                   {isStaff && (
-                    <button type="button" className="wn-opt-action" onClick={() => setIsQrModalOpen(true)}>QR kod generatori &amp; chop etish</button>
+                    <button type="button" className="wn-opt-action" onClick={() => setIsQrModalOpen(true)}>{t('QR kod generatori & chop etish')}</button>
                   )}
                 </div>
               </div>
@@ -264,18 +270,18 @@ export const WelcomePageNew: React.FC = () => {
                 <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 1 }}>
                   <span className="wn-opt-icon"><Icon name="table" size={24} /></span>
                   <div>
-                    <h3>Stol raqamini kiritish</h3>
-                    <p>Stolingiz ustidagi raqamni yozib menyuga kiring.</p>
+                    <h3>{t('Stol raqamini kiritish')}</h3>
+                    <p>{t('Stolingiz ustidagi raqamni yozib menyuga kiring.')}</p>
                     <form onSubmit={handleTableSubmit} className="wn-table-form">
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="Stol raqami (masalan: 7)"
+                        placeholder={t('Stol raqami (masalan: 7)')}
                         value={inputTableNum}
                         onChange={(e) => setInputTableNum(e.target.value)}
-                        aria-label="Stol raqami"
+                        aria-label={t('Stol raqami')}
                       />
-                      <button type="submit">Ulanish</button>
+                      <button type="submit">{t('Ulanish')}</button>
                     </form>
                   </div>
                 </div>
@@ -285,9 +291,9 @@ export const WelcomePageNew: React.FC = () => {
                 <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 2 }}>
                   <span className="wn-opt-icon"><Icon name="nfc" size={24} /></span>
                   <div>
-                    <h3>NFC orqali ulanish</h3>
-                    <p>Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.</p>
-                    <button type="button" className="wn-opt-action" onClick={() => setIsNfcModalOpen(true)}>NFC / Stolni tanlash</button>
+                    <h3>{t('NFC orqali ulanish')}</h3>
+                    <p>{t('Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.')}</p>
+                    <button type="button" className="wn-opt-action" onClick={() => setIsNfcModalOpen(true)}>{t('NFC / Stolni tanlash')}</button>
                   </div>
                 </div>
               )}
@@ -295,10 +301,10 @@ export const WelcomePageNew: React.FC = () => {
               <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 3 }}>
                 <span className="wn-opt-icon"><Icon name="calendar" size={24} /></span>
                 <div>
-                  <h3>Bron qilingan stolni qidirish</h3>
-                  <p>Oldindan joy band qilgan bo'lsangiz, raqamingiz orqali toping.</p>
+                  <h3>{t('Bron qilingan stolni qidirish')}</h3>
+                  <p>{t("Oldindan joy band qilgan bo'lsangiz, raqamingiz orqali toping.")}</p>
                   <button type="button" className="wn-opt-action" onClick={() => navigate('/reservation/find')}>
-                    <Icon name="search" size={15} />Bronni tekshirish
+                    <Icon name="search" size={15} />{t('Bronni tekshirish')}
                   </button>
                 </div>
               </div>

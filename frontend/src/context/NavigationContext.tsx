@@ -169,6 +169,9 @@ export interface NavigationContextType {
   setIsCallWaiterOpen: (open: boolean) => void;
   isNfcModalOpen: boolean;
   setIsNfcModalOpen: (open: boolean) => void;
+  /** Til va kun/tun sozlamalari oynasi */
+  isSettingsOpen: boolean;
+  setIsSettingsOpen: (open: boolean) => void;
   isQrModalOpen: boolean;
   setIsQrModalOpen: (open: boolean) => void;
   isStudioModalOpen: boolean;
@@ -638,6 +641,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Modals
   const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
   const [isNfcModalOpen, setIsNfcModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
 
@@ -1256,6 +1260,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setIsCallWaiterOpen,
         isNfcModalOpen,
         setIsNfcModalOpen,
+        isSettingsOpen,
+        setIsSettingsOpen,
         isQrModalOpen,
         setIsQrModalOpen,
         isStudioModalOpen,

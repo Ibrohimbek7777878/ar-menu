@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../../i18n';
 import './SearchBar.css';
 
 export interface SearchBarProps {
@@ -11,7 +12,7 @@ export interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChange,
-  placeholder = 'Taom yoki ichimlik qidiring...',
+  placeholder = t('Taom yoki ichimlik qidiring...'),
   className = '',
 }) => {
   return (
@@ -34,7 +35,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           type="button"
           className="search-clear-cross"
           onClick={() => onChange('')}
-          aria-label="Tozalash"
+          aria-label={t('Tozalash')}
         >
           ✕
         </button>

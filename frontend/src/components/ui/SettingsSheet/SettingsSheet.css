@@ -1,0 +1,72 @@
+/* Sozlamalar oynasi (til, kun/tun): faqat sayt tokenlari, yangi rang yo'q — kun/tun rejimida o'zi almashadi */
+.settings-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.settings-btn:hover { background: var(--bg-surface-subtle); color: var(--text-primary); }
+.settings-btn:active { transform: scale(0.94); }
+
+.st-root { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; }
+.st-backdrop { position: absolute; inset: 0; background: rgba(24, 21, 19, 0.45); animation: st-fade 0.2s ease both; }
+.st-sheet {
+  position: relative;
+  width: min(100%, 460px);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 8px 20px calc(24px + var(--safe-bottom));
+  box-shadow: var(--shadow-modal);
+  animation: st-rise 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.st-root.is-closing .st-backdrop { animation: st-fade 0.2s ease reverse both; }
+.st-root.is-closing .st-sheet { animation: st-rise 0.2s ease reverse both; }
+.st-grabber { width: 40px; height: 4px; border-radius: 2px; background: var(--border-strong); margin: 4px auto 10px; }
+.st-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.st-title { font-size: 18px; font-weight: 700; margin: 0; }
+.st-close {
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: var(--radius-full); background: var(--bg-surface-subtle); color: var(--text-secondary); cursor: pointer;
+}
+.st-section { margin-top: 14px; }
+.st-label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 8px; }
+.st-seg { display: flex; gap: 6px; padding: 4px; border-radius: var(--radius-full); background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); }
+.st-opt {
+  flex: 1; min-height: 44px; padding: 8px 10px; border: none; border-radius: var(--radius-full);
+  background: transparent; color: var(--text-secondary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.st-opt.is-on { background: var(--brand-primary); color: #FFFFFF; box-shadow: 0 2px 8px rgb(var(--brand-primary-rgb) / 0.25); }
+.st-opt:disabled { opacity: 0.6; cursor: wait; }
+.st-opt:focus-visible, .st-close:focus-visible, .settings-btn:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+.st-hint { margin: 8px 2px 0; font-size: 12px; color: var(--text-muted); }
+
+@keyframes st-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes st-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .st-backdrop, .st-sheet { animation: none !important; }
+}
+@media (min-width: 640px) {
+  .st-root { align-items: center; }
+  .st-sheet { border-radius: var(--radius-lg); padding-bottom: 24px; }
+  .st-grabber { display: none; }
+}
+
+/* Sarlavhaga tugma qo'shilgani uchun tor ekranda joy ochiladi (faqat tugma bor sarlavhada; tugma yo'q bo'lsa sarlavha avvalgidek) */
+@media (max-width: 480px) {
+  .header-nav-container:has(.settings-btn) { gap: 8px; padding: 0 12px; }
+  .header-nav-container:has(.settings-btn) .header-nav-actions { gap: 6px; }
+  .header-nav-container:has(.settings-btn) .header-brand-link { min-width: 0; flex: 1 1 auto; }
+  .header-nav-container:has(.settings-btn) .brand-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .header-nav-container:has(.settings-btn) .header-nav-actions { flex: 0 0 auto; }
+  .header-nav-actions .settings-btn { width: 36px; height: 36px; min-width: 36px; }
+}

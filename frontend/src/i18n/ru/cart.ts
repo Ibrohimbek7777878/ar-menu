@@ -1,0 +1,20 @@
+// Savat sahifasi (CartPage)
+export default {
+  'Taom savatdan olib tashlandi': 'Блюдо удалено из корзины',
+  '{name} savatdan olib tashlandi': 'Из корзины удалено: {name}',
+  'Menyuga qaytish': 'Назад в меню',
+  'Asosiy Zal': 'Главный зал',
+  'Savatchangiz': 'Ваша корзина',
+  '{n} ta taom': '{n} блюдо|{n} блюда|{n} блюд',
+  "O'chirish": 'Удалить',
+  "{name}ni o'chirish": 'Удалить: {name}',
+  'Oshxona uchun maxsus istak yoki eslatma:': 'Пожелание или заметка для кухни:',
+  "Masalan: Sho'rvasini kamroq yog'li qiling, ko'katlarsiz, issiqroq keltiring...": 'Например: шурпу менее жирной, без зелени, подайте погорячее...',
+  'Buyurtmani rasmiylashtirish': 'Оформить заказ',
+  "Savatingiz hozircha bo'sh": 'В корзине пока пусто',
+  'Dasturxonimizdagi sara va milliy taomlarni tanlab, buyurtma berishingiz mumkin.': 'Выберите лучшие блюда национальной кухни из нашего меню и оформите заказ.',
+  'Menyudan taom tanlash': 'Выбрать блюда в меню',
+  'dona': 'шт',
+  'porsiya': 'порц.',
+  'kg': 'кг',
+} as Record<string, string>

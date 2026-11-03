@@ -3,7 +3,8 @@ import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { RouteGuard } from './core/guards/RouteGuard';
 import { getTabFromPath } from './pages/AdminDashboardPage/tabs';
 import { roleService } from './core/auth/RoleService';
-import { CallWaiterModal, NFCGatewayModal } from './components/ui';
+import { CallWaiterModal, NFCGatewayModal, SettingsSheet } from './components/ui';
+import { LangBoundary } from './i18n/LangBoundary';
 import './App.css';
 
 // Har sahifa alohida bo'lak (TZ: R8-1): mehmon faqat o'zi ochgan sahifa kodini yuklaydi, xodim kodi (admin, KDS, moliya,
@@ -130,6 +131,7 @@ const GlobalModals: React.FC = () => {
     <>
       <CallWaiterModal />
       <NFCGatewayModal />
+      <SettingsSheet />
       {/* Xodim vositalari: faqat ochilganda yuklanadi (qrcode kutubxonasi mehmonga tushmaydi) */}
       {isQrModalOpen && (
         <Suspense fallback={null}>
@@ -162,10 +164,12 @@ const GlobalModals: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <NavigationProvider>
-      <Suspense fallback={null}>
-        <AppContent />
-      </Suspense>
-      <GlobalModals />
+      <LangBoundary>
+        <Suspense fallback={null}>
+          <AppContent />
+        </Suspense>
+        <GlobalModals />
+      </LangBoundary>
     </NavigationProvider>
   );
 };

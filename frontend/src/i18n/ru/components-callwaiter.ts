@@ -1,0 +1,21 @@
+// Ofitsiantni chaqirish oynasi (CallWaiterModal)
+export default {
+  "Ko'k / Qora Choy": 'Зелёный / чёрный чай',
+  "Choynakni yangilash yoki qo'shimcha choy": 'Заменить чайник или добавить чай',
+  'Issiq Tandir Non': 'Горячий хлеб из тандыра',
+  'Yangi issiq non olib kelish': 'Принести свежий горячий хлеб',
+  'Hisob-kitob (Chek)': 'Счёт (чек)',
+  "To'lov uchun yakuniy hisobni olib kelish": 'Принести итоговый счёт для оплаты',
+  'Ofitsiantni chaqirish': 'Позвать официанта',
+  "Stolga xizmat ko'rsatish bo'yicha yordam": 'Помощь с обслуживанием стола',
+  "Stol {num} bo'yicha xodimingiz zudlik bilan yo'lga chiqdi.": 'Сотрудник уже спешит к столу {num}.',
+  'Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.': 'Стол не определён. Отсканируйте QR-код на столе.',
+  "Chaqiruv yuborilmadi. Internetni tekshirib, qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring.": 'Вызов не отправлен. Проверьте интернет и повторите попытку или поднимите руку, чтобы позвать официанта.',
+  'Ofitsiantga xabar yuborildi!': 'Официанту отправлено сообщение!',
+  'Ofitsiantga xabar berish': 'Сообщить официанту',
+  'Qanday xizmat kerakligini tanlang, ofitsiantimiz bir necha daqiqada stolingizga yetib keladi.': 'Выберите, что вам нужно, — официант подойдёт к столу через несколько минут.',
+  "Qo'shimcha izoh (ixtiyoriy):": 'Комментарий (необязательно):',
+  "Masalan: limonli bo'lsin, 2 ta stakan...": 'Например: с лимоном, 2 стакана...',
+  'Yuborilmoqda...': 'Отправляем...',
+  'Chaqiruvni yuborish': 'Отправить вызов',
+} as Record<string, string>

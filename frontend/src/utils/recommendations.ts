@@ -3,6 +3,9 @@
 // Bo'lim turini egasi admin paneldan tanlaydi, bo'sh bo'lsa nomidan aniqlanadi (backend: categories/kinds.py).
 import type { DishKind, Product } from '../types/dish'
 
+// `tr` core.ts dan (i18n/index.ts Vite-ga xos `import.meta.glob` ishlatadi, uni `node --test` import qila olmaydi)
+import { tr } from '../i18n/core.ts'
+
 /** Asosiy taom -> salatlar, salat -> shirinliklar, shirinlik -> ichimliklar, ichimlik -> shirinliklar. */
 export const COMPLEMENT_KINDS: Record<DishKind, readonly DishKind[]> = {
   main: ['salad'],
@@ -12,12 +15,13 @@ export const COMPLEMENT_KINDS: Record<DishKind, readonly DishKind[]> = {
   other: [],
 }
 
+/** Sarlavhalar o'zbekcha kalit sifatida belgilangan; ko'rsatishda `t(COMPLEMENT_TITLES[kind])` chaqiriladi (DishSheet). */
 export const COMPLEMENT_TITLES: Record<DishKind, string> = {
-  main: "Qo'shimcha: salatlar",
-  salad: "Qo'shimcha: shirinliklar",
-  dessert: "Qo'shimcha: ichimliklar",
-  drink: "Qo'shimcha: shirinliklar",
-  other: "Qo'shimcha",
+  main: tr("Qo'shimcha: salatlar"),
+  salad: tr("Qo'shimcha: shirinliklar"),
+  dessert: tr("Qo'shimcha: ichimliklar"),
+  drink: tr("Qo'shimcha: shirinliklar"),
+  other: tr("Qo'shimcha"),
 }
 
 /** Tavsiya (Hit) belgilangan taomlar oldinga; qolganlari menyudagi tartibida (saralash barqaror). */

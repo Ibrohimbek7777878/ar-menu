@@ -1,3 +1,7 @@
+import type { Lang } from '../i18n/core';
+// `.ts` kengaytmasi bilan: tests/uzbekSearch.test.ts bu faylni to'g'ridan-to'g'ri `node --test` bilan yuklaydi (Node kengaytmasiz yo'lni topmaydi)
+import { dishDescription, dishName } from './dishText.ts';
+
 /**
  * O'zbek tili uchun aqlli semantik va fonetik qidiruv yordamchisi.
  * Apostroflar (' ‘ ’ ʻ ʼ `) va o'/g' harflarining har xil yozilishini to'g'ri tushunadi.
@@ -69,4 +73,30 @@ export function matchUzbekQuery(
 
   const target = toCanonical(targetFields.filter(Boolean).join(' '));
   return tokens.every((token) => target.includes(token));
+}
+
+interface SearchableDish {
+  name: string;
+  name_ru?: string;
+  name_en?: string;
+  description?: string;
+  desc_ru?: string;
+  desc_en?: string;
+  category_name?: string;
+}
+
+/**
+ * Taom uchun qidiruv maydonlari: o'zbekcha nom/tavsif/bo'lim HAR DOIM bor (ism yoki lotincha so'z bilan qidirish ishlayveradi),
+ * tanlangan til rus/ingliz bo'lsa uning tarjimasi ham qo'shiladi (rus mehmon "плов" yoki "salad" deb yozsa topiladi).
+ * `categoryLabel` — bo'limning tanlangan tildagi nomi (berilsa qo'shiladi). Natija `matchUzbekQuery` ga beriladi.
+ */
+export function dishSearchFields(product: SearchableDish, lang: Lang, categoryLabel?: string): string[] {
+  return [
+    product.name,
+    dishName(product, lang),
+    product.description,
+    dishDescription(product, lang),
+    product.category_name,
+    categoryLabel,
+  ].filter((v): v is string => typeof v === 'string' && v.length > 0);
 }

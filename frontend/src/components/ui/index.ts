@@ -15,3 +15,4 @@ export * from './CallWaiterModal';
 export * from './NFCGatewayModal';
 // QRGeneratorModal va PhotogrammetryStudioModal bu yerdan eksport qilinmaydi: ular faqat xodimga kerak (qrcode kutubxonasi
 // bilan), App.tsx ularni alohida bo'lak sifatida kerak bo'lgandagina yuklaydi (TZ: R8-1).
+export * from './SettingsSheet';

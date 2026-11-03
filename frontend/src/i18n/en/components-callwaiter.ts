@@ -1,0 +1,21 @@
+// Ofitsiantni chaqirish oynasi (CallWaiterModal)
+export default {
+  "Ko'k / Qora Choy": 'Green / black tea',
+  "Choynakni yangilash yoki qo'shimcha choy": 'New teapot or extra tea',
+  'Issiq Tandir Non': 'Hot tandoor bread',
+  'Yangi issiq non olib kelish': 'Bring fresh hot bread',
+  'Hisob-kitob (Chek)': 'Bill (check)',
+  "To'lov uchun yakuniy hisobni olib kelish": 'Bring the final bill to pay',
+  'Ofitsiantni chaqirish': 'Call the waiter',
+  "Stolga xizmat ko'rsatish bo'yicha yordam": 'Help with table service',
+  "Stol {num} bo'yicha xodimingiz zudlik bilan yo'lga chiqdi.": 'A staff member is heading to table {num} right away.',
+  'Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.': 'Table not detected. Scan the QR code on your table.',
+  "Chaqiruv yuborilmadi. Internetni tekshirib, qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring.": 'The call was not sent. Check your internet connection and try again, or raise your hand to get the waiter.',
+  'Ofitsiantga xabar yuborildi!': 'Message sent to the waiter!',
+  'Ofitsiantga xabar berish': 'Notify the waiter',
+  'Qanday xizmat kerakligini tanlang, ofitsiantimiz bir necha daqiqada stolingizga yetib keladi.': 'Choose what you need and our waiter will reach your table in a few minutes.',
+  "Qo'shimcha izoh (ixtiyoriy):": 'Extra note (optional):',
+  "Masalan: limonli bo'lsin, 2 ta stakan...": 'E.g. with lemon, 2 glasses...',
+  'Yuborilmoqda...': 'Sending...',
+  'Chaqiruvni yuborish': 'Send call',
+} as Record<string, string>

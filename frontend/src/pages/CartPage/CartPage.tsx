@@ -9,11 +9,16 @@ import {
 } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { CartSync } from '../../services/CartSync';
+import { fmtMoney, getLang, t } from '../../i18n';
+import { dishName } from '../../utils/dishText';
 import './CartPage.css';
 
 interface CartItem {
   product_id: number;
   name: string;
+  /** Rus/ingliz tarjimalari (server yuborsa; bo'sh bo'lsa o'zbekcha ko'rinadi) */
+  name_ru?: string;
+  name_en?: string;
   price: number;
   quantity: number;
   subtotal: number;
@@ -86,7 +91,7 @@ export const CartPage: React.FC = () => {
   const handleUpdateQuantity = (productId: number, newQty: number) => {
     if (newQty <= 0) {
       void CartSync.setQuantity(productId, 0);
-      showToast("Taom savatdan olib tashlandi");
+      showToast(t("Taom savatdan olib tashlandi"));
       setItems((prev) => prev.filter((item) => item.product_id !== productId));
       return;
     }
@@ -101,7 +106,7 @@ export const CartPage: React.FC = () => {
   const handleRemoveItem = (productId: number, name: string) => {
     setItems((prev) => prev.filter((item) => item.product_id !== productId));
     void CartSync.setQuantity(productId, 0);
-    showToast(`${name} savatdan olib tashlandi`);
+    showToast(t('{name} savatdan olib tashlandi', { name }));
   };
 
   const totalCartCount = useMemo(() => {
@@ -111,8 +116,6 @@ export const CartPage: React.FC = () => {
   const subtotal = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [items]);
-
-  const fmt = (num: number) => new Intl.NumberFormat('uz-UZ').format(num);
 
   return (
     <div className="cart-app-container">
@@ -134,13 +137,13 @@ export const CartPage: React.FC = () => {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span>Menyuga qaytish</span>
+            <span>{t('Menyuga qaytish')}</span>
           </a>
 
           {table?.number && (
             <TableBadge
               tableNumber={table.number}
-              hallName={table.hall || "Asosiy Zal"}
+              hallName={table.hall ? t(table.hall) : t("Asosiy Zal")}
               status="available"
             />
           )}
@@ -150,8 +153,8 @@ export const CartPage: React.FC = () => {
           <>
             {/* Title & Counter */}
             <div className="cart-title-section">
-              <h1 className="cart-title-main">Savatchangiz</h1>
-              <span className="cart-items-count-badge tabular-nums">{totalCartCount} ta taom</span>
+              <h1 className="cart-title-main">{t('Savatchangiz')}</h1>
+              <span className="cart-items-count-badge tabular-nums">{t('{n} ta taom', { n: totalCartCount })}</span>
             </div>
 
             {/* List of Cart Items */}
@@ -162,7 +165,7 @@ export const CartPage: React.FC = () => {
                     {item.image ? (
                       <img
                         src={item.image}
-                        alt={item.name}
+                        alt={dishName(item, getLang())}
                         className="cart-item-img"
                         loading="lazy"
                         decoding="async"
@@ -184,12 +187,12 @@ export const CartPage: React.FC = () => {
                   </div>
 
                   <div className="cart-item-details">
-                    <h3 className="cart-item-name">{item.name}</h3>
+                    <h3 className="cart-item-name">{dishName(item, getLang())}</h3>
                     <p className="cart-item-unit-price tabular-nums">
-                      {fmt(item.price)} so'm {item.unit ? `/ ${item.unit}` : ''}
+                      {fmtMoney(item.price)} {item.unit ? `/ ${t(item.unit)}` : ''}
                     </p>
                     <span className="cart-item-total-price tabular-nums">
-                      {fmt(item.price * item.quantity)} so'm
+                      {fmtMoney(item.price * item.quantity)}
                     </span>
                   </div>
 
@@ -204,9 +207,9 @@ export const CartPage: React.FC = () => {
                     <button
                       type="button"
                       className="btn-remove-item"
-                      onClick={() => handleRemoveItem(item.product_id, item.name)}
-                      title="O'chirish"
-                      aria-label={`${item.name}ni o'chirish`}
+                      onClick={() => handleRemoveItem(item.product_id, dishName(item, getLang()))}
+                      title={t("O'chirish")}
+                      aria-label={t("{name}ni o'chirish", { name: dishName(item, getLang()) })}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -223,11 +226,11 @@ export const CartPage: React.FC = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
                 </svg>
-                <span>Oshxona uchun maxsus istak yoki eslatma:</span>
+                <span>{t('Oshxona uchun maxsus istak yoki eslatma:')}</span>
               </h4>
               <textarea
                 className="cart-note-input"
-                placeholder="Masalan: Sho'rvasini kamroq yog'li qiling, ko'katlarsiz, issiqroq keltiring..."
+                placeholder={t("Masalan: Sho'rvasini kamroq yog'li qiling, ko'katlarsiz, issiqroq keltiring...")}
                 value={customerNote}
                 onChange={(e) => setCustomerNote(e.target.value)}
               />
@@ -243,7 +246,7 @@ export const CartPage: React.FC = () => {
                 }
                 navigate('/checkout');
               }}
-              checkoutButtonText="Buyurtmani rasmiylashtirish"
+              checkoutButtonText={t('Buyurtmani rasmiylashtirish')}
             />
           </>
         ) : (
@@ -256,12 +259,12 @@ export const CartPage: React.FC = () => {
                 <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
               </svg>
             </div>
-            <h2 className="empty-cart-heading">Savatingiz hozircha bo'sh</h2>
+            <h2 className="empty-cart-heading">{t("Savatingiz hozircha bo'sh")}</h2>
             <p className="empty-cart-desc">
-              Dasturxonimizdagi sara va milliy taomlarni tanlab, buyurtma berishingiz mumkin.
+              {t('Dasturxonimizdagi sara va milliy taomlarni tanlab, buyurtma berishingiz mumkin.')}
             </p>
             <button type="button" onClick={() => navigate('/menu')} className="btn-go-menu-primary">
-              <span>Menyudan taom tanlash</span>
+              <span>{t('Menyudan taom tanlash')}</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>

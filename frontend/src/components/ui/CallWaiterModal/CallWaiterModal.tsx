@@ -2,11 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigation, type LiveServiceCall } from '../../../context/NavigationContext';
 import { fxEnabled } from '../../../motion/env';
 import { pop, ringBell, rippleRings, setButtonState } from '../../../motion/fx';
+import { t, tr } from '../../../i18n';
 import './CallWaiterModal.css';
 
 interface CallOption {
   type: LiveServiceCall['type'];
   icon: string;
+  /** O'zbekcha matn: xodimlarga serverga shu holatda yuboriladi; mehmonga `t(title)` ko'rsatiladi */
   title: string;
   desc: string;
   color: string;
@@ -16,29 +18,29 @@ const CALL_OPTIONS: CallOption[] = [
   {
     type: 'tea',
     icon: '🫖',
-    title: 'Ko\'k / Qora Choy',
-    desc: 'Choynakni yangilash yoki qo\'shimcha choy',
+    title: tr("Ko'k / Qora Choy"),
+    desc: tr("Choynakni yangilash yoki qo'shimcha choy"),
     color: '#16A34A',
   },
   {
     type: 'bread',
     icon: '🍞',
-    title: 'Issiq Tandir Non',
-    desc: 'Yangi issiq non olib kelish',
+    title: tr('Issiq Tandir Non'),
+    desc: tr('Yangi issiq non olib kelish'),
     color: '#D97706',
   },
   {
     type: 'bill',
     icon: '🧾',
-    title: 'Hisob-kitob (Chek)',
-    desc: 'To\'lov uchun yakuniy hisobni olib kelish',
+    title: tr('Hisob-kitob (Chek)'),
+    desc: tr("To'lov uchun yakuniy hisobni olib kelish"),
     color: '#E11D48',
   },
   {
     type: 'waiter',
     icon: '🙋‍♂️',
-    title: 'Ofitsiantni chaqirish',
-    desc: 'Stolga xizmat ko\'rsatish bo\'yicha yordam',
+    title: tr('Ofitsiantni chaqirish'),
+    desc: tr("Stolga xizmat ko'rsatish bo'yicha yordam"),
     color: 'var(--brand-primary)',
   },
 ];
@@ -63,10 +65,13 @@ export const CallWaiterModal: React.FC = () => {
 
   if (!isCallWaiterOpen) return null;
 
+  // "Stol #5 bo'yicha ..." — stol raqami qalin chiqishi uchun jumla belgi bo'yicha ikkiga bo'linadi (so'z tartibi tilga qarab o'zgaradi)
+  const sentParts = t("Stol {num} bo'yicha xodimingiz zudlik bilan yo'lga chiqdi.", { num: '\u0001' }).split('\u0001');
+
   const handleSendCall = async () => {
     if (isSending) return;
     if (!tableNumber) {
-      setErrorMsg("Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.");
+      setErrorMsg(t('Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.'));
       return;
     }
     const opt = CALL_OPTIONS.find((o) => o.type === selectedType) || CALL_OPTIONS[3];
@@ -85,7 +90,7 @@ export const CallWaiterModal: React.FC = () => {
     if (!ok) {
       setButtonState(sendRef.current, 'error');
       window.setTimeout(() => setButtonState(sendRef.current, 'idle'), 1400);
-      setErrorMsg("Chaqiruv yuborilmadi. Internetni tekshirib, qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring.");
+      setErrorMsg(t("Chaqiruv yuborilmadi. Internetni tekshirib, qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring."));
       return;
     }
 
@@ -109,7 +114,7 @@ export const CallWaiterModal: React.FC = () => {
           type="button"
           className="call-waiter-close"
           onClick={() => setIsCallWaiterOpen(false)}
-          aria-label="Yopish"
+          aria-label={t('Yopish')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -120,18 +125,18 @@ export const CallWaiterModal: React.FC = () => {
         {isSuccess ? (
           <div className="call-waiter-success">
             <div className="success-icon-bubble" ref={bubbleRef}>✓</div>
-            <h3>Ofitsiantga xabar yuborildi!</h3>
+            <h3>{t('Ofitsiantga xabar yuborildi!')}</h3>
             <p>
-              Stol <strong>#{tableNumber}</strong> bo'yicha xodimingiz zudlik bilan yo'lga chiqdi.
+              {sentParts[0]}<strong>#{tableNumber}</strong>{sentParts[1] ?? ''}
             </p>
           </div>
         ) : (
           <>
             <div className="call-waiter-header">
-              <span className="call-waiter-badge">Stol #{tableNumber}</span>
-              <h3 className="call-waiter-title">Ofitsiantga xabar berish</h3>
+              <span className="call-waiter-badge">{t('Stol #{num}', { num: tableNumber })}</span>
+              <h3 className="call-waiter-title">{t('Ofitsiantga xabar berish')}</h3>
               <p className="call-waiter-desc">
-                Qanday xizmat kerakligini tanlang, ofitsiantimiz bir necha daqiqada stolingizga yetib keladi.
+                {t('Qanday xizmat kerakligini tanlang, ofitsiantimiz bir necha daqiqada stolingizga yetib keladi.')}
               </p>
             </div>
 
@@ -142,12 +147,12 @@ export const CallWaiterModal: React.FC = () => {
                   className={`call-opt-card ${selectedType === opt.type ? 'active' : ''}`}
                   onClick={() => setSelectedType(opt.type)}
                 >
-                  <span className="call-opt-emoji" role="img" aria-label={opt.title}>
+                  <span className="call-opt-emoji" role="img" aria-label={t(opt.title)}>
                     {opt.icon}
                   </span>
                   <div className="call-opt-info">
-                    <span className="call-opt-title">{opt.title}</span>
-                    <span className="call-opt-desc">{opt.desc}</span>
+                    <span className="call-opt-title">{t(opt.title)}</span>
+                    <span className="call-opt-desc">{t(opt.desc)}</span>
                   </div>
                   <div className="call-opt-radio">
                     {selectedType === opt.type && <span className="radio-dot" />}
@@ -158,13 +163,13 @@ export const CallWaiterModal: React.FC = () => {
 
             <div className="call-waiter-note-wrap">
               <label htmlFor="call-waiter-note" className="call-note-label">
-                Qo'shimcha izoh (ixtiyoriy):
+                {t("Qo'shimcha izoh (ixtiyoriy):")}
               </label>
               <input
                 id="call-waiter-note"
                 type="text"
                 className="call-note-input"
-                placeholder="Masalan: limonli bo'lsin, 2 ta stakan..."
+                placeholder={t("Masalan: limonli bo'lsin, 2 ta stakan...")}
                 value={customNote}
                 onChange={(e) => setCustomNote(e.target.value)}
               />
@@ -175,7 +180,7 @@ export const CallWaiterModal: React.FC = () => {
             )}
 
             <button type="button" ref={sendRef} className="btn-send-call" onClick={handleSendCall} disabled={isSending}>
-              <span>{isSending ? 'Yuborilmoqda...' : 'Chaqiruvni yuborish'}</span>
+              <span>{isSending ? t('Yuborilmoqda...') : t('Chaqiruvni yuborish')}</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />

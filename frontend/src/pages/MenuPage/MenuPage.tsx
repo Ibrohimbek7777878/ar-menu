@@ -17,6 +17,8 @@ import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { DishSheet } from '../../components/ui/DishSheet/DishSheet';
 import { getGuestDesign } from '../../utils/guestDesign';
 import { enrichDishWith3D } from '../../services/Smart3DMatcher';
+import { getLang, t } from '../../i18n';
+import { dishName } from '../../utils/dishText';
 import './MenuPage.css';
 
 interface InitialData {
@@ -153,13 +155,13 @@ export const MenuPage: React.FC = () => {
 
   const handleAddToCart = (product: Product) => {
     addToCart(product.id, 1);
-    showToast(`${product.name} savatga qo'shildi`);
+    showToast(t("{name} savatga qo'shildi", { name: dishName(product, getLang()) }));
   };
 
   const handleUpdateQuantity = (productId: number, delta: number) => {
     updateQuantity(productId, delta);
     if (delta < 0 && (cart[productId] || 0) <= 1) {
-      showToast("Taom savatdan olib tashlandi");
+      showToast(t("Taom savatdan olib tashlandi"));
     }
   };
 
@@ -181,7 +183,7 @@ export const MenuPage: React.FC = () => {
       }
       // Smart Uzbek Search query (handles o', g', sh, ch and all apostrophes)
       if (searchQuery.trim()) {
-        const isMatch = matchUzbekQuery([p.name, p.description, p.category_name], searchQuery);
+        const isMatch = matchUzbekQuery([p.name, p.name_ru, p.name_en, p.description, p.category_name], searchQuery);
         if (!isMatch) return false;
       }
       return true;
@@ -238,7 +240,7 @@ export const MenuPage: React.FC = () => {
         <div className="menu-top-bar">
           <TableBadge
             tableNumber={tableNumber || table?.number || 5}
-            hallName={table?.hall || "Asosiy Zal"}
+            hallName={table?.hall ? t(table.hall) : t("Asosiy Zal")}
             status="available"
           />
 
@@ -253,7 +255,7 @@ export const MenuPage: React.FC = () => {
               <path d="m3.29 7 8.71 5.37L20.71 7" />
               <path d="M12 12.37V22" />
             </svg>
-            <span>Faqat 360° taomlar</span>
+            <span>{t('Faqat 360° taomlar')}</span>
           </button>
         </div>
 
@@ -262,7 +264,7 @@ export const MenuPage: React.FC = () => {
           <SearchBar
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder="Osh, kabob, sho'rva, salat qidirish..."
+            placeholder={t("Osh, kabob, sho'rva, salat qidirish...")}
           />
         </div>
 
@@ -298,18 +300,18 @@ export const MenuPage: React.FC = () => {
                   <path d="M8 11h6" />
                 </svg>
               </div>
-              <h3 className="empty-title">{products.length === 0 ? 'Menyu tez orada' : 'Mos taom topilmadi'}</h3>
+              <h3 className="empty-title">{products.length === 0 ? t('Menyu tez orada') : t('Mos taom topilmadi')}</h3>
               <p className="empty-text">
                 {products.length === 0
-                  ? "Restoran taomlarni qo'shmoqda. Birozdan keyin qayta oching."
-                  : "Qidiruv so'zini tekshiring yoki barcha toifalarni ko'ring."}
+                  ? t("Restoran taomlarni qo'shmoqda. Birozdan keyin qayta oching.")
+                  : t("Qidiruv so'zini tekshiring yoki barcha toifalarni ko'ring.")}
               </p>
               <button
                 type="button"
                 className="btn-clear-filters"
                 onClick={() => { setActiveCategory('all'); setSearchQuery(''); setOnly3D(false); }}
               >
-                Barcha taomlarni ko'rsatish
+                {t("Barcha taomlarni ko'rsatish")}
               </button>
             </div>
           )}
@@ -319,7 +321,7 @@ export const MenuPage: React.FC = () => {
         {filteredProducts.length > 0 && (
           <div className="menu-pagination-bar">
             <span className="pagination-count-label">
-              {filteredProducts.length} tadan {visibleProducts.length} tasi ko'rsatilmoqda
+              {t("{total} tadan {shown} tasi ko'rsatilmoqda", { total: filteredProducts.length, shown: visibleProducts.length })}
             </span>
             {filteredProducts.length > visibleCount && (
               <button
@@ -330,7 +332,7 @@ export const MenuPage: React.FC = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                <span>Yana taomlarni ko'rish</span>
+                <span>{t("Yana taomlarni ko'rish")}</span>
               </button>
             )}
           </div>

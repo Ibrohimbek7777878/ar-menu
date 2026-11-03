@@ -4,7 +4,12 @@ export type DishKind = 'main' | 'salad' | 'dessert' | 'drink' | 'other';
 export interface Product {
   id: number;
   name: string;
+  /** Rus/ingliz tarjimalari (restoran egasi /ra/ menyu bo'limidan kiritadi); bo'sh bo'lsa server kalitni yubormaydi -> o'zbekcha ko'rinadi */
+  name_ru?: string;
+  name_en?: string;
   description?: string;
+  desc_ru?: string;
+  desc_en?: string;
   price: number;
   old_price?: number;
   image?: string;
@@ -32,6 +37,8 @@ export interface Product {
 export interface Category {
   id: number;
   name: string;
+  name_ru?: string;
+  name_en?: string;
   icon?: string;
   count?: number;
 }

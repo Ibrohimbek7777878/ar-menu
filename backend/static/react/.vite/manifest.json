@@ -1,6 +1,6 @@
 {
-  "_HeroPlate3D-B9arx8Mu.js": {
-    "file": "assets/HeroPlate3D-B9arx8Mu.js",
+  "_HeroPlate3D-BuFxt3v8.js": {
+    "file": "assets/HeroPlate3D-BuFxt3v8.js",
     "name": "HeroPlate3D",
     "imports": [
       "index.html"
@@ -17,12 +17,12 @@
     "file": "assets/mockDishes-Ct1bRflm.js",
     "name": "mockDishes"
   },
-  "_motion-BmQHNqhs.js": {
-    "file": "assets/motion-BmQHNqhs.js",
+  "_motion-B_HbVS-A.js": {
+    "file": "assets/motion-B_HbVS-A.js",
     "name": "motion",
     "imports": [
       "index.html",
-      "_HeroPlate3D-B9arx8Mu.js"
+      "_HeroPlate3D-BuFxt3v8.js"
     ]
   },
   "_three.module-VGYe9TAt.js": {
@@ -34,11 +34,13 @@
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-D41eSJeE.js",
+    "file": "assets/index-DaZIo-y2.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
     "dynamicImports": [
+      "src/i18n/ru/index.ts",
+      "src/i18n/en/index.ts",
       "node_modules/@google/model-viewer/lib/model-viewer.js",
       "src/pages/WelcomePage/WelcomePage.tsx",
       "src/pages/MenuPage/MenuPage.tsx",
@@ -79,7 +81,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-D1_e56qv.js",
+    "file": "assets/model-viewer-Btam1S2d.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -89,7 +91,7 @@
     ]
   },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-o10J-Hx8.js",
+    "file": "assets/PhotogrammetryStudioModal-C1AhqKAx.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -99,7 +101,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-D5iFOVeV.js",
+    "file": "assets/QRGeneratorModal-NCE7gcvO.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -107,8 +109,20 @@
       "index.html"
     ]
   },
+  "src/i18n/en/index.ts": {
+    "file": "assets/en-OmQuknUo.js",
+    "name": "en",
+    "src": "src/i18n/en/index.ts",
+    "isDynamicEntry": true
+  },
+  "src/i18n/ru/index.ts": {
+    "file": "assets/ru-CE72xfdX.js",
+    "name": "ru",
+    "src": "src/i18n/ru/index.ts",
+    "isDynamicEntry": true
+  },
   "src/motion/three/celebrationScene.ts": {
-    "file": "assets/celebrationScene-B6gM7nbS.js",
+    "file": "assets/celebrationScene-D1zADw3q.js",
     "name": "celebrationScene",
     "src": "src/motion/three/celebrationScene.ts",
     "isDynamicEntry": true,
@@ -118,7 +132,7 @@
     ]
   },
   "src/motion/three/heroPlateScene.ts": {
-    "file": "assets/heroPlateScene-xi40Tx_i.js",
+    "file": "assets/heroPlateScene-DnKkqjtS.js",
     "name": "heroPlateScene",
     "src": "src/motion/three/heroPlateScene.ts",
     "isDynamicEntry": true,
@@ -128,7 +142,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-DmYcaAHQ.js",
+    "file": "assets/ARMenuPage-DE-4aG7R.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -140,7 +154,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-BekCdxT1.js",
+    "file": "assets/AdminDashboardPage-BYS32MD4.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -152,7 +166,7 @@
     ]
   },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-C-S1AZbn.js",
+    "file": "assets/CartPage-GIVJLciA.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -161,20 +175,20 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-CtXV5fA0.js",
+    "file": "assets/CheckoutPage-DaPccxUS.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-BmQHNqhs.js"
+      "_motion-B_HbVS-A.js"
     ],
     "dynamicImports": [
       "src/motion/three/celebrationScene.ts"
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-igTr8vs-.js",
+    "file": "assets/HostessDeskPage-K7Uu2BwD.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -183,7 +197,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-D7NBZWgc.js",
+    "file": "assets/MenuPage-BLA5Phx-.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -195,17 +209,17 @@
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-qtCVprNW.js",
+    "file": "assets/OrdersPage-CrsgnMAa.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-BmQHNqhs.js"
+      "_motion-B_HbVS-A.js"
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-0XtZxPYq.js",
+    "file": "assets/ReservationPage-D2r8rPav.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -214,7 +228,7 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-B2cUHAjl.js",
+    "file": "assets/TableHubPage-akyarM6T.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
@@ -223,7 +237,7 @@
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-D1OswG9M.js",
+    "file": "assets/WaiterPanelPage-u2ZPtwif.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -232,17 +246,17 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-CbjHF3Ds.js",
+    "file": "assets/WelcomePage-ChF2hTCJ.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_HeroPlate3D-B9arx8Mu.js"
+      "_HeroPlate3D-BuFxt3v8.js"
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-gTftgtJk.js",
+    "file": "assets/ComponentShowcase-D2imfZ9z.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
@@ -252,7 +266,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-Baz-QG7g.css",
+    "file": "assets/style-BHkbH91Y.css",
     "src": "style.css"
   }
 }

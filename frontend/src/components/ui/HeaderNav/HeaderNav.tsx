@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigation } from '../../../context/NavigationContext';
 import { pop } from '../../../motion/fx';
+import { t } from '../../../i18n';
+import { SettingsButton } from '../SettingsSheet/SettingsButton';
 import './HeaderNav.css';
 
 export interface HeaderNavProps {
@@ -36,18 +38,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   useEffect(() => {
     if (cartCount > prevCount.current) {
       prevCount.current = cartCount;
-      const t = window.setTimeout(() => pop(badgeRef.current), 480);
-      return () => window.clearTimeout(t);
+      const timer = window.setTimeout(() => pop(badgeRef.current), 480);
+      return () => window.clearTimeout(timer);
     }
     prevCount.current = cartCount;
   }, [cartCount]);
 
   const navLinks = [
-    { path: '/', label: 'Asosiy' },
-    { path: '/menu', label: 'Menyu' },
-    { path: '/ar', label: '360° Taomlar' },
-    { path: '/table', label: 'Stol xizmatlari' },
-    { path: '/orders', label: 'Buyurtmalar' },
+    { path: '/', label: t('Asosiy') },
+    { path: '/menu', label: t('Menyu') },
+    { path: '/ar', label: t('360° Taomlar') },
+    { path: '/table', label: t('Stol xizmatlari') },
+    { path: '/orders', label: t('Buyurtmalar') },
   ];
 
   const isLinkActive = (path: string) => {
@@ -70,7 +72,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </div>
 
         {/* ─── Desktop-Only Navigation Bar ─── */}
-        <nav className="header-desktop-links" aria-label="Desktop asosiy menyu">
+        <nav className="header-desktop-links" aria-label={t('Desktop asosiy menyu')}>
           {navLinks.map((link) => {
             const active = isLinkActive(link.path);
             return (
@@ -94,26 +96,29 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               onClick={() => setIsNfcModalOpen(true)} 
               role="button" 
               tabIndex={0}
-              title="NFC / QR orqali stolni o'zgartirish"
+              title={t("NFC / QR orqali stolni o'zgartirish")}
             >
               <span className="table-status-dot" />
-              <span>Stol {tableNumber}</span>
+              <span>{t('Stol {num}', { num: tableNumber })}</span>
             </div>
           )}
+
+          {/* Til va kun/tun (almashtirgich yoqilmagan bo'lsa chizilmaydi) */}
+          <SettingsButton />
 
           {/* Quick Call Waiter Button */}
           <button
             type="button"
             className="btn-header-call-waiter"
             onClick={() => setIsCallWaiterOpen(true)}
-            title="Ofitsiantni chaqirish (Choy, Non, Hisob)"
-            aria-label="Ofitsiant chaqirish"
+            title={t('Ofitsiantni chaqirish (Choy, Non, Hisob)')}
+            aria-label={t('Ofitsiant chaqirish')}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            <span className="call-waiter-text">Chaqiruv</span>
+            <span className="call-waiter-text">{t('Chaqiruv')}</span>
           </button>
 
           {/* Cart Trigger */}
@@ -122,7 +127,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             className="header-cart-btn"
             data-cart-target=""
             onClick={onCartClick || (() => navigate('/cart'))}
-            aria-label="Savat"
+            aria-label={t('Savat')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"></circle>

@@ -1,0 +1,20 @@
+// Savat sahifasi (CartPage)
+export default {
+  'Taom savatdan olib tashlandi': 'Dish removed from cart',
+  '{name} savatdan olib tashlandi': '{name} removed from cart',
+  'Menyuga qaytish': 'Back to menu',
+  'Asosiy Zal': 'Main hall',
+  'Savatchangiz': 'Your cart',
+  '{n} ta taom': '{n} dish|{n} dishes',
+  "O'chirish": 'Remove',
+  "{name}ni o'chirish": 'Remove {name}',
+  'Oshxona uchun maxsus istak yoki eslatma:': 'Special request or note for the kitchen:',
+  "Masalan: Sho'rvasini kamroq yog'li qiling, ko'katlarsiz, issiqroq keltiring...": 'e.g. Make the soup less oily, no herbs, serve it hotter...',
+  'Buyurtmani rasmiylashtirish': 'Checkout',
+  "Savatingiz hozircha bo'sh": 'Your cart is empty',
+  'Dasturxonimizdagi sara va milliy taomlarni tanlab, buyurtma berishingiz mumkin.': 'Pick from our finest traditional dishes and place your order.',
+  'Menyudan taom tanlash': 'Choose from the menu',
+  'dona': 'pcs',
+  'porsiya': 'serving',
+  'kg': 'kg',
+} as Record<string, string>

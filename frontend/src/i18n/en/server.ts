@@ -1,0 +1,51 @@
+// Server xabarlari (backend): mehmonga qaytariladigan o'zbekcha xato/ogohlantirishlar. Ko'rsatilganda `t(message)` ishlatiladi
+export default {
+  // web/guest_api.py, backend/ratelimit.py
+  'Topilmadi': 'Not found',
+  "Juda ko'p so'rov. Keyinroq urinib ko'ring.": 'Too many requests. Please try again later.',
+  "Juda ko'p so'rov yuborildi. Iltimos, keyinroq urinib ko'ring (Rate limit exceeded).": 'Too many requests. Please try again later.',
+  'Buyurtma topilmadi': 'Order not found',
+  // web/tma_views.py: savat va buyurtma (checkout)
+  'Mahsulot topilmadi': 'Dish not found',
+  "Savat bo'sh yoki buyurtma allaqachon yuborilgan": 'The cart is empty or the order has already been sent',
+  "Savatdagi taomlar endi menyuda yo'q": 'The dishes in your cart are no longer on the menu',
+  "Xizmat turi noto'g'ri": 'Invalid service type',
+  'Ism, manzil yoki izoh juda uzun': 'The name, address or note is too long',
+  "Telefon raqami noto'g'ri. Masalan: +998 90 123 45 67": 'Invalid phone number. For example: +998 90 123 45 67',
+  'Stol aniqlanmadi. Stol ustidagi QR kodni qayta skanerlang yoki ofitsiantga murojaat qiling.': 'Table not detected. Scan the QR code on your table again or ask the waiter.',
+  'Yetkazib berish uchun telefon raqamingizni kiriting!': 'Please enter your phone number for delivery!',
+  'Yetkazib berish manzilini kiriting!': 'Please enter the delivery address!',
+  "Bu stolda ochiq buyurtmalar juda ko'p. Iltimos, ofitsiantga murojaat qiling.": 'There are too many open orders at this table. Please ask the waiter.',
+  "Vaqtincha xatolik, buyurtma yuborilmadi. Qayta urinib ko'ring.": 'Temporary error, the order was not sent. Please try again.',
+  // shops/availability.py: restoran buyurtma qabul qila oladimi
+  'Restoran hozir buyurtma qabul qilmayapti.': 'The restaurant is not accepting orders right now.',
+  'Bu xizmat turi hozir mavjud emas.': 'This service type is not available right now.',
+  // web/tma_views.py (bron kodi bilan kelish) va tables_restaurant/reservations.py
+  "Bron topilmadi. Kodni tekshirib qayta urinib ko'ring.": 'Reservation not found. Check the code and try again.',
+  'Bu bron yakunlangan yoki bekor qilingan.': 'This reservation is completed or cancelled.',
+  "Bronga hali stol biriktirilmagan. Iltimos, hostess bilan bog'laning.": 'No table has been assigned to this reservation yet. Please contact the hostess.',
+  'Bron topilmadi': 'Reservation not found',
+  // orders/interfaces/api/views.py va orders/application/services.py: mehmon buyurtmasi, ofitsiant chaqiruvi
+  'Avval stol ustidagi QR kodni skanerlang': 'Please scan the QR code on your table first',
+  "Buyurtmani qabul qilib bo'lmadi": 'The order could not be accepted',
+  "Taom miqdori noto'g'ri": 'Invalid dish quantity',
+  "Taom miqdori 1 dan 100 gacha bo'lishi kerak": 'Dish quantity must be between 1 and 100',
+  "Noto'g'ri taom ma'lumoti": 'Invalid dish data',
+  'Taom menyuda topilmadi': 'Dish not found on the menu',
+  'Taom menyuda topilmadi yoki hozir mavjud emas': 'Dish not found on the menu or currently unavailable',
+  "Buyurtmada taom yo'q": 'There are no dishes in the order',
+  'Taom topilmadi': 'Dish not found',
+  'Stol topilmadi': 'Table not found',
+  'Stol topilmadi. Stol ustidagi QR kodni qayta skanerlang.': 'Table not found. Scan the QR code on your table again.',
+  // orders/models.py: buyurtma holati va to'lov holati (status_display)
+  'Kutilmoqda': 'Pending',
+  'Tasdiqlangan': 'Confirmed',
+  'Tayyorlanmoqda': 'Preparing',
+  'Tayyor — olib ketish': 'Ready — pick up',
+  "Yo'lda": 'On the way',
+  'Yetkazildi': 'Delivered',
+  'Bekor qilindi': 'Cancelled',
+  "To'lanmagan": 'Unpaid',
+  "To'langan": 'Paid',
+  'Qaytarilgan': 'Refunded',
+} as Record<string, string>

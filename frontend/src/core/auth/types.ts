@@ -33,6 +33,10 @@ export interface ServerSession {
   motion?: 'light' | 'off';
   /** Taom oynasi (restoran sozlamasi `guest_dish_sheet`); standart yoqiq bo'lsa kalit yo'q */
   dishSheet?: 'off';
+  /** Kun/tun rejimi (restoran sozlamasi `guest_theme`); standart `day` bo'lsa kalit yo'q */
+  theme?: 'off' | 'night' | 'auto';
+  /** Yoqilgan tillar (restoran sozlamasi `guest_languages`, masalan "uz,ru"); barcha tillar yoqiq bo'lsa kalit yo'q */
+  languages?: string;
   /** Admin paneldan sozlanadigan ish qiymatlari (xodim sessiyasida) */
   config?: { kds_warn_minutes?: number; kds_late_minutes?: number };
 }

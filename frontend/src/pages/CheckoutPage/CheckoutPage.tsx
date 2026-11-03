@@ -9,12 +9,14 @@ import {
 import { useNavigation } from '../../context/NavigationContext';
 import { getGuestDesign } from '../../utils/guestDesign';
 import { bounceIcon, celebrateOrder, fxEnabled, setButtonState } from '../../motion';
+import { fmtMoney, fmtNum, getLang, t, tr } from '../../i18n';
+import { dishName } from '../../utils/dishText';
 import './CheckoutPage.css';
 
 interface InitialCheckoutData {
   shop?: { name: string };
   table?: { number: string | number; hall?: string; id?: number };
-  items?: Array<{ name: string; price: number; quantity: number; subtotal: number }>;
+  items?: Array<{ name: string; name_ru?: string; name_en?: string; price: number; quantity: number; subtotal: number }>;
   cartCount?: number;
   subtotal?: number;
   allTables?: Array<{ id: number; number: string; hall?: string }>;
@@ -32,6 +34,20 @@ const newSubmissionId = () =>
 
 const SUBMIT_TIMEOUT_MS = 20000;
 
+/**
+ * Serverdan keladigan xabar: qiymat qo'shilgan turlari (tugagan taomlar, ish vaqti, minimal summa) tarjima shabloniga solinadi,
+ * qolganlari oddiy kalit sifatida tarjima qilinadi (lug'atda yo'q bo'lsa o'zbekcha ko'rinadi).
+ */
+function serverText(message: string): string {
+  let m = message.match(/^Quyidagi taomlar hozir tugagan: (.+)\. Savat yangilandi — buyurtmani qayta tasdiqlang\.$/);
+  if (m) return t('Quyidagi taomlar hozir tugagan: {names}. Savat yangilandi — buyurtmani qayta tasdiqlang.', { names: m[1] });
+  m = message.match(/^Restoran hozir yopiq\. Ish vaqti: (.+)\.$/);
+  if (m) return t('Restoran hozir yopiq. Ish vaqti: {hours}.', { hours: m[1] });
+  m = message.match(/^Yetkazib berish uchun buyurtma kamida ([\d\s]+) so'm bo'lishi kerak\.$/);
+  if (m) return t("Yetkazib berish uchun buyurtma kamida {sum} bo'lishi kerak.", { sum: fmtMoney(Number(m[1].replace(/\s/g, ''))) });
+  return t(message);
+}
+
 export const CheckoutPage: React.FC = () => {
   const { navigate, clearCart } = useNavigation();
   const initialData: InitialCheckoutData = (window as any).__GULISTON_CHECKOUT_DATA__ || {};
@@ -45,7 +61,7 @@ export const CheckoutPage: React.FC = () => {
   const savedNote = sessionStorage.getItem('order_note') || '';
   const submissionId = useRef(newSubmissionId());
   const isClosed = initialData.orderGate ? !initialData.orderGate.open : false;
-  const closedMessage = initialData.orderGate?.message || 'Restoran hozir buyurtma qabul qilmayapti.';
+  const closedMessage = initialData.orderGate?.message || tr('Restoran hozir buyurtma qabul qilmayapti.');
   const onlinePayment = initialData.onlinePayment === true;
 
   // Form State
@@ -84,29 +100,29 @@ export const CheckoutPage: React.FC = () => {
     if (isSubmitting) return;
 
     if (isClosed) {
-      showToast(closedMessage);
+      showToast(serverText(closedMessage));
       return;
     }
 
     if (serviceType === 'delivery' && !deliveryAddress.trim()) {
-      showToast("Iltimos, yetkazib berish manzilini kiriting");
+      showToast(t("Iltimos, yetkazib berish manzilini kiriting"));
       return;
     }
 
     const minOrder = initialData.minOrder || 0;
     if (serviceType === 'delivery' && minOrder > 0 && subtotal < minOrder) {
-      showToast(`Yetkazib berish uchun buyurtma kamida ${minOrder.toLocaleString('ru-RU')} so'm bo'lishi kerak`);
+      showToast(t("Yetkazib berish uchun buyurtma kamida {sum} bo'lishi kerak", { sum: fmtMoney(minOrder) }));
       return;
     }
 
     if (items.length === 0) {
-      showToast("Savatingiz bo'sh. Avval menyudan taom tanlang.");
+      showToast(t("Savatingiz bo'sh. Avval menyudan taom tanlang."));
       return;
     }
 
     setIsSubmitting(true);
     setButtonState(submitRef.current, 'loading');
-    showToast("Buyurtma yuborilmoqda...");
+    showToast(t("Buyurtma yuborilmoqda..."));
 
     const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
     const formData = new FormData();
@@ -141,7 +157,7 @@ export const CheckoutPage: React.FC = () => {
       if (!res.ok || !data?.ok) {
         // Kalit boshqa sessiyaniki bo'lib qolsa, yangisini olamiz; boshqa xatolarda kalit o'sha qoladi (qayta urinish xavfsiz)
         if (data?.code === 'submission_conflict') submissionId.current = newSubmissionId();
-        showToast(data?.error || "Buyurtmani yuborib bo'lmadi. Qayta urinib ko'ring.");
+        showToast(data?.error ? serverText(String(data.error)) : t("Buyurtmani yuborib bo'lmadi. Qayta urinib ko'ring."));
         setIsSubmitting(false);
         flashSubmitError();
         return;
@@ -149,7 +165,7 @@ export const CheckoutPage: React.FC = () => {
 
       sessionStorage.removeItem('order_note');
       clearCart();
-      showToast("Buyurtmangiz qabul qilindi!");
+      showToast(t("Buyurtmangiz qabul qilindi!"));
       setButtonState(submitRef.current, 'success');
       void celebrateOrder(submitRef.current);
       // Kutlov ko'rinib ulgursin: animatsiya yoqilgan bo'lsa yo'naltirish biroz kechikadi (o'chiq bo'lsa avvalgidek)
@@ -159,7 +175,7 @@ export const CheckoutPage: React.FC = () => {
     } catch {
       window.clearTimeout(timer);
       // Buyurtma serverga yetib borgan bo'lishi mumkin. Kalit o'zgarmaydi: qayta yuborsangiz ikkinchi buyurtma yaratilmaydi.
-      showToast("Aloqa uzildi. Qayta yuboring: buyurtma ikki marta yaratilmaydi.");
+      showToast(t("Aloqa uzildi. Qayta yuboring: buyurtma ikki marta yaratilmaydi."));
       setIsSubmitting(false);
       flashSubmitError();
     }
@@ -182,25 +198,25 @@ export const CheckoutPage: React.FC = () => {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span>Savatga qaytish</span>
+            <span>{t('Savatga qaytish')}</span>
           </button>
 
           {table?.number && (
             <TableBadge
               tableNumber={table.number}
-              hallName={table.hall || "Asosiy Zal"}
+              hallName={table.hall ? t(table.hall) : t("Asosiy Zal")}
               status="available"
             />
           )}
         </div>
 
-        <h1 className="checkout-page-title">Buyurtmani rasmiylashtirish</h1>
+        <h1 className="checkout-page-title">{t('Buyurtmani rasmiylashtirish')}</h1>
 
         <form onSubmit={handleSubmit}>
           {/* 1. Xizmat turi */}
           <section className="checkout-section-card">
             <div className="checkout-section-head">
-              <span className="section-head-title">Xizmat turini tanlang</span>
+              <span className="section-head-title">{t('Xizmat turini tanlang')}</span>
             </div>
 
             <div className="service-types-grid">
@@ -214,8 +230,8 @@ export const CheckoutPage: React.FC = () => {
                   </svg>
                 </div>
                 <div>
-                  <div className="service-opt-title">Stolda (Zalda)</div>
-                  <div className="service-opt-desc">Restoran ichida xizmat</div>
+                  <div className="service-opt-title">{t('Stolda (Zalda)')}</div>
+                  <div className="service-opt-desc">{t('Restoran ichida xizmat')}</div>
                 </div>
               </div>
 
@@ -231,8 +247,8 @@ export const CheckoutPage: React.FC = () => {
                   </svg>
                 </div>
                 <div>
-                  <div className="service-opt-title">Olib ketish</div>
-                  <div className="service-opt-desc">Tayyorlab qo'yiladi</div>
+                  <div className="service-opt-title">{t('Olib ketish')}</div>
+                  <div className="service-opt-desc">{t("Tayyorlab qo'yiladi")}</div>
                 </div>
               </div>
 
@@ -249,8 +265,8 @@ export const CheckoutPage: React.FC = () => {
                   </svg>
                 </div>
                 <div>
-                  <div className="service-opt-title">Yetkazib berish</div>
-                  <div className="service-opt-desc">Ko'rsatilgan manzilga</div>
+                  <div className="service-opt-title">{t('Yetkazib berish')}</div>
+                  <div className="service-opt-desc">{t("Ko'rsatilgan manzilga")}</div>
                 </div>
               </div>
             </div>
@@ -260,19 +276,19 @@ export const CheckoutPage: React.FC = () => {
           {isNewDesign && items.length > 0 && (
             <section className="checkout-section-card">
               <div className="checkout-section-head">
-                <span className="section-head-title">Buyurtmangiz</span>
+                <span className="section-head-title">{t('Buyurtmangiz')}</span>
               </div>
               <ul className="checkout-items-list">
                 {items.map((it, i) => (
                   <li key={`${it.name}-${i}`} className="checkout-item-row">
-                    <span className="checkout-item-avatar" aria-hidden="true">{(it.name || '?').charAt(0).toUpperCase()}</span>
+                    <span className="checkout-item-avatar" aria-hidden="true">{(dishName(it, getLang()) || '?').charAt(0).toUpperCase()}</span>
                     <span className="checkout-item-info">
-                      <span className="checkout-item-name">{it.name}</span>
+                      <span className="checkout-item-name">{dishName(it, getLang())}</span>
                       <span className="checkout-item-qty tabular-nums">
-                        {it.quantity} × {new Intl.NumberFormat('uz-UZ').format(it.price)} so'm
+                        {it.quantity} × {fmtMoney(it.price)}
                       </span>
                     </span>
-                    <span className="checkout-item-total tabular-nums">{new Intl.NumberFormat('uz-UZ').format(it.subtotal)}</span>
+                    <span className="checkout-item-total tabular-nums">{fmtNum(it.subtotal)}</span>
                   </li>
                 ))}
               </ul>
@@ -282,37 +298,37 @@ export const CheckoutPage: React.FC = () => {
           {/* 2. Mehmon & Manzil ma'lumotlari */}
           <section className="checkout-section-card">
             <div className="checkout-section-head">
-              <span className="section-head-title">Ma'lumotlar</span>
+              <span className="section-head-title">{t("Ma'lumotlar")}</span>
             </div>
 
             <div className="form-grid-two">
               {serviceType === 'table' && (
                 <div className="form-group-field">
-                  <label className="field-label">Stol raqami:</label>
+                  <label className="field-label">{t('Stol raqami:')}</label>
                   <input
                     type="text"
                     className="field-input-text"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value)}
-                    placeholder="Masalan: 7"
+                    placeholder={t('Masalan: 7')}
                     required
                   />
                 </div>
               )}
 
               <div className="form-group-field">
-                <label className="field-label">Ismingiz (ixtiyoriy):</label>
+                <label className="field-label">{t('Ismingiz (ixtiyoriy):')}</label>
                 <input
                   type="text"
                   className="field-input-text"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="Masalan: Anvar"
+                  placeholder={t('Masalan: Anvar')}
                 />
               </div>
 
               <div className="form-group-field">
-                <label className="field-label">Telefon raqam:</label>
+                <label className="field-label">{t('Telefon raqam:')}</label>
                 <input
                   type="tel"
                   className="field-input-text tabular-nums"
@@ -324,26 +340,26 @@ export const CheckoutPage: React.FC = () => {
 
               {serviceType === 'delivery' && (
                 <div className="form-group-field" style={{ gridColumn: '1 / -1' }}>
-                  <label className="field-label">Yetkazib berish manzili:</label>
+                  <label className="field-label">{t('Yetkazib berish manzili:')}</label>
                   <input
                     type="text"
                     className="field-input-text"
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
-                    placeholder="Ko'cha, uy raqami, mo'ljal..."
+                    placeholder={t("Ko'cha, uy raqami, mo'ljal...")}
                     required
                   />
                 </div>
               )}
 
               <div className="form-group-field" style={{ gridColumn: '1 / -1' }}>
-                <label className="field-label">Qo'shimcha istak yoki izoh:</label>
+                <label className="field-label">{t("Qo'shimcha istak yoki izoh:")}</label>
                 <input
                   type="text"
                   className="field-input-text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Masalan: Issiqroq keltiring, non ko'proq bo'lsin..."
+                  placeholder={t("Masalan: Issiqroq keltiring, non ko'proq bo'lsin...")}
                 />
               </div>
             </div>
@@ -352,7 +368,7 @@ export const CheckoutPage: React.FC = () => {
           {/* 3. To'lov usuli */}
           <section className="checkout-section-card">
             <div className="checkout-section-head">
-              <span className="section-head-title">To'lov usuli</span>
+              <span className="section-head-title">{t("To'lov usuli")}</span>
             </div>
 
             <div className="payment-methods-grid">
@@ -367,7 +383,7 @@ export const CheckoutPage: React.FC = () => {
                     <path d="M6 12h.01M18 12h.01" />
                   </svg>
                 </div>
-                <span className="payment-opt-title">Naqd pul</span>
+                <span className="payment-opt-title">{t('Naqd pul')}</span>
               </div>
 
               {/* Onlayn to'lov hozir yo'q (egasi qarori): karta/Click/Payme faqat server yoqsa ko'rinadi */}
@@ -383,7 +399,7 @@ export const CheckoutPage: React.FC = () => {
                     <line x1="2" y1="10" x2="22" y2="10" />
                   </svg>
                 </div>
-                <span className="payment-opt-title">Terminal / Karta</span>
+                <span className="payment-opt-title">{t('Terminal / Karta')}</span>
               </div>
 
               <div
@@ -419,14 +435,14 @@ export const CheckoutPage: React.FC = () => {
             className="btn-submit-order"
             disabled={isSubmitting || items.length === 0 || isClosed}
           >
-            <span>{isClosed ? 'Restoran hozir yopiq' : isSubmitting ? 'Yuborilmoqda...' : 'Buyurtmani tasdiqlash'}</span>
+            <span>{isClosed ? t('Restoran hozir yopiq') : isSubmitting ? t('Yuborilmoqda...') : t('Buyurtmani tasdiqlash')}</span>
             {!isSubmitting && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             )}
           </button>
-          {isClosed && <p role="alert">{closedMessage}</p>}
+          {isClosed && <p role="alert">{serverText(closedMessage)}</p>}
         </form>
       </main>
 

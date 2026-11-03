@@ -3,10 +3,15 @@ import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { StatusScene } from '../../motion';
 import type { OrderStatusKey } from '../../motion';
+import { fmtMoney, getLang, numberLocale, t, tr } from '../../i18n';
+import { dishName } from '../../utils/dishText';
 import './OrdersPage.css';
 
 export interface OrderItem {
   name: string;
+  /** Rus/ingliz tarjimalari (server yuborsa; bo'sh bo'lsa o'zbekcha ko'rinadi) */
+  name_ru?: string;
+  name_en?: string;
   quantity: number;
   price: number;
   total: number;
@@ -73,18 +78,18 @@ export const OrdersPage: React.FC = () => {
       return sharedOrders.map((o) => ({
         id: typeof o.id === 'number' ? o.id : 1,
         order_number: o.order_number.replace('#', ''),
-        created_at: new Date(o.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+        created_at: new Date(o.created_at).toLocaleTimeString(numberLocale(), { hour: '2-digit', minute: '2-digit' }),
         status: (o.status === 'paid' ? 'completed' : o.status) as any,
         status_display:
           o.status === 'pending'
-            ? 'Kutilmoqda'
+            ? tr('Kutilmoqda')
             : o.status === 'preparing'
-            ? 'Tayyorlanmoqda'
+            ? tr('Tayyorlanmoqda')
             : o.status === 'ready'
-            ? 'Oshxonada tayyor!'
+            ? tr('Oshxonada tayyor!')
             : o.status === 'delivered'
-            ? 'Yetkazildi'
-            : 'To\'landi',
+            ? tr('Yetkazildi')
+            : tr("To'landi"),
         total_amount: o.total_amount,
         table_number: o.table_number,
         items: o.items.map((it) => ({
@@ -99,9 +104,9 @@ export const OrdersPage: React.FC = () => {
       {
         id: 1,
         order_number: '101',
-        created_at: 'Bugun, 20:45',
+        created_at: `${t('Bugun')}, 20:45`,
         status: 'preparing' as const,
-        status_display: 'Tayyorlanmoqda',
+        status_display: tr('Tayyorlanmoqda'),
         total_amount: 156000,
         table_number: ctxTableNumber || '05',
         items: [
@@ -182,22 +187,22 @@ export const OrdersPage: React.FC = () => {
   const sendCall = async (type: 'waiter' | 'bill' | 'tea' | 'bread', title: string, okMessage: string) => {
     if (isSendingCall) return;
     if (!callTableNumber) {
-      showToast('Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.');
+      showToast(t('Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.'));
       return;
     }
     setIsSendingCall(true);
     const ok = await createServiceCall({ table_number: callTableNumber, type, title });
     setIsSendingCall(false);
-    showToast(ok ? okMessage : "Chaqiruv yuborilmadi. Qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring.");
+    showToast(ok ? okMessage : t("Chaqiruv yuborilmadi. Qayta urinib ko'ring yoki ofitsiantga qo'l ko'taring."));
   };
 
-  const handleCallWaiter = () => sendCall('waiter', 'Ofitsiantni chaqirish', 'Ofitsiantga chaqiruv yuborildi');
+  const handleCallWaiter = () => sendCall('waiter', 'Ofitsiantni chaqirish', t('Ofitsiantga chaqiruv yuborildi'));
 
-  const handleRequestBill = () => sendCall('bill', 'Hisob-kitob so\'rovi', 'Hisob-kitob so\'rovi qabul qilindi');
+  const handleRequestBill = () => sendCall('bill', 'Hisob-kitob so\'rovi', t("Hisob-kitob so'rovi qabul qilindi"));
 
   const handleServiceCall = (serviceName: string) => {
     const type = serviceName === 'Choy yangilash' ? 'tea' : serviceName === 'Tandir non olib kelish' ? 'bread' : 'waiter';
-    return sendCall(type, serviceName, `"${serviceName}" so'rovi yuborildi`);
+    return sendCall(type, serviceName, t('"{name}" so\'rovi yuborildi', { name: t(serviceName) }));
   };
 
   const handlePrintReceipt = () => {
@@ -205,7 +210,7 @@ export const OrdersPage: React.FC = () => {
   };
 
   const handleOnlinePay = (order: OrderData) => {
-    showToast(`Buyurtma #${order.order_number} to'loviga o'tilmoqda`);
+    showToast(t("Buyurtma #{num} to'loviga o'tilmoqda", { num: order.order_number }));
   };
 
   const filteredOrders = useMemo(() => {
@@ -252,12 +257,12 @@ export const OrdersPage: React.FC = () => {
       <main className="orders-main-content">
         {/* ─── Title & Header ─── */}
         <div className="orders-page-header">
-          <span className="orders-kicker">Buyurtmalar tarixi</span>
+          <span className="orders-kicker">{t('Buyurtmalar tarixi')}</span>
           <h1 className="orders-page-title serif">
-            Hisob va buyurtmalar
+            {t('Hisob va buyurtmalar')}
           </h1>
           <p className="orders-page-desc">
-            Buyurtma holati, taomlar ro'yxati va umumiy hisob-kitob.
+            {t("Buyurtma holati, taomlar ro'yxati va umumiy hisob-kitob.")}
           </p>
         </div>
 
@@ -284,7 +289,7 @@ export const OrdersPage: React.FC = () => {
               gap: '0.5rem',
             }}
           >
-            <span>🛎️ Ofitsiantni chaqirish (Choy, Non, Hisob)</span>
+            <span>🛎️ {t('Ofitsiantni chaqirish (Choy, Non, Hisob)')}</span>
           </button>
           <button
             type="button"
@@ -304,7 +309,7 @@ export const OrdersPage: React.FC = () => {
               gap: '0.5rem',
             }}
           >
-            <span>📶 Stol #{ctxTableNumber || '05'} (NFC/QR)</span>
+            <span>📶 {t('Stol #{num} (NFC/QR)', { num: ctxTableNumber || '05' })}</span>
           </button>
         </div>
 
@@ -313,15 +318,15 @@ export const OrdersPage: React.FC = () => {
           <div className="table-live-bill-card">
             <div className="table-bill-top">
               <div className="table-badge-large">
-                <span className="table-badge-kicker">Stol</span>
+                <span className="table-badge-kicker">{t('Stol')}</span>
                 <span className="table-badge-num tabular-nums">{table.number}</span>
               </div>
               <div className="table-bill-summary">
-                <span className="bill-label">Joriy faol hisob</span>
+                <span className="bill-label">{t('Joriy faol hisob')}</span>
                 <strong className="bill-amount tabular-nums">
-                  {new Intl.NumberFormat('uz-UZ').format(activeOrdersTotal)} so'm
+                  {fmtMoney(activeOrdersTotal)}
                 </strong>
-                <span className="bill-hall">{table.hall || 'Asosiy Zal'}</span>
+                <span className="bill-hall">{table.hall ? t(table.hall) : t('Asosiy Zal')}</span>
               </div>
             </div>
 
@@ -330,7 +335,7 @@ export const OrdersPage: React.FC = () => {
               <button
                 type="button"
                 className="btn-service-pill"
-                onClick={() => handleServiceCall('Choy yangilash')}
+                onClick={() => handleServiceCall(tr('Choy yangilash'))}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
@@ -338,29 +343,29 @@ export const OrdersPage: React.FC = () => {
                   <line x1="10" y1="2" x2="10" y2="4" />
                   <line x1="14" y1="2" x2="14" y2="4" />
                 </svg>
-                <span>Choy yangilash</span>
+                <span>{t('Choy yangilash')}</span>
               </button>
               <button
                 type="button"
                 className="btn-service-pill"
-                onClick={() => handleServiceCall('Tandir non olib kelish')}
+                onClick={() => handleServiceCall(tr('Tandir non olib kelish'))}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 7v10M7 12h10" />
                 </svg>
-                <span>Non keltirish</span>
+                <span>{t('Non keltirish')}</span>
               </button>
               <button
                 type="button"
                 className="btn-service-pill"
-                onClick={() => handleServiceCall('Qo\'shimcha salfetka')}
+                onClick={() => handleServiceCall(tr("Qo'shimcha salfetka"))}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect width="18" height="18" x="3" y="3" rx="2" />
                   <path d="M7 12h10" />
                 </svg>
-                <span>Salfetka</span>
+                <span>{t('Salfetka')}</span>
               </button>
             </div>
 
@@ -374,7 +379,7 @@ export const OrdersPage: React.FC = () => {
                   <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                   <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                 </svg>
-                <span>Ofitsiantni chaqirish</span>
+                <span>{t('Ofitsiantni chaqirish')}</span>
               </button>
               <button
                 type="button"
@@ -388,7 +393,7 @@ export const OrdersPage: React.FC = () => {
                   <line x1="16" y1="17" x2="8" y2="17" />
                   <polyline points="10 9 9 9 8 9" />
                 </svg>
-                <span>Hisobni so'rash</span>
+                <span>{t("Hisobni so'rash")}</span>
               </button>
             </div>
           </div>
@@ -401,21 +406,21 @@ export const OrdersPage: React.FC = () => {
             className={`filter-tab ${filterStatus === 'all' ? 'active' : ''}`}
             onClick={() => setFilterStatus('all')}
           >
-            Barchasi ({orders.length})
+            {t('Barchasi')} ({orders.length})
           </button>
           <button
             type="button"
             className={`filter-tab ${filterStatus === 'active' ? 'active' : ''}`}
             onClick={() => setFilterStatus('active')}
           >
-            Jarayonda ({orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length})
+            {t('Jarayonda')} ({orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length})
           </button>
           <button
             type="button"
             className={`filter-tab ${filterStatus === 'completed' ? 'active' : ''}`}
             onClick={() => setFilterStatus('completed')}
           >
-            Yakunlangan ({orders.filter((o) => FINISHED_STATUSES.includes(o.status)).length})
+            {t('Yakunlangan')} ({orders.filter((o) => FINISHED_STATUSES.includes(o.status)).length})
           </button>
         </div>
 
@@ -429,12 +434,12 @@ export const OrdersPage: React.FC = () => {
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
-              <h3 className="empty-orders-title">Buyurtmalar mavjud emas</h3>
+              <h3 className="empty-orders-title">{t('Buyurtmalar mavjud emas')}</h3>
               <p className="empty-orders-desc">
-                Sizda hozircha ushbu toifada buyurtmalar mavjud emas. Menyudan sara taomlarni tanlang.
+                {t('Sizda hozircha ushbu toifada buyurtmalar mavjud emas. Menyudan sara taomlarni tanlang.')}
               </p>
               <a href="/menu/" className="btn-orders-to-menu">
-                <span>Menyuga o'tish</span>
+                <span>{t("Menyuga o'tish")}</span>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -450,38 +455,38 @@ export const OrdersPage: React.FC = () => {
                 <div className="order-card-header">
                   {sceneOf(order.status) && <StatusScene status={sceneOf(order.status)!} size={44} />}
                   <div className="order-card-id">
-                    <span className="order-num tabular-nums">№{order.order_number}</span>
+                    <span className="order-num tabular-nums">{t('№{num}', { num: order.order_number })}</span>
                     <span className="order-time">{order.created_at}</span>
                   </div>
                   <span className={`order-status-badge ${getStatusBadgeClass(order.status)}`}>
                     {renderStatusDot(order.status)}
-                    <span>{order.status_display}</span>
+                    <span>{t(order.status_display)}</span>
                   </span>
                 </div>
 
                 <div className="order-card-items">
                   {order.items.slice(0, 3).map((item, idx) => (
                     <div key={idx} className="order-item-snippet">
-                      <span className="order-item-name">{item.name}</span>
+                      <span className="order-item-name">{dishName(item, getLang())}</span>
                       <span className="order-item-qty tabular-nums">× {item.quantity}</span>
                     </div>
                   ))}
                   {order.items.length > 3 && (
                     <span className="order-items-more">
-                      + yana {order.items.length - 3} ta taom...
+                      {t('+ yana {n} ta taom...', { n: order.items.length - 3 })}
                     </span>
                   )}
                 </div>
 
                 <div className="order-card-footer">
                   <div className="order-total-block">
-                    <span className="order-total-label">Jami:</span>
+                    <span className="order-total-label">{t('Jami:')}</span>
                     <strong className="order-total-sum tabular-nums">
-                      {new Intl.NumberFormat('uz-UZ').format(order.total_amount)} so'm
+                      {fmtMoney(order.total_amount)}
                     </strong>
                   </div>
                   <button type="button" className="btn-view-details">
-                    <span>Tafsilotlar</span>
+                    <span>{t('Tafsilotlar')}</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
@@ -501,7 +506,7 @@ export const OrdersPage: React.FC = () => {
               type="button"
               className="btn-modal-close-icon"
               onClick={() => setSelectedOrder(null)}
-              aria-label="Yopish"
+              aria-label={t('Yopish')}
             >
               ✕
             </button>
@@ -509,50 +514,50 @@ export const OrdersPage: React.FC = () => {
             <div className="modal-status-hero">
               {sceneOf(selectedOrder.status) && <StatusScene status={sceneOf(selectedOrder.status)!} size={96} />}
               <h2 className="modal-order-number tabular-nums">
-                Buyurtma #{selectedOrder.order_number}
+                {t('Buyurtma #{num}', { num: selectedOrder.order_number })}
               </h2>
               <span className={`order-status-badge ${getStatusBadgeClass(selectedOrder.status)}`}>
                 {renderStatusDot(selectedOrder.status)}
-                <span>{selectedOrder.status_display}</span>
+                <span>{t(selectedOrder.status_display)}</span>
               </span>
             </div>
 
             <div className="modal-order-meta-grid">
               <div className="meta-box">
-                <span className="meta-kicker">Vaqt:</span>
+                <span className="meta-kicker">{t('Vaqt:')}</span>
                 <strong className="meta-val">{selectedOrder.created_at}</strong>
               </div>
               <div className="meta-box">
-                <span className="meta-kicker">Joylashuv:</span>
+                <span className="meta-kicker">{t('Joylashuv:')}</span>
                 <strong className="meta-val">
                   {selectedOrder.table_number
-                    ? `Stol №${selectedOrder.table_number}`
-                    : 'Yetkazib berish'}
+                    ? t('Stol №{num}', { num: selectedOrder.table_number })
+                    : t('Yetkazib berish')}
                 </strong>
               </div>
             </div>
 
-            <h3 className="modal-items-title">Taomlar ro'yxati</h3>
+            <h3 className="modal-items-title">{t("Taomlar ro'yxati")}</h3>
             <div className="modal-items-list">
               {selectedOrder.items.map((item, idx) => (
                 <div key={idx} className="modal-item-row">
                   <div className="modal-item-info">
-                    <span className="modal-item-title">{item.name}</span>
+                    <span className="modal-item-title">{dishName(item, getLang())}</span>
                     <span className="modal-item-unit-price tabular-nums">
-                      {new Intl.NumberFormat('uz-UZ').format(item.price)} so'm × {item.quantity}
+                      {fmtMoney(item.price)} × {item.quantity}
                     </span>
                   </div>
                   <strong className="modal-item-subtotal tabular-nums">
-                    {new Intl.NumberFormat('uz-UZ').format(item.total)} so'm
+                    {fmtMoney(item.total)}
                   </strong>
                 </div>
               ))}
             </div>
 
             <div className="modal-order-total-bar">
-              <span className="modal-total-text">Jami to'lov:</span>
+              <span className="modal-total-text">{t("Jami to'lov:")}</span>
               <strong className="modal-total-num tabular-nums">
-                {new Intl.NumberFormat('uz-UZ').format(selectedOrder.total_amount)} so'm
+                {fmtMoney(selectedOrder.total_amount)}
               </strong>
             </div>
 
@@ -562,7 +567,7 @@ export const OrdersPage: React.FC = () => {
                 className="btn-print-order"
                 onClick={handlePrintReceipt}
               >
-                Chekni chop etish
+                {t('Chekni chop etish')}
               </button>
               {initialData.onlinePayment === true && (
                 <button
@@ -570,7 +575,7 @@ export const OrdersPage: React.FC = () => {
                   className="btn-pay-order"
                   onClick={() => handleOnlinePay(selectedOrder)}
                 >
-                  Onlayn to'lov
+                  {t("Onlayn to'lov")}
                 </button>
               )}
             </div>

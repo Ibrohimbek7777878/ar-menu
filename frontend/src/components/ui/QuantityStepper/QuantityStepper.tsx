@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../../i18n';
 import './QuantityStepper.css';
 
 export interface QuantityStepperProps {
@@ -39,7 +40,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         className="stepper-action-btn"
         onClick={handleDecrement}
         disabled={value <= min}
-        aria-label="Kamaytirish"
+        aria-label={t('Kamaytirish')}
       >
         −
       </button>
@@ -49,7 +50,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         className="stepper-action-btn"
         onClick={handleIncrement}
         disabled={value >= max}
-        aria-label="Oshirish"
+        aria-label={t('Oshirish')}
       >
         +
       </button>

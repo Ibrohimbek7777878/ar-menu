@@ -13,6 +13,8 @@ import { INITIAL_PRODUCTS } from '../../data/mockDishes';
 import { matchUzbekQuery } from '../../utils/uzbekSearch';
 import { useNavigation } from '../../context/NavigationContext';
 import { enrichDishWith3D } from '../../services/Smart3DMatcher';
+import { getLang, t } from '../../i18n';
+import { categoryName, dishName } from '../../utils/dishText';
 import './ARMenuPage.css';
 
 interface InitialARData {
@@ -105,13 +107,13 @@ export const ARMenuPage: React.FC = () => {
 
   const handleAddToCart = (product: Product) => {
     addToCart(product.id, 1);
-    showToast(`"${product.name}" savatga qo'shildi`);
+    showToast(t("{name} savatga qo'shildi", { name: `"${dishName(product, getLang())}"` }));
   };
 
   const handleUpdateQuantity = (productId: number, delta: number) => {
     updateQuantity(productId, delta);
     if (delta < 0 && (cart[productId] || 0) <= 1) {
-      showToast("Taom savatdan olib tashlandi");
+      showToast(t("Taom savatdan olib tashlandi"));
     }
   };
 
@@ -120,13 +122,15 @@ export const ARMenuPage: React.FC = () => {
     setIs3DOpen(true);
   };
 
+  const activeCategoryItem = categories.find((c) => c.id === activeCategory);
+
   // Filter products by category and smart Uzbek search
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesCategory =
         activeCategory === 'all' || p.category_id === activeCategory;
       const matchesSearch = searchQuery.trim()
-        ? matchUzbekQuery([p.name, p.description, p.category_name], searchQuery)
+        ? matchUzbekQuery([p.name, p.name_ru, p.name_en, p.description, p.category_name], searchQuery)
         : true;
       return matchesCategory && matchesSearch;
     });
@@ -152,13 +156,13 @@ export const ARMenuPage: React.FC = () => {
                 <path d="m3.29 7 8.71 5.37L20.71 7" />
                 <path d="M12 12.37V22" />
               </svg>
-              <span>360° Jonli Ko'rinish</span>
+              <span>{t("360° Jonli Ko'rinish")}</span>
             </span>
             <h1 className="ar-hero-title">
-              Taomlarni 360° Har Taraflama<br />Tanlang
+              {t('Taomlarni 360° Har Taraflama')}<br />{t('Tanlang')}
             </h1>
             <p className="ar-hero-desc">
-              Har bir taomning porsiyasi va ko'rinishini aylantirib, stol ustida ko'rib buyurtma bering.
+              {t("Har bir taomning porsiyasi va ko'rinishini aylantirib, stol ustida ko'rib buyurtma bering.")}
             </p>
             <div className="ar-hero-actions">
               <button 
@@ -166,7 +170,7 @@ export const ARMenuPage: React.FC = () => {
                 onClick={() => navigate('/menu')} 
                 className="btn-ar-action btn-ar-action-primary"
               >
-                Klassik menyu
+                {t('Klassik menyu')}
               </button>
               {isStaff && (
                 <button
@@ -175,7 +179,7 @@ export const ARMenuPage: React.FC = () => {
                   className="btn-ar-action btn-ar-action-secondary"
                   style={{ background: 'var(--brand-primary)', color: '#FFFFFF', borderColor: 'var(--brand-primary)' }}
                 >
-                  📸 Yangi 3D/360 Taom Yaratish
+                  📸 {t('Yangi 3D/360 Taom Yaratish')}
                 </button>
               )}
             </div>
@@ -187,7 +191,7 @@ export const ARMenuPage: React.FC = () => {
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Taomlarni qidirish..."
+            placeholder={t('Taomlarni qidirish...')}
           />
 
           <CategoryChips
@@ -203,11 +207,11 @@ export const ARMenuPage: React.FC = () => {
             <div>
               <h2 className="ar-section-title">
                 {activeCategory === 'all'
-                  ? '360° Aylantirib Ko\'rish Mumkin Bo\'lgan Taomlar'
-                  : categories.find((c) => c.id === activeCategory)?.name || 'Taomlar'}
+                  ? t("360° Aylantirib Ko'rish Mumkin Bo'lgan Taomlar")
+                  : (activeCategoryItem && categoryName(activeCategoryItem, getLang())) || t('Taomlar')}
               </h2>
               <span className="ar-section-count tabular-nums">
-                {filteredProducts.length} ta taom
+                {t('{n} ta taom', { n: filteredProducts.length })}
               </span>
             </div>
           </div>
@@ -215,15 +219,15 @@ export const ARMenuPage: React.FC = () => {
           {filteredProducts.length === 0 && products.length === 0 ? (
             // Restoranda hali birorta taomga 3D model biriktirilmagan: "qidiruv topilmadi" emas, haqiqiy sabab aytiladi
             <div className="ar-empty-state">
-              <h3 className="ar-empty-title">Hozircha 360° taomlar yo'q</h3>
-              <p className="ar-empty-desc">Taomlarning 360° ko'rinishi tayyorlanmoqda. Hozircha butun menyuni ko'rishingiz mumkin.</p>
+              <h3 className="ar-empty-title">{t("Hozircha 360° taomlar yo'q")}</h3>
+              <p className="ar-empty-desc">{t("Taomlarning 360° ko'rinishi tayyorlanmoqda. Hozircha butun menyuni ko'rishingiz mumkin.")}</p>
               <button type="button" className="btn-ar-reset" onClick={() => navigate('/menu')}>
-                Menyuni ko'rish
+                {t("Menyuni ko'rish")}
               </button>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="ar-empty-state">
-              <p>Qidiruv bo'yicha mos taom topilmadi.</p>
+              <p>{t("Qidiruv bo'yicha mos taom topilmadi.")}</p>
               <button
                 type="button"
                 className="btn-ar-reset"
@@ -232,7 +236,7 @@ export const ARMenuPage: React.FC = () => {
                   setActiveCategory('all');
                 }}
               >
-                Filtrni tozalash
+                {t('Filtrni tozalash')}
               </button>
             </div>
           ) : (

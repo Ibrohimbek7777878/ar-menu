@@ -3,6 +3,7 @@ import { HeaderNav, BottomNav, Toast } from '../../components/ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { roleService } from '../../core/auth/RoleService';
+import { t, tr } from '../../i18n';
 import './ReservationPage.css';
 
 export interface ReservationInfo {
@@ -28,12 +29,12 @@ interface InitialReservationData {
 
 // Server holat kodlari → mehmonga tushunarli matn
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'Kutilmoqda',
-  confirmed: 'Tasdiqlangan',
-  arrived: 'Keldi',
-  seated: "Stolga o'tirdi",
-  completed: 'Yakunlangan',
-  cancelled: 'Bekor qilingan',
+  pending: tr('Kutilmoqda'),
+  confirmed: tr('Tasdiqlangan'),
+  arrived: tr('Keldi'),
+  seated: tr("Stolga o'tirdi"),
+  completed: tr('Yakunlangan'),
+  cancelled: tr('Bekor qilingan'),
 };
 
 export const ReservationPage: React.FC = () => {
@@ -79,7 +80,7 @@ export const ReservationPage: React.FC = () => {
   // Kelishni tasdiqlash serverda rad etilgan bo'lsa (kod noto'g'ri, bron boshqa kunga...) sababi ko'rsatiladi
   useEffect(() => {
     if (initialData.error) {
-      setToastMsg(initialData.error);
+      setToastMsg(t(initialData.error));
       setToastIcon('');
       setToastVisible(true);
       const timer = window.setTimeout(() => setToastVisible(false), 3600);
@@ -92,7 +93,7 @@ export const ReservationPage: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) {
-      showToast('Qidirish uchun kod yoki telefon kiriting');
+      showToast(t('Qidirish uchun kod yoki telefon kiriting'));
       return;
     }
 
@@ -100,9 +101,9 @@ export const ReservationPage: React.FC = () => {
     RestaurantAPI.findReservation(query.trim()).then((res) => {
       if (res?.reservation) {
         setFoundReservation(res.reservation);
-        showToast('Bron topildi!', '✓');
+        showToast(t('Bron topildi!'), '✓');
       } else {
-        showToast('Bron topilmadi');
+        showToast(t('Bron topilmadi'));
       }
     });
 
@@ -150,14 +151,14 @@ export const ReservationPage: React.FC = () => {
             className={`mode-btn ${viewMode === 'arrival' ? 'active' : ''}`}
             onClick={() => setMode('arrival')}
           >
-            Kelishni tasdiqlash
+            {t('Kelishni tasdiqlash')}
           </button>
           <button
             type="button"
             className={`mode-btn ${viewMode === 'find' ? 'active' : ''}`}
             onClick={() => setMode('find')}
           >
-            Bronni qidirish
+            {t('Bronni qidirish')}
           </button>
         </div>
 
@@ -167,13 +168,13 @@ export const ReservationPage: React.FC = () => {
         {viewMode === 'arrival' && foundReservation && (
           <div className="arrival-view">
             <div className="arrival-hero-card">
-              <span className="res-badge">Tashrif qaydnomasi</span>
+              <span className="res-badge">{t('Tashrif qaydnomasi')}</span>
               <h1 className="arrival-title serif">
                 {foundReservation.customer_name},<br />
-                Stolingiz tayyor!
+                {t('Stolingiz tayyor!')}
               </h1>
               <p className="arrival-desc">
-                Tashrifingiz tizimda qayd etildi. Quyidagi tugma orqali stol menyusiga o'tib, taomlarni buyurtma qiling.
+                {t("Tashrifingiz tizimda qayd etildi. Quyidagi tugma orqali stol menyusiga o'tib, taomlarni buyurtma qiling.")}
               </p>
             </div>
 
@@ -181,7 +182,7 @@ export const ReservationPage: React.FC = () => {
             <div className="arrival-detail-card">
               <div className="arrival-card-top">
                 <div className="arrival-table-circle">
-                  <span className="circle-kicker">Stol</span>
+                  <span className="circle-kicker">{t('Stol')}</span>
                   <strong className="circle-num tabular-nums">
                     {foundReservation.table_number}
                   </strong>
@@ -189,28 +190,28 @@ export const ReservationPage: React.FC = () => {
 
                 <div className="arrival-meta-right">
                   <span className="res-code-badge tabular-nums">
-                    KOD: #{foundReservation.code}
+                    {t('KOD: #{code}', { code: foundReservation.code })}
                   </span>
                   <strong className="arrival-guest-name">
                     {foundReservation.customer_name}
                   </strong>
                   <span className="arrival-hall-name">
-                    {foundReservation.hall}
+                    {foundReservation.hall ? t(foundReservation.hall) : ''}
                   </span>
                 </div>
               </div>
 
               <div className="arrival-info-grid">
                 <div className="info-box">
-                  <span className="info-box-label">Belgilangan vaqt</span>
+                  <span className="info-box-label">{t('Belgilangan vaqt')}</span>
                   <strong className="info-box-val tabular-nums">
                     {foundReservation.reservation_time}
                   </strong>
                 </div>
                 <div className="info-box">
-                  <span className="info-box-label">Mehmonlar soni</span>
+                  <span className="info-box-label">{t('Mehmonlar soni')}</span>
                   <strong className="info-box-val tabular-nums">
-                    {foundReservation.guests_count} kishi
+                    {t('{n} kishi', { n: foundReservation.guests_count })}
                   </strong>
                 </div>
               </div>
@@ -220,7 +221,7 @@ export const ReservationPage: React.FC = () => {
                 className="btn-confirm-and-menu"
                 onClick={handleConfirmArrival}
               >
-                <span>Stol menyusini ochish</span>
+                <span>{t('Stol menyusini ochish')}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -229,7 +230,7 @@ export const ReservationPage: React.FC = () => {
 
             <div className="arrival-extra-actions">
               <a href="/table/" className="extra-link">
-                Boshqa stollarni ko'rish
+                {t("Boshqa stollarni ko'rish")}
               </a>
               <span className="extra-sep">•</span>
               <button
@@ -237,7 +238,7 @@ export const ReservationPage: React.FC = () => {
                 className="extra-btn"
                 onClick={() => setMode('find')}
               >
-                Boshqa bron kodi bilan qidirish
+                {t('Boshqa bron kodi bilan qidirish')}
               </button>
             </div>
           </div>
@@ -249,12 +250,12 @@ export const ReservationPage: React.FC = () => {
         {viewMode === 'find' && (
           <div className="find-view">
             <div className="find-header">
-              <span className="res-badge">Bron holati</span>
+              <span className="res-badge">{t('Bron holati')}</span>
               <h1 className="find-title serif">
-                Broningizni tekshiring
+                {t('Broningizni tekshiring')}
               </h1>
               <p className="find-desc">
-                Bron kodi (masalan, GS-K7QX2) yoki ro'yxatdan o'tgan telefon raqamingizni kiriting.
+                {t("Bron kodi (masalan, GS-K7QX2) yoki ro'yxatdan o'tgan telefon raqamingizni kiriting.")}
               </p>
             </div>
 
@@ -265,14 +266,14 @@ export const ReservationPage: React.FC = () => {
                   className={`search-tab-btn ${searchTab === 'code' ? 'active' : ''}`}
                   onClick={() => setSearchTab('code')}
                 >
-                  Bron kodi (GS-K7QX2)
+                  {t('Bron kodi (GS-K7QX2)')}
                 </button>
                 <button
                   type="button"
                   className={`search-tab-btn ${searchTab === 'phone' ? 'active' : ''}`}
                   onClick={() => setSearchTab('phone')}
                 >
-                  Telefon raqam
+                  {t('Telefon raqam')}
                 </button>
               </div>
 
@@ -282,7 +283,7 @@ export const ReservationPage: React.FC = () => {
                   className="search-field"
                   placeholder={
                     searchTab === 'code'
-                      ? 'Bron kodi (masalan: GS-K7QX2)'
+                      ? t('Bron kodi (masalan: GS-K7QX2)')
                       : '+998 90 123 45 67'
                   }
                   value={query}
@@ -290,7 +291,7 @@ export const ReservationPage: React.FC = () => {
                   autoFocus
                 />
                 <button type="submit" className="btn-search-submit">
-                  Izlash
+                  {t('Izlash')}
                 </button>
               </div>
             </form>
@@ -308,14 +309,14 @@ export const ReservationPage: React.FC = () => {
                     </h3>
                   </div>
                   <span className="found-status-tag">
-                    {STATUS_LABEL[foundReservation.status || ''] || foundReservation.status || 'Tasdiqlangan'}
+                    {t(STATUS_LABEL[foundReservation.status || ''] || foundReservation.status || 'Tasdiqlangan')}
                   </span>
                 </div>
 
                 <div className="found-meta-row">
-                  <span className="tabular-nums">Vaqt: {foundReservation.reservation_time}</span>
-                  <span className="tabular-nums">{foundReservation.guests_count} kishi</span>
-                  <span className="tabular-nums">Stol #{foundReservation.table_number}</span>
+                  <span className="tabular-nums">{t('Vaqt:')} {foundReservation.reservation_time}</span>
+                  <span className="tabular-nums">{t('{n} kishi', { n: foundReservation.guests_count })}</span>
+                  <span className="tabular-nums">{t('Stol #{num}', { num: foundReservation.table_number })}</span>
                 </div>
 
                 <button
@@ -325,7 +326,7 @@ export const ReservationPage: React.FC = () => {
                     setMode('arrival');
                   }}
                 >
-                  Kelishni tasdiqlash sahifasi →
+                  {t('Kelishni tasdiqlash sahifasi →')}
                 </button>
               </div>
             )}

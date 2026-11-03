@@ -6,6 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ shop.name|default:"Guliston" }} — Oila Dasturxoni{% endblock %}</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    {# Kun/tun rejimi birinchi kadrdan to'g'ri bo'lishi uchun (yorqin chaqnash bo'lmasin): mantiq frontend/src/utils/guestTheme.ts bilan bir xil #}
+    <script>
+    (function () {
+        try {
+            var s = window.__GULISTON_SESSION__ || {};
+            var setting = s.design === 'classic' ? 'off' : (s.theme || 'day');
+            if (setting === 'off') return;
+            var pref = null;
+            try { pref = localStorage.getItem('guliston.theme'); } catch (e) {}
+            if (pref !== 'day' && pref !== 'night' && pref !== 'auto') pref = setting;
+            var tg = window.Telegram && window.Telegram.WebApp;
+            var systemDark = tg && (tg.colorScheme === 'dark' || tg.colorScheme === 'light')
+                ? tg.colorScheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var dark = pref === 'night' || (pref === 'auto' && systemDark);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } catch (e) {}
+    })();
+    </script>
     {% seller_assets_mode as assets_mode %}
     {% if assets_mode == 'cdn' %}
     {# SELLER_ASSETS=cdn — eski (zaxira) yo'l: Google Fonts. Hech narsa o'chirilmagan. #}

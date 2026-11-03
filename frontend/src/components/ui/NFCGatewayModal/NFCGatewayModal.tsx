@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigation } from '../../../context/NavigationContext';
+import { t } from '../../../i18n';
 import './NFCGatewayModal.css';
 
 export const NFCGatewayModal: React.FC = () => {
@@ -27,7 +28,7 @@ export const NFCGatewayModal: React.FC = () => {
           type="button"
           className="nfc-modal-close"
           onClick={() => setIsNfcModalOpen(false)}
-          aria-label="Yopish"
+          aria-label={t('Yopish')}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -46,7 +47,7 @@ export const NFCGatewayModal: React.FC = () => {
                 <path d="M6 18h12M6 6h12" />
                 <path d="M12 2v20" />
               </svg>
-              <span>NFC Aloqa</span>
+              <span>{t('NFC Aloqa')}</span>
             </button>
             <button
               type="button"
@@ -67,7 +68,7 @@ export const NFCGatewayModal: React.FC = () => {
                 <path d="M21 12v.01" />
                 <path d="M12 21v-1" />
               </svg>
-              <span>QR Kod</span>
+              <span>{t('QR Kod')}</span>
             </button>
           </div>
         </div>
@@ -89,10 +90,10 @@ export const NFCGatewayModal: React.FC = () => {
             </div>
 
             <h3 className="nfc-title">
-              {isScanning ? 'Stol aniqlanmoqda...' : 'Telefonni stol chipiga tekkizing'}
+              {isScanning ? t('Stol aniqlanmoqda...') : t('Telefonni stol chipiga tekkizing')}
             </h3>
             <p className="nfc-subtitle">
-              Yoki quyidagi ro'yxatdan o'tirgan stolingizni bosing:
+              {t("Yoki quyidagi ro'yxatdan o'tirgan stolingizni bosing:")}
             </p>
           </div>
         ) : (
@@ -112,30 +113,30 @@ export const NFCGatewayModal: React.FC = () => {
               </div>
               <div className="qr-scanner-line" />
             </div>
-            <h3 className="nfc-title">Kamera orqali stol QR-kodini skanerlang</h3>
+            <h3 className="nfc-title">{t('Kamera orqali stol QR-kodini skanerlang')}</h3>
             <p className="nfc-subtitle">
-              Stol ustidagi stikerga kamerani qarating yoki tanlang:
+              {t('Stol ustidagi stikerga kamerani qarating yoki tanlang:')}
             </p>
           </div>
         )}
 
         <div className="nfc-tables-selection">
-          <span className="nfc-select-label">Stollar ro'yxati (16 ta stol):</span>
+          <span className="nfc-select-label">{t("Stollar ro'yxati (16 ta stol):")}</span>
           <div className="nfc-tables-grid">
-            {tables.map((t) => {
-              const isCurrent = String(t.number) === String(tableNumber);
-              const isSelected = String(t.number) === String(selectedTbl);
+            {tables.map((tbl) => {
+              const isCurrent = String(tbl.number) === String(tableNumber);
+              const isSelected = String(tbl.number) === String(selectedTbl);
               return (
                 <button
-                  key={t.id}
+                  key={tbl.id}
                   type="button"
-                  className={`nfc-tbl-chip ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''} ${t.status}`}
+                  className={`nfc-tbl-chip ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''} ${tbl.status}`}
                   onClick={() => {
-                    setSelectedTbl(t.number);
-                    handleConnectTable(t.number);
+                    setSelectedTbl(tbl.number);
+                    handleConnectTable(tbl.number);
                   }}
                 >
-                  <span className="tbl-name">{t.number}</span>
+                  <span className="tbl-name">{tbl.number}</span>
                   <span className="tbl-status-indicator" />
                 </button>
               );
@@ -144,10 +145,10 @@ export const NFCGatewayModal: React.FC = () => {
         </div>
 
         <div className="nfc-legend">
-          <span className="legend-item"><span className="legend-dot free" /> Bo'sh</span>
-          <span className="legend-item"><span className="legend-dot occupied" /> Band</span>
-          <span className="legend-item"><span className="legend-dot bill_requested" /> Hisob kutilmoqda</span>
-          <span className="legend-item"><span className="legend-dot reserved" /> Bron</span>
+          <span className="legend-item"><span className="legend-dot free" /> {t("Bo'sh")}</span>
+          <span className="legend-item"><span className="legend-dot occupied" /> {t('Band')}</span>
+          <span className="legend-item"><span className="legend-dot bill_requested" /> {t('Hisob kutilmoqda')}</span>
+          <span className="legend-item"><span className="legend-dot reserved" /> {t('Bron')}</span>
         </div>
       </div>
     </div>
