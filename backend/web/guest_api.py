@@ -35,7 +35,10 @@ def _throttled(request):
     limit = int(getattr(settings, 'GUEST_API_RATE_LIMIT', 1200) or 0)
     if limit <= 0:
         return False
-    key = f"guestapi:{client_ip(request)}:{int(time.time() // _RATE_WINDOW)}"
+    from shops.tenancy import current_tenant_id
+    tenant_id = current_tenant_id()
+    tenant_part = '' if tenant_id is None else f"t{tenant_id}:"      # har tenantning o'z hisobi (tenantsiz rejimda kalit avvalgidek)
+    key = f"guestapi:{tenant_part}{client_ip(request)}:{int(time.time() // _RATE_WINDOW)}"
     try:
         cache.add(key, 0, timeout=_RATE_WINDOW + 10)
         return cache.incr(key) > limit
@@ -211,7 +214,11 @@ def build_checkout(request):
             ids.append(int(product_id))
         except (TypeError, ValueError):
             continue
-    products = {p.id: p for p in Product.objects.filter(id__in=ids, is_available=True, is_deleted=False)}
+    product_qs = Product.objects.filter(id__in=ids, is_available=True, is_deleted=False)
+    from shops.tenancy import current_tenant_id
+    if current_tenant_id() is not None:
+        product_qs = product_qs.filter(shop_id=current_tenant_id())    # multi-tenant: begona restoran taomi ro'yxatga tushmaydi
+    products = {p.id: p for p in product_qs}
 
     items = []
     total = Decimal('0')

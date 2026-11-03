@@ -111,14 +111,69 @@ def user_role(user):
     return getattr(user, 'role', '') or ''
 
 
+def _own_shop_id(user):
+    """Xodim ishlaydigan restoran ID si: `user.shop`, bo'lmasa egasi bo'lgan (birinchi) do'kon. Yo'q bo'lsa None."""
+    shop_id = getattr(user, 'shop_id', None)
+    if shop_id is not None:
+        return shop_id
+    if not getattr(user, 'pk', None):
+        return None
+    memo = getattr(user, '_gulistan_owned_shop_id', False)
+    if memo is not False:
+        return memo
+    from shops.models import Shop
+    owned = Shop.objects.filter(owner_id=user.pk).order_by('pk').values_list('pk', flat=True).first()
+    try:
+        user._gulistan_owned_shop_id = owned
+    except AttributeError:
+        pass
+    return owned
+
+
+def user_belongs_to_shop(user, shop_id):
+    """
+    Foydalanuvchi shu restoran (tenant) xodimimi? Multi-tenant: boshqa restoran xodimi, hatto to'g'ri parol bilan ham, bu
+    tenantga kira olmaydi. `super_admin` (platforma operatori) istisno. Do'konsiz xodim hech qaysi tenantga tegishli emas.
+    """
+    if user_role(user) == 'super_admin':
+        return True
+    if not getattr(user, 'is_authenticated', False) or shop_id is None:
+        return False
+    return _own_shop_id(user) == shop_id
+
+
+LOGIN_DENIED_FOREIGN_TENANT = "Bu restoran uchun hisob emas."
+LOGIN_DENIED_PLATFORM_HOST = "Bu manzildan faqat platforma administratori kira oladi. O'z restoraningiz manzilidan kiring."
+
+
+def login_denied_message(user):
+    """Multi-tenant: shu hostda `user` kira olmasa sabab matni (o'zbekcha), aks holda None. `super_admin` istisno."""
+    from shops.tenancy import current_tenant, on_platform_host
+    if user_role(user) == 'super_admin':
+        return None
+    tenant = current_tenant()
+    if tenant is not None and not user_belongs_to_shop(user, tenant.pk):
+        return LOGIN_DENIED_FOREIGN_TENANT
+    if tenant is None and on_platform_host():
+        return LOGIN_DENIED_PLATFORM_HOST
+    return None
+
+
 def _has_restaurant_scope(user):
     """
     Platforma admini bundan mustasno, xodim aniq bir restoranga bog'langan bo'lishi shart. Do'konsiz hisob avval
     `shop or get_or_default_shop()` orqali asosiy restoranga tushib qolardi (kassa, bronlar, taom yaratish).
     Faqat "ha" natija eslab qolinadi: do'kon keyin biriktirilsa eski "yo'q" javob qolib ketmasin.
+    Multi-tenant (`<mijoz>.PLATFORM_DOMAIN`): xodimning restorani ALBATTA shu tenant bo'lishi shart — sessiya ham, JWT ham.
     """
     if user_role(user) == 'super_admin':
         return True
+    from shops.tenancy import current_tenant_id, on_platform_host
+    tenant_id = current_tenant_id()
+    if tenant_id is not None:
+        return user_belongs_to_shop(user, tenant_id)
+    if on_platform_host():
+        return False           # platforma hostida (apex/www/app) faqat platforma admini; restoran xodimi o'z subdomenidan kiradi
     if getattr(user, '_restaurant_scope_ok', False):
         return True
     ok = bool(getattr(user, 'shop_id', None))
@@ -144,18 +199,26 @@ def staff_shop(request):
     """
     Xodim ishlaydigan restoran. Oddiy xodim faqat o'z do'koniga bog'lanadi
     (boshqa do'konga "fallback" yo'q). super_admin — tenant middleware tanlagan do'kon.
+    Multi-tenant hostida (`<mijoz>.PLATFORM_DOMAIN`) har doim SHU tenant: super_admin uchun ham; boshqa restoran xodimi
+    uchun None (chaqiruvchilar "Restoran topilmadi" deydi, ruxsat qatlami esa allaqachon 403 bergan).
     """
+    from shops.tenancy import current_tenant
     user = request.user
+    tenant = current_tenant()
     if user_role(user) == 'super_admin':
+        if tenant is not None:
+            return tenant
         if request.GET.get('shop'):
             return getattr(request, 'tenant_shop', None)
         from notifications.admin_bot import get_restaurant_shop
         return get_restaurant_shop()
     shop = getattr(user, 'shop', None)
-    if shop:
-        return shop
-    from shops.models import Shop
-    return Shop.objects.filter(owner=user).first()
+    if not shop:
+        from shops.models import Shop
+        shop = Shop.objects.filter(owner=user).first()
+    if tenant is not None and (shop is None or shop.pk != tenant.pk):
+        return None
+    return shop
 
 
 def _deny(request, api, status, message):
@@ -243,15 +306,23 @@ def spa_session(request):
     user = getattr(request, 'user', None)
     role = _SPA_ROLE.get(user_role(user), '') if is_restaurant_staff(user) else ''
     from backend.app_settings import get_choice
+    # Restoranga oid sozlamalar avval restoranning o'zidan (business_profile), keyin global AppSetting'dan o'qiladi
+    # (shops/tenant_settings.py). Mehmon: restoran `guest_profile` orqali (bitta so'rov, jarayon keshi); xodim: o'z restorani.
+    staff_shop_obj = staff_shop(request) if role else None
+    guest_prof = None
+    if not role:
+        from shops.guest_profile import guest_profile
+        guest_prof = guest_profile(guest_shop_id(request), request)
     payload = {'role': role or 'guest', 'roles': _SPA_ROLES.get(role, []), 'demo': bool(getattr(settings, 'DEMO_MODE', False)),
                # Mehmon dizayni (yangi/eski): kodni o'zgartirmasdan admin sozlamadan almashtiriladi
-               'design': get_choice('guest_design', 'new', ('new', 'classic'))}
+               'design': (guest_prof or {}).get('design') or get_choice('guest_design', 'new', ('new', 'classic'), shop=staff_shop_obj)}
     if role:
         payload['name'] = (user.get_full_name() or user.get_username()).strip()
         # Admin paneldan sozlanadigan ish qiymatlari (kodni o'zgartirmasdan): KDS taymeri ogohlantirish chegaralari
         from backend.app_settings import get_int
-        warn = get_int('kds_warn_minutes', 10, 1, 120)
-        payload['config'] = {'kds_warn_minutes': warn, 'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240))}
+        warn = get_int('kds_warn_minutes', 10, 1, 120, shop=staff_shop_obj)
+        payload['config'] = {'kds_warn_minutes': warn,
+                             'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240, shop=staff_shop_obj))}
     else:
         # Fasl, animatsiya, taom oynasi, kun/tun, tillar va palitra: mehmonga, dizayn tartibidan (new/classic) QAT'I NAZAR
         # (egasi qarori 2026-11-03: imkoniyatlar eski tartibda ham ishlasin); standart bo'lsa kalit umuman yo'q (javob avvalgidek).
@@ -282,12 +353,17 @@ def _guest_shop_id(request):
     raw = session.get('tma_table_token') if session is not None else None
     if raw:
         def _table_shop_id():
-            table = guest_session_table(request)
+            table = guest_session_table(request, check_tenant=False)   # tenant filtri keshdan KEYIN (kesh tenantga bog'liq emas)
             return table.shop_id if table is not None else None
         shop_id = cached_shop_value(('table', str(raw)), 'shop_id', _table_shop_id)
+        # Multi-tenant: boshqa tenantning stoli (tokeni eslab qolingan bo'lsa ham) shu saytga ta'sir qilmaydi
+        from shops.tenancy import current_tenant_id
+        tenant_id = current_tenant_id()
+        if tenant_id is not None and shop_id != tenant_id:
+            shop_id = None
     if not shop_id:
         from notifications.admin_bot import default_restaurant_shop_id
-        shop_id = default_restaurant_shop_id()
+        shop_id = default_restaurant_shop_id()    # tenant hostida shu tenant
     return shop_id
 
 
@@ -334,8 +410,9 @@ def bind_session_table(request, token):
     request.session.modified = True
 
 
-def guest_session_table(request):
-    """Mehmon QR skanerlaganda sessiyada eslab qolingan stol (tasodifiy token orqali), aks holda None."""
+def guest_session_table(request, check_tenant=True):
+    """Mehmon QR skanerlaganda sessiyada eslab qolingan stol (tasodifiy token orqali), aks holda None.
+    Multi-tenant hostida boshqa tenantning stoli ham None (stol topilmadi kabi)."""
     import uuid
     raw = session_table_token(request)
     if not raw:
@@ -345,7 +422,19 @@ def guest_session_table(request):
     except (ValueError, TypeError, AttributeError):
         return None
     from tables_restaurant.models import Table
-    return Table.objects.filter(qr_token=token, is_active=True).select_related('shop', 'hall').first()
+    table = Table.objects.filter(qr_token=token, is_active=True).select_related('shop', 'hall').first()
+    if table is not None and check_tenant and not table_visible_for_tenant(table):
+        return None
+    return table
+
+
+def table_visible_for_tenant(table):
+    """Multi-tenant: stol shu saytning tenantiga tegishlimi? Tenant bo'lmasa (localhost/demo) har doim ha."""
+    if table is None:
+        return False
+    from shops.tenancy import current_tenant_id
+    tenant_id = current_tenant_id()
+    return tenant_id is None or table.shop_id == tenant_id
 
 
 def guest_order_ids(request):

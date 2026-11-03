@@ -5,14 +5,28 @@ from .models import Shop, ShopTemplate, ShopPage
 @admin.register(Shop)
 class ShopAdmin(admin.ModelAdmin):
     list_display = [
-        'name', 'store_type', 'category', 'is_open', 'is_featured',
+        'name', 'subdomain', 'business_type', 'status', 'store_type', 'category', 'is_open', 'is_featured',
         'is_verified', 'plan', 'rating', 'reviews_count', 'created_at'
     ]
-    list_filter = ['store_type', 'is_open', 'is_featured', 'is_verified', 'plan', 'category']
-    search_fields = ['name', 'address', 'phone', 'owner__username']
+    list_filter = ['status', 'business_type', 'store_type', 'is_open', 'is_featured', 'is_verified', 'plan', 'category']
+    search_fields = ['name', 'subdomain', 'address', 'phone', 'owner__username']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['verified_at', 'created_at', 'updated_at']
-    actions = ['verify_shops', 'set_basic_plan', 'set_pro_plan', 'set_business_plan']
+    actions = ['verify_shops', 'set_basic_plan', 'set_pro_plan', 'set_business_plan', 'suspend_tenants', 'activate_tenants']
+
+    def suspend_tenants(self, request, queryset):
+        count = queryset.filter(status='active').update(status='suspended')
+        from backend.runtime_cache import invalidate_runtime_cache
+        invalidate_runtime_cache()
+        self.message_user(request, f"{count} ta mijoz to'xtatildi (ma'lumot saqlanadi, sayt 503 ko'rsatadi)")
+    suspend_tenants.short_description = "Mijozni to'xtatish (sayt faol emas)"
+
+    def activate_tenants(self, request, queryset):
+        count = queryset.filter(status='suspended').update(status='active')
+        from backend.runtime_cache import invalidate_runtime_cache
+        invalidate_runtime_cache()
+        self.message_user(request, f'{count} ta mijoz qayta faollashtirildi')
+    activate_tenants.short_description = "Mijozni faollashtirish"
 
     def verify_shops(self, request, queryset):
         from django.utils import timezone

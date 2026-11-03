@@ -2160,6 +2160,14 @@ def table_menu_redirect(request, token):
             "<h2>QR kod yaroqsiz</h2><p>Iltimos, ofitsiantga murojaat qiling.</p>",
             status=404, content_type='text/html; charset=utf-8',
         )
+    # Multi-tenant: boshqa restoranning QR tokeni bu saytda yaroqsiz (stol topilmadi bilan bir xil javob, mavjudligi oshkor bo'lmaydi)
+    from web.restaurant_auth import table_visible_for_tenant
+    if not table_visible_for_tenant(table):
+        from django.http import HttpResponse
+        return HttpResponse(
+            "<h2>QR kod yaroqsiz</h2><p>Iltimos, ofitsiantga murojaat qiling.</p>",
+            status=404, content_type='text/html; charset=utf-8',
+        )
     # Restoran menyusiga (/menu/). Avval marketplace do'kon sahifasiga (/shop/<slug>/) yuborilardi —
     # restoran konfiguratsiyasida u sahifa 500 xato berardi (NoReverseMatch). QR token doimiy: muddati tugamaydi.
     return redirect(f'/menu/?table={table.qr_token}')
@@ -2193,6 +2201,11 @@ def ar_menu_page(request, slug):
     from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 
     shop = get_object_or_404(Shop, slug=slug)
+    # Multi-tenant: bu sayt faqat o'z restorani sahifasini ochadi (boshqa tenant slug'i -> 404)
+    from shops.tenancy import current_tenant_id
+    if current_tenant_id() is not None and shop.pk != current_tenant_id():
+        from django.http import Http404
+        raise Http404
     table_info = None
     token_raw = request.GET.get('t', '')
     if token_raw:
@@ -2247,6 +2260,10 @@ def nfc_tap_handler(request, code):
         # Balki card_uid berilgandir
         card = NFCCard.objects.select_related('shop', 'table', 'table__hall').filter(card_uid=code, is_active=True).first()
 
+    # Multi-tenant: boshqa restoranning NFC kartasi bu saytda "topilmadi"
+    from shops.tenancy import current_tenant_id
+    if card is not None and current_tenant_id() is not None and card.shop_id != current_tenant_id():
+        card = None
     if not card:
         return render(request, 'customer/nfc_not_found.html', {'code': code}, status=404)
 

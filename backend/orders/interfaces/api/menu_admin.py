@@ -60,11 +60,10 @@ def _error(message, status_code=status.HTTP_400_BAD_REQUEST, **extra):
 
 
 def _visible_categories(shop):
-    """Do'kon ko'ra oladigan va mahsulotga bog'lay oladigan kategoriyalar (global taksonomiya: modelda do'kon maydoni yo'q)."""
-    qs = Category.objects.filter(is_active=True)
-    if shop:
-        return qs.filter(Q(is_restaurant=True) | Q(products__shop=shop)).distinct()
-    return qs.filter(is_restaurant=True)
+    """Do'kon ko'ra oladigan va mahsulotga bog'lay oladigan kategoriyalar: `Category.shop` bo'yicha (categories/scoping.py).
+    Tenant rejimida faqat shu restoranniki; oddiy rejimda egasiz eski bo'limlar ham avvalgidek."""
+    from categories.scoping import categories_for_shop
+    return categories_for_shop(shop, Category.objects.filter(is_active=True))
 
 
 def _clean_category(shop, value, field='category_id'):
@@ -645,11 +644,15 @@ class MenuCategoryListCreateView(RestoAdminAPIView):
 
     def post(self, request):
         name = parse_text(request.data.get('name'), 'name', max_length=100, required=True)
+        shop = staff_shop(request)
+        if shop is None:
+            return _error("Restoran topilmadi", status.HTTP_404_NOT_FOUND)
 
-        # Kategoriya do'konlararo umumiy: bir xil nomli faol restoran kategoriyasi bo'lsa yangisi yaratilmaydi (nom ifloslanmasin)
-        existing = Category.objects.filter(is_active=True, is_restaurant=True, name__iexact=name).order_by('id').first()
+        # Bo'lim restoranniki (boshqa restoran nomini ko'rmaydi ham, ifloslantirmaydi ham): shu restoranda bir xil nomli faol
+        # bo'lim bo'lsa yangisi yaratilmaydi
+        existing = _visible_categories(shop).filter(is_restaurant=True, name__iexact=name).order_by('id').first()
         created = existing is None
-        category = existing or Category.objects.create(name=name, is_restaurant=True, is_active=True)
+        category = existing or Category.objects.create(shop=shop, name=name, is_restaurant=True, is_active=True)
         return Response({
             'id': category.id,
             'name': category.name,

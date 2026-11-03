@@ -36,9 +36,17 @@ SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
 
 
 def legacy_api_closed(request):
-    """Restoran mahsulotida eski API'lar yopiqmi (sahifalar yo'naltirish uchun ham ishlatiladi)."""
-    return (getattr(request, 'product_code', '') == 'restaurant'
-            and not getattr(settings, 'LEGACY_API_ENABLED', False))
+    """Restoran mahsulotida eski API'lar yopiqmi (sahifalar yo'naltirish uchun ham ishlatiladi).
+    Multi-tenant hostlarida (`<mijoz>.PLATFORM_DOMAIN`, platforma hosti) `LEGACY_API_ENABLED` e'tiborga olinmaydi: bu API'lar
+    tenant izolyatsiyasini bilmaydi (barcha restoranlar aralash), shuning uchun umumiy serverda doim yopiq."""
+    if getattr(request, 'product_code', '') != 'restaurant':
+        return False
+    from shops.tenancy import HOST_LEGACY, classify_host
+    try:
+        multi_tenant_host = classify_host(request.get_host())[0] != HOST_LEGACY
+    except Exception:  # noqa: BLE001 — DisallowedHost: CommonMiddleware 400 beradi
+        multi_tenant_host = False
+    return multi_tenant_host or not getattr(settings, 'LEGACY_API_ENABLED', False)
 
 
 def legacy_rule_for(path):

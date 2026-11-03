@@ -14,6 +14,13 @@ class Category(models.Model):
     sort_order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     is_restaurant = models.BooleanField(default=False)
+    # Multi-tenant (TZ_MULTITENANT Bosqich 0): bo'lim aniq bitta restoranniki. Avval jadval do'konlararo umumiy edi: bir restoran
+    # yaratgan bo'lim boshqasining menyusida ko'rinardi. NULL = egasiz (eski/umumiy) yozuv: PLATFORM_DOMAIN yo'q rejimda eskicha
+    # ko'rinadi, tenant rejimida HECH KIMGA ko'rinmaydi. null=False qilish — barcha yaratuvchilar `shop` bersa (keyingi qadam).
+    shop = models.ForeignKey(
+        'shops.Shop', on_delete=models.CASCADE, null=True, blank=True, related_name='menu_categories',
+        verbose_name='Restoran',
+    )
     # Mehmon taom oynasidagi "Qo'shimcha" tavsiyalari uchun (bo'sh = nomidan aniqlanadi, categories/kinds.py)
     kind = models.CharField('Turi (tavsiyalar uchun)', max_length=10, choices=KIND_CHOICES, blank=True, default='')
     parent = models.ForeignKey(

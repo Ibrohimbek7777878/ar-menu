@@ -70,6 +70,30 @@ CSRF_TRUSTED_ORIGINS = _env_list(
     'http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000' if (DEBUG or RUNNING_TESTS) else '',
 )
 
+# ─── Multi-tenant (TZ_MULTITENANT Bosqich 0) ────────────────────────────────────────────────────────
+# PLATFORM_DOMAIN bo'sh (standart) = multi-tenant O'CHIQ: hozirgi bitta-restoran xatti-harakati o'zgarishsiz. Berilsa
+# (masalan `menyu.uz`), `mijoz.menyu.uz` mijozning saytiga, apex/www/app — platformaga olib boradi (backend/tenancy.py).
+# Faqat bare domen yoziladi (sxema va port yo'q). Cookie'lar host-only: SESSION_COOKIE_DOMAIN / CSRF_COOKIE_DOMAIN
+# QO'YILMAYDI (tenantlar sessiyasi aralashmasin) — test: shops/test_tenancy.py.
+PLATFORM_DOMAIN = os.environ.get('PLATFORM_DOMAIN', '').strip().lower().strip('.')
+for _prefix in ('https://', 'http://'):
+    if PLATFORM_DOMAIN.startswith(_prefix):
+        PLATFORM_DOMAIN = PLATFORM_DOMAIN[len(_prefix):]
+PLATFORM_DOMAIN = PLATFORM_DOMAIN.split('/')[0].split(':')[0].strip('.')
+# Mijozga berilmaydigan qo'shimcha subdomenlar (kod ichidagi ro'yxatga qo'shiladi, kamaytirib bo'lmaydi)
+TENANT_RESERVED_SUBDOMAINS = _env_list('TENANT_RESERVED_SUBDOMAINS')
+# `X-Forwarded-Host` sarlavhasiga ISHONISH: faqat host sarlavhasini o'zi qayta yozadigan ishonchli proxy bo'lsagina yoqing.
+# Aks holda mijoz soxta sarlavha bilan boshqa tenant hostini ko'rsatishi mumkin.
+USE_X_FORWARDED_HOST = _env_bool('USE_X_FORWARDED_HOST', False)
+if PLATFORM_DOMAIN:
+    if f'.{PLATFORM_DOMAIN}' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(f'.{PLATFORM_DOMAIN}')           # apex + barcha subdomenlar
+    _tenant_origins = [f'https://*.{PLATFORM_DOMAIN}', f'https://{PLATFORM_DOMAIN}']
+    if DEBUG or RUNNING_TESTS:
+        _tenant_origins += [f'http://*.{PLATFORM_DOMAIN}', f'http://{PLATFORM_DOMAIN}',
+                            f'http://*.{PLATFORM_DOMAIN}:8000', f'http://{PLATFORM_DOMAIN}:8000']
+    CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [o for o in _tenant_origins if o not in CSRF_TRUSTED_ORIGINS]
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -111,6 +135,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'backend.tenancy.TenantMiddleware',               # Host -> request.tenant_shop (PLATFORM_DOMAIN bo'sh bo'lsa hech narsa qilmaydi)
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

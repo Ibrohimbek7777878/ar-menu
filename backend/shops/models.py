@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 
+from shops.tenancy import normalize_subdomain, validate_subdomain
+
 SHOP_SECTION_TYPES = [
     ('hero', 'Hero (sarlavha + rasm)'),
     ('product_grid', 'Mahsulotlar gridi'),
@@ -117,7 +119,9 @@ class Shop(models.Model):
     phone2 = models.CharField(max_length=20, blank=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
-    category = models.ForeignKey('categories.Category', on_delete=models.SET_NULL, null=True, blank=True)
+    # related_name: `Category.shop` (menyu bo'limining egasi) bilan teskari nom to'qnashmasin (fields.E303)
+    category = models.ForeignKey('categories.Category', on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='shops_of_type')
     image = models.ImageField(upload_to='shops/')
     banner = models.ImageField(upload_to='shops/banners/', null=True, blank=True)
     working_hours = models.CharField(max_length=50, default='08:00-22:00')
@@ -228,6 +232,26 @@ class Shop(models.Model):
     # V12: universal biznes profili (menu_label, order_label, preset, unit...)
     business_profile = models.JSONField(default=dict, blank=True)
 
+    # Multi-tenant (TZ_MULTITENANT Bosqich 0): mijoz `subdomain.PLATFORM_DOMAIN` da ochiladi. NULL = subdomen berilmagan
+    # (faqat PLATFORM_DOMAIN yo'q rejimda ishlaydi). Qoidalar va band so'zlar: shops/tenancy.py.
+    subdomain = models.CharField(
+        'Subdomen', max_length=40, unique=True, null=True, blank=True, validators=[validate_subdomain],
+        help_text="mijoz.<platforma domeni> — 3–40 belgi: kichik lotin harf, raqam, defis")
+    BUSINESS_TYPE_CHOICES = [
+        ('restaurant', 'Restoran'),
+        ('cafe', 'Kafe'),
+        ('banquet', "To'yxona"),
+    ]
+    business_type = models.CharField('Biznes turi', max_length=20, choices=BUSINESS_TYPE_CHOICES, default='restaurant')
+    STATUS_ACTIVE = 'active'
+    STATUS_SUSPENDED = 'suspended'
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, 'Faol'),
+        (STATUS_SUSPENDED, "To'xtatilgan"),
+    ]
+    # `suspended`: mijoz sayti 503 "faol emas" sahifasini ko'rsatadi; ma'lumot saqlanadi (hech narsa o'chirilmaydi)
+    status = models.CharField('Holati', max_length=12, choices=STATUS_CHOICES, default=STATUS_ACTIVE, db_index=True)
+
     PLAN_CHOICES = [('basic', 'Basic'), ('pro', 'Pro'), ('business', 'Business')]
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='basic')
     plan_started_at = models.DateTimeField(null=True, blank=True)
@@ -248,10 +272,16 @@ class Shop(models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        super().clean()
+        self.subdomain = normalize_subdomain(self.subdomain)   # validate_unique() kichik harfdagi qiymatni solishtirsin
+
     def save(self, *args, **kwargs):
         if not self.slug:
             from django.utils.text import slugify
             self.slug = slugify(self.name, allow_unicode=True)
+        # Subdomen har doim kichik harfda; bo'sh satr emas NULL (unique maydonda bir nechta bo'sh qiymat bo'lishi uchun)
+        self.subdomain = normalize_subdomain(self.subdomain)
         super().save(*args, **kwargs)
 
     @property

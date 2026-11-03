@@ -76,7 +76,9 @@ def _on_product_change(sender, instance, **kwargs):
 
 
 def _on_category_change(sender, instance, **kwargs):
-    bump_menu_version(None)
+    # Multi-tenant: bo'lim restoranniki bo'lsa faqat shu restoran menyusi eskiradi (boshqa mijozlar keshi tegilmaydi);
+    # egasiz (eski/umumiy) bo'lim o'zgarsa — avvalgidek hamma menyu
+    bump_menu_version(getattr(instance, 'shop_id', None))
 
 
 def _on_3dmodel_change(sender, instance, **kwargs):

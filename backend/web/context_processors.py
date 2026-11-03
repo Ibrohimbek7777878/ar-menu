@@ -35,7 +35,9 @@ def site_context(request):
                 pass
 
     from django.conf import settings as django_settings
-    raw_scope = str(settings.get('panel_scope') or getattr(django_settings, 'PANEL_SCOPE', 'restaurant')).strip().lower()
+    from shops.tenant_settings import shop_value
+    # Tenant hostida avval restoranning o'z sozlamasi (business_profile), keyin global AppSetting
+    raw_scope = str(shop_value('panel_scope') or settings.get('panel_scope') or getattr(django_settings, 'PANEL_SCOPE', 'restaurant')).strip().lower()
     panel_scope = raw_scope if raw_scope in ('restaurant', 'all') else 'restaurant'
 
     raw_ai = settings.get('ai_assistant')

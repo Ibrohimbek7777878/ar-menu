@@ -33,7 +33,8 @@ from web.http_cache import conditional_guest_page
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
     MANAGEMENT_CAPABILITIES, bind_session_table, can_view_order, guest_order_ids, has_capability, is_restaurant_staff,
-    remember_guest_order, restaurant_staff_required, role_home_url, session_table_token, staff_shop, user_role,
+    login_denied_message, remember_guest_order, restaurant_staff_required, role_home_url, session_table_token, staff_shop,
+    table_visible_for_tenant, user_role,
 )
 from tables_restaurant.privacy import find_reservation_by_code_or_phone, mask_name, mask_phone
 
@@ -106,7 +107,8 @@ def _get_tma_table(request):
         val_uuid = uuid.UUID(str(raw_t))
         table = Table.objects.filter(qr_token=val_uuid, is_active=True).select_related('shop', 'hall').first()
         if table:
-            return table, table_token
+            # Multi-tenant: boshqa restoranning QR tokeni bu saytda "stol topilmadi" (boshqa tenantning stoli ochilmaydi)
+            return (table if table_visible_for_tenant(table) else None), table_token
     except (ValueError, TypeError, AttributeError):
         pass
 
@@ -126,6 +128,20 @@ def _get_tma_table(request):
     return table, table_token
 
 
+def _tenancy_on():
+    from shops.tenancy import tenancy_enabled
+    return tenancy_enabled()
+
+
+def _menu_categories(shop):
+    """Mehmon menyusida shu restoran ko'rsata oladigan bo'limlar: boshqa restoranga tegishli bo'lim (ma'lumot buzilgan bo'lsa ham)
+    chiqmaydi. `shop` bo'lmasa (egasiz eski bo'limlar) yoki tenantsiz rejimda egasizlari ham — avvalgidek."""
+    from shops.tenancy import tenancy_enabled
+    if tenancy_enabled():
+        return Category.objects.filter(shop=shop)
+    return Category.objects.filter(Q(shop=shop) | Q(shop__isnull=True))
+
+
 def _model_status(product):
     """Taom rasmidan 3D holati: none | queued | processing | ready | failed."""
     from django.core.exceptions import ObjectDoesNotExist
@@ -139,13 +155,17 @@ def _build_tma_menu(active_shop):
     """Mehmon menyusi ma'lumotlari (DB'dan). Eski kesh yo'li shu lug'atni (model nusxalari bilan) keshlaydi."""
     # Faqat shu restoranning arxivlanmagan taomlari (avval o'chirilganlar ham chiqar, menyu 35 taomda kesilardi)
     prod_qs = Product.objects.filter(is_available=True, is_deleted=False)
+    if not active_shop and _tenancy_on():
+        prod_qs = prod_qs.none()          # restoran aniqlanmagan platforma hostida hech kimning taomi ko'rsatilmaydi
     if active_shop:
         prod_qs = prod_qs.filter(shop=active_shop)
-        categories = list(Category.objects.filter(
+        categories = list(_menu_categories(active_shop).filter(
             products__shop=active_shop, products__is_deleted=False, is_active=True,
         ).distinct().order_by('sort_order', 'name'))
     else:
-        categories = list(Category.objects.filter(is_active=True).order_by('sort_order')[:12])
+        # Restoran aniqlanmagan: multi-tenant rejimida hech qaysi mijozning bo'limlari ko'rsatilmaydi
+        from shops.tenancy import tenancy_enabled
+        categories = [] if tenancy_enabled() else list(Category.objects.filter(is_active=True).order_by('sort_order')[:12])
 
     featured_products = list(prod_qs.select_related('shop', 'category', 'model3d').order_by('id')[:300])
     ar_products = [p for p in featured_products if p.has_3d][:12]
@@ -309,11 +329,14 @@ def tma_catalog(request):
     has_3d = request.GET.get('has_3d') == '1'
 
     products = Product.objects.filter(is_available=True, is_deleted=False).select_related('shop', 'category')
+    if not active_shop and _tenancy_on():
+        products = products.none()
     if active_shop:
         products = products.filter(shop=active_shop)
-        categories = Category.objects.filter(products__shop=active_shop, is_active=True).distinct().order_by('sort_order', 'name')
+        categories = _menu_categories(active_shop).filter(products__shop=active_shop, is_active=True).distinct().order_by('sort_order', 'name')
     else:
-        categories = Category.objects.filter(is_active=True).order_by('sort_order')
+        from shops.tenancy import tenancy_enabled
+        categories = Category.objects.none() if tenancy_enabled() else Category.objects.filter(is_active=True).order_by('sort_order')
 
     if category_id:
         products = products.filter(category_id=category_id)
@@ -462,6 +485,10 @@ def tma_cart_api(request):
     qty_param = max(raw_qty, 1)
 
     product = Product.objects.filter(id=product_id, is_deleted=False).first()
+    # Multi-tenant: boshqa restoran taomi bu saytning savatiga tushmaydi (nomi/narxi ham ochilmaydi)
+    from shops.tenancy import current_tenant_id
+    if product is not None and current_tenant_id() is not None and product.shop_id != current_tenant_id():
+        product = None
     if not product:
         return JsonResponse({'success': False, 'error': 'Mahsulot topilmadi'}, status=404)
     wants_more = action == 'add' or (action == 'set' and raw_qty > 0)
@@ -1259,6 +1286,12 @@ def restaurant_admin_login(request):
 
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
+        # Multi-tenant: boshqa restoranning (to'g'ri parolli) xodimi bu saytga kira olmaydi; platforma hostida faqat super_admin
+        denied = login_denied_message(user) if user else None
+        if denied:
+            login_guard.record_failure(request, username, scope='restaurant')
+            messages.error(request, denied)
+            return render(request, 'restaurant_admin/login.html', {'next': next_url})
         # Ofitsiant/oshpaz/hostess akkauntini rahbariyat yaratadi — "sotuvchi tasdig'i" (is_approved) talab qilinmaydi
         approved = bool(user) and (getattr(user, 'is_approved', False) or user_role(user) in ('waiter', 'kitchen', 'hostess'))
         if user and approved and is_restaurant_staff(user):
@@ -1558,7 +1591,7 @@ def tma_ar_menu(request):
             prods = base.select_related('shop', 'category')
 
         cat_ids = prods.values_list('category_id', flat=True).distinct()
-        cats = list(Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True))
+        cats = list(_menu_categories(shop).filter(id__in=cat_ids).exclude(id__isnull=True))
 
         prods = list(prods)
         new_cutoff = new_dish_cutoff(prods)

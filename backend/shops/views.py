@@ -25,6 +25,15 @@ class ShopViewSet(viewsets.ModelViewSet):
     ordering_fields = ['rating', 'created_at']
     lookup_field = 'slug'
 
+    def get_queryset(self):
+        # Multi-tenant: <mijoz>.PLATFORM_DOMAIN hostida faqat shu restoran (boshqa tenantlar ro'yxati/slug orqali ko'rinmaydi)
+        from shops.tenancy import current_tenant_id, on_platform_host
+        tenant_id = current_tenant_id()
+        qs = Shop.objects.all().order_by('pk')
+        if tenant_id is not None:
+            return qs.filter(pk=tenant_id)
+        return qs.none() if on_platform_host() else qs
+
     def get_serializer_class(self):
         if self.action == 'list':
             return ShopListSerializer

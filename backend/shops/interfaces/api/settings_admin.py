@@ -21,6 +21,7 @@ from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
     capability,
 )
+from shops.booking_config import normalize_booking, validate_booking_strict
 from shops.guest_dish_sheet import DISH_SHEET_CHOICES, normalize_dish_sheet
 from shops.guest_languages import is_valid_languages, normalize_languages
 from shops.guest_motion import MOTION_CHOICES, normalize_motion
@@ -72,6 +73,7 @@ class SettingsAdminView(RestoAdminAPIView):
             'guest_languages': normalize_languages(bp.get('guest_languages')),
             'guest_palette': normalize_palette(bp.get('guest_palette')),
             'menu_import_ai': normalize_menu_import_ai(bp.get('menu_import_ai')),
+            'booking': normalize_booking(bp.get('booking')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -188,6 +190,11 @@ class SettingsAdminView(RestoAdminAPIView):
             if palette not in PALETTE_CHOICES:
                 raise InputError("Ranglar: classic (yashil-krem) yoki orange (apelsin) bo'lishi kerak", 'guest_palette')
             bp['guest_palette'] = palette
+            bp_changed = True
+
+        if 'booking' in data:
+            # Bron sozlamasi: TO'LIQ almashtirish, qat'iy tekshiruv (xato — 400 + field: "booking.slots[1].times[0]")
+            bp['booking'] = validate_booking_strict(data['booking'])
             bp_changed = True
 
         if 'guest_languages' in data:

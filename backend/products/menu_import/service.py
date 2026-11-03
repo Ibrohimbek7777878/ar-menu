@@ -339,7 +339,7 @@ def _structure_with_ai(shop, text, notes):
 # ─── mavjud ma'lumotlar bilan moslash ──────────────────────────────────────────────
 
 def _category_index(shop):
-    """({normalized_name: id}, {id: name}) — do'kon ko'ra oladigan bo'limlar (global taksonomiya, `menu_admin._visible_categories`)."""
+    """({normalized_name: id}, {id: name}) — do'kon ko'ra oladigan bo'limlar (`Category.shop`, `menu_admin._visible_categories`)."""
     by_name, names = {}, {}
     for cid, name in _visible_categories(shop).order_by('id').values_list('id', 'name'):
         by_name.setdefault(normalize_name(name), cid)
@@ -578,7 +578,7 @@ def _write_plan(shop, plan, batch_id, *, request, actor):
                 new_categories.setdefault(normalize_name(item['category']), item['category'])
         category_objs = {}
         if new_categories:
-            objs = [Category(name=n, name_uz=n, name_ru=n, is_restaurant=True, is_active=True) for n in new_categories.values()]
+            objs = [Category(shop=shop, name=n, name_uz=n, name_ru=n, is_restaurant=True, is_active=True) for n in new_categories.values()]
             Category.objects.bulk_create(objs)
             category_objs = dict(zip(new_categories.keys(), objs))
 

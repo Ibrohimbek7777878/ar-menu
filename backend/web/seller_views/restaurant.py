@@ -622,7 +622,8 @@ def seller_ar(request):
 
     products = Product.objects.filter(shop=shop).select_related('category', 'model3d').order_by('-updated_at')
     all_products = products
-    categories = Category.objects.filter(is_active=True).order_by('sort_order', 'name')
+    from categories.scoping import categories_for_shop
+    categories = categories_for_shop(shop, Category.objects.filter(is_active=True)).order_by('sort_order', 'name')
     just_created_ar_id = request.session.pop('just_created_ar_id', None)
     recent_3d_products = list(products.filter(has_3d=True).order_by('-updated_at')[:4])
 
@@ -642,10 +643,11 @@ def seller_ar(request):
             name = request.POST.get('name', '').strip()
             if not name:
                 return JsonResponse({'success': False, 'error': 'Kategoriya nomi kiritilmadi'})
-            cat, created = Category.objects.get_or_create(
-                name=name,
-                defaults={'name_uz': name, 'name_ru': name, 'icon': 'folder', 'color': '#7c3aed', 'is_active': True}
-            )
+            cat = categories_for_shop(shop, Category.objects.all()).filter(name=name).order_by('pk').first()
+            created = cat is None
+            if created:
+                cat = Category.objects.create(
+                    shop=shop, name=name, name_uz=name, name_ru=name, icon='folder', color='#7c3aed', is_active=True)
             return JsonResponse({'success': True, 'id': cat.id, 'name': cat.name, 'created': created})
 
         elif action == 'toggle_ar':
@@ -797,15 +799,14 @@ def seller_ar(request):
             # Kategoriya aniqlash
             selected_category = None
             if new_cat_name:
-                selected_category, _ = Category.objects.get_or_create(
-                    name=new_cat_name,
-                    defaults={'name_uz': new_cat_name, 'name_ru': new_cat_name, 'icon': 'folder', 'color': '#7c3aed', 'is_active': True}
-                )
+                selected_category = categories_for_shop(shop, Category.objects.all()).filter(name=new_cat_name).order_by('pk').first()
+                if selected_category is None:
+                    selected_category = Category.objects.create(
+                        shop=shop, name=new_cat_name, name_uz=new_cat_name, name_ru=new_cat_name,
+                        icon='folder', color='#7c3aed', is_active=True)
             elif cat_id:
-                try:
-                    selected_category = Category.objects.get(pk=cat_id)
-                except Category.DoesNotExist:
-                    pass
+                # Boshqa restoran bo'limi tanlanmaydi (IDOR): faqat shu restoranga ko'rinadiganlar
+                selected_category = categories_for_shop(shop, Category.objects.all()).filter(pk=cat_id).first()
 
             # Mahsulotni topish yoki yaratish
             p = None

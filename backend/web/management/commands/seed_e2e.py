@@ -119,8 +119,9 @@ class Command(BaseCommand):
     def _menu(self, shop):
         categories = {}
         for index, name in enumerate(CATEGORIES, start=1):
+            # Bo'lim restoranniki (Category.shop, multi-tenant)
             categories[name], _ = Category.objects.get_or_create(
-                name=name, is_restaurant=True,
+                shop=shop, name=name, is_restaurant=True,
                 defaults={'name_uz': name, 'name_ru': name, 'icon': 'utensils', 'sort_order': index},
             )
         products = {}

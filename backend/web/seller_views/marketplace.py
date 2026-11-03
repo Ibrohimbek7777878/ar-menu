@@ -19,6 +19,13 @@ from products.ar_validation import ArModelError, validate_ar_model_form_value
 from django.contrib.auth import authenticate, login
 
 
+
+def _shop_categories(shop):
+    """Faqat shu restoranning bo'limlari (categories/scoping.py): boshqa restoran bo'limlari ko'rinmaydi va yaratilmaydi."""
+    from categories.scoping import categories_for_shop
+    return categories_for_shop(shop, Category.objects.all())
+
+
 @seller_required
 def seller_dashboard(request):
     shop = request.tenant_shop
@@ -146,7 +153,7 @@ def seller_products(request):
     all_products = Product.objects.filter(shop=shop)
     return render(request, 'seller/products.html', {
         'shop': shop, 'products': products,
-        'search': q, 'categories': Category.objects.all(),
+        'search': q, 'categories': _shop_categories(shop),
         'category_filter': int(cat) if cat and cat.isdigit() else None,
         'available_count': all_products.filter(is_available=True).count(),
         'stoplist_count': all_products.filter(is_available=False).count(),
@@ -701,7 +708,7 @@ def seller_template_preview(request, slug, page='home'):
     if page == 'home':
         # HAQIQIY do'kon sahifasi — draft sections + ranglar bilan
         products = shop.products.filter(is_available=True) if shop else Product.objects.none()
-        categories = Category.objects.all()[:16]
+        categories = _shop_categories(shop)[:16]
         from notifications.models import Review
         reviews = Review.objects.filter(product__shop=shop).select_related('product', 'customer')[:8] if shop else []
         ctx = {
@@ -743,7 +750,7 @@ def seller_product_edit(request, pk):
     from products.models import Product, PRODUCT_DESIGN_TEMPLATES
     product = get_object_or_404(Product, pk=pk, shop=request.tenant_shop)
     from categories.models import Category
-    categories = Category.objects.filter(is_active=True)
+    categories = _shop_categories(request.tenant_shop).filter(is_active=True)
     if request.method == 'POST':
         f = request.POST
         product.name = f.get('name', product.name).strip()
@@ -853,7 +860,7 @@ def seller_product_create(request):
     from products.models import Product, PRODUCT_DESIGN_TEMPLATES
     shop = request.tenant_shop
     from categories.models import Category
-    categories = Category.objects.filter(is_active=True)
+    categories = _shop_categories(shop).filter(is_active=True)
     if request.method == 'POST':
         f = request.POST
         # 3D model manzili API'dagi bilan bir xil qoida bo'yicha tekshiriladi: yaroqsiz bo'lsa mahsulot yaratilmaydi
@@ -1032,7 +1039,7 @@ def seller_products_import_csv(request):
         col_unit = next((i for i, h in enumerate(header) if any(k in h for k in ['olchov', "o'lchov", 'unit', 'birlik'])), None)
 
         imported_count = 0
-        categories_cache = {c.name.lower(): c for c in Category.objects.all()}
+        categories_cache = {c.name.lower(): c for c in _shop_categories(shop)}
 
         for row in rows[1:]:
             if not row or len(row) <= col_name:
@@ -1056,7 +1063,7 @@ def seller_products_import_csv(request):
                     if cat_key in categories_cache:
                         cat_obj = categories_cache[cat_key]
                     else:
-                        cat_obj = Category.objects.create(name=cat_str)
+                        cat_obj = Category.objects.create(shop=shop, name=cat_str)
                         categories_cache[cat_key] = cat_obj
 
             description = row[col_desc].strip() if col_desc is not None and len(row) > col_desc else ''
@@ -1235,7 +1242,7 @@ def seller_products_seed_starter(request):
     ]
 
     added = 0
-    categories_cache = {c.name.lower(): c for c in Category.objects.all()}
+    categories_cache = {c.name.lower(): c for c in _shop_categories(shop)}
 
     for d in STARTER_DISHES:
         if Product.objects.filter(shop=shop, name=d['name']).exists():
@@ -1246,7 +1253,7 @@ def seller_products_seed_starter(request):
         if cat_key in categories_cache:
             cat_obj = categories_cache[cat_key]
         else:
-            cat_obj = Category.objects.create(name=cat_name)
+            cat_obj = Category.objects.create(shop=shop, name=cat_name)
             categories_cache[cat_key] = cat_obj
 
         # Check if dish image exists in media

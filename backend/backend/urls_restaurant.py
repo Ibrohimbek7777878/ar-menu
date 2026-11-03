@@ -16,7 +16,7 @@ from django.conf.urls.static import static
 from django.shortcuts import redirect
 from django.views.static import serve
 
-from web import views, seller_views, tma_views, telegram_webhook, health, resto_admin_views
+from web import views, seller_views, tma_views, telegram_webhook, health, resto_admin_views, guest_booking
 
 
 def other_product_page(request, *args, **kwargs):
@@ -49,6 +49,7 @@ urlpatterns = [
 
     # Restoran Dasturxon Menyusi (Taomlar va Stol buyurtmasi)
     path('menu/', tma_views.tma_home, name='tma_menu'),
+    path('book/', guest_booking.book_page, name='tma_book'),            # stol bron qilish (mehmon React ilovasi, BookingPage)
     path('restaurant/', tma_views.tma_home, name='restaurant_home'),
     path('restoran/', tma_views.tma_home, name='restoran_home'),
     path('ar-menu/', tma_views.tma_home, name='ar_menu_home'),
@@ -130,6 +131,13 @@ urlpatterns = [
     path('api/restaurant/admin/v1/staff/', include('accounts.interfaces.api.staff_admin_urls')),
     path('api/restaurant/admin/v1/finance/', include('finance.interfaces.api.finance_admin_urls')),
     path('api/restaurant/admin/v1/settings/', include('shops.interfaces.api.settings_admin_urls')),
+    path('api/restaurant/admin/v1/reservations/', include('tables_restaurant.interfaces.api.reservations_admin_urls')),
+
+    # Mehmon bron API (ochiq, CSRF + tezlik chegarasi; restoran guest_shop_id() dan): sozlama, bandlik, bron, kod bo'yicha holat
+    path('api/restaurant/guest/booking/config/', guest_booking.booking_config, name='guest_booking_config'),
+    path('api/restaurant/guest/booking/availability/', guest_booking.booking_availability, name='guest_booking_availability'),
+    path('api/restaurant/guest/booking/', guest_booking.booking_create, name='guest_booking_create'),
+    path('api/restaurant/guest/booking/<str:public_code>/', guest_booking.booking_status, name='guest_booking_status'),
 
     # Telegram Bot Webhook
     path('bot/restaurant/webhook/', telegram_webhook.restaurant_webhook, name='bot_restaurant_webhook'),

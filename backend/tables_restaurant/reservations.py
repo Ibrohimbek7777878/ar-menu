@@ -9,7 +9,7 @@ yerdan o'tadi:
   • sana va vaqt qat'iy tekshiriladi (o'tmish, juda uzoq kelajak va noto'g'ri format — aniq xato);
   • bir stolga bir vaqt oralig'ida ikki faol bron bo'lmaydi (oraliq = RESERVATION_SLOT_MINUTES, standart 120 daqiqa);
   • stol berilmasa, tizim shu vaqtga bo'sh va sig'imi yetarli eng kichik stolni o'zi tanlaydi;
-  • holat o'tishlari cheklangan (pending → confirmed → arrived → seated → completed; bekor qilish mumkin);
+  • holat o'tishlari cheklangan (pending → confirmed → arrived → seated → completed; bekor qilish yoki 'kelmadi' mumkin);
   • "o'tirdi" stolni band qiladi, "yakunlandi/bekor" ochiq hisobi yo'q stolni bo'shatadi.
 """
 import datetime
@@ -25,12 +25,13 @@ ACTIVE = TableReservation.ACTIVE_STATUSES
 GRACE_MINUTES = 15            # bugungi bron uchun: boshlanish vaqtidan shuncha kech bo'lsa ham qabul qilinadi
 
 TRANSITIONS = {
-    'pending': {'confirmed', 'arrived', 'seated', 'cancelled'},
-    'confirmed': {'arrived', 'seated', 'cancelled'},
+    'pending': {'confirmed', 'arrived', 'seated', 'cancelled', 'no_show'},
+    'confirmed': {'arrived', 'seated', 'cancelled', 'no_show'},
     'arrived': {'seated', 'cancelled'},
     'seated': {'completed', 'cancelled'},
     'completed': set(),
     'cancelled': set(),
+    'no_show': set(),            # mehmon kelmadi: stol bo'shaydi (faol holat emas)
 }
 
 _TIME_RE = re.compile(r'^(\d{1,2}):(\d{2})(?::\d{2})?$')
@@ -129,14 +130,29 @@ def _check_not_past(date, time, now=None):
 
 # ── To'qnashuv ──────────────────────────────────────────────────────────────────────────────────────────────
 
-def conflicting(table, date, time, exclude_id=None):
-    """Shu stolning shu kundagi, vaqti kesishadigan faol bronlari."""
-    slot = slot_minutes()
-    start = _minutes(time)
-    qs = TableReservation.objects.filter(table=table, reservation_date=date, status__in=ACTIVE, is_deleted=False)
+def _interval(date, time, duration, base):
+    """[boshlanish, tugash) — `base` sanasining 00:00 iga nisbatan daqiqalarda (kun chegarasidan o'tgan bronlar ham to'g'ri)."""
+    start = (date - base).days * 1440 + _minutes(time)
+    return start, start + duration
+
+
+def conflicting(table, date, time, exclude_id=None, duration=None):
+    """Shu stolning vaqti KESISHADIGAN faol bronlari: [boshlanish, boshlanish+davomiylik) oraliqlari kesishsa — band.
+    `duration` berilmasa admin sozlamasi (`reservation_slot_minutes`). Mavjud bronning davomiyligi o'zining `duration_minutes`
+    idan olinadi. Kechagi/ertangi bronlar ham tekshiriladi (23:30 + 120 daqiqa ertangi 00:30 ga o'tadi)."""
+    duration = duration or slot_minutes()
+    start, end = _interval(date, time, duration, date)
+    day = datetime.timedelta(days=1)
+    qs = TableReservation.objects.filter(table=table, reservation_date__range=(date - day, date + day),
+                                         status__in=ACTIVE, is_deleted=False)
     if exclude_id:
         qs = qs.exclude(pk=exclude_id)
-    return [r for r in qs if abs(_minutes(r.reservation_time) - start) < slot]
+    clashes = []
+    for r in qs:
+        r_start, r_end = _interval(r.reservation_date, r.reservation_time, r.duration_minutes or slot_minutes(), date)
+        if start < r_end and r_start < end:
+            clashes.append(r)
+    return clashes
 
 
 def _free_at(table, date, time, exclude_id=None):
@@ -242,11 +258,11 @@ def create_reservation(shop, data, by_staff=False):
     reservation = TableReservation.objects.create(
         shop=shop, table=table, hall=table.hall or hall, customer_name=name, customer_phone=phone,
         guests_count=guests, reservation_date=date, reservation_time=time, notes=str(get('notes') or '')[:1000],
-        status=status, is_walk_in=walk_in,
+        status=status, is_walk_in=walk_in, duration_minutes=slot_minutes(), source='staff' if by_staff else 'guest',
     )
 
     # Parallel so'rov oldin yozib qo'ygan bo'lsa (SQLite'da qator qulfi yo'q) — ikkinchisi bekor qilinadi
-    if [r for r in conflicting(table, date, time, exclude_id=reservation.pk) if r.pk < reservation.pk]:
+    if [r for r in conflicting(table, date, time, exclude_id=reservation.pk, duration=reservation.duration_minutes) if r.pk < reservation.pk]:
         raise ReservationError("Bu stol hozirgina band qilindi. Boshqa vaqt yoki stol tanlang", status=409, code='conflict')
 
     if walk_in:
@@ -289,7 +305,8 @@ def change_status(shop, reservation_id, new_status, table_number=None):
 
     if table_number not in (None, ''):               # xodim stolni qo'lda biriktiradi yoki almashtiradi
         table = Table.objects.select_for_update().get(pk=_find_table(shop, table_number).pk)
-        clash = conflicting(table, reservation.reservation_date, reservation.reservation_time, exclude_id=reservation.pk)
+        clash = conflicting(table, reservation.reservation_date, reservation.reservation_time, exclude_id=reservation.pk,
+                            duration=reservation.duration_minutes)
         if clash:
             raise _conflict_error(clash)
         reservation.table = table

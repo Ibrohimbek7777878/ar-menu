@@ -1,0 +1,8 @@
+{% extends "ar_guest/404.html" %}
+{% comment %}Faol bo'lmagan (to'xtatilgan) restoran sahifasi: 404 sahifa bilan bir xil ko'rinish, faqat matn boshqa (CSS o'zgarmagan).{% endcomment %}
+{% block err_code %}{{ err_code }}{% endblock %}
+{% block err_title %}{{ err_title }}{% endblock %}
+{% block err_messages %}      <div><strong>🇺🇿 O'zbekcha:</strong> {{ line_uz }}</div>
+      <div><strong>🇷🇺 Русский:</strong> {{ line_ru }}</div>
+      <div><strong>🇬🇧 English:</strong> {{ line_en }}</div>
+{% endblock %}

@@ -23,6 +23,8 @@ def _load(shop_id):
         'theme': normalize_theme(bp.get('guest_theme')),
         'languages': normalize_languages(bp.get('guest_languages')),
         'palette': normalize_palette(bp.get('guest_palette')),
+        # Restoranning o'z dizayn tartibi (new/classic); bo'sh = restoran tanlamagan, global sozlama (AppSetting) amal qiladi
+        'design': (str(bp.get('guest_design') or '').strip().lower() if str(bp.get('guest_design') or '').strip().lower() in ('new', 'classic') else ''),
     }
 
 

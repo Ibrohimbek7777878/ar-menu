@@ -118,14 +118,14 @@
   <div class="err-watermark" aria-hidden="true">🍽</div>
 
   <div class="err-card">
-    <div class="err-badge">404</div>
-    <div class="err-title">Sahifa topilmadi</div>
+    <div class="err-badge">{% block err_code %}404{% endblock %}</div>
+    <div class="err-title">{% block err_title %}Sahifa topilmadi{% endblock %}</div>
 
     <div class="err-messages">
-      <div><strong>🇺🇿 O'zbekcha:</strong> Qidirilayotgan sahifa mavjud emas yoki boshqa manzilga ko'chirilgan.</div>
+{% block err_messages %}      <div><strong>🇺🇿 O'zbekcha:</strong> Qidirilayotgan sahifa mavjud emas yoki boshqa manzilga ko'chirilgan.</div>
       <div><strong>🇷🇺 Русский:</strong> Запрашиваемая страница не найдена или была перемещена.</div>
       <div><strong>🇬🇧 English:</strong> The requested page does not exist or has been moved.</div>
-    </div>
+{% endblock %}    </div>
 
     <div class="err-actions">
       <button class="btn-retry" onclick="location.reload()">

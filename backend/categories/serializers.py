@@ -9,12 +9,12 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = [
             'id', 'name', 'name_uz', 'name_ru', 'name_en',
-            'icon', 'color', 'parent', 'sort_order', 'is_active',
+            'icon', 'color', 'parent', 'sort_order', 'is_active', 'shop',
             'children'
         ]
 
     def get_children(self, obj):
-        children = obj.children.filter(is_active=True)
+        children = obj.children.filter(is_active=True, shop_id=obj.shop_id)
         return CategorySerializer(children, many=True).data
 
 

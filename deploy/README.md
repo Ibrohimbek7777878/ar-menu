@@ -88,6 +88,55 @@ Zaxira siyosati: kunlik nusxalar 7 kun, yakshanba nusxalari 5 hafta, `pre-deploy
   `PYTHON=backend/venv/bin/python ./scripts/migrate_sqlite_to_postgres.sh /yo'l/db.sqlite3`
   Test buyurtmalari, sessiyalar va outbox ko'chirilmaydi. Haqiqiy restoran odatda `create_restaurant` bilan toza ochiladi.
 
+## Multi-tenant: bitta umumiy server, har mijoz `mijoz.<domen>`
+
+Qisqa: `PLATFORM_DOMAIN` bo'sh bo'lsa (standart) hech narsa o'zgarmaydi — bitta restoran/bitta server rejimi. Berilsa, har mijoz
+o'z subdomenida ochiladi, ma'lumotlari va xodimlari boshqa mijozlardan ajratiladi (kod: `backend/tenancy.py`, `shops/tenancy.py`).
+
+**1. DNS.** Domen provayderida ikkita yozuv: `A  domen -> server IP` va wildcard `A  *.domen -> server IP`
+(IPv6 bo'lsa `AAAA` ham). Yangi mijoz uchun DNS'ga tegish shart emas — wildcard hammasini qoplaydi.
+
+**2. Wildcard TLS (Caddy).** Ikki yo'l:
+
+- *Tavsiya: DNS-challenge.* Bitta `*.domen` + `domen` sertifikati. Caddy'ni DNS provayderingiz plagini bilan yig'ing
+  (`xcaddy build --with github.com/caddy-dns/cloudflare` kabi) va `deploy/Caddyfile` da sayt manzili va `tls` bloki:
+  ```
+  {$DOMAIN}, *.{$DOMAIN} {
+      tls {
+          dns cloudflare {env.DNS_API_TOKEN}
+      }
+      # ...qolgan bloklar o'zgarishsiz
+  ```
+  Standart (bitta domenli) `Caddyfile` ATAYLAB o'zgartirilmagan: `PLATFORM_DOMAIN` o'rnatilmasa eski sozlama ishlayveradi.
+- *On-demand TLS* (`tls { on_demand }`) FAQAT `ask` endpointi bilan xavfsiz: usiz istalgan odam tasodifiy subdomen so'rab
+  sertifikat chiqarishni majbur qilib, Let's Encrypt limitini tugatishi mumkin. Bunday `ask` endpointi HALI yozilmagan
+  (rejada) — shuning uchun on-demand'ni hozir yoqmang.
+
+**3. Muhit.** `deploy/.env` ga (`env_file` konteynerga o'tkazadi): `PLATFORM_DOMAIN=domen` (faqat domen: sxema/port yo'q).
+`settings.py` o'zi `ALLOWED_HOSTS` ga `.domen` va `CSRF_TRUSTED_ORIGINS` ga `https://*.domen` qo'shadi. Qo'shimcha:
+`TENANT_RESERVED_SUBDOMAINS=vip,billing2` (mijozga berilmaydigan qo'shimcha nomlar), `USE_X_FORWARDED_HOST` — ODDIY holatda
+`False` qoldiring (Caddy Host sarlavhasini o'zgartirmaydi). Cookie'lar host-only: `SESSION_COOKIE_DOMAIN` /
+`CSRF_COOKIE_DOMAIN` ni HECH QACHON o'rnatmang (mijozlar sessiyasi aralashib ketadi).
+`RESTAURANT_PUBLIC_URL` (compose'da `https://${DOMAIN}`) bu rejimda stol QR kodlarini umumiy domenga yo'naltiradi:
+multi-tenant ishga tushirishdan oldin uni bo'shating (QR so'rov kelgan mijoz hostidan olinadi). Bot havolalari esa
+mijozning o'z subdomeniga ketadi.
+
+**4. Yangi mijoz qo'shish.**
+```
+docker compose exec web python manage.py create_restaurant \
+    --name "Bahor Kafe" --owner bahor_ega --password '...' \
+    --subdomain bahor --business-type cafe --tables 12 --no-default
+```
+`--subdomain` 3–40 belgi (kichik lotin harf, raqam, defis; band so'zlar: www, app, admin, api, static, media, platform, mail,
+ra, seller, shop, test, demo ...), `--business-type` `restaurant|cafe|banquet`. Berilmasa subdomen `slug`dan olinadi.
+Mijoz darhol `https://bahor.domen/` da ochiladi, xodimlar `https://bahor.domen/admin/login/` dan kiradi
+(boshqa mijoz xodimi bu manzilga kira olmaydi). To'xtatish: do'konning `status` maydonini `suspended` qiling (admin panel) —
+sayt "Bu restoran hozir faol emas" (503) ko'rsatadi, ma'lumot saqlanadi; `active` qaytaradi.
+
+**5. Tekshirish.** `curl -sI https://bahor.domen/health/` (200), `https://yoq.domen/` (404 sahifa), apex `https://domen/` va
+`www.` (platforma hosti). Eslatma: media fayllari (`/media/`) hozircha umumiy papkada (tenantga bo'linmagan), Telegram bot
+bitta (token umumiy).
+
 ## Nima sinalgan, nima SINALMAGAN
 
 **Lokal noutbukda to'liq sinalgan** (Docker, `DOMAIN=localhost`, 8080/8443 portlar):

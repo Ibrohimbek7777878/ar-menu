@@ -164,6 +164,14 @@ def send_table_reservation_alert(reservation):
     hall_str = esc(reservation.hall.name) if reservation.hall else (
         esc(reservation.table.hall.name) if reservation.table and reservation.table.hall else "Asosiy zal")
 
+    # Bron mexanizmi (TZ_MULTITENANT_BRON...): tadbir turi (sozlama katalogidagi nomi) va avtomatik tasdiqlangan bronlar
+    event_line = ""
+    if getattr(reservation, 'event_type', ''):
+        from shops.booking_config import event_label, get_booking_config
+        event_line = f"🎉 <b>Tadbir:</b> {esc(event_label(get_booking_config(reservation.shop_id), reservation.event_type))}\n"
+    footer = ("✅ <i>Bron tasdiqlangan.</i>" if getattr(reservation, 'status', '') == 'confirmed'
+              else "👉 <i>Ofitsiant/Kassir paneli orqali tasdiqlang.</i>")
+
     text = (
         f"📅 <b>YANGI STOL BRONI QABUL QILINDI!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -175,8 +183,9 @@ def send_table_reservation_alert(reservation):
         f"⏰ <b>Vaqt:</b> {reservation.reservation_time.strftime('%H:%M')}\n"
         f"🏢 <b>Zal:</b> {hall_str}\n"
         f"📍 <b>Stol:</b> {tbl_str}\n"
+        f"{event_line}"
         f"📝 <b>Izoh:</b> <i>{esc(reservation.notes) or 'Qo\'shimcha talab yo\'q'}</i>\n\n"
-        f"👉 <i>Ofitsiant/Kassir paneli orqali tasdiqlang.</i>"
+        f"{footer}"
     )
 
     from notifications.admin_bot import get_shop_admin_chat_ids

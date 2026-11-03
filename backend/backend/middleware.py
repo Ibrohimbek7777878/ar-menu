@@ -18,6 +18,24 @@ class SellerTenantMiddleware(MiddlewareMixin):
     SKIP_PREFIXES = ('/media/', '/assets/', '/static/', '/health/', '/favicon.ico')
 
     def process_request(self, request):
+        # Multi-tenant (backend/tenancy.py): <mijoz>.PLATFORM_DOMAIN hostida TenantMiddleware do'konni allaqachon qo'ygan.
+        # U bu yerda HECH QACHON almashtirilmaydi (super_admin ?shop= bilan ham); boshqa restoran xodimi sessiyasi tenantga
+        # kira olmaydi — anonimga aylantiriladi (JWT bilan kelgan so'rovni `web.restaurant_auth` tekshiradi).
+        host_tenant = getattr(request, 'tenant_shop', None)
+        if host_tenant is not None:
+            user = getattr(request, 'user', None)
+            if user is not None and user.is_authenticated and not self._belongs_to_tenant(user, host_tenant):
+                from django.contrib.auth.models import AnonymousUser
+                request.user = AnonymousUser()
+            return None
+        if getattr(request, 'is_platform_host', False):
+            # Platforma hosti (apex/www/app): faqat super_admin sessiyasi amal qiladi
+            user = getattr(request, 'user', None)
+            if user is not None and user.is_authenticated and user.role != 'super_admin' and not user.is_superuser:
+                from django.contrib.auth.models import AnonymousUser
+                request.user = AnonymousUser()
+                request.tenant_shop = None
+                return None
         request.tenant_shop = None
         if request.path.startswith(self.SKIP_PREFIXES):
             return None
@@ -76,6 +94,11 @@ class SellerTenantMiddleware(MiddlewareMixin):
             except Exception:
                 pass
         return None
+
+    @staticmethod
+    def _belongs_to_tenant(user, tenant):
+        from web.restaurant_auth import user_belongs_to_shop
+        return user_belongs_to_shop(user, tenant.pk)
 
     def process_response(self, request, response):
         return response
@@ -166,6 +189,18 @@ class MultiProductHostPortMiddleware(MiddlewareMixin):
             request.urlconf = 'backend.urls_studio'
             request.product_code = 'studio'
             return None
+
+        # 1b. Multi-tenant (PLATFORM_DOMAIN): <mijoz>.<domen>, www/app va apex — DOIM restoran mahsuloti. Mijoz yuboradigan
+        # X-Product sarlavhasi, port yoki host'dagi so'z ('shop-uz', 'model-cafe' kabi nomlar bozor/studiya deb adashtirilmasin)
+        # tenant hostini boshqa mahsulotga o'tkaza olmaydi.
+        try:
+            from shops.tenancy import HOST_LEGACY, classify_host
+            if classify_host(request.get_host())[0] != HOST_LEGACY:
+                request.urlconf = 'backend.urls_restaurant'
+                request.product_code = 'restaurant'
+                return None
+        except Exception:  # noqa: BLE001 — DisallowedHost va h.k.: pastdagi xatti-harakat (CommonMiddleware 400 beradi)
+            pass
 
         # 2. Maxsus HTTP Header (Reverse Proxy / Load Balancer)
         header_prod = request.META.get('HTTP_X_PRODUCT', '').strip().lower()

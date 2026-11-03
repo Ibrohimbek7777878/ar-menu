@@ -74,7 +74,7 @@ def get_menu_markup(base_url, is_user_admin=False, shop=None, table_number=None,
     bot_scope = 'all' bo'lsa barcha 4 ta tugma.
     """
     from backend.app_settings import get_choice
-    bot_scope = get_choice('bot_scope', 'restaurant', ('restaurant', 'all'))
+    bot_scope = get_choice('bot_scope', 'restaurant', ('restaurant', 'all'), shop=shop)
     is_https = base_url.startswith('https://')
 
     if table_token:
@@ -246,6 +246,7 @@ def _handle_telegram_update(request):
     table_token = None
     table_hall = ''
     table_shop_name = ''
+    table_shop_obj = None
     if text_clean.startswith('/start'):
         parts = text_clean.split(maxsplit=1)
         if len(parts) > 1:
@@ -262,6 +263,7 @@ def _handle_telegram_update(request):
                         table_num = str(table_obj.number)
                         table_hall = table_obj.hall.name if table_obj.hall else ''
                         table_shop_name = table_obj.shop.name if table_obj.shop else ''
+                        table_shop_obj = table_obj.shop
                 except Exception:
                     pass
             elif getattr(settings, 'DEMO_MODE', False) or getattr(settings, 'RESTAURANT_ALLOW_TABLE_NUMBER_URL', False):
@@ -272,6 +274,13 @@ def _handle_telegram_update(request):
                     table_num = arg[5:]
                 elif arg.isdigit():
                     table_num = arg
+
+    # Multi-tenant (PLATFORM_DOMAIN sozlangan): menyu/stol havolalari restoranning o'z subdomeniga olib borsin
+    # (bitta umumiy bot webhook'i bitta hostda turadi, mehmon esa kerakli restoran saytiga tushishi shart)
+    from shops.tenancy import tenant_base_url
+    tenant_url = tenant_base_url(table_shop_obj or shop)
+    if tenant_url:
+        base_url = tenant_url
 
     lang = guest_lang(from_user.get('language_code'), shop)
     markup = get_menu_markup(base_url, is_user_admin=is_user_admin, shop=shop, table_number=table_num, table_token=table_token, lang=lang)

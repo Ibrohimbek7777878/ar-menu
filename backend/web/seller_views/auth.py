@@ -34,6 +34,13 @@ def seller_login(request):
 
         password = request.POST.get('password', '').strip()
         user = authenticate(request, username=username, password=password)
+        # Multi-tenant: boshqa restoranning (to'g'ri parolli) xodimi bu saytga kira olmaydi
+        from web.restaurant_auth import login_denied_message
+        denied = login_denied_message(user) if user else None
+        if denied:
+            login_guard.record_failure(request, username, scope='seller')
+            messages.error(request, denied)
+            return render(request, 'seller/login.html')
         if user and user.is_approved and getattr(user, 'role', '') in ('shop_owner', 'shop_manager', 'super_admin'):
             login_guard.record_success(request, username, user, scope='seller')
             login(request, user)

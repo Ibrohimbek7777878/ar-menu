@@ -40,7 +40,11 @@ def rate_limited(request, key_prefix, limit=20, seconds=60):
     (view ichida, masalan faqat POST uchun, dekoratorsiz ishlatish mumkin).
     """
     ip = client_ip(request)
-    bucket_key = f"ratelimit:{key_prefix}:{ip}"
+    # Multi-tenant: har restoranning o'z hisobi (bir tenantning ko'p so'rovi boshqasining mehmonlarini cheklamasin);
+    # tenantsiz rejimda kalit avvalgidek ('-' o'rniga bo'sh qism qo'shilmaydi)
+    from shops.tenancy import current_tenant_id
+    tenant_id = current_tenant_id()
+    bucket_key = f"ratelimit:{key_prefix}:{ip}" if tenant_id is None else f"ratelimit:t{tenant_id}:{key_prefix}:{ip}"
     now = time.time()
     try:
         hits = [t for t in cache.get(bucket_key, []) if now - t < seconds]

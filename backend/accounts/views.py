@@ -63,6 +63,13 @@ def login_view(request):
         login_guard.record_failure(request, username, scope='api')
         serializer.is_valid(raise_exception=True)
     user = serializer.validated_data['user']
+    # Multi-tenant: boshqa restoranning xodimiga bu saytdan token berilmaydi (token host'ga bog'lanmaydi, shuning uchun
+    # chiqarishning o'zida to'xtatiladi; xodim API'larida ham tenant tekshiriladi — web/restaurant_auth.py)
+    from web.restaurant_auth import login_denied_message
+    denied = login_denied_message(user)
+    if denied:
+        login_guard.record_failure(request, username, scope='api')
+        return Response({'detail': denied}, status=status.HTTP_403_FORBIDDEN)
     login_guard.record_success(request, username, user, scope='api')
     refresh = RefreshToken.for_user(user)
     return Response({

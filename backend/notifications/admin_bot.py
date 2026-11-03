@@ -187,6 +187,12 @@ def get_restaurant_shop(shop_id=None, order=None, table=None):
         s = Shop.objects.filter(id=shop_id).first()
         if s:
             return s
+    # Multi-tenant (`<mijoz>.PLATFORM_DOMAIN`): so'rov tenanti ustun. Tenant bo'lmasa (localhost/demo/fon vazifa) — avvalgi
+    # xatti-harakat. Nusxa shu so'rovga tegishli (TenantMiddleware qo'ygan), jarayon keshiga tushmaydi.
+    from shops.tenancy import current_tenant
+    tenant = current_tenant()
+    if tenant is not None:
+        return tenant
     # Admin tanlagan asosiy restoran (AppSetting 'restaurant_default_shop' = slug, admin paneldan o'zgaradi;
     # yoki .env RESTAURANT_DEFAULT_SHOP). Avval doim "stollari bor birinchi do'kon" olinardi.
     from backend.runtime_cache import runtime_cache_enabled
@@ -207,6 +213,11 @@ def _resolve_default_restaurant_shop():
         s = Shop.objects.filter(slug=default_slug).first()
         if s:
             return s
+    # Multi-tenant platforma hosti (apex/www/app): "birinchi do'kon" TAXMIN QILINMAYDI (tasodifan bitta mijozning menyusi
+    # umumiy manzilda chiqmasin); faqat `restaurant_default_shop` ochiq belgilangan bo'lsa ko'rsatiladi
+    from shops.tenancy import on_platform_host
+    if on_platform_host():
+        return None
     # Stollari bor do'konni qidirish
     shop_with_tables = Shop.objects.filter(restaurant_tables__isnull=False).distinct().first()
     if shop_with_tables:
@@ -220,6 +231,10 @@ def default_restaurant_shop_id():
     DB'siz yo'llar (304, S1-3) uchun: Shop nusxasi kerak bo'lmasa shuni ishlating.
     """
     from backend.runtime_cache import cached_default_shop_id, runtime_cache_enabled
+    from shops.tenancy import current_tenant_id
+    tenant_id = current_tenant_id()
+    if tenant_id is not None:
+        return tenant_id          # Multi-tenant: "asosiy restoran" tushunchasi yo'q, host tenanti
 
     def _resolve():
         shop = _resolve_default_restaurant_shop()

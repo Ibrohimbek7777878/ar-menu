@@ -8,6 +8,12 @@ from django.conf import settings
 
 
 def qr_base_url(request) -> str:
+    # Multi-tenant: stol QR kodi shu restoranning o'z subdomeniga yo'naladi (https://mijoz.PLATFORM_DOMAIN); platforma
+    # sozlanmagan bo'lsa (demo/lokal) avvalgi xatti-harakat: RESTAURANT_PUBLIC_URL yoki so'rov hosti.
+    from shops.tenancy import current_tenant, tenant_base_url
+    tenant_url = tenant_base_url(current_tenant())
+    if tenant_url:
+        return tenant_url
     return getattr(settings, 'RESTAURANT_PUBLIC_URL', '') or request.build_absolute_uri('/').rstrip('/')
 
 

@@ -14,7 +14,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Category.objects.filter(is_active=True, parent=None)
-        return qs.order_by('sort_order')
+        return self._tenant_scoped(qs).order_by('sort_order')
+
+    @staticmethod
+    def _tenant_scoped(qs):
+        """Multi-tenant hostida faqat shu restoranning bo'limlari (`Category.shop`); oddiy rejimda o'zgarishsiz."""
+        from shops.tenancy import current_tenant_id, on_platform_host
+        tenant_id = current_tenant_id()
+        if tenant_id is not None:
+            return qs.filter(shop_id=tenant_id)
+        return qs.none() if on_platform_host() else qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -23,6 +32,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def all(self, request):
-        categories = Category.objects.filter(is_active=True).order_by('sort_order')
+        categories = self._tenant_scoped(Category.objects.filter(is_active=True)).order_by('sort_order')
         serializer = CategoryListSerializer(categories, many=True)
         return Response(serializer.data)

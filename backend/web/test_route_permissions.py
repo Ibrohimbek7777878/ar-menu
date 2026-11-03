@@ -55,6 +55,7 @@ PUBLIC_GET_PAGES = {
     '/api/guest/v1/session/', '/api/guest/v1/welcome/', '/api/guest/v1/menu/', '/api/guest/v1/cart/',
     '/api/guest/v1/checkout/', '/api/guest/v1/orders/',
     '/api/v1/restaurant/menu/',
+    '/book/', '/api/restaurant/guest/booking/config/',     # mehmon bron sahifasi va uning sozlama API'si (bron TZ, Bosqich 1)
     '/api/v1/products/', '/api/v1/categories/',         # eski, faqat o'qish (legacy_gate READONLY); React menyusining zaxira yo'li
 }
 IGNORED_PREFIXES = ('/media/', '/assets/', '/djangoadmin/')   # /djangoadmin/ faqat DEBUG da ulanadi
@@ -182,6 +183,7 @@ SECTION_GUARDS = (
     (rf'^{ADMIN}tables/<int:pk>/(status/|qr\.svg)$', None, {'tables_read'}),
     (rf'^{ADMIN}tables/(halls/)?$', {'get'}, {'tables_read'}),
     (rf'^{ADMIN}tables/', None, {'tables_admin'}),
+    (rf'^{ADMIN}reservations/', None, {'reservations'}),
     (rf'^{ADMIN}orders/<int:pk>/payment/$', None, {'pos'}),
     (rf'^{ADMIN}orders/', None, {'kds'}),
     (r'^api/v1/restaurant/finance/', None, {'finance'}),

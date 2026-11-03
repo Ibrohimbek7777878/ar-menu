@@ -27,6 +27,10 @@ class RestaurantOrderService:
         from notifications.admin_bot import get_restaurant_shop
         shop = get_restaurant_shop()
         if not shop:
+            # Multi-tenant (PLATFORM_DOMAIN): restoran aniqlanmasa (platforma hosti) tasodifiy "birinchi do'kon" olinmaydi
+            from shops.tenancy import tenancy_enabled
+            if tenancy_enabled():
+                return None
             shop = Shop.objects.filter(is_open=True).first() or Shop.objects.first()
         return shop
 
@@ -363,9 +367,11 @@ class RestaurantOrderService:
                 return {'error': 'Mahsulot topilmadi', 'status': 'failed'}
         else:
             cat_name = payload.get('category_name', 'Asosiy taomlar')
-            category = Category.objects.filter(name__icontains=cat_name).first()
+            from categories.scoping import categories_for_shop
+            category = categories_for_shop(shop, Category.objects.all()).filter(name__icontains=cat_name).first()
             if not category:
                 category = Category.objects.create(
+                    shop=shop,
                     name=cat_name,
                     name_uz=cat_name,
                     name_ru=cat_name,
@@ -441,7 +447,8 @@ class RestaurantOrderService:
             products = list(products)
             from collections import Counter
             cat_counts = Counter(p.category_id for p in products)
-            categories = Category.objects.filter(id__in=cat_counts.keys(), is_active=True).order_by('sort_order', 'id')
+            from categories.scoping import categories_for_shop
+            categories = categories_for_shop(shop, Category.objects.filter(id__in=cat_counts.keys(), is_active=True)).order_by('sort_order', 'id')
 
             cat_data = []
             for c in categories:

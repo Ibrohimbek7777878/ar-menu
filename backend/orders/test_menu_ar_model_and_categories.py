@@ -164,13 +164,24 @@ class MenuCategoryIsolationTests(TestCase):
         shared.refresh_from_db()
         self.assertEqual((shared.name, shared.is_active), ('Umumiy', True))
 
-    def test_category_create_does_not_duplicate_existing_shared_name(self):
+    def test_category_create_does_not_duplicate_within_a_shop_but_is_not_shared_between_shops(self):
+        """Bo'lim endi restoranniki (`Category.shop`, multi-tenant): bir restoranda bir xil nom takrorlanmaydi, lekin boshqa
+        restoran bu nomni ko'rmaydi va uning o'z nusxasi yaratiladi (avval do'konlararo umumiy edi)."""
         res1 = self.client_a.post(f'{BASE}categories/', {'name': 'Salatlar'}, content_type='application/json')
+        res_again = self.client_a.post(f'{BASE}categories/', {'name': 'salatlar'}, content_type='application/json')
         res2 = self.client_b.post(f'{BASE}categories/', {'name': 'salatlar'}, content_type='application/json')
         self.assertEqual(res1.status_code, 201)
-        self.assertEqual(res2.status_code, 200)
-        self.assertEqual(res1.json()['id'], res2.json()['id'])
-        self.assertEqual(Category.objects.filter(name__iexact='salatlar').count(), 1)
+        self.assertEqual(res_again.status_code, 200)
+        self.assertEqual(res1.json()['id'], res_again.json()['id'])
+        self.assertEqual(res2.status_code, 201)
+        self.assertNotEqual(res1.json()['id'], res2.json()['id'])
+        self.assertEqual(Category.objects.get(pk=res1.json()['id']).shop_id, self.shop_a.pk)
+        self.assertEqual(Category.objects.get(pk=res2.json()['id']).shop_id, self.shop_b.pk)
+        self.assertEqual(Category.objects.filter(name__iexact='salatlar').count(), 2)
+        # Ro'yxatda har restoran faqat o'zinikini ko'radi
+        names_b = [c['id'] for c in self.client_b.get(f'{BASE}categories/').json()]
+        self.assertIn(res2.json()['id'], names_b)
+        self.assertNotIn(res1.json()['id'], names_b)
 
     def test_category_name_length_and_type_are_validated(self):
         for bad in ('x' * 101, ['a'], None, '   '):

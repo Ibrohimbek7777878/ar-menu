@@ -188,8 +188,14 @@ class TableReservation(SoftDeleteBehaviour, models.Model):
         ('seated', 'O\'tirdi (Faol)'),
         ('completed', 'Yakunlangan'),
         ('cancelled', 'Bekor qilingan'),
+        ('no_show', 'Kelmadi'),
     ]
-    ACTIVE_STATUSES = ('pending', 'confirmed', 'arrived', 'seated')
+    ACTIVE_STATUSES = ('pending', 'confirmed', 'arrived', 'seated')       # stolni band qiladi; qolganlari (jumladan no_show) bo'shatadi
+    SOURCE_CHOICES = [
+        ('guest', 'Mehmon (sayt)'),
+        ('staff', 'Xodim (qo\'lda)'),
+        ('bot', 'Bot'),
+    ]
 
     shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, related_name='table_reservations')
     table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
@@ -204,6 +210,12 @@ class TableReservation(SoftDeleteBehaviour, models.Model):
     public_code = models.CharField(max_length=12, unique=True, default=generate_reservation_code, editable=False,
                                    verbose_name="Bron kodi")
     is_walk_in = models.BooleanField(default=False, verbose_name="Jonli kelgan (oldindan bron qilinmagan)")
+    # Bron mexanizmi (TZ_MULTITENANT_BRON...): tadbir turi (sozlama katalogidagi kalit, 'none' = bo'sh), stolni band qilish davomiyligi,
+    # takroriy yuborishdan himoya (bir xil submission_id — bitta bron) va bron qaerdan kelgani.
+    event_type = models.CharField(max_length=20, blank=True, default='', verbose_name="Tadbir turi")
+    duration_minutes = models.PositiveSmallIntegerField(default=120, verbose_name="Stol band qilinish davomiyligi (daqiqa)")
+    submission_id = models.CharField(max_length=40, blank=True, default='', verbose_name="Yuborish identifikatori (idempotentlik)")
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='guest', verbose_name="Manba")
     is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="O'chirilgan (Soft delete)")
     deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -213,6 +225,12 @@ class TableReservation(SoftDeleteBehaviour, models.Model):
         db_table = 'restaurant_table_reservations'
         ordering = ['-reservation_date', '-reservation_time', '-created_at']
         indexes = [models.Index(fields=['shop', 'reservation_date', 'status'], name='resv_shop_date_status_idx')]
+        constraints = [
+            # Bir restoranda bir xil submission_id ikkita bron bermaydi (parallel takroriy so'rov DB darajasida ham to'xtaydi).
+            # Bo'sh qiymat (eski bronlar, submission_id yubormagan mijoz) cheklanmaydi. Qidiruv shu indeks orqali.
+            models.UniqueConstraint(fields=['shop', 'submission_id'], condition=~models.Q(submission_id=''),
+                                    name='resv_shop_submission_uniq'),
+        ]
 
     def __str__(self):
         tbl = f" (Stol #{self.table.number})" if self.table else ""
