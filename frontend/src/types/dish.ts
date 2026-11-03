@@ -15,6 +15,9 @@ export interface Product {
   image?: string;
   /** Qo'shimcha rasmlar bilan birga (asosiy rasm birinchi) — taom oynasida suriladi */
   images?: string[];
+  /** Internetdan olingan namuna rasm: muallif · litsenziya (bo'sh = restoranning o'z rasmi) */
+  image_credit?: string;
+  image_source_url?: string;
   category_id?: number;
   category_kind?: DishKind;
   category_name?: string;

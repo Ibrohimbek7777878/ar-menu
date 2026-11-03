@@ -9,6 +9,9 @@ export type GuestMotionSetting = 'full' | 'light' | 'off';
 /** Mehmon taom oynasi: on — taom kartasini bosganda oyna ochiladi, off — avvalgi xatti-harakat (backend: shops/guest_dish_sheet.py) */
 export type GuestDishSheetSetting = 'on' | 'off';
 
+/** Menyuni ommaviy kiritishda rasm/matnni AI o'qiydimi: off bo'lsa uchinchi tomonga hech narsa yuborilmaydi (backend: shops/menu_import_ai.py) */
+export type MenuImportAiSetting = 'on' | 'off';
+
 /** Mehmon kun/tun rejimi (backend: shops/guest_theme.py) */
 export type GuestThemeSetting = 'day' | 'night' | 'auto' | 'off';
 
@@ -39,6 +42,7 @@ export interface ShopSettings {
   guest_dish_sheet: GuestDishSheetSetting;
   guest_theme: GuestThemeSetting;
   guest_languages: string;
+  menu_import_ai: MenuImportAiSetting;
   panel_scope: string;
 }
 

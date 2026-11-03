@@ -1,6 +1,6 @@
 {
-  "_HeroPlate3D-BuFxt3v8.js": {
-    "file": "assets/HeroPlate3D-BuFxt3v8.js",
+  "_HeroPlate3D-ChLf7zhH.js": {
+    "file": "assets/HeroPlate3D-ChLf7zhH.js",
     "name": "HeroPlate3D",
     "imports": [
       "index.html"
@@ -17,12 +17,12 @@
     "file": "assets/mockDishes-Ct1bRflm.js",
     "name": "mockDishes"
   },
-  "_motion-B_HbVS-A.js": {
-    "file": "assets/motion-B_HbVS-A.js",
+  "_motion-DoaWjDpE.js": {
+    "file": "assets/motion-DoaWjDpE.js",
     "name": "motion",
     "imports": [
       "index.html",
-      "_HeroPlate3D-BuFxt3v8.js"
+      "_HeroPlate3D-ChLf7zhH.js"
     ]
   },
   "_three.module-VGYe9TAt.js": {
@@ -34,7 +34,7 @@
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-DaZIo-y2.js",
+    "file": "assets/index-BiAzAOpE.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -81,7 +81,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-Btam1S2d.js",
+    "file": "assets/model-viewer-DhrDMbQA.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -91,7 +91,7 @@
     ]
   },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-C1AhqKAx.js",
+    "file": "assets/PhotogrammetryStudioModal-DXnV1t8c.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -101,7 +101,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-NCE7gcvO.js",
+    "file": "assets/QRGeneratorModal-C7Nloqj2.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -110,19 +110,19 @@
     ]
   },
   "src/i18n/en/index.ts": {
-    "file": "assets/en-OmQuknUo.js",
+    "file": "assets/en-B2ykg-RU.js",
     "name": "en",
     "src": "src/i18n/en/index.ts",
     "isDynamicEntry": true
   },
   "src/i18n/ru/index.ts": {
-    "file": "assets/ru-CE72xfdX.js",
+    "file": "assets/ru-Dp0TBkjX.js",
     "name": "ru",
     "src": "src/i18n/ru/index.ts",
     "isDynamicEntry": true
   },
   "src/motion/three/celebrationScene.ts": {
-    "file": "assets/celebrationScene-D1zADw3q.js",
+    "file": "assets/celebrationScene-BQGbuidC.js",
     "name": "celebrationScene",
     "src": "src/motion/three/celebrationScene.ts",
     "isDynamicEntry": true,
@@ -132,7 +132,7 @@
     ]
   },
   "src/motion/three/heroPlateScene.ts": {
-    "file": "assets/heroPlateScene-DnKkqjtS.js",
+    "file": "assets/heroPlateScene-CTgMcIf_.js",
     "name": "heroPlateScene",
     "src": "src/motion/three/heroPlateScene.ts",
     "isDynamicEntry": true,
@@ -142,7 +142,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-DE-4aG7R.js",
+    "file": "assets/ARMenuPage-CZuExSm2.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -154,7 +154,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-BYS32MD4.js",
+    "file": "assets/AdminDashboardPage-C1kfWGgE.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -166,7 +166,7 @@
     ]
   },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-GIVJLciA.js",
+    "file": "assets/CartPage-Caic0AOi.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -175,20 +175,20 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-DaPccxUS.js",
+    "file": "assets/CheckoutPage-D74IdfL9.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-B_HbVS-A.js"
+      "_motion-DoaWjDpE.js"
     ],
     "dynamicImports": [
       "src/motion/three/celebrationScene.ts"
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-K7Uu2BwD.js",
+    "file": "assets/HostessDeskPage-BW8cfuVA.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -197,7 +197,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-BLA5Phx-.js",
+    "file": "assets/MenuPage-D4wW9rmJ.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -209,17 +209,17 @@
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-CrsgnMAa.js",
+    "file": "assets/OrdersPage-N58Unuir.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-B_HbVS-A.js"
+      "_motion-DoaWjDpE.js"
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-D2r8rPav.js",
+    "file": "assets/ReservationPage-Bt9jolgX.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -228,7 +228,7 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-akyarM6T.js",
+    "file": "assets/TableHubPage-D8PRDXYY.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
@@ -237,7 +237,7 @@
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-u2ZPtwif.js",
+    "file": "assets/WaiterPanelPage-CahSMrQo.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -246,17 +246,17 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-ChF2hTCJ.js",
+    "file": "assets/WelcomePage-_sUtiQJG.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_HeroPlate3D-BuFxt3v8.js"
+      "_HeroPlate3D-ChLf7zhH.js"
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-D2imfZ9z.js",
+    "file": "assets/ComponentShowcase-BFkpDWP0.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
@@ -266,7 +266,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-BHkbH91Y.css",
+    "file": "assets/style-BALZYF4X.css",
     "src": "style.css"
   }
 }

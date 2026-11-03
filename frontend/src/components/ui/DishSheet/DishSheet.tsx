@@ -155,6 +155,17 @@ const SheetContent: React.FC<ContentProps> = ({
         </div>
 
         <div className="ds-info">
+          {product.image_credit && (
+            <p className="ds-credit">
+              {product.image_source_url ? (
+                <a href={product.image_source_url} target="_blank" rel="noopener noreferrer">
+                  {t('Rasm: {credit}', { credit: product.image_credit })}
+                </a>
+              ) : (
+                t('Rasm: {credit}', { credit: product.image_credit })
+              )}
+            </p>
+          )}
           <div className="ds-badges">
             {product.is_popular && <span className="ds-badge hit">{t('Hit')}</span>}
             {product.is_new && <span className="ds-badge new">{t('Yangi')}</span>}

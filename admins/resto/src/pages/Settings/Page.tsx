@@ -12,9 +12,16 @@ import {
   Power,
   RotateCcw,
   Palette,
+  FileText,
 } from 'lucide-react';
 import { useSettings } from './useSettings';
-import type { GuestDishSheetSetting, GuestMotionSetting, GuestSeasonSetting, GuestThemeSetting } from './api';
+import type {
+  GuestDishSheetSetting,
+  GuestMotionSetting,
+  GuestSeasonSetting,
+  GuestThemeSetting,
+  MenuImportAiSetting,
+} from './api';
 import { restoUz } from '../../i18n/uz';
 
 const inputStyle: React.CSSProperties = {
@@ -81,6 +88,7 @@ export function SettingsPage() {
   const [guestDishSheet, setGuestDishSheet] = useState<GuestDishSheetSetting>('on');
   const [guestTheme, setGuestTheme] = useState<GuestThemeSetting>('day');
   const [guestLanguages, setGuestLanguages] = useState('uz,ru,en');
+  const [menuImportAi, setMenuImportAi] = useState<MenuImportAiSetting>('on');
 
   useEffect(() => {
     if (settings) {
@@ -104,6 +112,7 @@ export function SettingsPage() {
       setGuestDishSheet(settings.guest_dish_sheet ?? 'on');
       setGuestTheme(settings.guest_theme ?? 'day');
       setGuestLanguages(settings.guest_languages ?? 'uz,ru,en');
+      setMenuImportAi(settings.menu_import_ai ?? 'on');
     }
   }, [settings]);
 
@@ -130,6 +139,7 @@ export function SettingsPage() {
       guest_dish_sheet: guestDishSheet,
       guest_theme: guestTheme,
       guest_languages: guestLanguages,
+      menu_import_ai: menuImportAi,
     });
   };
 
@@ -611,6 +621,44 @@ export function SettingsPage() {
               ))}
             </select>
             <p style={helpTextStyle}>{restoUz.settingsPage.languagesHint}</p>
+          </div>
+        </Card>
+
+        {/* 3c. MENYUNI KIRITISH (ommaviy qo'shish) */}
+        <Card style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              fontWeight: 600,
+              fontSize: '15px',
+            }}
+          >
+            <FileText size={18} color="var(--accent-amber)" />
+            <span>{restoUz.settingsPage.menuImportTitle}</span>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="menu-import-ai">
+              {restoUz.settingsPage.menuImportAiLabel}
+            </label>
+            <select
+              id="menu-import-ai"
+              value={menuImportAi}
+              onChange={(e) => setMenuImportAi(e.target.value as MenuImportAiSetting)}
+              style={inputStyle}
+            >
+              {(Object.keys(restoUz.settingsPage.menuImportAiOptions) as MenuImportAiSetting[]).map((key) => (
+                <option key={key} value={key}>
+                  {restoUz.settingsPage.menuImportAiOptions[key]}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.menuImportAiHint}</p>
           </div>
         </Card>
 

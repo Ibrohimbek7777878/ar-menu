@@ -1,5 +1,6 @@
 // Taom oynasi (DishSheet) va tavsiyalar sarlavhalari (utils/recommendations.ts)
 export default {
+  'Rasm: {credit}': 'Фото: {credit}',
   'Tayyorlanish': 'Время',
   "Og'irligi": 'Вес',
   'Kaloriya': 'Калории',

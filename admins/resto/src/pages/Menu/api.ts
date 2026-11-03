@@ -24,6 +24,9 @@ export interface MenuProduct {
   prep_minutes?: number | null;
   cook_min?: number;
   has_real_photo: boolean;
+  // Internetdan olingan namuna rasmning muallifi/litsenziyasi va manbasi (faqat shunday rasm bo'lsa to'ldiriladi)
+  image_credit?: string;
+  image_source_url?: string;
   is_featured: boolean;
   is_deleted: boolean;
   stock?: number;
@@ -62,6 +65,14 @@ export async function fetchMenuProducts(params: {
   const query = searchParams.toString();
   const endpoint = `/api/restaurant/admin/v1/menu/products/${query ? `?${query}` : ''}`;
   return apiClient<MenuProductsResponse>(endpoint);
+}
+
+/**
+ * Taomga vaqtincha saqlangan rasmni biriktirish (`POST/PATCH products/…`): internetdan tanlangan yoki "O'z rasmim" orqali
+ * yuklangan rasmning tokeni. Token 2 soat amal qiladi va bir marta ishlatiladi.
+ */
+export function appendImageToken(formData: FormData, token: string | null | undefined): void {
+  if (token) formData.append('image_token', token);
 }
 
 export async function createMenuProduct(formData: FormData): Promise<MenuProduct> {

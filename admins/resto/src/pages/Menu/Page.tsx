@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { useMenu, StatusFilter } from './useMenu';
-import { MenuProduct } from './api';
+import { MenuProduct, appendImageToken } from './api';
 import { TranslationFields } from './TranslationFields';
 import {
   appendTranslations,
@@ -10,6 +10,9 @@ import {
   translationsFromProduct,
 } from './translations';
 import { restoUz } from '../../i18n/uz';
+import { ImagePicker } from './BulkImport/ImagePicker';
+import { fill } from './BulkImport/text';
+import type { ImageChoice } from './BulkImport/types';
 import {
   Card,
   Button,
@@ -33,9 +36,13 @@ import {
   FolderPlus,
   RefreshCw,
   Image as ImageIcon,
+  Files,
 } from 'lucide-react';
 
-export const MenuPage: React.FC = () => {
+// Ommaviy qo'shish alohida bo'lak sifatida yuklanadi: oddiy menyu sahifasi yengil qoladi
+const BulkImportScreen = lazy(() => import('./BulkImport/BulkImportScreen'));
+
+const MenuProductsScreen: React.FC<{ onOpenBulkImport: () => void }> = ({ onOpenBulkImport }) => {
   const {
     products,
     categories,
@@ -71,6 +78,10 @@ export const MenuPage: React.FC = () => {
   const [formDescription, setFormDescription] = useState('');
   const [formTranslations, setFormTranslations] = useState<TranslationValues>(emptyTranslations());
   const [formImage, setFormImage] = useState<File | null>(null);
+  // Internetdan tanlangan namuna rasm (vaqtincha saqlangan; saqlashda `image_token` bilan yuboriladi)
+  const [formImageChoice, setFormImageChoice] = useState<ImageChoice | null>(null);
+  // Fayl tanlash maydonini tozalash uchun (internetdan rasm tanlansa, ilgari tanlangan fayl bekor bo'ladi)
+  const [imageInputKey, setImageInputKey] = useState(0);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
   // Kategoriya formasi
@@ -86,6 +97,7 @@ export const MenuPage: React.FC = () => {
     setFormDescription('');
     setFormTranslations(emptyTranslations());
     setFormImage(null);
+    setFormImageChoice(null);
     setIsProductModalOpen(true);
   };
 
@@ -98,7 +110,16 @@ export const MenuPage: React.FC = () => {
     setFormDescription(p.description || '');
     setFormTranslations(translationsFromProduct(p));
     setFormImage(null);
+    setFormImageChoice(null);
     setIsProductModalOpen(true);
+  };
+
+  const handleInternetImage = (choice: ImageChoice | null) => {
+    setFormImageChoice(choice);
+    if (choice) {
+      setFormImage(null);
+      setImageInputKey((key) => key + 1);
+    }
   };
 
   const changeTranslation = (field: TranslationField, value: string) => {
@@ -119,7 +140,9 @@ export const MenuPage: React.FC = () => {
       // Tahrirlashda bo'sh tavsif ham yuboriladi: aks holda egasi tavsifni tozalay olmasdi
       if (editingProduct || formDescription) fd.append('description', formDescription);
       appendTranslations(fd, formTranslations);
+      // Fayl yoki internetdan tanlangan rasm (ikkalasi birga emas: biri tanlansa ikkinchisi bekor bo'ladi)
       if (formImage) fd.append('image', formImage);
+      else appendImageToken(fd, formImageChoice?.token);
 
       await saveProduct(editingProduct ? editingProduct.id : null, fd);
       setIsProductModalOpen(false);
@@ -162,7 +185,16 @@ export const MenuPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onOpenBulkImport}
+            icon={<Files size={16} />}
+          >
+            {restoUz.bulkImport.openButton}
+          </Button>
+
           <Button
             variant="secondary"
             size="sm"
@@ -326,9 +358,14 @@ export const MenuPage: React.FC = () => {
           title="Taomlar topilmadi"
           description="Ushbu mezonlar bo'yicha menyuda taom mavjud emas. Yangi taom qo'shishingiz mumkin."
           action={
-            <Button variant="primary" onClick={openCreateModal} icon={<Plus size={16} />}>
-              Birinchi taomni qo'shish
-            </Button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Button variant="primary" onClick={openCreateModal} icon={<Plus size={16} />}>
+                Birinchi taomni qo'shish
+              </Button>
+              <Button variant="secondary" onClick={onOpenBulkImport} icon={<Files size={16} />}>
+                {restoUz.bulkImport.openButton}
+              </Button>
+            </div>
           }
         />
       ) : (
@@ -687,9 +724,15 @@ export const MenuPage: React.FC = () => {
               Taom surati
             </label>
             <input
+              key={imageInputKey}
               type="file"
               accept="image/*"
-              onChange={(e) => setFormImage(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setFormImage(file);
+                // Fayl tanlansa, internetdan tanlangan rasm bekor bo'ladi
+                if (file) setFormImageChoice(null);
+              }}
               style={{
                 width: '100%',
                 padding: '6px',
@@ -700,6 +743,26 @@ export const MenuPage: React.FC = () => {
                 fontSize: '13px',
               }}
             />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>
+              {restoUz.bulkImport.images.formTitle}
+            </label>
+            <ImagePicker
+              query={formName}
+              value={formImageChoice}
+              onChange={handleInternetImage}
+              allowOwn={false}
+              currentPreview={editingProduct?.image ?? null}
+            />
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              {formImageChoice
+                ? restoUz.bulkImport.images.formPicked
+                : editingProduct?.image_credit && !formImage
+                  ? fill(restoUz.bulkImport.images.formCurrent, { credit: editingProduct.image_credit })
+                  : restoUz.bulkImport.images.formHint}
+            </p>
           </div>
 
           <div>
@@ -789,6 +852,29 @@ export const MenuPage: React.FC = () => {
       </Modal>
     </div>
   );
+};
+
+/**
+ * Menyu sahifasi: taomlar ro'yxati yoki "Ommaviy qo'shish" ekrani. Ro'yxatga qaytganda u qayta ochiladi,
+ * shuning uchun yangi taomlar va bo'limlar darrov ko'rinadi.
+ */
+export const MenuPage: React.FC = () => {
+  const [view, setView] = useState<'list' | 'import'>('list');
+  if (view === 'import') {
+    return (
+      <Suspense
+        fallback={
+          <div style={{ padding: '24px' }}>
+            <Skeleton height="40px" width="240px" style={{ marginBottom: '16px' }} />
+            <Skeleton height="220px" borderRadius="var(--radius-lg)" />
+          </div>
+        }
+      >
+        <BulkImportScreen onClose={() => setView('list')} />
+      </Suspense>
+    );
+  }
+  return <MenuProductsScreen onOpenBulkImport={() => setView('import')} />;
 };
 
 export default MenuPage;
