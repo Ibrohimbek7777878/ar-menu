@@ -139,13 +139,14 @@ class GuestSeasonEndToEndTests(TestCase):
             self.assertEqual(self.guest_session()['season'], 'qish')
 
     # ── klassik dizayn va xodim sessiyasi fasl olmaydi ──
-    def test_classic_design_never_gets_a_season(self):
+    def test_classic_design_gets_the_season_too(self):
+        # Egasi qarori 2026-11-03: imkoniyatlar dizayn tartibidan (new/classic) mustaqil
         from notifications.models import AppSetting
         self.set_season('qish')
         AppSetting.objects.create(key='guest_design', value='classic', category='guest')
         data = self.guest_session()
         self.assertEqual(data['design'], 'classic')
-        self.assertNotIn('season', data)
+        self.assertEqual(data['season'], 'qish')
 
     def test_staff_session_has_no_season(self):
         self.set_season('qish')

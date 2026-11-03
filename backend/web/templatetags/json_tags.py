@@ -38,6 +38,25 @@ def gulistan_session(context):
     return mark_safe(f'<script>window.__GULISTON_SESSION__ = {text};</script>')
 
 
+@register.simple_tag(takes_context=True)
+def gulistan_palette(context):
+    """`<html data-palette="{% gulistan_palette %}">`: 'classic' (standart, yashil-krem) yoki 'orange'. Hech qachon xato bermaydi:
+    sahifa palitra tufayli yiqilmasin (xato bo'lsa 'classic')."""
+    try:
+        from shops.guest_palette import DEFAULT_PALETTE
+        from shops.guest_profile import guest_palette_for_shop_id
+        from web.restaurant_auth import guest_shop_id, is_restaurant_staff, staff_shop
+        request = context.get('request')
+        if request is None:
+            return DEFAULT_PALETTE
+        user = getattr(request, 'user', None)
+        shop = staff_shop(request) if (user is not None and is_restaurant_staff(user)) else None
+        shop_id = getattr(shop, 'id', None) or guest_shop_id(request)
+        return guest_palette_for_shop_id(shop_id, request)
+    except Exception:  # noqa: BLE001
+        return 'classic'
+
+
 @register.filter(is_safe=True)
 def script_json(value):
     """

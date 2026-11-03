@@ -1,5 +1,5 @@
 {% load json_tags %}{% load static seller_assets %}<!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" data-palette="{% gulistan_palette %}">
 <head>
     <meta charset="UTF-8">
     {% gulistan_session %}
@@ -11,7 +11,7 @@
     (function () {
         try {
             var s = window.__GULISTON_SESSION__ || {};
-            var setting = s.design === 'classic' ? 'off' : (s.theme || 'day');
+            var setting = s.theme || 'day';
             if (setting === 'off') return;
             var pref = null;
             try { pref = localStorage.getItem('guliston.theme'); } catch (e) {}

@@ -84,13 +84,14 @@ class GuestMotionEndToEndTests(TestCase):
         self.assertNotIn('season', data)
         self.assertEqual(data['motion'], 'light')
 
-    def test_classic_design_never_gets_motion(self):
+    def test_classic_design_gets_motion_too(self):
+        # Egasi qarori 2026-11-03: "hozirgi animatsiyalar qo'shilsin" — dizayn tartibidan mustaqil
         from notifications.models import AppSetting
         self.patch(guest_motion='off')
         AppSetting.objects.create(key='guest_design', value='classic', category='guest')
         data = self.guest_session()
         self.assertEqual(data['design'], 'classic')
-        self.assertNotIn('motion', data)
+        self.assertEqual(data['motion'], 'off')
 
     def test_staff_session_has_no_motion(self):
         self.patch(guest_motion='off')

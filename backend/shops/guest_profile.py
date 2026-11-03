@@ -7,6 +7,7 @@ Avval har sozlama alohida `Shop` so'rovi (kesh sovuq bo'lganda) edi; sozlamalar 
 from shops.guest_dish_sheet import normalize_dish_sheet
 from shops.guest_languages import DEFAULT_LANGUAGES, normalize_languages
 from shops.guest_motion import DEFAULT_MOTION, normalize_motion
+from shops.guest_palette import DEFAULT_PALETTE, normalize_palette
 from shops.guest_season import normalize_season, resolve_season
 from shops.guest_theme import DEFAULT_THEME, normalize_theme
 
@@ -21,15 +22,39 @@ def _load(shop_id):
         'dish_sheet': normalize_dish_sheet(bp.get('guest_dish_sheet')),
         'theme': normalize_theme(bp.get('guest_theme')),
         'languages': normalize_languages(bp.get('guest_languages')),
+        'palette': normalize_palette(bp.get('guest_palette')),
     }
 
 
-def guest_session_extras(shop_id, now=None):
-    """`window.__GULISTON_SESSION__` ga qo'shiladigan kalitlar; standart qiymatda kalit yo'q (javob avvalgidek)."""
+def guest_profile(shop_id, request=None):
+    """Restoranning mehmon sozlamalari (normallangan). Bitta so'rov ichida (`request`) bir marta o'qiladi: sahifada `<html data-palette>`
+    va `window.__GULISTON_SESSION__` ikkalasi ham kerak bo'lsa ikkinchi SQL ketmaydi."""
     if not shop_id:
-        return {}
+        return None
+    memo = getattr(request, '_gulistan_guest_profile', None) if request is not None else None
+    if memo is not None and memo[0] == shop_id:
+        return memo[1]
     from backend.runtime_cache import cached_shop_value
-    s = cached_shop_value(shop_id, 'guest_profile', lambda: _load(shop_id))
+    value = cached_shop_value(shop_id, 'guest_profile', lambda: _load(shop_id))
+    if request is not None:
+        try:
+            request._gulistan_guest_profile = (shop_id, value)
+        except Exception:  # noqa: BLE001 — so'rov obyekti o'zgartirib bo'lmasa, faqat memo yo'q
+            pass
+    return value
+
+
+def guest_palette_for_shop_id(shop_id, request=None):
+    """`<html data-palette>` uchun: 'classic' (standart) yoki 'orange'."""
+    s = guest_profile(shop_id, request)
+    return s['palette'] if s else DEFAULT_PALETTE
+
+
+def guest_session_extras(shop_id, now=None, request=None):
+    """`window.__GULISTON_SESSION__` ga qo'shiladigan kalitlar; standart qiymatda kalit yo'q (javob avvalgidek)."""
+    s = guest_profile(shop_id, request)
+    if not s:
+        return {}
     extras = {}
     season = resolve_season(s['season'], now)
     if season:
@@ -42,4 +67,6 @@ def guest_session_extras(shop_id, now=None):
         extras['theme'] = s['theme']
     if s['languages'] != DEFAULT_LANGUAGES:
         extras['languages'] = s['languages']
+    if s['palette'] != DEFAULT_PALETTE:
+        extras['palette'] = s['palette']
     return extras

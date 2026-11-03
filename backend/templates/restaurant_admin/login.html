@@ -1,106 +1,296 @@
-{% load static seller_assets %}<!DOCTYPE html>
-<html lang="uz">
+{% load static seller_assets json_tags %}<!DOCTYPE html>
+<html lang="uz" data-palette="{% gulistan_palette %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guliston — Boshqaruv Paneliga Kirish</title>
+    <meta name="theme-color" content="#FFFFFF">
+    {# Kun/tun va til birinchi kadrdan to'g'ri bo'lishi uchun (yorqin chaqnash bo'lmasin). Mantiq /ra/ ilovasi bilan bir xil: admins/shared/src/theme va i18n (kalitlar `guliston.theme`, `guliston.lang`) #}
+    <script>
+    (function () {
+        try {
+            var pref = null;
+            try { pref = localStorage.getItem('guliston.theme'); } catch (e) {}
+            if (pref !== 'day' && pref !== 'night' && pref !== 'auto') pref = 'day';
+            var dark = pref === 'night' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            var root = document.documentElement;
+            root.setAttribute('data-theme', dark ? 'dark' : 'light');
+            var lang = null;
+            try { lang = localStorage.getItem('guliston.lang'); } catch (e) {}
+            if (lang === 'uz' || lang === 'ru' || lang === 'en') root.setAttribute('lang', lang);
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', dark ? '#1B1714' : '#FFFFFF');
+        } catch (e) {}
+    })();
+    </script>
     {% seller_assets_mode as assets_mode %}
     {% if assets_mode == 'cdn' %}
     {# SELLER_ASSETS=cdn — eski (zaxira) yo'l: Google Fonts. Hech narsa o'chirilmagan. #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     {% else %}
     <link rel="stylesheet" href="{% static 'vendor/fonts/fonts-resto.css' %}">
+    <style>
+        /* Outfit: faqat `orange` palitrada sarlavha shrifti (klassikda Playfair Display, fonts-resto.css da) */
+        @font-face{font-family:'Outfit';font-style:normal;font-weight:100 900;font-display:swap;src:url('{% static "vendor/fonts/outfit-latin-ext-wght-normal.woff2" %}') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+        @font-face{font-family:'Outfit';font-style:normal;font-weight:100 900;font-display:swap;src:url('{% static "vendor/fonts/outfit-latin-wght-normal.woff2" %}') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+    </style>
     {% endif %}
     <style>
+        /* ─── Palitra tokenlari: admins/shared/src/ui/tokens.css bilan BIR XIL nom va qiymatlar (shu fayldagi to'plam uning qismi).
+               Mosligi tekshiriladi: admins/shared/tests/palette.test.ts. Palitrani server tanlaydi (`data-palette`), kun/tun — `data-theme`. ─── */
         :root {
-            --bg-cream: #F7F3EA;
-            --bg-cream-soft: #FAF7F0;
-            --primary-green: #2F4836;
-            --primary-green-hover: #24382A;
-            --accent-brown: #8B5E3C;
-            --text-dark: #2C2A26;
-            --text-muted: #6B6559;
-            --border-cream: #E8E0CF;
-            --radius-2xl: 24px;
-            --radius-xl: 18px;
-            --radius-pill: 9999px;
-            --shadow-card: 0 10px 30px -4px rgba(44, 42, 38, 0.08);
+            color-scheme: light;
+            --bg-primary: #F7F3EA;
+            --bg-surface: #FFFFFF;
+            --bg-elevated: #FAF7F0;
+            --border-subtle: #E8E0CF;
+            --border-strong: #D9CFB8;
+            --text-main: #2C2A26;
+            --text-muted: #4F4A42;
+            --text-inverse: #FFFFFF;
+            --accent-amber: #A9501A;
+            --accent-amber-bg: #F8EEE4;
+            --accent-amber-border: #F0DCC8;
+            --accent-rose: #B42318;
+            --accent-rose-bg: #FAF0EF;
+            --accent-rose-border: #F3DCDA;
+            --action: #2F4836;
+            --action-hover: #24382A;
+            --brand: #2F4836;
+            --brand-hover: #24382A;
+            --brand-bg: #EBF1EC;
+            --brand-border: #C2D4C7;
+            --focus-ring: #2F4836;
+            --radius-md: 14px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            --shadow-sm: 0 1px 3px rgba(44, 42, 38, 0.05);
+            --shadow-md: 0 4px 20px -2px rgba(44, 42, 38, 0.05), 0 1px 3px rgba(44, 42, 38, 0.04);
+            --shadow-lg: 0 25px 50px -12px rgba(44, 42, 38, 0.28);
+            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+        }
+        html[data-palette='orange'] {
+            color-scheme: light;
+            --bg-primary: #FAF8F5;
+            --bg-surface: #FFFFFF;
+            --bg-elevated: #FAF8F5;
+            --border-subtle: #EFE9E2;
+            --border-strong: #DDD4C8;
+            --text-main: #181513;
+            --text-muted: #4A443E;
+            --text-inverse: #FFFFFF;
+            --accent-amber: #C2410C;
+            --accent-amber-bg: #FFF7ED;
+            --accent-amber-border: #FED7AA;
+            --accent-rose: #DC2626;
+            --accent-rose-bg: #FFF1F2;
+            --accent-rose-border: #FFE4E6;
+            --action: #C2410C;
+            --action-hover: #9A3412;
+            --brand: #C2410C;
+            --brand-hover: #9A3412;
+            --brand-bg: #FFF7ED;
+            --brand-border: #FED7AA;
+            --focus-ring: #C2410C;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            --shadow-sm: 0 1px 3px rgba(24, 21, 19, 0.04);
+            --shadow-md: 0 2px 10px -2px rgba(24, 21, 19, 0.06), 0 1px 3px rgba(24, 21, 19, 0.03);
+            --shadow-lg: 0 10px 25px -4px rgba(24, 21, 19, 0.12), 0 4px 10px -2px rgba(24, 21, 19, 0.05);
+            --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
+        html[data-theme='dark']:not([data-palette='orange']) {
+            color-scheme: dark;
+            --bg-primary: #0F1511;
+            --bg-surface: #17201A;
+            --bg-elevated: #1F2A22;
+            --border-subtle: #2A3A2F;
+            --border-strong: #3A4D3F;
+            --text-main: #F1EEE6;
+            --text-muted: #CFCABD;
+            --text-inverse: #FFFFFF;
+            --accent-amber: #E8A877;
+            --accent-amber-bg: #2B2018;
+            --accent-amber-border: #3A2A1D;
+            --accent-rose: #F87171;
+            --accent-rose-bg: #2D1519;
+            --accent-rose-border: #5B2229;
+            --action: #3E6B4A;
+            --action-hover: #35593F;
+            --brand: #8FBF9A;
+            --brand-hover: #A9D4B3;
+            --brand-bg: #1C2B21;
+            --brand-border: #2F4A37;
+            --focus-ring: #8FBF9A;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 2px 10px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        html[data-theme='dark'][data-palette='orange'] {
+            color-scheme: dark;
+            --bg-primary: #141110;
+            --bg-surface: #1F1B18;
+            --bg-elevated: #2A2420;
+            --border-subtle: #332C27;
+            --border-strong: #4A4038;
+            --text-main: #F5EFE8;
+            --text-muted: #CFC6BC;
+            --text-inverse: #FFFFFF;
+            --accent-amber: #EA580C;
+            --accent-amber-bg: #2A1B12;
+            --accent-amber-border: #5A3416;
+            --accent-rose: #F87171;
+            --accent-rose-bg: #2D1519;
+            --accent-rose-border: #5B2229;
+            --action: #C2410C;
+            --action-hover: #9A3412;
+            --brand: #EA580C;
+            --brand-hover: #FB923C;
+            --brand-bg: #2A1B12;
+            --brand-border: #5A3416;
+            --focus-ring: #EA580C;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 2px 10px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            font-family: var(--font-sans);
         }
 
         body {
-            background-color: var(--bg-cream);
-            color: var(--text-dark);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 72px 20px 20px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .serif { font-family: 'Playfair Display', Georgia, serif; }
+        .serif { font-family: var(--font-display); }
+
+        :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+        /* Til va kun/tun tanlagichlari: tepada o'ngda, kichik */
+        .login-tools {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .seg {
+            display: inline-flex;
+            padding: 3px;
+            gap: 2px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-full);
+        }
+        .seg button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 34px;
+            padding: 0 10px;
+            border: none;
+            border-radius: var(--radius-full);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+        }
+        .seg button:hover { color: var(--text-main); }
+        .seg button[aria-pressed='true'] {
+            background: var(--brand-bg);
+            color: var(--brand);
+            box-shadow: inset 0 0 0 1px var(--brand-border);
+        }
+        .seg svg { width: 16px; height: 16px; }
+        @media (max-width: 480px) {
+            .seg button { min-width: 44px; height: 40px; }
+        }
 
         .login-card {
             width: 100%;
             max-width: 440px;
-            background: #FFFFFF;
-            border: 1px solid var(--border-cream);
-            border-radius: var(--radius-2xl);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-xl);
             padding: 40px 32px;
-            box-shadow: var(--shadow-card);
+            box-shadow: var(--shadow-md);
             text-align: center;
         }
 
         .brand-crest-big {
             width: 64px;
             height: 64px;
-            border-radius: 18px;
-            background: var(--primary-green);
-            color: #FAF7F0;
-            font-family: 'Playfair Display', Georgia, serif;
+            border-radius: var(--radius-lg);
+            background: var(--action);
+            color: var(--text-inverse);
+            font-family: var(--font-display);
             font-size: 32px;
             font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 16px;
-            box-shadow: 0 6px 18px rgba(47, 72, 54, 0.25);
+            box-shadow: var(--shadow-sm);
         }
 
         .login-title {
             font-size: 26px;
             font-weight: 700;
-            color: var(--text-dark);
+            color: var(--text-main);
             margin-bottom: 4px;
         }
 
         .login-subtitle {
             font-size: 11px;
             letter-spacing: 2px;
-            color: var(--accent-brown);
+            color: var(--accent-amber);
             text-transform: uppercase;
             font-weight: 700;
             margin-bottom: 28px;
         }
 
-        .error-box {
-            background: #FFF5F5;
-            border: 1px solid #FEB2B2;
-            color: #C53030;
+        .msg-box {
             padding: 12px 14px;
-            border-radius: var(--radius-xl);
+            border-radius: var(--radius-lg);
             font-size: 13px;
             font-weight: 600;
             margin-bottom: 20px;
             text-align: left;
+            background: var(--accent-rose-bg);
+            border: 1px solid var(--accent-rose-border);
+            color: var(--accent-rose);
+        }
+        .msg-box.msg-warning {
+            background: var(--accent-amber-bg);
+            border-color: var(--accent-amber-border);
+            color: var(--accent-amber);
+        }
+        .msg-box.msg-info, .msg-box.msg-success {
+            background: var(--brand-bg);
+            border-color: var(--brand-border);
+            color: var(--brand);
         }
 
         .login-form {
@@ -114,47 +304,49 @@
             display: block;
             font-size: 13px;
             font-weight: 700;
-            color: var(--text-dark);
+            color: var(--text-main);
             margin-bottom: 6px;
         }
 
         .form-field {
             width: 100%;
-            background: var(--bg-cream-soft);
-            border: 1px solid var(--border-cream);
-            border-radius: var(--radius-xl);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
             padding: 14px 18px;
-            font-size: 14px;
-            color: var(--text-dark);
+            font-size: 16px;
+            color: var(--text-main);
             outline: none;
             transition: border-color 0.2s;
         }
+        .form-field::placeholder { color: var(--text-muted); opacity: 0.8; }
         .form-field:focus {
-            border-color: var(--primary-green);
-            background: #FFFFFF;
+            border-color: var(--brand);
+            background: var(--bg-surface);
         }
 
         .btn-submit-login {
             margin-top: 10px;
-            background: var(--primary-green);
-            color: #FFFFFF;
+            background: var(--action);
+            color: var(--text-inverse);
             border: none;
             padding: 16px;
-            border-radius: var(--radius-pill);
+            border-radius: var(--radius-full);
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 8px 24px rgba(47, 72, 54, 0.25);
+            box-shadow: var(--shadow-sm);
             transition: all 0.2s;
         }
         .btn-submit-login:hover {
-            background: var(--primary-green-hover);
+            background: var(--action-hover);
             transform: translateY(-1px);
         }
 
         .back-menu-link {
             display: inline-block;
             margin-top: 24px;
+            padding: 8px 4px;
             font-size: 13px;
             color: var(--text-muted);
             font-weight: 700;
@@ -162,20 +354,39 @@
             transition: color 0.15s;
         }
         .back-menu-link:hover {
-            color: var(--primary-green);
+            color: var(--brand);
         }
     </style>
 </head>
 <body>
+    <div class="login-tools">
+        <div class="seg" role="group" id="langSwitch" data-i18n-aria="lang">
+            <button type="button" data-lang="uz" title="O'zbekcha" aria-pressed="true">UZ</button>
+            <button type="button" data-lang="ru" title="Русский" aria-pressed="false">RU</button>
+            <button type="button" data-lang="en" title="English" aria-pressed="false">EN</button>
+        </div>
+        <div class="seg" role="group" id="themeSwitch" data-i18n-aria="appearance">
+            <button type="button" data-theme-pref="day" data-i18n-title="day" data-i18n-aria="day" title="Kun" aria-label="Kun" aria-pressed="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            </button>
+            <button type="button" data-theme-pref="night" data-i18n-title="night" data-i18n-aria="night" title="Tun" aria-label="Tun" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button type="button" data-theme-pref="auto" data-i18n-title="auto" data-i18n-aria="auto" title="Avto" aria-label="Avto" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+            </button>
+        </div>
+    </div>
+
     <div class="login-card">
         <div class="brand-crest-big">G</div>
         <h1 class="login-title serif">Guliston</h1>
-        <p class="login-subtitle">Restoran Boshqaruv Paneli</p>
+        <p class="login-subtitle" data-i18n="subtitle">Restoran Boshqaruv Paneli</p>
 
         {% if messages %}
-        <div class="error-box">
+        <div class="msg-box{% for message in messages %}{% if forloop.first %} msg-{{ message.tags }}{% endif %}{% endfor %}" role="alert">
             {% for message in messages %}
-            <p>⚠️ {{ message }}</p>
+            <p data-msg>{{ message }}</p>
             {% endfor %}
         </div>
         {% endif %}
@@ -184,21 +395,147 @@
             {% csrf_token %}
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div>
-                <label class="form-label">Foydalanuvchi nomi / Login</label>
-                <input type="text" name="username" placeholder="Masalan: admin" class="form-field" required autocomplete="username">
+                <label class="form-label" for="id_username" data-i18n="username">Foydalanuvchi nomi / Login</label>
+                <input type="text" id="id_username" name="username" placeholder="Masalan: admin" data-i18n-ph="usernamePh" class="form-field" required autocomplete="username">
             </div>
 
             <div>
-                <label class="form-label">Maxfiy parol</label>
-                <input type="password" name="password" placeholder="••••••••" class="form-field" required autocomplete="current-password">
+                <label class="form-label" for="id_password" data-i18n="password">Maxfiy parol</label>
+                <input type="password" id="id_password" name="password" placeholder="••••••••" class="form-field" required autocomplete="current-password">
             </div>
 
-            <button type="submit" class="btn-submit-login">
+            <button type="submit" class="btn-submit-login" data-i18n="submit">
                 Tizimga Kirish →
             </button>
         </form>
 
-        <a href="/" class="back-menu-link">← Mehmon Menyusiga Qaytish</a>
+        <a href="/" class="back-menu-link" data-i18n="back">← Mehmon Menyusiga Qaytish</a>
     </div>
+
+    <script>
+    (function () {
+        var LS_LANG = 'guliston.lang';
+        var LS_THEME = 'guliston.theme';
+        var LANGS = ['uz', 'ru', 'en'];
+        var THEMES = ['day', 'night', 'auto'];
+        var CHROME = { light: '#FFFFFF', dark: '#1B1714' };
+
+        /* Interfeys matnlari: uz — HTML ning o'zida; ru va en shu yerda. */
+        var TEXT = {
+            title: {
+                uz: "Guliston — Boshqaruv Paneliga Kirish",
+                ru: "Guliston — Вход в панель управления",
+                en: "Guliston — Sign in to the dashboard"
+            },
+            subtitle: { uz: "Restoran Boshqaruv Paneli", ru: "Панель управления рестораном", en: "Restaurant dashboard" },
+            username: { uz: "Foydalanuvchi nomi / Login", ru: "Имя пользователя / Логин", en: "Username / Login" },
+            usernamePh: { uz: "Masalan: admin", ru: "Например: admin", en: "For example: admin" },
+            password: { uz: "Maxfiy parol", ru: "Пароль", en: "Password" },
+            submit: { uz: "Tizimga Kirish →", ru: "Войти →", en: "Sign in →" },
+            back: { uz: "← Mehmon Menyusiga Qaytish", ru: "← Вернуться в меню для гостей", en: "← Back to the guest menu" },
+            lang: { uz: "Til", ru: "Язык", en: "Language" },
+            appearance: { uz: "Ko'rinish", ru: "Оформление", en: "Appearance" },
+            day: { uz: "Kun", ru: "День", en: "Day" },
+            night: { uz: "Tun", ru: "Ночь", en: "Night" },
+            auto: { uz: "Avto", ru: "Авто", en: "Auto" }
+        };
+
+        /* Server (Django messages) o'zbekcha yuboradi: ma'lum xabarlar tilga qarab almashtiriladi, noma'lumi o'zgarishsiz qoladi. */
+        var MESSAGES = {
+            "Login yoki parol xato yoki hisob tasdiqlanmagan.": {
+                ru: "Неверный логин или пароль, либо учётная запись не подтверждена.",
+                en: "Wrong username or password, or the account has not been approved."
+            },
+            "Bu akkaunt restoran xodimi emas. Xodim akkaunti bilan qayta kiring.": {
+                ru: "Эта учётная запись не принадлежит сотруднику ресторана. Войдите с учётной записью сотрудника.",
+                en: "This account is not a restaurant staff account. Sign in with a staff account."
+            },
+            "Xavfsizlik: ko'p marotaba xato urinish bo'ldi. Iltimos, bir necha daqiqadan so'ng qayta urinib ko'ring.": {
+                ru: "Безопасность: слишком много неудачных попыток. Пожалуйста, попробуйте снова через несколько минут.",
+                en: "Security: too many failed attempts. Please try again in a few minutes."
+            },
+            "Boshqaruv panelidan chiqdingiz.": {
+                ru: "Вы вышли из панели управления.",
+                en: "You have signed out of the dashboard."
+            }
+        };
+
+        var root = document.documentElement;
+        function store(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+        function save(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+        function pick(map, lang) { return map[lang] || map.uz; }
+
+        /* Server xabarlarining asl (o'zbekcha) matni bir marta eslab qolinadi: tilni qayta o'zbekchaga qaytarish uchun */
+        var originals = [];
+        Array.prototype.forEach.call(document.querySelectorAll('[data-msg]'), function (el) {
+            originals.push({ el: el, uz: el.textContent });
+        });
+
+        function applyLang(lang) {
+            root.setAttribute('lang', lang);
+            Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (el) {
+                el.textContent = pick(TEXT[el.getAttribute('data-i18n')], lang);
+            });
+            Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-ph]'), function (el) {
+                el.setAttribute('placeholder', pick(TEXT[el.getAttribute('data-i18n-ph')], lang));
+            });
+            Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-title]'), function (el) {
+                el.setAttribute('title', pick(TEXT[el.getAttribute('data-i18n-title')], lang));
+            });
+            Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (el) {
+                el.setAttribute('aria-label', pick(TEXT[el.getAttribute('data-i18n-aria')], lang));
+            });
+            originals.forEach(function (item) {
+                var known = MESSAGES[item.uz.trim()];
+                item.el.textContent = known && lang !== 'uz' ? known[lang] : item.uz;
+            });
+            document.title = TEXT.title[lang];
+            Array.prototype.forEach.call(document.querySelectorAll('[data-lang]'), function (btn) {
+                btn.setAttribute('aria-pressed', String(btn.getAttribute('data-lang') === lang));
+            });
+        }
+
+        function systemDark() {
+            try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; }
+        }
+        var themePref = store(LS_THEME);
+        if (THEMES.indexOf(themePref) < 0) themePref = 'day';
+        function applyTheme() {
+            var dark = themePref === 'night' || (themePref === 'auto' && systemDark());
+            root.setAttribute('data-theme', dark ? 'dark' : 'light');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', dark ? CHROME.dark : CHROME.light);
+            Array.prototype.forEach.call(document.querySelectorAll('[data-theme-pref]'), function (btn) {
+                btn.setAttribute('aria-pressed', String(btn.getAttribute('data-theme-pref') === themePref));
+            });
+        }
+        try {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                if (themePref === 'auto') applyTheme();
+            });
+        } catch (e) {}
+
+        var lang = store(LS_LANG);
+        if (LANGS.indexOf(lang) < 0) lang = 'uz';
+
+        Array.prototype.forEach.call(document.querySelectorAll('[data-lang]'), function (btn) {
+            btn.addEventListener('click', function () {
+                lang = btn.getAttribute('data-lang');
+                save(LS_LANG, lang);
+                applyLang(lang);
+            });
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-theme-pref]'), function (btn) {
+            btn.addEventListener('click', function () {
+                themePref = btn.getAttribute('data-theme-pref');
+                save(LS_THEME, themePref);
+                applyTheme();
+            });
+        });
+
+        applyLang(lang);
+        applyTheme();
+    })();
+    </script>
 </body>
 </html>

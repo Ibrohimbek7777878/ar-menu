@@ -40,6 +40,16 @@ def resto_admin_spa(request, path=""):
     if not is_restaurant_staff(user, RESTAURANT_STAFF_ROLES):
         return redirect('restaurant_root')
 
+    # Boshqaruv paneli (/ra/) faqat egasi/boshqaruvchi uchun. Ofitsiant, oshxona va hostess o'z ish sahifasiga yo'naltiriladi
+    # (avval ular ham /ra/ qobig'ini ochib, boshqaruv markazini ko'rar edi: API ruxsatlari ma'lumotni cheklaydi, lekin interfeys
+    # begona bo'limlarni ko'rsatardi).
+    from web.restaurant_auth import role_panel
+    role = user_role(user)
+    if role not in ('super_admin', 'shop_owner', 'shop_manager'):
+        panel = role_panel(role)
+        if panel and panel['path'] != '/ra/':
+            return redirect(panel['path'])
+
     return render(request, 'admins/resto.html', {
         'user': user,
     })

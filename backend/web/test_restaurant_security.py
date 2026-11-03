@@ -161,7 +161,7 @@ class RestaurantLoginTests(RestaurantFixtureMixin, TestCase):
     def test_waiter_without_seller_approval_can_log_in(self):
         res = self.client.post('/admin/login/', {'username': 'waiter_a', 'password': 'pass-12345-w'})
         self.assertEqual(res.status_code, 302)
-        self.assertEqual(res['Location'], reverse('waiter_panel_web'))
+        self.assertEqual(res['Location'], reverse('waiter_mobile_panel'))
 
     def test_login_returns_to_safe_next_only(self):
         res = self.client.post('/admin/login/', {'username': 'waiter_a', 'password': 'pass-12345-w', 'next': '/kds/'})

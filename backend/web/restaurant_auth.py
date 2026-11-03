@@ -34,12 +34,45 @@ def has_capability(user, capability):
 def role_home_url(user):
     """Rolga mos bosh sahifa: login'dan keyin va ruxsatsiz sahifadan qaytarilganda (R2-3)."""
     from django.urls import NoReverseMatch, reverse
-    name = {'waiter': 'waiter_panel_web', 'kitchen': 'restaurant_kds', 'hostess': 'arrival_desk'}.get(
+    name = {'waiter': 'waiter_mobile_panel', 'kitchen': 'restaurant_kds', 'hostess': 'arrival_desk'}.get(
         user_role(user), 'restaurant_admin_dashboard')
     try:
         return reverse(name)
     except NoReverseMatch:
         return '/'
+
+
+# Xodimga yuboriladigan kirish havolasi qaysi sahifaga olib borishi: rol → (panel kaliti, o'zbekcha nomi).
+# Bu yo'llar HAQIQIY ishlaydigan sahifalar (kod va brauzerda tekshirilgan): login'dan keyin shu sahifa ochiladi va
+# `restaurant_staff_required` shu rolni o'tkazadi. Ofitsiant uchun `/waiter/panel/` tanlangan (`/seller/waiter/` emas):
+# sessiya tugasa u xodim login sahifasiga qaytaradi, `/seller/waiter/` esa ofitsiant kira olmaydigan sotuvchi loginiga.
+_PANEL_BY_ROLE = {
+    'super_admin': 'manager', 'shop_owner': 'manager', 'shop_manager': 'manager',
+    'waiter': 'waiter', 'kitchen': 'kitchen', 'hostess': 'hostess',
+}
+# panel kaliti → (marshrut nomi yoki None, zaxira yo'l, nomi). `/ra/` regex marshrut: teskari qidirib bo'lmaydi.
+_PANELS = {
+    'manager': (None, '/ra/', 'Boshqaruv paneli'),
+    'waiter': ('waiter_mobile_panel', '/waiter/panel/', 'Ofitsiant paneli'),
+    'kitchen': ('restaurant_kds', '/kds/', 'Oshxona ekrani'),
+    'hostess': ('arrival_desk', '/arrival/desk/', 'Qabul stoli'),
+}
+
+
+def role_panel(role):
+    """Rolga mos ish sahifasi: {'path': '/waiter/panel/', 'label': 'Ofitsiant paneli'}; restoran paneliga kirmaydigan rol uchun None."""
+    key = _PANEL_BY_ROLE.get(role or '')
+    if not key:
+        return None
+    from django.urls import NoReverseMatch, reverse
+    route_name, fallback_path, label = _PANELS[key]
+    path = fallback_path
+    if route_name:
+        try:
+            path = reverse(route_name)
+        except NoReverseMatch:
+            pass
+    return {'path': path, 'label': label}
 
 
 def user_role(user):
@@ -183,15 +216,29 @@ def spa_session(request):
         from backend.app_settings import get_int
         warn = get_int('kds_warn_minutes', 10, 1, 120)
         payload['config'] = {'kds_warn_minutes': warn, 'kds_late_minutes': max(warn + 1, get_int('kds_late_minutes', 20, 2, 240))}
-    elif payload['design'] == 'new':
-        # Fasl rangi, animatsiya, taom oynasi, kun/tun va tillar: faqat mehmonga va faqat yangi dizaynda; standart bo'lsa kalit
-        # umuman yo'q (javob avvalgidek). Restoran bir marta aniqlanadi, sozlamalar BITTA so'rov bilan o'qiladi va jarayon keshida turadi.
+    else:
+        # Fasl, animatsiya, taom oynasi, kun/tun, tillar va palitra: mehmonga, dizayn tartibidan (new/classic) QAT'I NAZAR
+        # (egasi qarori 2026-11-03: imkoniyatlar eski tartibda ham ishlasin); standart bo'lsa kalit umuman yo'q (javob avvalgidek).
+        # Restoran bir marta aniqlanadi, sozlamalar BITTA so'rov bilan o'qiladi va jarayon keshida turadi.
         from shops.guest_profile import guest_session_extras
-        payload.update(guest_session_extras(guest_shop_id(request)))
+        payload.update(guest_session_extras(guest_shop_id(request), request=request))
     return payload
 
 
 def guest_shop_id(request):
+    """`_guest_shop_id` natijasi so'rov ichida bir marta hisoblanadi (sessiya + palitra + shablon bir necha marta so'raydi)."""
+    memo = getattr(request, '_gulistan_guest_shop_id', None)
+    if memo is not None:
+        return memo[0]
+    value = _guest_shop_id(request)
+    try:
+        request._gulistan_guest_shop_id = (value,)
+    except Exception:  # noqa: BLE001
+        pass
+    return value
+
+
+def _guest_shop_id(request):
     """Mehmon sahifasi qaysi restoranniki: QR stol restorani, bo'lmasa asosiy restoran. Kesh orqali, qo'shimcha SQL yo'q."""
     from backend.runtime_cache import cached_shop_value
     shop_id = None

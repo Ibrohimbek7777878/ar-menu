@@ -161,3 +161,40 @@ class RestoAdminSessionApiTests(TestCase):
         self.assertNotIn('average_check', data)
         for dish in data.get('top_dishes', []):
             self.assertNotIn('total_sum', dish)
+
+
+@override_settings(ROOT_URLCONF='backend.urls_restaurant')
+class RestoSpaRoleRedirectTests(TestCase):
+    """/ra/ boshqaruv paneli faqat egasi/boshqaruvchiga: ofitsiant, oshxona va hostess o'z ish sahifasiga yo'naltiriladi."""
+
+    def setUp(self):
+        import io
+        from django.core.management import call_command
+        call_command('create_restaurant', name='Rol Restorani', slug='rol-r', owner='rol-r-ega',
+                     password='Rol-parol-12345', tables=2, stdout=io.StringIO())
+        from shops.models import Shop
+        self.shop = Shop.objects.get(slug='rol-r')
+
+    def login(self, username, role=None):
+        from django.test import Client
+        from accounts.models import AdminUser
+        if role:
+            user = AdminUser.objects.create_user(username=username, password='Rol-parol-1', role=role, shop=self.shop,
+                                                 is_staff=True, is_approved=True)
+        else:
+            user = AdminUser.objects.get(username=username)
+            user.is_approved = True
+            user.save(update_fields=['is_approved'])
+        client = Client()
+        client.force_login(user)
+        return client
+
+    def test_owner_opens_the_panel(self):
+        res = self.login('rol-r-ega').get('/ra/')
+        self.assertEqual(res.status_code, 200)
+
+    def test_other_roles_are_sent_to_their_own_page(self):
+        for role, expected in (('waiter', '/waiter/panel/'), ('kitchen', '/kds/'), ('hostess', '/arrival/desk/')):
+            res = self.login(f'rol-r-{role}', role).get('/ra/menu')
+            self.assertEqual(res.status_code, 302, role)
+            self.assertEqual(res['Location'], expected, role)

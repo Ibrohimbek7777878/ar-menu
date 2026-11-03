@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from accounts.models import AdminUser
+from accounts.staff_access import access_origin, staff_access
 from accounts.staff_admin import (
     CREATABLE_ROLES,
     StaffError,
@@ -36,7 +37,12 @@ ROLE_LABELS = {
 }
 
 
-def _serialize_staff(u):
+def _serialize_staff(u, origin):
+    """Xodim javobi. `origin` — kirish havolasi boshi (`access_origin(request)`, so'rov uchun bir marta hisoblanadi).
+
+    Kirish maydonlari (`panel_path`, `panel_label`, `login_url`, `login_unavailable_reason`) serverda hisoblanadi:
+    frontend qaysi rol qayerga tushishini o'zi taxmin qilmaydi.
+    """
     full_name = f"{u.first_name} {u.last_name}".strip() if u.first_name or u.last_name else u.username
     return {
         'id': u.id,
@@ -48,6 +54,7 @@ def _serialize_staff(u):
         'is_active': bool(u.is_active),
         'date_joined': u.date_joined.isoformat() if u.date_joined else None,
         'last_login': u.last_login.isoformat() if u.last_login else None,
+        **staff_access(u, origin),
     }
 
 
@@ -68,7 +75,8 @@ class StaffListCreateView(RestoAdminAPIView):
             AdminUser.objects.filter(shop=shop, is_superuser=False)
             .order_by('id')
         )
-        return Response([_serialize_staff(u) for u in staff_users])
+        origin = access_origin(request)
+        return Response([_serialize_staff(u, origin) for u in staff_users])
 
     def post(self, request):
         shop = staff_shop(request)
@@ -116,7 +124,7 @@ class StaffListCreateView(RestoAdminAPIView):
             new_value={'username': user.username, 'role': user.role, 'full_name': full_name}
         )
 
-        data = _serialize_staff(user)
+        data = _serialize_staff(user, access_origin(request))
         # Parol bir marta ko'rsatiladi
         data['generated_password'] = generated or password or None
         return Response(data, status=status.HTTP_201_CREATED)
@@ -192,7 +200,7 @@ class StaffDetailUpdateView(RestoAdminAPIView):
                 new_value={f: getattr(user, f) for f in update_fields}
             )
 
-        return Response(_serialize_staff(user))
+        return Response(_serialize_staff(user, access_origin(request)))
 
 
 class StaffBlockView(RestoAdminAPIView):

@@ -63,11 +63,12 @@ class DishSheetEndToEndTests(TestCase):
             self.assertEqual(res.json().get('field'), 'guest_dish_sheet', bad)
         self.assertEqual(self.owner_client.get(self.API).json()['guest_dish_sheet'], 'on')
 
-    def test_classic_design_never_gets_the_key(self):
+    def test_classic_design_gets_the_key_too(self):
+        # Egasi qarori 2026-11-03: imkoniyatlar dizayn tartibidan (new/classic) mustaqil
         from notifications.models import AppSetting
         self.patch(guest_dish_sheet='off')
         AppSetting.objects.create(key='guest_design', value='classic', category='guest')
-        self.assertNotIn('dishSheet', self.guest_session())
+        self.assertEqual(self.guest_session()['dishSheet'], 'off')
 
     def test_waiter_cannot_change_it(self):
         waiter = AdminUser.objects.create_user(username='oyna-s-ofitsiant', password='Ofitsiant-1', role='waiter',

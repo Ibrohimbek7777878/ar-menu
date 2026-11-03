@@ -24,6 +24,7 @@ from orders.interfaces.api.permissions import (
 from shops.guest_dish_sheet import DISH_SHEET_CHOICES, normalize_dish_sheet
 from shops.guest_languages import is_valid_languages, normalize_languages
 from shops.guest_motion import MOTION_CHOICES, normalize_motion
+from shops.guest_palette import PALETTE_CHOICES, normalize_palette
 from shops.guest_theme import THEME_CHOICES, normalize_theme
 from shops.guest_season import SEASON_CHOICES, normalize_season
 from shops.menu_import_ai import MENU_IMPORT_AI_CHOICES, normalize_menu_import_ai
@@ -69,6 +70,7 @@ class SettingsAdminView(RestoAdminAPIView):
             'guest_dish_sheet': normalize_dish_sheet(bp.get('guest_dish_sheet')),
             'guest_theme': normalize_theme(bp.get('guest_theme')),
             'guest_languages': normalize_languages(bp.get('guest_languages')),
+            'guest_palette': normalize_palette(bp.get('guest_palette')),
             'menu_import_ai': normalize_menu_import_ai(bp.get('menu_import_ai')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
@@ -179,6 +181,13 @@ class SettingsAdminView(RestoAdminAPIView):
             if theme not in THEME_CHOICES:
                 raise InputError("Kun va tun: day, night, auto yoki off bo'lishi kerak", 'guest_theme')
             bp['guest_theme'] = theme
+            bp_changed = True
+
+        if 'guest_palette' in data:
+            palette = parse_text(data['guest_palette'], 'guest_palette', max_length=10).strip().lower()
+            if palette not in PALETTE_CHOICES:
+                raise InputError("Ranglar: classic (yashil-krem) yoki orange (apelsin) bo'lishi kerak", 'guest_palette')
+            bp['guest_palette'] = palette
             bp_changed = True
 
         if 'guest_languages' in data:

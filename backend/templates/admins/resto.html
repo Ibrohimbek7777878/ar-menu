@@ -1,14 +1,33 @@
-{% load react_assets static %}
+{% load react_assets static json_tags %}
 <!DOCTYPE html>
-<html lang="uz" data-design="new">
+<html lang="uz" data-design="new" data-palette="{% gulistan_palette %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resto Admin — Boshqaruv Markazi</title>
+    <meta name="theme-color" content="#FFFFFF">
+    {# Kun/tun va til birinchi kadrdan to'g'ri bo'lishi uchun (yorqin chaqnash bo'lmasin). Mantiq admins/shared/src/theme va i18n bilan bir xil: kalitlar `guliston.theme`, `guliston.lang` (mehmon sayti bilan umumiy) #}
+    <script>
+    (function () {
+        try {
+            var pref = null;
+            try { pref = localStorage.getItem('guliston.theme'); } catch (e) {}
+            if (pref !== 'day' && pref !== 'night' && pref !== 'auto') pref = 'day';
+            var dark = pref === 'night' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            var root = document.documentElement;
+            root.setAttribute('data-theme', dark ? 'dark' : 'light');
+            var lang = null;
+            try { lang = localStorage.getItem('guliston.lang'); } catch (e) {}
+            if (lang === 'uz' || lang === 'ru' || lang === 'en') root.setAttribute('lang', lang);
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', dark ? '#1B1714' : '#FFFFFF');
+        } catch (e) {}
+    })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="{% get_static_prefix %}admins/resto/favicon.svg">
     {% spa_css 'resto' %}
 </head>
-<body class="bg-[#0f172a] text-slate-100 antialiased min-h-screen">
+<body>
     <div id="root"></div>
     {% spa_js 'resto' %}
 </body>

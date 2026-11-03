@@ -86,10 +86,10 @@ class EndToEndTests(TestCase):
         body = self.owner_client.get(self.API).json()
         self.assertEqual((body['guest_theme'], body['guest_languages']), ('day', 'uz,ru,en'))
 
-    def test_classic_design_never_gets_the_keys(self):
+    def test_classic_design_gets_the_keys_too(self):
+        # Egasi qarori 2026-11-03: imkoniyatlar dizayn tartibidan (new/classic) mustaqil
         from notifications.models import AppSetting
         self.patch(guest_theme='night', guest_languages='ru')
         AppSetting.objects.create(key='guest_design', value='classic', category='guest')
         session = self.guest_session()
-        self.assertNotIn('theme', session)
-        self.assertNotIn('languages', session)
+        self.assertEqual((session['theme'], session['languages']), ('night', 'ru'))
