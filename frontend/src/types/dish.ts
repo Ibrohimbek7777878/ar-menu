@@ -1,3 +1,6 @@
+/** Bo'lim turi (backend: categories/kinds.py): taom oynasidagi "Qo'shimcha" tavsiyalari shunga asoslanadi */
+export type DishKind = 'main' | 'salad' | 'dessert' | 'drink' | 'other';
+
 export interface Product {
   id: number;
   name: string;
@@ -5,7 +8,10 @@ export interface Product {
   price: number;
   old_price?: number;
   image?: string;
+  /** Qo'shimcha rasmlar bilan birga (asosiy rasm birinchi) — taom oynasida suriladi */
+  images?: string[];
   category_id?: number;
+  category_kind?: DishKind;
   category_name?: string;
   has_3d?: boolean;
   ar_model?: string;
@@ -15,6 +21,8 @@ export interface Product {
   spin_video?: string;
   unit?: string;
   weight?: string;
+  /** Masalan "620 kkal" (server tayyor matn yuboradi) */
+  calories?: string;
   prep_time?: string;
   is_halal?: boolean;
   is_popular?: boolean;

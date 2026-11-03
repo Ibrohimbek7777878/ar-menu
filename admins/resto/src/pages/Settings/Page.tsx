@@ -14,7 +14,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { useSettings } from './useSettings';
-import type { GuestMotionSetting, GuestSeasonSetting } from './api';
+import type { GuestDishSheetSetting, GuestMotionSetting, GuestSeasonSetting } from './api';
 import { restoUz } from '../../i18n/uz';
 
 const inputStyle: React.CSSProperties = {
@@ -78,6 +78,7 @@ export function SettingsPage() {
   const [autoAcceptOrders, setAutoAcceptOrders] = useState(false);
   const [guestSeason, setGuestSeason] = useState<GuestSeasonSetting>('off');
   const [guestMotion, setGuestMotion] = useState<GuestMotionSetting>('full');
+  const [guestDishSheet, setGuestDishSheet] = useState<GuestDishSheetSetting>('on');
 
   useEffect(() => {
     if (settings) {
@@ -98,6 +99,7 @@ export function SettingsPage() {
       setAutoAcceptOrders(Boolean(settings.auto_accept_orders));
       setGuestSeason(settings.guest_season ?? 'off');
       setGuestMotion(settings.guest_motion ?? 'full');
+      setGuestDishSheet(settings.guest_dish_sheet ?? 'on');
     }
   }, [settings]);
 
@@ -121,6 +123,7 @@ export function SettingsPage() {
       auto_accept_orders: autoAcceptOrders,
       guest_season: guestSeason,
       guest_motion: guestMotion,
+      guest_dish_sheet: guestDishSheet,
     });
   };
 
@@ -545,6 +548,25 @@ export function SettingsPage() {
               ))}
             </select>
             <p style={helpTextStyle}>{restoUz.settingsPage.motionHint}</p>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="guest-dish-sheet">
+              {restoUz.settingsPage.dishSheetLabel}
+            </label>
+            <select
+              id="guest-dish-sheet"
+              value={guestDishSheet}
+              onChange={(e) => setGuestDishSheet(e.target.value as GuestDishSheetSetting)}
+              style={inputStyle}
+            >
+              {(Object.keys(restoUz.settingsPage.dishSheetOptions) as GuestDishSheetSetting[]).map((key) => (
+                <option key={key} value={key}>
+                  {restoUz.settingsPage.dishSheetOptions[key]}
+                </option>
+              ))}
+            </select>
+            <p style={helpTextStyle}>{restoUz.settingsPage.dishSheetHint}</p>
           </div>
         </Card>
 

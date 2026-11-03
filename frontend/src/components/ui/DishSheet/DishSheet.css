@@ -1,0 +1,105 @@
+/* Taom oynasi (DishSheet). Ranglar, radius va soyalar faqat index.css tokenlaridan. Animatsiya `guest_motion` (motion.css) ostida. */
+body.ds-lock { overflow: hidden; }
+
+.ds-root { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: flex-end; justify-content: center; }
+.ds-backdrop { position: absolute; inset: 0; background: rgb(24 21 19 / 0.5); animation: ds-fade 0.2s ease-out both; }
+
+.ds-panel {
+  position: relative; display: flex; flex-direction: column; width: 100%; max-height: min(92dvh, 92vh);
+  background: var(--bg-primary); border-radius: 24px 24px 0 0; box-shadow: var(--shadow-modal); outline: none;
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation: ds-up 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.ds-root.is-closing .ds-backdrop { animation: ds-fade-out 0.22s ease-in forwards; }
+.ds-root.is-closing .ds-panel { animation: ds-down 0.22s ease-in forwards; }
+@keyframes ds-fade { from { opacity: 0; } }
+@keyframes ds-fade-out { to { opacity: 0; } }
+@keyframes ds-up { from { transform: translateY(100%); } }
+@keyframes ds-down { to { transform: translateY(100%); } }
+
+.ds-grab { flex: none; display: grid; place-items: center; height: 28px; cursor: grab; touch-action: none; }
+.ds-grab span { width: 40px; height: 4px; border-radius: 2px; background: rgb(24 21 19 / 0.18); }
+.ds-close {
+  position: absolute; top: 12px; right: 14px; z-index: 3; width: 44px; height: 44px; border: 0; border-radius: 50%;
+  background: rgb(255 255 255 / 0.92); color: var(--text-primary); display: grid; place-items: center; cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.ds-scroll { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+
+/* Rasm(lar): suriladi */
+.ds-hero { position: relative; margin: 0 16px; border-radius: 20px; overflow: hidden; background: var(--bg-surface-subtle); }
+.ds-gallery { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; aspect-ratio: 4 / 3; }
+.ds-gallery::-webkit-scrollbar { display: none; }
+.ds-slide { flex: 0 0 100%; scroll-snap-align: center; height: 100%; }
+.ds-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ds-placeholder {
+  width: 100%; height: 100%; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 96px; font-weight: 700;
+  color: rgb(var(--brand-primary-rgb) / 0.55); background: linear-gradient(135deg, var(--brand-primary-subtle), var(--brand-primary-light));
+}
+.ds-dots { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.ds-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgb(255 255 255 / 0.6); box-shadow: 0 0 0 1px rgb(24 21 19 / 0.12); }
+.ds-dots span.on { background: #fff; width: 18px; border-radius: 4px; }
+.ds-chip-360 {
+  position: absolute; left: 12px; top: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px;
+  border: 0; border-radius: 999px; background: var(--bg-surface-dark); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+
+/* Ma'lumot */
+.ds-info { padding: 14px 20px 4px; }
+.ds-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ds-badges:empty { display: none; }
+.ds-badge { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.ds-badge.hit { background: var(--brand-accent); color: #fff; }
+.ds-badge.new { background: var(--bg-surface-dark); color: #fff; }
+.ds-badge.halal { background: var(--status-success-light); color: var(--text-primary); }
+.ds-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ds-title { margin: 0; font-family: 'Outfit', sans-serif; font-size: 24px; line-height: 1.2; color: var(--text-primary); overflow-wrap: anywhere; }
+.ds-price { flex: none; text-align: right; font-family: 'Outfit', sans-serif; color: var(--brand-primary-hover); white-space: nowrap; }
+.ds-price b { font-size: 22px; }
+.ds-price span { font-size: 12px; font-weight: 600; }
+.ds-old { display: block; font-size: 12px; color: var(--text-muted); }
+.ds-desc { margin: 8px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ds-desc.open { display: block; -webkit-line-clamp: unset; }
+.ds-more { margin-top: 4px; padding: 6px 0; min-height: 32px; border: 0; background: none; color: var(--brand-primary-hover); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.ds-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.ds-tile { background: var(--bg-surface); border: 1px solid rgb(24 21 19 / 0.08); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ds-tile span { font-size: 11.5px; color: var(--text-muted); }
+.ds-tile b { font-family: 'Outfit', sans-serif; font-size: 15px; color: var(--text-primary); overflow-wrap: anywhere; }
+
+/* Tavsiyalar */
+.ds-rail { margin-top: 18px; }
+.ds-rail-title { margin: 0 20px 10px; font-family: 'Outfit', sans-serif; font-size: 17px; color: var(--text-primary); }
+.ds-rail-track { display: flex; gap: 12px; overflow-x: auto; padding: 2px 20px 8px; scroll-padding: 0 20px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.ds-rail-track::-webkit-scrollbar { display: none; }
+.ds-mini { position: relative; flex: 0 0 140px; scroll-snap-align: start; background: var(--bg-surface); border-radius: 16px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; }
+.ds-mini-open { display: flex; flex-direction: column; width: 100%; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.ds-mini-media { display: block; aspect-ratio: 4 / 3; border-radius: 16px 16px 0 0; overflow: hidden; background: var(--brand-primary-subtle); }
+.ds-mini-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ds-mini-letter { width: 100%; height: 100%; display: grid; place-items: center; font-family: 'Outfit', sans-serif; font-size: 34px; font-weight: 700; color: rgb(var(--brand-primary-rgb) / 0.55); }
+.ds-mini-name { padding: 8px 10px 0; font-size: 13px; font-weight: 700; line-height: 1.25; color: var(--text-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
+.ds-mini-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 8px 10px 10px; margin-top: auto; }
+.ds-mini-price { font-size: 12.5px; font-weight: 700; color: var(--brand-primary-hover); min-width: 0; }
+.ds-mini-add { position: relative; flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--brand-primary); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; display: grid; place-items: center; box-shadow: 0 2px 8px rgb(var(--brand-primary-rgb) / 0.35); }
+.ds-mini-qty { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--bg-surface-dark); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; line-height: 1; }
+
+/* Pastki panel: doim ko'rinadi */
+.ds-bar { flex: none; display: flex; gap: 12px; align-items: center; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg-surface); border-top: 1px solid rgb(24 21 19 / 0.08); }
+.ds-stepper { flex: none; display: inline-flex; align-items: center; border: 1.5px solid rgb(var(--brand-primary-rgb) / 0.35); border-radius: 14px; background: var(--brand-primary-light); }
+.ds-stepper button { width: 44px; height: 48px; border: 0; background: none; color: var(--brand-primary-hover); font-size: 24px; cursor: pointer; }
+.ds-stepper button:disabled { opacity: 0.35; cursor: default; }
+.ds-stepper span { min-width: 28px; text-align: center; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; color: var(--text-primary); }
+.ds-cta { flex: 1; min-height: 52px; border: 0; border-radius: 14px; background: var(--brand-primary); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgb(var(--brand-primary-rgb) / 0.3); transition: background 0.15s ease, transform 0.1s ease; }
+.ds-cta:hover { background: var(--brand-primary-hover); }
+.ds-cta:active { transform: scale(0.98); }
+.ds-close:focus-visible, .ds-cta:focus-visible, .ds-more:focus-visible, .ds-chip-360:focus-visible, .ds-mini-open:focus-visible, .ds-mini-add:focus-visible, .ds-stepper button:focus-visible { outline: 2px solid var(--brand-primary-hover); outline-offset: 2px; }
+
+/* Kompyuter/planshet: o'rtada turadigan kartochka */
+@media (min-width: 720px) {
+  .ds-root { align-items: center; }
+  .ds-panel { width: min(520px, 92vw); max-height: 88vh; border-radius: 24px; }
+  .ds-grab { cursor: default; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-backdrop, .ds-panel { animation: none !important; transition: none; }
+}

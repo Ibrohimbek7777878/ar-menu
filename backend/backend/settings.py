@@ -197,6 +197,8 @@ RESTAURANT_TABLE_BINDING_TTL_SECONDS = int(os.environ.get('RESTAURANT_TABLE_BIND
 # Restoran ish vaqtidan tashqari buyurtma qabul qilinmasin. Har restoran `business_profile.enforce_working_hours` bilan o'zgartiradi.
 # Testlarda o'chiq: aks holda testlar kunning vaqtiga qarab o'tadi yoki yiqiladi (ish vaqti tekshiruvi o'z testlarida yoqiladi).
 RESTAURANT_ENFORCE_WORKING_HOURS = _env_bool('RESTAURANT_ENFORCE_WORKING_HOURS', not (len(sys.argv) > 1 and sys.argv[1] == 'test'))
+# Mehmon menyusida taomga "Yangi" belgisi: oxirgi N kun (0 = o'chiq). Menyu endi yaratilgan bo'lsa belgi qo'yilmaydi (web/guest_dish.py)
+RESTAURANT_NEW_DISH_DAYS = int(os.environ.get('RESTAURANT_NEW_DISH_DAYS', 14))
 # Onlayn to'lov (Click/Payme/karta) yoqilganmi. Standart o'chiq: hozir faqat naqd / stolda to'lash haqiqiy ishlaydi.
 RESTAURANT_ONLINE_PAYMENT_ENABLED = _env_bool('RESTAURANT_ONLINE_PAYMENT_ENABLED', False)
 # Mehmon sahifalari dizayni: 'new' (yangi) yoki 'classic' (eski). Admin paneldan (AppSetting `guest_design`) ham almashtiriladi.

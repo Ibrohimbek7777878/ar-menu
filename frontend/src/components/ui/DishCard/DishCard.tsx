@@ -10,6 +10,8 @@ export interface DishCardProps {
   onAddToCart?: (product: Product) => void;
   onUpdateQuantity?: (productId: number, delta: number) => void;
   onOpen3D?: (product: Product) => void;
+  /** Berilsa, karta (rasm, nom, narx) bosilganda taom oynasi ochiladi; berilmasa avvalgi xatti-harakat (faqat 3D taomda 3D oyna) */
+  onOpenDetail?: (product: Product) => void;
   className?: string;
   layout?: 'grid' | 'horizontal';
 }
@@ -20,6 +22,7 @@ export const DishCard: React.FC<DishCardProps> = ({
   onAddToCart,
   onUpdateQuantity,
   onOpen3D,
+  onOpenDetail,
   className = '',
   layout = 'grid',
 }) => {
@@ -31,6 +34,10 @@ export const DishCard: React.FC<DishCardProps> = ({
     : null;
 
   const handleMediaClick = () => {
+    if (onOpenDetail) {
+      onOpenDetail(product);
+      return;
+    }
     if (product.has_3d && onOpen3D) {
       onOpen3D(product);
     }
@@ -59,9 +66,21 @@ export const DishCard: React.FC<DishCardProps> = ({
   };
 
   return (
-    <article className={`dish-card layout-${layout} ${className}`}>
+    <article className={`dish-card layout-${layout}${onOpenDetail ? ' has-detail' : ''} ${className}`}>
       {/* ─── Media Container ─── */}
-      <div className="dish-card-media" onClick={handleMediaClick} role="button" tabIndex={0}>
+      <div
+        className="dish-card-media"
+        onClick={handleMediaClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleMediaClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={onOpenDetail ? `${product.name}: batafsil` : undefined}
+      >
         {product.image && !imgError ? (
           <img 
             src={product.image} 
@@ -94,7 +113,10 @@ export const DishCard: React.FC<DishCardProps> = ({
             <span className="badge-tag-clean" title="Taom rasmidan 3D ko'rinish tayyorlanmoqda">3D tayyorlanmoqda…</span>
           )}
           {product.is_popular && (
-            <span className="badge-tag-clean tag-popular">Tavsiya</span>
+            <span className="badge-tag-clean tag-popular">Hit</span>
+          )}
+          {product.is_new && (
+            <span className="badge-tag-clean tag-new">Yangi</span>
           )}
           {product.is_halal && (
             <span className="badge-tag-clean tag-halal">Halol</span>
@@ -123,7 +145,7 @@ export const DishCard: React.FC<DishCardProps> = ({
       </div>
 
       {/* ─── Content Body ─── */}
-      <div className="dish-card-body">
+      <div className="dish-card-body" onClick={onOpenDetail ? () => onOpenDetail(product) : undefined}>
         {/* Meta badges: time & weight */}
         {(product.prep_time || product.weight) && (
           <div className="dish-card-meta">

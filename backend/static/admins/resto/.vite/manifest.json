@@ -108,7 +108,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/index.DVv552OV.js",
+    "file": "assets/index.OuVDWGFA.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -135,7 +135,7 @@
     ]
   },
   "src/pages/Dashboard/Page.tsx": {
-    "file": "assets/Page.DZKRX2ra.js",
+    "file": "assets/Page.DkZ-5HZb.js",
     "name": "Page",
     "src": "src/pages/Dashboard/Page.tsx",
     "isDynamicEntry": true,
@@ -148,7 +148,7 @@
     ]
   },
   "src/pages/Finance/Page.tsx": {
-    "file": "assets/Page.SCrEzn2N.js",
+    "file": "assets/Page.CqLAg4vz.js",
     "name": "Page",
     "src": "src/pages/Finance/Page.tsx",
     "isDynamicEntry": true,
@@ -162,7 +162,7 @@
     ]
   },
   "src/pages/Menu/Page.tsx": {
-    "file": "assets/Page.BXnivsiF.js",
+    "file": "assets/Page.CHpmihZg.js",
     "name": "Page",
     "src": "src/pages/Menu/Page.tsx",
     "isDynamicEntry": true,
@@ -180,7 +180,7 @@
     ]
   },
   "src/pages/Orders/Page.tsx": {
-    "file": "assets/Page.DL_rwacP.js",
+    "file": "assets/Page.BQkI46Pw.js",
     "name": "Page",
     "src": "src/pages/Orders/Page.tsx",
     "isDynamicEntry": true,
@@ -196,7 +196,7 @@
     ]
   },
   "src/pages/Settings/Page.tsx": {
-    "file": "assets/Page.BjOCbEgR.js",
+    "file": "assets/Page.BkuH6GS5.js",
     "name": "Page",
     "src": "src/pages/Settings/Page.tsx",
     "isDynamicEntry": true,
@@ -208,7 +208,7 @@
     ]
   },
   "src/pages/Staff/Page.tsx": {
-    "file": "assets/Page.hIEORmoc.js",
+    "file": "assets/Page.TSX_7aRp.js",
     "name": "Page",
     "src": "src/pages/Staff/Page.tsx",
     "isDynamicEntry": true,
@@ -225,7 +225,7 @@
     ]
   },
   "src/pages/Tables/Page.tsx": {
-    "file": "assets/Page.xNzVVv63.js",
+    "file": "assets/Page.CjMyOzQY.js",
     "name": "Page",
     "src": "src/pages/Tables/Page.tsx",
     "isDynamicEntry": true,

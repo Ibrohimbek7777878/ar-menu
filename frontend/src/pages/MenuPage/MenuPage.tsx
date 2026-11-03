@@ -14,6 +14,8 @@ import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../../data/mockDishes';
 import { matchUzbekQuery } from '../../utils/uzbekSearch';
 import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
+import { DishSheet } from '../../components/ui/DishSheet/DishSheet';
+import { getGuestDesign } from '../../utils/guestDesign';
 import { enrichDishWith3D } from '../../services/Smart3DMatcher';
 import './MenuPage.css';
 
@@ -91,6 +93,9 @@ export const MenuPage: React.FC = () => {
   
   // 3D Modal state
   const [selected3DProduct, setSelected3DProduct] = useState<Product | null>(null);
+  // Taom oynasi: faqat yangi dizaynda va restoran o'chirmagan bo'lsa (eski xatti-harakat saqlanadi, AGENTS 4-qoida)
+  const dishSheetOn = getGuestDesign() === 'new' && window.__GULISTON_SESSION__?.dishSheet !== 'off';
+  const [sheetProduct, setSheetProduct] = useState<Product | null>(null);
   const [is3DOpen, setIs3DOpen] = useState(false);
 
   // Toast state
@@ -205,6 +210,21 @@ export const MenuPage: React.FC = () => {
         onAddToCart={handleAddToCart}
       />
 
+      {/* Taom oynasi (kartani bosganda) */}
+      {dishSheetOn && sheetProduct && (
+        <DishSheet
+          product={sheetProduct}
+          products={productsList}
+          cart={cart}
+          onClose={() => setSheetProduct(null)}
+          onSelect={setSheetProduct}
+          onAddToCart={handleAddToCart}
+          onUpdateQuantity={handleUpdateQuantity}
+          onOpen3D={handleOpen3D}
+          onGoToCart={() => navigate('/cart')}
+        />
+      )}
+
       {/* ─── 1. Header Nav ─── */}
       <HeaderNav
         brandName={shopName}
@@ -265,6 +285,7 @@ export const MenuPage: React.FC = () => {
               onAddToCart={handleAddToCart}
               onUpdateQuantity={handleUpdateQuantity}
               onOpen3D={handleOpen3D}
+              onOpenDetail={dishSheetOn ? setSheetProduct : undefined}
             />
           ))}
 

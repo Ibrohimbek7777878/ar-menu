@@ -353,3 +353,8 @@
     padding: 0 6px;
   }
 }
+
+/* Taom oynasi ochiladigan karta: rasm va ma'lumot qismi bosiladi (Qo'shish / son / 360 tugmalari o'z ishini qiladi) */
+.dish-card.has-detail .dish-card-media,
+.dish-card.has-detail .dish-card-body { cursor: pointer; }
+.badge-tag-clean.tag-new { background: var(--bg-surface-dark); color: #fff; }

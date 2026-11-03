@@ -25,6 +25,7 @@ from orders.models import Order, OrderItem, OrderStatusHistory
 from accounts.models import Customer
 from payments.payment_service import create_order_payment
 from notifications.admin_bot import get_restaurant_shop
+from web.guest_dish import guest_dish_extras, new_dish_cutoff
 from web.http_cache import conditional_guest_page
 from web.telegram_auth import telegram_id_from_request
 from web.restaurant_auth import (
@@ -157,6 +158,7 @@ def _build_tma_menu(active_shop):
             })
 
     # React MenuPage uchun to'liq boshlang'ich ma'lumotlar
+    new_cutoff = new_dish_cutoff(featured_products)
     react_products = []
     for p in featured_products:
         react_products.append({
@@ -174,6 +176,7 @@ def _build_tma_menu(active_shop):
             'unit': p.unit or 'dona',
             'is_halal': bool(p.is_halal),
             'is_popular': bool(p.is_featured),
+            **guest_dish_extras(p, new_cutoff),
         })
 
     from collections import Counter
@@ -185,6 +188,7 @@ def _build_tma_menu(active_shop):
             'name': c.name,
             'icon': getattr(c, 'icon', '') or '🍽️',
             'count': cat_counts.get(c.id, 0),
+            'kind': c.effective_kind,
         })
 
     return {
@@ -1540,6 +1544,8 @@ def tma_ar_menu(request):
         cat_ids = prods.values_list('category_id', flat=True).distinct()
         cats = list(Category.objects.filter(id__in=cat_ids).exclude(id__isnull=True))
 
+        prods = list(prods)
+        new_cutoff = new_dish_cutoff(prods)
         r_prods = []
         for p in prods:
             r_prods.append({
@@ -1556,6 +1562,7 @@ def tma_ar_menu(request):
                 'unit': p.unit or 'dona',
                 'is_halal': bool(p.is_halal),
                 'is_popular': bool(p.is_featured),
+                **guest_dish_extras(p, new_cutoff),
             })
 
         from collections import Counter
@@ -1567,6 +1574,7 @@ def tma_ar_menu(request):
                 'name': c.name,
                 'icon': getattr(c, 'icon', '') or '✨',
                 'count': per_category.get(c.id, 0),
+                'kind': c.effective_kind,
             })
 
         return {

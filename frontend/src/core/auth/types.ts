@@ -31,6 +31,8 @@ export interface ServerSession {
   season?: 'kuz' | 'qish' | 'bahor' | 'yoz';
   /** Animatsiya darajasi (restoran sozlamasi `guest_motion`); standart `full` bo'lsa kalit yo'q */
   motion?: 'light' | 'off';
+  /** Taom oynasi (restoran sozlamasi `guest_dish_sheet`); standart yoqiq bo'lsa kalit yo'q */
+  dishSheet?: 'off';
   /** Admin paneldan sozlanadigan ish qiymatlari (xodim sessiyasida) */
   config?: { kds_warn_minutes?: number; kds_late_minutes?: number };
 }

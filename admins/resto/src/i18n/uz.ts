@@ -70,6 +70,13 @@ export const restoUz = {
       light: 'Yengil',
       off: "O'chiq",
     },
+    dishSheetLabel: 'Taom oynasi',
+    dishSheetHint:
+      "Mehmon taom kartasini bosganda pastdan ochiladigan oyna: qisqa ma'lumot va shunga o'xshash hamda qo'shimcha taomlar. O'chirilsa karta avvalgidek ishlaydi (faqat 3D taomning rasmini bosganda 3D oyna ochiladi). Eski (klassik) dizaynda bu oyna yo'q.",
+    dishSheetOptions: {
+      on: 'Yoqilgan',
+      off: "O'chirilgan",
+    },
     seasonOptions: {
       off: "O'chiq (hozirgi apelsin ranglar)",
       auto: "Avtomatik (oyga qarab)",

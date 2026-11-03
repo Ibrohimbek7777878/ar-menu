@@ -1,6 +1,6 @@
 {
-  "_HeroPlate3D-CH_LS14Y.js": {
-    "file": "assets/HeroPlate3D-CH_LS14Y.js",
+  "_HeroPlate3D-BEjHSgA6.js": {
+    "file": "assets/HeroPlate3D-BEjHSgA6.js",
     "name": "HeroPlate3D",
     "imports": [
       "index.html"
@@ -17,12 +17,12 @@
     "file": "assets/mockDishes-Ct1bRflm.js",
     "name": "mockDishes"
   },
-  "_motion-imlYQ2ag.js": {
-    "file": "assets/motion-imlYQ2ag.js",
+  "_motion-Ims3QusX.js": {
+    "file": "assets/motion-Ims3QusX.js",
     "name": "motion",
     "imports": [
       "index.html",
-      "_HeroPlate3D-CH_LS14Y.js"
+      "_HeroPlate3D-BEjHSgA6.js"
     ]
   },
   "_three.module-VGYe9TAt.js": {
@@ -34,7 +34,7 @@
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-Ch3UeKV2.js",
+    "file": "assets/index-0T3QbYIf.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -79,7 +79,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-CDzzamuS.js",
+    "file": "assets/model-viewer-BVfFMNYJ.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -89,7 +89,7 @@
     ]
   },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-Cym41c2Z.js",
+    "file": "assets/PhotogrammetryStudioModal-BFei5FIY.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -99,7 +99,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-ChQycIp3.js",
+    "file": "assets/QRGeneratorModal-DRzuWbd3.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -108,7 +108,7 @@
     ]
   },
   "src/motion/three/celebrationScene.ts": {
-    "file": "assets/celebrationScene-nYTsFHAL.js",
+    "file": "assets/celebrationScene-MAaABywM.js",
     "name": "celebrationScene",
     "src": "src/motion/three/celebrationScene.ts",
     "isDynamicEntry": true,
@@ -118,7 +118,7 @@
     ]
   },
   "src/motion/three/heroPlateScene.ts": {
-    "file": "assets/heroPlateScene-5fh5vifb.js",
+    "file": "assets/heroPlateScene-BsV46me7.js",
     "name": "heroPlateScene",
     "src": "src/motion/three/heroPlateScene.ts",
     "isDynamicEntry": true,
@@ -128,7 +128,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-DWKU_ptf.js",
+    "file": "assets/ARMenuPage-DV0_MnF2.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -140,7 +140,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-DEsUsDIo.js",
+    "file": "assets/AdminDashboardPage-COirKU3h.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -152,7 +152,7 @@
     ]
   },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-BaKktQie.js",
+    "file": "assets/CartPage-CKZhWYuk.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -161,20 +161,20 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-VPonPa5r.js",
+    "file": "assets/CheckoutPage-vfiV3GiT.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-imlYQ2ag.js"
+      "_motion-Ims3QusX.js"
     ],
     "dynamicImports": [
       "src/motion/three/celebrationScene.ts"
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-DVZ1siHR.js",
+    "file": "assets/HostessDeskPage-BemxL8vx.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -183,7 +183,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-D7Rnpvtn.js",
+    "file": "assets/MenuPage-CeotrjUD.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -195,17 +195,17 @@
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-PMiCFVWU.js",
+    "file": "assets/OrdersPage-DSjOPa51.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-imlYQ2ag.js"
+      "_motion-Ims3QusX.js"
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-r6pn-Qto.js",
+    "file": "assets/ReservationPage-CiuDBo43.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -214,7 +214,7 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-B5JlMPWj.js",
+    "file": "assets/TableHubPage-DohKsF0F.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
@@ -223,7 +223,7 @@
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-D1YcuexF.js",
+    "file": "assets/WaiterPanelPage-Cs41hQjg.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -232,17 +232,17 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-DADO4gUO.js",
+    "file": "assets/WelcomePage-DdSpRbXK.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_HeroPlate3D-CH_LS14Y.js"
+      "_HeroPlate3D-BEjHSgA6.js"
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-rAENNUaC.js",
+    "file": "assets/ComponentShowcase-CMmJ98-i.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
@@ -252,7 +252,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-BQW_1q2B.css",
+    "file": "assets/style-JRLfcwuR.css",
     "src": "style.css"
   }
 }

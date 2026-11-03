@@ -21,6 +21,7 @@ from orders.interfaces.api.permissions import (
     RESTAURANT_API_AUTHENTICATION,
     capability,
 )
+from shops.guest_dish_sheet import DISH_SHEET_CHOICES, normalize_dish_sheet
 from shops.guest_motion import MOTION_CHOICES, normalize_motion
 from shops.guest_season import SEASON_CHOICES, normalize_season
 from web.restaurant_auth import staff_shop
@@ -62,6 +63,7 @@ class SettingsAdminView(RestoAdminAPIView):
             'auto_accept_orders': bool(bp.get('auto_accept_orders', False)),
             'guest_season': normalize_season(bp.get('guest_season')),
             'guest_motion': normalize_motion(bp.get('guest_motion')),
+            'guest_dish_sheet': normalize_dish_sheet(bp.get('guest_dish_sheet')),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -150,6 +152,13 @@ class SettingsAdminView(RestoAdminAPIView):
             if motion not in MOTION_CHOICES:
                 raise InputError("Animatsiya darajasi: full, light yoki off bo'lishi kerak", 'guest_motion')
             bp['guest_motion'] = motion
+            bp_changed = True
+
+        if 'guest_dish_sheet' in data:
+            sheet = parse_text(data['guest_dish_sheet'], 'guest_dish_sheet', max_length=10).strip().lower()
+            if sheet not in DISH_SHEET_CHOICES:
+                raise InputError("Taom oynasi: on yoki off bo'lishi kerak", 'guest_dish_sheet')
+            bp['guest_dish_sheet'] = sheet
             bp_changed = True
 
         if bp_changed:

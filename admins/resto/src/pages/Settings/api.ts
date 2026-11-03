@@ -6,6 +6,9 @@ export type GuestSeasonSetting = 'off' | 'auto' | 'kuz' | 'qish' | 'bahor' | 'yo
 /** Mehmon sayti animatsiya darajasi: full — hammasi, light — faqat bir martalik, off — animatsiyasiz (backend: shops/guest_motion.py) */
 export type GuestMotionSetting = 'full' | 'light' | 'off';
 
+/** Mehmon taom oynasi: on — taom kartasini bosganda oyna ochiladi, off — avvalgi xatti-harakat (backend: shops/guest_dish_sheet.py) */
+export type GuestDishSheetSetting = 'on' | 'off';
+
 export interface ShopSettings {
   id: number;
   name: string;
@@ -27,6 +30,7 @@ export interface ShopSettings {
   auto_accept_orders: boolean;
   guest_season: GuestSeasonSetting;
   guest_motion: GuestMotionSetting;
+  guest_dish_sheet: GuestDishSheetSetting;
   panel_scope: string;
 }
 
