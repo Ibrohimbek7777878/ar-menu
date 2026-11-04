@@ -50,6 +50,7 @@ urlpatterns = [
     # Restoran Dasturxon Menyusi (Taomlar va Stol buyurtmasi)
     path('menu/', tma_views.tma_home, name='tma_menu'),
     path('book/', guest_booking.book_page, name='tma_book'),            # stol bron qilish (mehmon React ilovasi, BookingPage)
+    path('tour/', include('tours.interfaces.page_urls')),               # video sayr (mehmon React ilovasi, TourPage), /book/ kabi
     path('restaurant/', tma_views.tma_home, name='restaurant_home'),
     path('restoran/', tma_views.tma_home, name='restoran_home'),
     path('ar-menu/', tma_views.tma_home, name='ar_menu_home'),
@@ -131,7 +132,12 @@ urlpatterns = [
     path('api/restaurant/admin/v1/staff/', include('accounts.interfaces.api.staff_admin_urls')),
     path('api/restaurant/admin/v1/finance/', include('finance.interfaces.api.finance_admin_urls')),
     path('api/restaurant/admin/v1/settings/', include('shops.interfaces.api.settings_admin_urls')),
+    path('api/restaurant/admin/v1/brand/', include('shops.interfaces.api.brand_admin_urls')),
+    # Platforma boshqaruvi (mijozlar): faqat super_admin, tenant hostida 404
+    path('api/platform/v1/', include('shops.interfaces.api.platform_admin_urls')),
     path('api/restaurant/admin/v1/reservations/', include('tables_restaurant.interfaces.api.reservations_admin_urls')),
+    path('api/restaurant/admin/v1/tours/', include('tours.interfaces.api.tours_admin_urls')),   # video sayr (VT1): ruxsat settings_admin
+    path('api/restaurant/guest/tour/', include('tours.interfaces.api.guest_tour_urls')),        # mehmon sayri (ochiq, faqat e'lon qilingan)
 
     # Mehmon bron API (ochiq, CSRF + tezlik chegarasi; restoran guest_shop_id() dan): sozlama, bandlik, bron, kod bo'yicha holat
     path('api/restaurant/guest/booking/config/', guest_booking.booking_config, name='guest_booking_config'),

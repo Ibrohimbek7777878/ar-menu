@@ -46,7 +46,8 @@ class DishSheetEndToEndTests(TestCase):
         return session_in(Client().get('/menu/').content.decode())
 
     def test_default_is_on_and_the_session_is_unchanged(self):
-        self.assertEqual(self.guest_session(), {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in self.guest_session().items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
         self.assertEqual(self.owner_client.get(self.API).json()['guest_dish_sheet'], 'on')
 
     def test_off_reaches_the_guest_page_and_on_removes_the_key(self):

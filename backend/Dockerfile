@@ -7,7 +7,8 @@ WORKDIR /app
 
 # curl — konteyner health-check uchun; kompilyator kerak emas (barcha paketlar tayyor g'ildirak sifatida o'rnatiladi).
 # tesseract + poppler — menyu rasmidan/skanerlangan PDF'dan matn o'qish uchun lokal (internetsiz) zaxira usuli (o'zbek, rus, ingliz)
-RUN apt-get update && apt-get install -y --no-install-recommends curl poppler-utils \
+# ffmpeg (+ffprobe) — video sayr: yuklangan videoni tekshirish va yengil variantlar yasash (tours, TZ Bosqich 3)
+RUN apt-get update && apt-get install -y --no-install-recommends curl poppler-utils ffmpeg \
        tesseract-ocr tesseract-ocr-eng tesseract-ocr-rus tesseract-ocr-uzb \
     && rm -rf /var/lib/apt/lists/*
 

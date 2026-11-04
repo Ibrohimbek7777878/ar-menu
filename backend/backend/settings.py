@@ -124,6 +124,7 @@ INSTALLED_APPS = [
     'ar3d',
     'tables_restaurant',
     'finance',
+    'tours',
 ]
 
 MIDDLEWARE = [

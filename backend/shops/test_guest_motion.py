@@ -54,7 +54,8 @@ class GuestMotionEndToEndTests(TestCase):
         return session_in((client or Client()).get('/menu/').content.decode())
 
     def test_default_is_full_and_the_session_is_unchanged(self):
-        self.assertEqual(self.guest_session(), {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in self.guest_session().items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
         self.assertEqual(self.owner_client.get(self.API).json()['guest_motion'], 'full')
 
     def test_light_and_off_reach_the_guest_page(self):

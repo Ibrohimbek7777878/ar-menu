@@ -17,7 +17,8 @@ class HelperTests(SimpleTestCase):
         for value in (None, '', 'green', '<script>', 5, {}):
             self.assertEqual(normalize_palette(value), 'classic')
         self.assertEqual(normalize_palette(' ORANGE '), 'orange')
-        self.assertEqual((PALETTE_CHOICES, DEFAULT_PALETTE), (('classic', 'orange'), 'classic'))
+        self.assertEqual((PALETTE_CHOICES, DEFAULT_PALETTE), (('classic', 'orange', 'custom'), 'classic'))
+        self.assertEqual(normalize_palette(' Custom '), 'custom')
 
 
 @override_settings(ROOT_URLCONF='backend.urls_restaurant', DEMO_MODE=False)
@@ -44,7 +45,8 @@ class EndToEndTests(TestCase):
 
     def test_default_is_classic_with_no_session_key_and_the_attribute_is_rendered(self):
         html = self.page()
-        self.assertEqual(session_in(html), {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in session_in(html).items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
         self.assertIn('data-palette="classic"', html)
         self.assertEqual(self.owner_client.get(self.API).json()['guest_palette'], 'classic')
 

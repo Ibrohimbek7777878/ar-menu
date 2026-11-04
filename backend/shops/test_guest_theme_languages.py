@@ -60,7 +60,8 @@ class EndToEndTests(TestCase):
         return session_in(Client().get('/menu/').content.decode())
 
     def test_defaults_leave_the_session_unchanged(self):
-        self.assertEqual(self.guest_session(), {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in self.guest_session().items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
         body = self.owner_client.get(self.API).json()
         self.assertEqual((body['guest_theme'], body['guest_languages']), ('day', 'uz,ru,en'))
 

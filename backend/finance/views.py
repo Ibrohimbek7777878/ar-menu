@@ -3,15 +3,25 @@ import logging
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db import IntegrityError, transaction as db_transaction
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db.models import Sum, Q, Prefetch
 from django.views.decorators.http import require_POST
 from web.seller_views import seller_required
 from backend.csv_safety import csv_text
-from finance.models import FinanceCategory, FinanceTransaction, DebtRecord, FinanceMovementHistory, FinanceCustomStage
+from finance.models import FinanceCategory, FinanceTransaction, DebtRecord, FinanceMovementHistory, FinanceCustomStage, FinanceRevision
 from finance.services.defaults import seed_default_categories_for_shop
 from finance.services.ai_copilot import process_finance_ai_query
+from finance.services.revisions import (
+    FinanceEditError,
+    clean_reason,
+    diff_snapshots,
+    money_str,
+    record_change,
+    tx_edit_lock,
+    tx_snapshot,
+)
 
 logger = logging.getLogger('finance')
 
@@ -87,6 +97,81 @@ STAGE_NAMES = {
     'realized': 'Kassa operatsiyasi'
 }
 
+# Egasi qarori (TZ_MULTITENANT Bosqich 5): moliyada MAVJUD yozuvni qo'lda o'zgartirish/yashirish MAJBURIY SABAB va tarix bilan,
+# jimgina o'zgartirish yo'q. Quyidagi amallar `reason` (5-300 belgi) siz BAJARILMAYDI. Storno/yangi yozuv beradigan amallar
+# (`pay_debt`, `cancel_transaction`, `add_*`, `create_*`) o'z mantig'ida qoladi.
+REASON_REQUIRED_ACTIONS = frozenset({
+    'edit_transaction', 'move_transaction', 'restore_transaction', 'settle_debt', 'delete_tx', 'delete_debt',
+})
+MSG_SOURCE_LOCKED = "Bu yozuv buyurtma/qarz to'lovidan hosil bo'lgan: uni tegishli bo'limda o'zgartiring"
+MSG_CANCELLED_LOCKED = "Bekor qilingan (storno) yozuvni tahrirlab bo'lmaydi: avval uni sabab bilan qayta tiklang"
+
+
+class _Reject(Exception):
+    """Amal rad etildi (hech narsa o'zgarmadi): xabar foydalanuvchiga ko'rsatiladi, tranzaksiya bekor bo'ladi."""
+
+    def __init__(self, message, status=400, code='rejected'):
+        super().__init__(message)
+        self.message, self.status, self.code = message, status, code
+
+
+def _reject_response(request, is_ajax, message, status=400, code='rejected'):
+    if is_ajax:
+        return JsonResponse({'success': False, 'error': str(message), 'code': code}, status=status)
+    messages.error(request, str(message))
+    return redirect('seller_finance_web')
+
+
+def _parse_pk(raw):
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
+def _lock_tx(shop, raw_id):
+    """Operatsiya qatorini qulflab oladi (faqat `atomic()` ichida). Begona restoran yozuvi yoki yo'q id -> rad."""
+    pk = _parse_pk(raw_id)
+    tx = FinanceTransaction.objects.select_for_update().filter(pk=pk, shop=shop).first() if pk else None
+    if tx is None:
+        raise _Reject("Yozuv topilmadi", 404, 'not_found')
+    return tx
+
+
+def _lock_tx_editable(shop, raw_id):
+    """`_lock_tx` + manba qulfi: storno qilingan yoki buyurtma/qarz to'lovidan hosil bo'lgan yozuv o'zgartirilmaydi (yangi /ra/ bilan bir xil)."""
+    tx = _lock_tx(shop, raw_id)
+    lock = tx_edit_lock(tx)
+    if lock == 'cancelled':
+        raise _Reject(MSG_CANCELLED_LOCKED, 409, 'cancelled')
+    if lock == 'source_locked':
+        raise _Reject(MSG_SOURCE_LOCKED, 409, 'source_locked')
+    return tx
+
+
+def _lock_debt(shop, raw_id):
+    """Qarz qatorini qulflab oladi (faqat `atomic()` ichida). Yashirilgan, begona yoki yo'q qarz -> rad."""
+    pk = _parse_pk(raw_id)
+    debt = DebtRecord.objects.select_for_update().filter(pk=pk, shop=shop).first() if pk else None
+    if debt is None:
+        raise _Reject("Qarz yozuvi topilmadi", 404, 'not_found')
+    return debt
+
+
+def _stage_changes(old_stage, new_stage, old_type, new_type, stage_names):
+    """Bosqich/tur o'zgarishi tarix uchun: `old`/`new` - ustun nomi (odam o'qiydi), `old_key`/`new_key` - barqaror kalit."""
+    changes = {}
+    if old_stage != new_stage:
+        changes['stage'] = {
+            'old': stage_names.get(old_stage, old_stage), 'new': stage_names.get(new_stage, new_stage),
+            'old_key': old_stage, 'new_key': new_stage,
+        }
+    if old_type != new_type:
+        changes['tx_type'] = {'old': old_type, 'new': new_type}
+    return changes
+
+
 @seller_required
 def seller_finance(request):
     shop = request.tenant_shop
@@ -102,6 +187,14 @@ def seller_finance(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         logger.info(f"[FINANCE_ACTION] Shop #{shop.id} ('{shop.name}'), user='{request.user}', action='{action}'")
+
+        # Majburiy sabab: yo'q yoki qisqa bo'lsa amal BAJARILMAYDI (hech narsa o'zgarmaydi, tarix yozilmaydi)
+        reason = ''
+        if action in REASON_REQUIRED_ACTIONS:
+            try:
+                reason = clean_reason(request.POST.get('reason'))
+            except FinanceEditError as err:
+                return _reject_response(request, is_ajax, err.detail['error'], 400, 'reason_required')
 
         if action == 'add_transaction':
             try:
@@ -199,18 +292,12 @@ def seller_finance(request):
         elif action == 'edit_transaction':
             try:
                 tx_id = request.POST.get('tx_id')
-                tx = get_object_or_404(FinanceTransaction, pk=tx_id, shop=shop)
 
                 amount_raw = request.POST.get('amount', '0')
                 amount_clean = amount_raw.replace(' ', '').replace(',', '.')
                 cat_id = request.POST.get('category_id')
                 title = request.POST.get('title', '').strip()
-                pay_method = request.POST.get('payment_method', tx.payment_method)
-                color = request.POST.get('color', tx.color or 'default')
                 notes = request.POST.get('notes', '').strip()
-                date_val = request.POST.get('tx_date') or str(tx.tx_date)
-                new_tx_type = request.POST.get('tx_type', tx.tx_type)
-                new_stage = request.POST.get('stage', tx.stage)
 
                 try:
                     amt = Decimal(amount_clean)
@@ -222,42 +309,64 @@ def seller_finance(request):
                     messages.error(request, "To'g'ri summa kiriting.")
                     return redirect('seller_finance_web')
 
-                old_stage = tx.stage
-                old_type = tx.tx_type
                 category = None
                 if cat_id:
                     category = FinanceCategory.objects.filter(pk=cat_id, shop=shop).first()
 
-                # Audit movement history if stage or type changed
-                if old_stage != new_stage or old_type != new_tx_type:
-                    from_desc = stage_names.get(old_stage, old_stage)
-                    to_desc = stage_names.get(new_stage, new_stage)
-                    FinanceMovementHistory.objects.create(
-                        transaction=tx,
-                        from_stage=from_desc,
-                        to_stage=to_desc,
-                        from_type=old_type,
-                        to_type=new_tx_type,
-                        moved_by=request.user,
-                        note=f"Tahrirlash orqali o'zgartirildi ({from_desc} -> {to_desc})"
-                    )
+                # Qator qulfi + MAJBURIY SABAB bilan o'zgarish tarixi (egasi qarori: sababsiz o'zgartirish yo'q): summa, kategoriya, mazmun,
+                # izoh, sana, to'lov turi, bosqich va kirim/chiqim turi eski -> yangi FinanceRevision va audit logga tushadi.
+                # Tarix yoki audit yozilmasa, o'zgarishning o'zi ham saqlanmaydi (bitta tranzaksiya).
+                with db_transaction.atomic():
+                    tx = _lock_tx_editable(shop, tx_id)
+                    before = tx_snapshot(tx)
+                    old_stage = tx.stage
+                    old_type = tx.tx_type
+                    pay_method = request.POST.get('payment_method', tx.payment_method)
+                    color = request.POST.get('color', tx.color or 'default')
+                    date_val = request.POST.get('tx_date') or str(tx.tx_date)
+                    new_tx_type = request.POST.get('tx_type', tx.tx_type)
+                    new_stage = request.POST.get('stage', tx.stage)
 
-                tx.amount = amt
-                tx.category = category
-                tx.title = title or tx.title
-                tx.payment_method = pay_method
-                tx.color = color if color != 'default' else ('emerald' if new_tx_type == 'income' else 'rose')
-                tx.notes = notes
-                tx.tx_date = date_val
-                tx.tx_type = new_tx_type
-                tx.stage = new_stage
-                tx.save()
+                    tx.amount = amt
+                    tx.category = category
+                    tx.title = title or tx.title
+                    tx.payment_method = pay_method
+                    tx.color = color if color != 'default' else ('emerald' if new_tx_type == 'income' else 'rose')
+                    tx.notes = notes
+                    tx.tx_date = date_val
+                    tx.tx_type = new_tx_type
+                    tx.stage = new_stage
+                    tx.save()
+                    tx.refresh_from_db()                 # tx_date matn bo'lib kelgan bo'lishi mumkin: bazadagi qiymat bilan solishtiriladi
+
+                    # Bosqich yoki tur o'zgargan bo'lsa, doska harakati tarixiga ham tushadi (sabab bilan)
+                    if old_stage != tx.stage or old_type != tx.tx_type:
+                        from_desc = stage_names.get(old_stage, old_stage)
+                        to_desc = stage_names.get(tx.stage, tx.stage)
+                        FinanceMovementHistory.objects.create(
+                            transaction=tx,
+                            from_stage=from_desc,
+                            to_stage=to_desc,
+                            from_type=old_type,
+                            to_type=tx.tx_type,
+                            moved_by=request.user,
+                            note=f"Tahrirlash orqali o'zgartirildi ({from_desc} -> {to_desc}). Sabab: {reason}"[:255]
+                        )
+
+                    changes = diff_snapshots(before, tx_snapshot(tx))
+                    changes.update(_stage_changes(old_stage, tx.stage, old_type, tx.tx_type, stage_names))
+                    record_change(
+                        shop=shop, target_type=FinanceRevision.TARGET_TRANSACTION, target_id=tx.pk, changes=changes,
+                        actor=request.user, request=request, reason=reason, audit_action='finance_tx_edited',
+                    )
 
                 formatted_amt = f"{int(amt):,}".replace(",", " ")
                 logger.info(f"[FINANCE_EDITED] Tx #{tx.id} updated by {request.user}: amt={formatted_amt}, color={tx.color}")
                 if is_ajax:
                     return JsonResponse({'success': True, 'message': f"Operatsiya tahrirlandi: {formatted_amt} so'm"})
                 messages.success(request, f"✏️ Operatsiya muvaffaqiyatli tahrirlandi: {formatted_amt} so'm")
+            except _Reject as rej:
+                return _reject_response(request, is_ajax, rej.message, rej.status, rej.code)
             except Exception as e:
                 logger.error(f"[FINANCE_EDIT_ERR] Tx #{request.POST.get('tx_id')} tahrirlashda xatolik: {e}", exc_info=True)
                 if is_ajax: return JsonResponse({'success': False, 'error': "Tahrirlashda xatolik yuz berdi."})
@@ -270,14 +379,20 @@ def seller_finance(request):
                 target_stage = request.POST.get('target_stage')
                 move_note = request.POST.get('note', '').strip()
 
-                tx = get_object_or_404(FinanceTransaction, pk=tx_id, shop=shop)
-                old_stage = tx.stage
-                old_type = tx.tx_type
-
                 custom_stages_qs = FinanceCustomStage.objects.filter(shop=shop)
                 valid_stages = ['planned', 'income', 'expense', 'debt', 'settled'] + list(custom_stages_qs.values_list('stage_key', flat=True))
 
-                if target_stage in valid_stages and target_stage != old_stage:
+                # Bosqichga ko'chirish ham MAJBURIY SABAB bilan: harakat tarixi + o'zgarmas FinanceRevision + audit, bitta tranzaksiyada
+                with db_transaction.atomic():
+                    tx = _lock_tx_editable(shop, tx_id)
+                    old_stage = tx.stage
+                    old_type = tx.tx_type
+
+                    if target_stage not in valid_stages:
+                        raise _Reject("Noto'g'ri ustun tanlandi", 400, 'bad_stage')
+                    if target_stage == old_stage:
+                        raise _Reject("Kartochka allaqachon shu ustunda", 400, 'no_change')
+
                     new_type = old_type
                     if target_stage == 'income':
                         new_type = 'income'
@@ -298,22 +413,29 @@ def seller_finance(request):
                         from_type=old_type,
                         to_type=new_type,
                         moved_by=request.user,
-                        note=move_note or f"Doskada surildi ({from_desc} -> {to_desc})"
+                        note=(f"{move_note or f'Doskada surildi ({from_desc} -> {to_desc})'}. Sabab: {reason}")[:255]
                     )
 
                     tx.stage = target_stage
                     tx.tx_type = new_type
                     tx.save()
+                    record_change(
+                        shop=shop, target_type=FinanceRevision.TARGET_TRANSACTION, target_id=tx.pk,
+                        changes=_stage_changes(old_stage, target_stage, old_type, new_type, stage_names),
+                        actor=request.user, request=request, reason=reason, audit_action='finance_tx_moved',
+                    )
 
-                    logger.info(f"[FINANCE_MOVED] Tx #{tx.id} moved: {old_stage} -> {target_stage} by {request.user}")
-                    if is_ajax:
-                        return JsonResponse({
-                            'success': True,
-                            'message': f"Kartochka '{to_desc}' ustuniga muvaffaqiyatli ko'chirildi!",
-                            'from_stage': from_desc,
-                            'to_stage': to_desc
-                        })
-                    messages.success(request, f"🔄 Kartochka '{to_desc}' bosqichiga ko'chirildi!")
+                logger.info(f"[FINANCE_MOVED] Tx #{tx.id} moved: {old_stage} -> {target_stage} by {request.user}")
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'message': f"Kartochka '{to_desc}' ustuniga muvaffaqiyatli ko'chirildi!",
+                        'from_stage': from_desc,
+                        'to_stage': to_desc
+                    })
+                messages.success(request, f"🔄 Kartochka '{to_desc}' bosqichiga ko'chirildi!")
+            except _Reject as rej:
+                return _reject_response(request, is_ajax, rej.message, rej.status, rej.code)
             except Exception as e:
                 logger.error(f"[FINANCE_MOVE_ERR] Tx #{request.POST.get('tx_id')} ko'chirishda xatolik: {e}", exc_info=True)
                 if is_ajax: return JsonResponse({'success': False, 'error': "Ko'chirishda xatolik yuz berdi."})
@@ -420,35 +542,51 @@ def seller_finance(request):
         elif action == 'settle_debt':
             try:
                 debt_id = request.POST.get('debt_id')
-                debt = get_object_or_404(DebtRecord, pk=debt_id, shop=shop)
-                remaining = debt.remaining_amount
                 pay_method = request.POST.get('payment_method', 'cash')
-                
-                if remaining > 0:
-                    debt.paid_amount = debt.amount
-                    debt.status = 'settled'
-                    debt.save()
-                    formatted_pay = f"{int(remaining):,}".replace(",", " ")
-                    if debt.debt_type == 'customer':
-                        FinanceTransaction.objects.create(
-                            shop=shop, tx_type='income', stage='income',
-                            amount=remaining, payment_method=pay_method, color='emerald',
-                            title=f"🤝 Nasiya to'liq to'landi: {debt.person_name}",
-                            created_by=request.user
-                        )
+
+                # Qarzni to'liq yopish ham MAJBURIY SABAB bilan: qarz qatori qulf ostida (qo'sh bosishda kassaga ikki marta kirmasin),
+                # holat va to'langan summa eski -> yangi tarixga, hosil bo'lgan kassa operatsiyasi audit logga yoziladi
+                with db_transaction.atomic():
+                    debt = _lock_debt(shop, debt_id)
+                    before = {'paid_amount': money_str(debt.paid_amount), 'status': debt.status}
+                    remaining = debt.remaining_amount
+                    cash_tx = None
+
+                    if remaining > 0:
+                        debt.paid_amount = debt.amount
+                        debt.status = 'settled'
+                        debt.save()
+                        if debt.debt_type == 'customer':
+                            cash_tx = FinanceTransaction.objects.create(
+                                shop=shop, tx_type='income', stage='income',
+                                amount=remaining, payment_method=pay_method, color='emerald',
+                                title=f"🤝 Nasiya to'liq to'landi: {debt.person_name}",
+                                created_by=request.user
+                            )
+                        else:
+                            cash_tx = FinanceTransaction.objects.create(
+                                shop=shop, tx_type='expense', stage='expense',
+                                amount=remaining, payment_method=pay_method, color='rose',
+                                title=f"🤝 Qarz to'liq to'landi: {debt.person_name}",
+                                created_by=request.user
+                            )
                     else:
-                        FinanceTransaction.objects.create(
-                            shop=shop, tx_type='expense', stage='expense',
-                            amount=remaining, payment_method=pay_method, color='rose',
-                            title=f"🤝 Qarz to'liq to'landi: {debt.person_name}",
-                            created_by=request.user
-                        )
-                else:
-                    debt.status = 'settled'
-                    debt.save()
+                        debt.status = 'settled'
+                        debt.save()
+
+                    changes = diff_snapshots(before, {'paid_amount': money_str(debt.paid_amount), 'status': debt.status})
+                    if not changes:
+                        raise _Reject("Bu qarz allaqachon to'liq yopilgan", 409, 'already_settled')
+                    record_change(
+                        shop=shop, target_type=FinanceRevision.TARGET_DEBT, target_id=debt.pk, changes=changes,
+                        actor=request.user, request=request, reason=reason, audit_action='debt_settled',
+                        extra={'cash_transaction_id': cash_tx.pk} if cash_tx else None,
+                    )
 
                 logger.info(f"[FINANCE_DEBT_SETTLED] Debt #{debt.id} completely settled.")
                 messages.success(request, f"✅ {debt.person_name} ning qarzi to'liq yopildi va kassa yangilandi!")
+            except _Reject as rej:
+                return _reject_response(request, is_ajax, rej.message, rej.status, rej.code)
             except Exception as e:
                 logger.error(f"[FINANCE_DEBT_SETTLE_ERR] Qarz #{request.POST.get('debt_id')} to'liq yopishda xatolik: {e}", exc_info=True)
                 messages.error(request, "Qarzni yopishda xatolik yuz berdi.")
@@ -489,28 +627,46 @@ def seller_finance(request):
         elif action == 'restore_transaction':
             try:
                 tx_id = request.POST.get('tx_id')
-                tx = get_object_or_404(FinanceTransaction, pk=tx_id, shop=shop)
-                tx.is_cancelled = False
-                tx.cancel_reason = ""
-                tx.cancelled_by = None
-                tx.cancelled_at = None
-                tx.save()
 
-                FinanceMovementHistory.objects.create(
-                    transaction=tx,
-                    from_stage="Bekor qilingan",
-                    to_stage=stage_names.get(tx.stage, tx.stage),
-                    from_type='cancelled',
-                    to_type=tx.tx_type,
-                    moved_by=request.user,
-                    note="Qayta tiklandi"
-                )
+                # Qayta tiklash faqat MAJBURIY SABAB bilan: storno qilingan yozuv kassaga qaytadi, shuning uchun tarix + audit yoziladi
+                with db_transaction.atomic():
+                    tx = _lock_tx(shop, tx_id)
+                    if not tx.is_cancelled:
+                        raise _Reject("Bu operatsiya bekor qilinmagan, tiklash shart emas", 409, 'not_cancelled')
+                    old_cancel_reason = tx.cancel_reason
+                    tx.is_cancelled = False
+                    tx.cancel_reason = ""
+                    tx.cancelled_by = None
+                    tx.cancelled_at = None
+                    tx.save()
+
+                    FinanceMovementHistory.objects.create(
+                        transaction=tx,
+                        from_stage="Bekor qilingan",
+                        to_stage=stage_names.get(tx.stage, tx.stage),
+                        from_type='cancelled',
+                        to_type=tx.tx_type,
+                        moved_by=request.user,
+                        note=f"Qayta tiklandi. Sabab: {reason}"[:255]
+                    )
+                    # Tiklash `cancel_reason` ni tozalaydi: avvalgi bekor qilish sababi tarixda eski qiymat sifatida saqlanib qoladi
+                    record_change(
+                        shop=shop, target_type=FinanceRevision.TARGET_TRANSACTION, target_id=tx.pk,
+                        changes={'cancelled': {'old': True, 'new': False}, 'cancel_reason': {'old': old_cancel_reason, 'new': ''}},
+                        actor=request.user, request=request, reason=reason, audit_action='finance_tx_restored',
+                    )
 
                 formatted_amt = f"{int(tx.amount):,}".replace(",", " ")
                 logger.info(f"[FINANCE_RESTORED] Tx #{tx.id} restored by {request.user}")
                 if is_ajax:
                     return JsonResponse({'success': True, 'message': f"Operatsiya qayta tiklandi: {formatted_amt} so'm"})
                 messages.success(request, f"🔄 Operatsiya qayta tiklandi: {tx.title} ({formatted_amt} so'm)")
+            except _Reject as rej:
+                return _reject_response(request, is_ajax, rej.message, rej.status, rej.code)
+            except IntegrityError:
+                logger.warning(f"[FINANCE_RESTORE_CONFLICT] Tx #{request.POST.get('tx_id')} tiklab bo'lmadi (cheklov buzilardi)", exc_info=True)
+                return _reject_response(request, is_ajax, "Bu operatsiyani tiklab bo'lmaydi: shu buyurtma uchun faol kirim allaqachon bor",
+                                        409, 'conflict')
             except Exception as e:
                 logger.error(f"[FINANCE_RESTORE_ERR] Tx #{request.POST.get('tx_id')} tiklashda xatolik: {e}", exc_info=True)
                 messages.error(request, "Operatsiyani tiklashda xatolik yuz berdi.")
@@ -582,18 +738,28 @@ def seller_finance(request):
         elif action == 'delete_tx':
             try:
                 tx_id = request.POST.get('tx_id')
-                tx = FinanceTransaction.objects.filter(pk=tx_id, shop=shop).first()
-                if tx:
-                    # Safe soft-cancellation instead of permanent hard delete
+
+                # "O'chirish" hech qachon haqiqiy o'chirish emas: yozuv yashiriladi (storno), sabab + tarix + audit bilan
+                with db_transaction.atomic():
+                    tx = _lock_tx(shop, tx_id)
+                    if tx.is_cancelled:
+                        raise _Reject("Bu operatsiya allaqachon bekor qilingan", 409, 'cancelled')
                     tx.is_cancelled = True
-                    tx.cancel_reason = "O'chirildi (Kassir/Egasi tomonidan)"
+                    tx.cancel_reason = f"O'chirildi (Kassir/Egasi tomonidan): {reason}"[:255]
                     tx.cancelled_by = request.user
                     tx.cancelled_at = timezone.now()
                     tx.save()
-                    logger.info(f"[FINANCE_DELETED_SAFE] Tx #{tx_id} safely cancelled/deleted by {request.user}")
+                    record_change(
+                        shop=shop, target_type=FinanceRevision.TARGET_TRANSACTION, target_id=tx.pk,
+                        changes={'hidden': {'old': False, 'new': True}},
+                        actor=request.user, request=request, reason=reason, audit_action='finance_tx_hidden',
+                    )
+                logger.info(f"[FINANCE_DELETED_SAFE] Tx #{tx_id} safely cancelled/deleted by {request.user}")
                 if is_ajax:
                     return JsonResponse({'success': True, 'message': "Operatsiya bekor qilindi va tarixga o'tkazildi."})
                 messages.info(request, "Operatsiya bekor qilindi va tarixga o'tkazildi.")
+            except _Reject as rej:
+                return _reject_response(request, is_ajax, rej.message, rej.status, rej.code)
             except Exception as e:
                 logger.error(f"[FINANCE_DEL_TX_ERR] Tx #{request.POST.get('tx_id')} o'chirishda xatolik: {e}", exc_info=True)
                 if is_ajax: return JsonResponse({'success': False, 'error': "Operatsiyani o'chirishda xatolik yuz berdi."})
@@ -603,11 +769,22 @@ def seller_finance(request):
         elif action == 'delete_debt':
             try:
                 debt_id = request.POST.get('debt_id')
-                DebtRecord.objects.filter(pk=debt_id, shop=shop).delete()
+
+                # Qarz daftardan faqat YASHIRILADI (soft delete: `is_deleted`), sabab + tarix + audit bilan
+                with db_transaction.atomic():
+                    debt = _lock_debt(shop, debt_id)
+                    debt.delete()
+                    record_change(
+                        shop=shop, target_type=FinanceRevision.TARGET_DEBT, target_id=debt.pk,
+                        changes={'hidden': {'old': False, 'new': True}},
+                        actor=request.user, request=request, reason=reason, audit_action='debt_hidden',
+                    )
                 logger.info(f"[FINANCE_DEBT_DELETED] Debt record #{debt_id} deleted by {request.user}")
                 if is_ajax:
                     return JsonResponse({'success': True, 'message': "Qarz yozuvi o'chirildi."})
                 messages.info(request, "Qarz yozuvi o'chirildi.")
+            except _Reject as rej:
+                return _reject_response(request, is_ajax, rej.message, rej.status, rej.code)
             except Exception as e:
                 logger.error(f"[FINANCE_DEL_DEBT_ERR] Qarz #{request.POST.get('debt_id')} o'chirishda xatolik: {e}", exc_info=True)
                 if is_ajax: return JsonResponse({'success': False, 'error': "Qarzni o'chirishda xatolik yuz berdi."})

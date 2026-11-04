@@ -1,6 +1,6 @@
 {% load react_assets static json_tags %}
 <!DOCTYPE html>
-<html lang="uz" data-design="new" data-palette="{% gulistan_palette %}">
+<html lang="uz" data-design="new" data-palette="{% gulistan_palette %}" data-font="{% gulistan_font %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,8 +24,11 @@
         } catch (e) {}
     })();
     </script>
-    <link rel="icon" type="image/svg+xml" href="{% get_static_prefix %}admins/resto/favicon.svg">
+    {% gulistan_favicon as brand_favicon %}
+    {% if brand_favicon %}{{ brand_favicon }}{% else %}<link rel="icon" type="image/svg+xml" href="{% get_static_prefix %}admins/resto/favicon.svg">{% endif %}
     {% spa_css 'resto' %}
+    {# Restoran brendi (maxsus palitra tokenlari): ilova stillaridan KEYIN #}
+    {% gulistan_brand_css 'admin' %}
 </head>
 <body>
     <div id="root"></div>

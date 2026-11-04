@@ -179,6 +179,9 @@ class HardDeleteCallsAreAccountedForTests(TestCase):
         ('orders/interfaces/api/menu_admin.py', 'product.delete()'): 'Product — yumshoq o\'chirish (SoftDeleteBehaviour)',
         ('finance/views.py', 'cs.delete()'): 'Moliya ustuni sozlamasi (tranzaksiyalar boshqa ustunga ko\'chiriladi)',
         ('finance/views.py', 'DebtRecord.objects.filter'): 'DebtRecord — yumshoq o\'chirish (SoftDeleteModel)',
+        ('finance/views.py', 'debt.delete()'): 'DebtRecord — yumshoq o\'chirish (SoftDeleteModel): sabab, tarix va audit bilan yashiriladi',
+        ('tours/services.py', 'TourStop.objects.filter(tour=tour).delete()'): 'Sayr nuqtalari — muharrirda "Saqlash" bilan to\'liq almashtiriladi (sayrning o\'zi arxivlanadi)',
+        ('tours/services.py', 'TourHotspot.objects.filter(tour=tour).delete()'): 'Sayr belgilari — muharrirda "Saqlash" bilan to\'liq almashtiriladi (sayrning o\'zi arxivlanadi)',
     }
 
 

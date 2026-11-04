@@ -114,9 +114,10 @@ class FinanceAppTests(TestCase):
         )
         self.assertFalse(tx.is_moved)
 
-        # Edit via POST
+        # Edit via POST (egasi qarori: sababsiz o'zgartirish yo'q -> `reason` majburiy; to'liq tekshiruvlar test_seller_finance_reasons.py da)
         res = self.client.post(reverse('seller_finance_web'), {
             'action': 'edit_transaction',
+            'reason': 'Go`sht narxi tuzatildi',
             'tx_id': tx.id,
             'amount': '16 000 000',
             'title': 'Go\'sht to\'liq to\'landi',
@@ -144,6 +145,7 @@ class FinanceAppTests(TestCase):
         )
         res = self.client.post(reverse('seller_finance_web'), {
             'action': 'move_transaction',
+            'reason': 'Mijoz pulni berdi',  # egasi qarori: sababsiz o'zgartirish yo'q
             'tx_id': tx.id,
             'target_stage': 'income',
             'note': 'Mijoz to\'lovni qildi'
@@ -316,6 +318,7 @@ class FinanceAppTests(TestCase):
         # Restore transaction
         res_rest = self.client.post(reverse('seller_finance_web'), {
             'action': 'restore_transaction',
+            'reason': 'Adashib bekor qilingan edi',  # egasi qarori: sababsiz o'zgartirish yo'q
             'tx_id': tx.id
         })
         self.assertEqual(res_rest.status_code, 302)
@@ -394,7 +397,7 @@ class FinanceAppTests(TestCase):
         # AJAX delete_tx
         res_tx = self.client.post(
             reverse('seller_finance_web'),
-            {'action': 'delete_tx', 'tx_id': tx.id},
+            {'action': 'delete_tx', 'tx_id': tx.id, 'reason': 'Ikki marta kiritilgan'},  # egasi qarori: sababsiz o'zgartirish yo'q
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         self.assertEqual(res_tx.status_code, 200)
@@ -412,7 +415,7 @@ class FinanceAppTests(TestCase):
         )
         res_debt = self.client.post(
             reverse('seller_finance_web'),
-            {'action': 'delete_debt', 'debt_id': debt.id},
+            {'action': 'delete_debt', 'debt_id': debt.id, 'reason': 'Noto`g`ri shaxsga yozilgan'},  # egasi qarori: sababsiz o'zgartirish yo'q
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         self.assertEqual(res_debt.status_code, 200)

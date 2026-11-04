@@ -1,5 +1,5 @@
 {% load json_tags %}{% load static seller_assets %}<!DOCTYPE html>
-<html lang="uz" data-palette="{% gulistan_palette %}">
+<html lang="uz" data-palette="{% gulistan_palette %}" data-font="{% gulistan_font %}">
 <head>
     <meta charset="UTF-8">
     {% gulistan_session %}
@@ -441,6 +441,9 @@
     <link rel="stylesheet" href="/static/css/ui_components.css">
 
     {% block extra_head %}{% endblock %}
+    {# Restoran brendi: favicon va maxsus palitra tokenlari. Hamma stillardan KEYIN turishi shart (teng ustuvorlikda keyingisi yutadi) #}
+    {% gulistan_favicon %}
+    {% gulistan_brand_css 'guest' %}
 </head>
 <body>
 

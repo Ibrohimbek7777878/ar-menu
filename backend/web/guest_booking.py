@@ -98,6 +98,18 @@ def _shop_id(request):
     return guest_shop_id(request)
 
 
+def _guest_config(shop_id):
+    """Mehmon uchun bron sozlamasi: restoran brendida «bron» bo'limi o'chirilgan bo'lsa (shops/brand.py `modules.booking`), onlayn bron
+    yopiq hisoblanadi — interfeysdagi yashirish serverda ham o'tadi. Xodim bronlari (qo'lda) va mavjud bronlarni ko'rish bunga bog'liq emas."""
+    config = bc.get_booking_config(shop_id)
+    if config['enabled']:
+        from shops.brand import module_enabled
+        from shops.guest_profile import guest_brand_for_shop_id
+        if not module_enabled(guest_brand_for_shop_id(shop_id), 'booking'):
+            config['enabled'] = False
+    return config
+
+
 # ── Sozlama va zal rejasi ────────────────────────────────────────────────────────────────────────────────────
 
 @ensure_csrf_cookie
@@ -111,7 +123,7 @@ def booking_config(request):
         return _json({'enabled': False, 'slots': [], 'event_types': [], 'max_days_ahead': 0, 'duration_minutes': 0,
                       'min_notice_minutes': 0, 'closed_weekdays': [], 'shop': {'name': ''}, 'halls': []})
     from shops.models import Shop
-    config = bc.get_booking_config(shop_id)
+    config = _guest_config(shop_id)
     name = Shop.objects.filter(pk=shop_id).values_list('name', flat=True).first() or ''
     halls = svc.halls_payload(shop_id) if config['enabled'] else []
     return _json({
@@ -141,7 +153,7 @@ def booking_availability(request):
         guests = svc.parse_int(raw_guests, 'guests', 1, 500, 'Mehmonlar soni') if raw_guests not in (None, '') else 1
     except svc.BookingError as exc:
         return _booking_error(exc)
-    config = bc.get_booking_config(shop_id)
+    config = _guest_config(shop_id)
     if not config['enabled']:
         return _error('Onlayn bron hozircha yopiq', 403, 'booking_disabled')
     return _json(svc.availability(shop_id, date, guests, config))
@@ -183,7 +195,7 @@ def booking_create(request):
     if not shop_id:
         return _error('Restoran topilmadi', 404, 'not_found')
     try:
-        reservation, created = svc.create_booking(shop_id, data, staff=False)
+        reservation, created = svc.create_booking(shop_id, data, staff=False, config=_guest_config(shop_id))
     except ReservationError as exc:
         return _booking_error(exc)
     resp = _json(svc.serialize_guest(reservation), 201)

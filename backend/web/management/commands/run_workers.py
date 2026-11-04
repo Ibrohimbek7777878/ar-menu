@@ -2,7 +2,8 @@
 Barcha fon ishchilarini bitta buyruq bilan ishga tushirish (TZ: R3-7).
 
   • outbox — Telegram va boshqa bildirishnomalarni navbatdan yuboradi (so'rov Telegram tezligiga bog'liq emas);
-  • 3d     — taom rasmidan 3D model yasaydi.
+  • 3d     — taom rasmidan 3D model yasaydi;
+  • tours  — video sayr: yuklangan videodan ffmpeg bilan yengil variantlar va AI takliflari (`run_tour_worker` bilan bir xil).
 
 Redis/Celery shart emas: navbat bazada. Har ishchi alohida oqimda, shuning uchun sekin 3D vazifa
 bildirishnomalarni kechiktirmaydi.
@@ -34,7 +35,12 @@ def drain_3d_once():
     return {'3d_ok' if ok else '3d_failed': 1}, 1
 
 
-WORKERS = {'outbox': drain_outbox_once, '3d': drain_3d_once}
+def drain_tours_once():
+    from tours.pipeline import drain_once
+    return drain_once()
+
+
+WORKERS = {'outbox': drain_outbox_once, '3d': drain_3d_once, 'tours': drain_tours_once}
 
 
 class Command(BaseCommand):
@@ -63,7 +69,8 @@ class Command(BaseCommand):
 
         from ar3d.pipeline import recover_stale_jobs
         from notifications.outbox import recover_stale_events
-        recovered = recover_stale_jobs() + recover_stale_events()
+        from tours.pipeline import recover_stale_jobs as recover_stale_tours
+        recovered = recover_stale_jobs() + recover_stale_events() + recover_stale_tours()
         if recovered:
             self.stdout.write(self.style.WARNING(f"{recovered} ta to'xtab qolgan vazifa qayta navbatga qo'yildi"))
 

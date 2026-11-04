@@ -1,9 +1,11 @@
 {% load static seller_assets json_tags %}<!DOCTYPE html>
-<html lang="uz" data-palette="{% gulistan_palette %}">
+<html lang="uz" data-palette="{% gulistan_palette %}" data-font="{% gulistan_font %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guliston — Boshqaruv Paneliga Kirish</title>
+    {% gulistan_brand as brand %}
+    <title>{{ brand.name }} — Boshqaruv Paneliga Kirish</title>
+    {% gulistan_favicon %}
     <meta name="theme-color" content="#FFFFFF">
     {# Kun/tun va til birinchi kadrdan to'g'ri bo'lishi uchun (yorqin chaqnash bo'lmasin). Mantiq /ra/ ilovasi bilan bir xil: admins/shared/src/theme va i18n (kalitlar `guliston.theme`, `guliston.lang`) #}
     <script>
@@ -180,6 +182,9 @@
         }
 
         .serif { font-family: var(--font-display); }
+        /* Restoran shrifti (brend sozlamasi): 'serif' = palitraning o'z sarlavha shrifti (o'zgarishsiz), qolgani lokal shriftlar */
+        html[data-font='sans'] { --font-display: var(--font-sans); }
+        html[data-font='rounded'] { --font-display: 'Outfit', var(--font-sans); }
 
         :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
@@ -254,6 +259,17 @@
             margin: 0 auto 16px;
             box-shadow: var(--shadow-sm);
         }
+
+        /* Restoran logotipi: markazda, nisbati saqlanadi, fon va soya yo'q */
+        .brand-crest-big.has-logo {
+            width: auto;
+            max-width: 160px;
+            height: 72px;
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+        }
+        .brand-crest-big img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
 
         .login-title {
             font-size: 26px;
@@ -357,6 +373,8 @@
             color: var(--brand);
         }
     </style>
+    {# Restoran brendi (maxsus palitra tokenlari): barcha stillardan KEYIN #}
+    {% gulistan_brand_css 'admin' %}
 </head>
 <body>
     <div class="login-tools">
@@ -379,8 +397,12 @@
     </div>
 
     <div class="login-card">
-        <div class="brand-crest-big">G</div>
-        <h1 class="login-title serif">Guliston</h1>
+        {% if brand.logo_url %}
+        <div class="brand-crest-big has-logo"><img src="{{ brand.logo_url }}" alt="" width="160" height="72"></div>
+        {% else %}
+        <div class="brand-crest-big" aria-hidden="true">{{ brand.initial }}</div>
+        {% endif %}
+        <h1 class="login-title serif">{{ brand.name }}</h1>
         <p class="login-subtitle" data-i18n="subtitle">Restoran Boshqaruv Paneli</p>
 
         {% if messages %}

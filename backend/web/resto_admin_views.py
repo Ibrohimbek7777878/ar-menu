@@ -100,11 +100,17 @@ def session_api(request):
 
     tenant_data = None
     if shop:
+        from shops.brand import brand_of_shop, public_brand
         tenant_data = {
             'id': str(shop.public_id),
             'slug': shop.slug,
             'name': shop.name,
+            # Restoran brendining ochiq qismi (nom, logotip, palitra, atamalar, bo'limlar): admin qobig'i shundan foydalanadi
+            # (barcha xodimlarga ko'rinadi, `settings_admin` ruxsati shart emas)
+            'brand': public_brand(brand_of_shop(shop)),
         }
+
+    from shops.tenancy import current_tenant, tenancy_enabled
 
     data = {
         'user': {
@@ -116,6 +122,11 @@ def session_api(request):
         'capabilities': caps,
         'flags': flags,
         'csrf': get_token(request),
+        # Platforma boshqaruvi (mijozlar bo'limi): faqat platforma administratori (super_admin) va faqat tenant hostida EMAS
+        # (platforma hosti yoki tenantsiz localhost/demo). `tenancy_enabled` — PLATFORM_DOMAIN sozlanganmi (aks holda mijoz havolasi yo'q).
+        'is_platform_admin': role == 'super_admin',
+        'platform_host': current_tenant() is None,
+        'tenancy_enabled': tenancy_enabled(),
     }
 
     res = JsonResponse(data)

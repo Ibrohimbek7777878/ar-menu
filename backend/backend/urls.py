@@ -41,6 +41,9 @@ urlpatterns = [
     path('api/restaurant/admin/v1/staff/', include('accounts.interfaces.api.staff_admin_urls')),
     path('api/restaurant/admin/v1/finance/', include('finance.interfaces.api.finance_admin_urls')),
     path('api/restaurant/admin/v1/settings/', include('shops.interfaces.api.settings_admin_urls')),
+    path('api/restaurant/admin/v1/brand/', include('shops.interfaces.api.brand_admin_urls')),
+    # Platforma boshqaruvi (mijozlar): faqat super_admin, tenant hostida 404
+    path('api/platform/v1/', include('shops.interfaces.api.platform_admin_urls')),
     path('api/v1/couriers/', include('couriers.urls')),
     path('api/v1/notifications/', include('notifications.urls')),
     # Flutter API

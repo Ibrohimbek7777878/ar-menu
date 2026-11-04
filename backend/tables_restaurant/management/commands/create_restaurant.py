@@ -8,18 +8,14 @@ Ishlatish:
     python manage.py create_restaurant --name "Bahor" --owner bahor_ega --subdomain bahor --business-type cafe   # multi-tenant
 
 Qayta ishga tushirilsa mavjud restoran o'chirilmaydi va qayta yaratilmaydi — yetishmayotgan stollar qo'shiladi.
+Mantiq `tables_restaurant/provisioning.py` da (platforma API ham shuni chaqiradi).
 """
-import secrets
-
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
-from django.utils.text import slugify
 
-from accounts.models import AdminUser
-from notifications.models import AppSetting
 from shops.models import Shop
-from shops.tenancy import normalize_subdomain, slug_to_subdomain, subdomain_problem, tenant_base_url
-from tables_restaurant.models import Hall, Table
+from shops.tenancy import tenant_base_url
+from tables_restaurant.models import Table
+from tables_restaurant.provisioning import ProvisionError, provision_restaurant
 
 
 class Command(BaseCommand):
@@ -42,102 +38,31 @@ class Command(BaseCommand):
         parser.add_argument('--business-type', default='restaurant', choices=[c[0] for c in Shop.BUSINESS_TYPE_CHOICES],
                             help="Biznes turi: restaurant | cafe | banquet (standart: restaurant)")
 
-    @transaction.atomic
     def handle(self, *args, **opts):
-        name = opts['name'].strip()
-        if not name:
-            raise CommandError("Restoran nomi bo'sh bo'lmasligi kerak")
-        tables_count = opts['tables']
-        if not 1 <= tables_count <= 200:
-            raise CommandError("Stollar soni 1 dan 200 gacha bo'lishi kerak")
-        if opts['business_type'] not in dict(Shop.BUSINESS_TYPE_CHOICES):        # call_command() argparse choices'ni tekshirmaydi
-            raise CommandError(f"--business-type: {', '.join(dict(Shop.BUSINESS_TYPE_CHOICES))} dan biri bo'lishi kerak")
-        slug = (opts['slug'] or slugify(name, allow_unicode=False) or 'restoran').strip('-')
-        subdomain = None
-        if opts['subdomain']:
-            subdomain = normalize_subdomain(opts['subdomain'])
-            problem = subdomain_problem(subdomain)
-            if problem:
-                raise CommandError(f"--subdomain: {problem}")
-        else:
-            subdomain = slug_to_subdomain(slug)       # yaroqsiz yoki band bo'lsa keyinroq e'tiborsiz qoldiriladi (ogohlantirish bilan)
-
-        # 1. Egasi
-        owner = AdminUser.objects.filter(username=opts['owner']).first()
-        password = opts['password']
-        if owner:
-            if owner.role not in ('shop_owner', 'shop_manager'):
-                raise CommandError(f"'{owner.username}' akkaunti restoran egasi emas (role={owner.role})")
-            if password:
-                owner.set_password(password)
-                owner.save(update_fields=['password'])
-        else:
-            if not password:
-                password = secrets.token_urlsafe(9)
-                self.stdout.write(self.style.WARNING(f"Parol avtomatik yaratildi: {password}  (saqlab qo'ying)"))
-            owner = AdminUser.objects.create_user(
-                username=opts['owner'], password=password, role='shop_owner',
-                is_approved=True, phone=opts['phone'],
+        try:
+            result = provision_restaurant(
+                name=opts['name'], owner_username=opts['owner'], password=opts['password'], slug=opts['slug'],
+                phone=opts['phone'], address=opts['address'], hall_name=opts['hall'], tables=opts['tables'],
+                subdomain=opts['subdomain'], business_type=opts['business_type'],
+                make_default=not opts['no_default'], allow_existing=True,
             )
-
-        # 2. Restoran
-        shop = Shop.objects.filter(slug=slug).first()
-        created_shop = shop is None
-        # Subdomen bandligi: aniq so'ralgan bo'lsa xato, slug'dan olingan bo'lsa jimgina o'tkazib yuboriladi
-        taken = Shop.objects.filter(subdomain=subdomain).exclude(pk=getattr(shop, 'pk', None)).exists() if subdomain else False
-        if taken and opts['subdomain']:
-            raise CommandError(f"'{subdomain}' subdomeni band")
-        if taken or (subdomain and not opts['subdomain'] and subdomain_problem(subdomain)):
-            self.stdout.write(self.style.WARNING(f"Subdomen '{subdomain}' band yoki yaroqsiz — keyin /platform orqali bering"))
-            subdomain = None
-        if created_shop:
-            shop = Shop.objects.create(
-                name=name, slug=slug, owner=owner, address=opts['address'], phone=opts['phone'],
-                latitude=40.4897, longitude=68.7842, is_open=True,
-                subdomain=subdomain, business_type=opts['business_type'],
-            )
-        elif shop.owner_id and shop.owner_id != owner.pk:
-            raise CommandError(f"'{slug}' restorani boshqa egaga tegishli")
-        else:
-            # Mavjud restoran: subdomen/turni faqat aniq so'ralganda yangilaymiz (o'zboshimchalik bilan o'zgartirilmaydi)
-            changed = []
-            if opts['subdomain'] and shop.subdomain != subdomain:
-                shop.subdomain = subdomain
-                changed.append('subdomain')
-            if opts['business_type'] != 'restaurant' and shop.business_type != opts['business_type']:
-                shop.business_type = opts['business_type']
-                changed.append('business_type')
-            if changed:
-                shop.save(update_fields=changed)
-        if owner.shop_id != shop.pk:
-            owner.shop = shop
-            owner.save(update_fields=['shop'])
-
-        # 3. Zal va stollar (yetishmaganlari qo'shiladi)
-        hall, _ = Hall.objects.get_or_create(shop=shop, name=opts['hall'])
-        existing = set(Table.objects.filter(shop=shop).values_list('number', flat=True))
-        new_tables = [
-            Table(shop=shop, hall=hall, number=str(n), capacity=4, status='free')
-            for n in range(1, tables_count + 1) if str(n) not in existing
-        ]
-        Table.objects.bulk_create(new_tables)
-
-        # 4. Mehmon menyusining asosiy restorani (admin paneldagi "Sozlamalar"da o'zgartiriladi)
-        if not opts['no_default']:
-            AppSetting.objects.update_or_create(
-                key='restaurant_default_shop',
-                defaults={'value': shop.slug, 'category': 'restaurant',
-                          'description': "Mehmon menyusi (/menu/) ko'rsatadigan restoran slug'i"},
-            )
+        except ProvisionError as exc:
+            prefix = '--subdomain: ' if exc.code == 'subdomain_invalid' else ('--business-type: ' if exc.field == 'business_type' else '')
+            raise CommandError(f"{prefix}{exc.message}") from None
+        shop, owner = result.shop, result.owner
+        if result.generated_password:
+            self.stdout.write(self.style.WARNING(f"Parol avtomatik yaratildi: {result.generated_password}  (saqlab qo'ying)"))
+        for warning in result.warnings:
+            self.stdout.write(self.style.WARNING(warning))
 
         self.stdout.write(self.style.SUCCESS(
-            f"{'Yaratildi' if created_shop else 'Yangilandi'}: {shop.name} (slug={shop.slug}, id={shop.pk})"
+            f"{'Yaratildi' if result.created_shop else 'Yangilandi'}: {shop.name} (slug={shop.slug}, id={shop.pk})"
         ))
         self.stdout.write(f"  Egasi: {owner.username} — kirish: /seller/login/")
         if shop.subdomain:
             url = tenant_base_url(shop) or f"https://{shop.subdomain}.<PLATFORM_DOMAIN>"
             self.stdout.write(f"  Subdomen: {shop.subdomain} ({shop.business_type}) — manzil: {url}/")
-        self.stdout.write(f"  Stollar: {Table.objects.filter(shop=shop).count()} ta ({len(new_tables)} ta yangi), zal: {hall.name}")
+        self.stdout.write(f"  Stollar: {result.tables_total} ta ({result.new_tables} ta yangi), zal: {result.hall.name}")
         first_table = Table.objects.filter(shop=shop).order_by('id').first()
         qr_hint = first_table.qr_path if first_table else '/menu/'
         self.stdout.write(f"  Mehmon menyusi (1-stol QR havolasi): {qr_hint}" + ("" if not opts['no_default'] else "  (asosiy qilinmadi)"))

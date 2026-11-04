@@ -204,3 +204,70 @@ class FinanceCustomStage(models.Model):
     def __str__(self):
         return f"{self.icon} {self.name} ({self.get_category_type_display()})"
 
+
+class ImmutableRecordError(Exception):
+    """O'zgarmas yozuvni (o'zgarishlar tarixi) o'zgartirish yoki o'chirishga urinish."""
+
+
+class FinanceRevisionQuerySet(models.QuerySet):
+    """Tarix faqat qo'shiladi: ommaviy o'zgartirish va o'chirish ham taqiqlangan (ORM darajasida)."""
+
+    def update(self, **kwargs):
+        raise ImmutableRecordError("Moliya o'zgarishlar tarixini o'zgartirib bo'lmaydi")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ImmutableRecordError("Moliya o'zgarishlar tarixini o'zgartirib bo'lmaydi")
+
+    def delete(self):
+        raise ImmutableRecordError("Moliya o'zgarishlar tarixini o'chirib bo'lmaydi")
+
+
+class FinanceRevision(models.Model):
+    """
+    Moliya yozuvini (kassa operatsiyasi yoki qarz) qo'lda tahrirlash tarixi: kim, qachon, NIMA UCHUN, nimani eski -> yangi qildi.
+    Pul hisobida jimgina o'zgartirish yo'q: har tahrir sabab bilan bitta qator qo'shadi. Qator o'zgarmas:
+    save() faqat yangi qator yaratadi, delete()/update() ORM darajasida taqiqlangan, admin'da faqat o'qish.
+    `changes` = {maydon: {'old': ..., 'new': ...}}; summa Decimal satr ("150000.00"), sana ISO satr.
+    Foydalanuvchi o'chirilsa ham kim ekani `changed_by_name`/`changed_by_role` nusxasida qoladi.
+    """
+    TARGET_TRANSACTION = 'transaction'
+    TARGET_DEBT = 'debt'
+    TARGET_CHOICES = [
+        (TARGET_TRANSACTION, 'Kassa operatsiyasi'),
+        (TARGET_DEBT, 'Qarz / Nasiya'),
+    ]
+
+    shop = models.ForeignKey('shops.Shop', on_delete=models.CASCADE, related_name='finance_revisions')
+    target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
+    target_id = models.PositiveBigIntegerField()
+    # Shu yozuvning 1, 2, 3... tahriri; yozuv qatori qulfi ostida beriladi, noyoblik cheklovi ikki parallel tahrirni ham ushlaydi
+    revision_no = models.PositiveIntegerField()
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    changed_by_name = models.CharField(max_length=200, blank=True)
+    changed_by_role = models.CharField(max_length=50, blank=True)
+    reason = models.CharField(max_length=300, verbose_name="O'zgartirish sababi")
+    changes = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = FinanceRevisionQuerySet.as_manager()
+
+    class Meta:
+        db_table = 'finance_revisions'
+        verbose_name = "Moliya o'zgarishi tarixi"
+        verbose_name_plural = "Moliya o'zgarishlari tarixi"
+        ordering = ['-revision_no', '-id']
+        indexes = [models.Index(fields=['shop', 'target_type', 'target_id'], name='finrev_target_idx')]
+        constraints = [
+            models.UniqueConstraint(fields=['target_type', 'target_id', 'revision_no'], name='uniq_finance_revision_no'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ImmutableRecordError("Moliya o'zgarishlar tarixini o'zgartirib bo'lmaydi")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ImmutableRecordError("Moliya o'zgarishlar tarixini o'chirib bo'lmaydi")
+
+    def __str__(self):
+        return f"{self.target_type} #{self.target_id} · tahrir {self.revision_no}"

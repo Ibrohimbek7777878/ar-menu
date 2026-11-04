@@ -28,7 +28,14 @@ from backend.api_input import (
     query_text,
 )
 from backend.csv_safety import csv_text
-from finance.models import DebtRecord, FinanceCategory, FinanceTransaction
+from finance.models import DebtRecord, FinanceCategory, FinanceRevision, FinanceTransaction
+from finance.services.revisions import (
+    MAX_AMOUNT,
+    MIN_AMOUNT,
+    revision_count,
+    revision_count_subquery,
+    tx_edit_lock,
+)
 from finance.services.summary import range_summary, today_summary
 from orders.audit import log_audit
 from orders.interfaces.api.permissions import (
@@ -39,17 +46,27 @@ from orders.timeutils import local_today
 from web.restaurant_auth import staff_shop
 
 
-MAX_AMOUNT = Decimal('999999999999.99')  # DecimalField(max_digits=14, decimal_places=2) chegarasi (~1 trln so'm)
-MIN_AMOUNT = Decimal('0.01')
+_PAYMENT_DISPLAY = {'cash': 'Naqd', 'card': 'Plastik / Karta', 'bank': 'Bank hisobi'}
 
 
-def _serialize_tx(t):
+def _revisions_of(obj, target_type, given):
+    """Tahrirlar soni: berilgan, ro'yxat so'rovidagi annotatsiya yoki (yagona obyekt uchun) bitta so'rov."""
+    if given is not None:
+        return given
+    annotated = getattr(obj, 'revisions_count', None)
+    return annotated if annotated is not None else revision_count(target_type, obj.pk)
+
+
+def _serialize_tx(t, revisions_count=None):
     if t.order_id:
         source = 'receipt'
     elif t.debt_id:
         source = 'debt_payment'
     else:
         source = 'manual'
+
+    revisions = _revisions_of(t, FinanceRevision.TARGET_TRANSACTION, revisions_count)
+    edit_lock = tx_edit_lock(t)       # None | 'cancelled' | 'source_locked' (qo'lda tahrirlab bo'lmaydi)
 
     return {
         'id': t.id,
@@ -60,17 +77,23 @@ def _serialize_tx(t):
         'category_name': t.category.name if t.category else 'Umumiy',
         'amount': float(t.amount),
         'payment_method': t.payment_method,
-        'payment_method_display': 'Naqd' if t.payment_method == 'cash' else 'Plastik / Karta',
+        'payment_method_display': _PAYMENT_DISPLAY.get(t.payment_method, 'Plastik / Karta'),
         'source_type': source,
+        'notes': t.notes or '',
         'tx_date': t.tx_date.isoformat(),
         'created_at': t.created_at.isoformat(),
         'is_cancelled': bool(t.is_cancelled),
         'cancel_reason': t.cancel_reason or '',
         'cancelled_at': t.cancelled_at.isoformat() if t.cancelled_at else None,
+        'edited': revisions > 0,
+        'revisions_count': revisions,
+        'can_edit': edit_lock is None,
+        'edit_lock': edit_lock,
     }
 
 
-def _serialize_debt(d):
+def _serialize_debt(d, revisions_count=None):
+    revisions = _revisions_of(d, FinanceRevision.TARGET_DEBT, revisions_count)
     is_settled = (d.status == 'settled') or (d.paid_amount >= d.amount)
     return {
         'id': d.id,
@@ -87,6 +110,8 @@ def _serialize_debt(d):
         'due_date': d.due_date.isoformat() if d.due_date else None,
         'notes': d.notes or '',
         'created_at': d.created_at.isoformat(),
+        'edited': revisions > 0,
+        'revisions_count': revisions,
     }
 
 
@@ -138,6 +163,7 @@ class FinanceTransactionsListCreateView(RestoAdminAPIView):
         qs = (
             FinanceTransaction.objects.filter(shop=shop)
             .select_related('category', 'order', 'debt')
+            .annotate(revisions_count=revision_count_subquery(FinanceRevision.TARGET_TRANSACTION))
             .order_by('-tx_date', '-id')
         )
 
@@ -249,7 +275,7 @@ class FinanceTransactionsListCreateView(RestoAdminAPIView):
                 }
             )
 
-        return Response(_serialize_tx(tx), status=status.HTTP_201_CREATED)
+        return Response(_serialize_tx(tx, revisions_count=0), status=status.HTTP_201_CREATED)
 
 
 class FinanceTransactionCancelView(RestoAdminAPIView):
@@ -261,16 +287,19 @@ class FinanceTransactionCancelView(RestoAdminAPIView):
 
     def post(self, request, pk):
         shop = staff_shop(request)
-        tx = get_object_or_404(FinanceTransaction, pk=pk, shop=shop)
-
-        if tx.is_cancelled:
-            return Response({'error': 'Tranzaksiya allaqachon bekor qilingan'}, status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(FinanceTransaction, pk=pk, shop=shop)
 
         reason = parse_text(request.data.get('reason'), 'reason', max_length=255)
-        if not reason:
-            return Response({'error': 'Bekor qilish sababini ko\'rsating', 'field': 'reason'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            # Qator qulfi: parallel tahrir/ikkinchi storno bilan to'qnashmaydi (qarz qoldig'i ikki marta tiklanmaydi)
+            tx = FinanceTransaction.objects.select_for_update().filter(pk=pk, shop=shop).first()
+            if tx is None:
+                return Response({'error': 'Yozuv topilmadi'}, status=status.HTTP_404_NOT_FOUND)
+            if tx.is_cancelled:
+                return Response({'error': 'Tranzaksiya allaqachon bekor qilingan'}, status=status.HTTP_400_BAD_REQUEST)
+            if not reason:
+                return Response({'error': 'Bekor qilish sababini ko\'rsating', 'field': 'reason'}, status=status.HTTP_400_BAD_REQUEST)
             from finance.services.order_integration import cancel_finance_transaction
             cancel_finance_transaction(tx, reason=reason, actor=request.user, request=request)
 
@@ -290,7 +319,9 @@ class FinanceDebtsListCreateView(RestoAdminAPIView):
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
 
-        qs = DebtRecord.objects.filter(shop=shop).order_by('status', '-created_at')
+        qs = (DebtRecord.objects.filter(shop=shop)
+              .annotate(revisions_count=revision_count_subquery(FinanceRevision.TARGET_DEBT))
+              .order_by('status', '-created_at'))
 
         # 1. Type
         debt_type = query_text(request, 'type', 20)
@@ -365,7 +396,7 @@ class FinanceDebtsListCreateView(RestoAdminAPIView):
                 new_value={'person_name': debt.person_name, 'amount': float(debt.amount), 'type': debt.debt_type}
             )
 
-        return Response(_serialize_debt(debt), status=status.HTTP_201_CREATED)
+        return Response(_serialize_debt(debt, revisions_count=0), status=status.HTTP_201_CREATED)
 
 
 class FinanceDebtPayView(RestoAdminAPIView):

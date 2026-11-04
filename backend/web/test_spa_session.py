@@ -37,7 +37,8 @@ class SpaSessionTests(TestCase):
 
     def test_guest_page_says_guest_and_not_demo(self):
         data = session_in(Client().get('/menu/').content.decode())
-        self.assertEqual(data, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in data.items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
 
     def test_owner_is_admin_on_staff_pages(self):
         client = self.login(self.owner)

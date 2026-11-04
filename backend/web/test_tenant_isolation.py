@@ -18,6 +18,7 @@ from orders.models import Order
 from products.models import Product
 from shops.test_tenant_kit import PASSWORD, make_tenant, snapshot, tenant_settings
 from tables_restaurant.models import Table
+from tours.models import Tour
 
 ADMIN = '/api/restaurant/admin/v1/'
 LEGACY = '/api/v1/restaurant/'
@@ -41,6 +42,10 @@ class TwoTenantCase(TestCase):
     def setUpTestData(cls):
         cls.A = make_tenant('alfa', 'ALFA')
         cls.B = make_tenant('bravo', 'BRAVO')
+        for t in (cls.A, cls.B):         # video sayr (tours): har tenantda bitta tayyor sayr, nomida <TAG>-SECRET belgisi
+            t.tour = Tour.objects.create(
+                shop=t.shop, title=f'{t.tag}-SECRETTOUR', status=Tour.READY, duration_s=20, width=720, height=1280,
+                variants={key: f'tours/shop_{t.shop.pk}/x/{key}.{"jpg" if key == "poster" else "mp4"}' for key in ('scrub', 'play', 'low', 'poster')})
 
     def body(self, resp):
         return resp.content.decode('utf-8', 'replace')
@@ -112,7 +117,7 @@ class ForeignCredentialsTests(TwoTenantCase):
     STAFF_GETS = (
         ADMIN + 'session/', ADMIN + 'dashboard/summary/', ADMIN + 'menu/products/', ADMIN + 'menu/categories/',
         ADMIN + 'tables/', ADMIN + 'tables/halls/', ADMIN + 'orders/', ADMIN + 'staff/', ADMIN + 'finance/summary/',
-        ADMIN + 'finance/transactions/', ADMIN + 'finance/debts/', ADMIN + 'settings/', ADMIN + 'reservations/',
+        ADMIN + 'finance/transactions/', ADMIN + 'finance/debts/', ADMIN + 'settings/', ADMIN + 'reservations/', ADMIN + 'tours/',
         LEGACY + 'orders/', LEGACY + 'tables/', LEGACY + 'calls/', LEGACY + 'reservations/', LEGACY + 'finance/',
         LEGACY + 'products/stoplist/', LEGACY + 'admin/menu/products/',
     )
@@ -228,6 +233,13 @@ def idor_cases(a, b):
         # moliya
         case('tx cancel', 'post', ADMIN + 'finance/transactions/{tx}/cancel/', {'reason': 'hack'}),
         case('debt pay', 'post', ADMIN + 'finance/debts/{debt}/pay/', {'amount': '100', 'payment_method': 'cash'}),
+        # moliya tahriri va tarixi (Bosqich 5): begona restoran yozuvi 404, tarix oqmaydi
+        case('tx edit', 'patch', ADMIN + 'finance/transactions/{tx}/', {'amount': '123', 'reason': 'begona tuzatish'}),
+        case('tx detail', 'get', ADMIN + 'finance/transactions/{tx}/'),
+        case('tx history', 'get', ADMIN + 'finance/transactions/{tx}/history/'),
+        case('debt edit', 'patch', ADMIN + 'finance/debts/{debt}/', {'amount': '8000', 'reason': 'begona tuzatish'}),
+        case('debt detail', 'get', ADMIN + 'finance/debts/{debt}/'),
+        case('debt history', 'get', ADMIN + 'finance/debts/{debt}/history/'),
         case('legacy tx cancel', 'post', LEGACY + 'finance/tx/{tx}/cancel/', {'reason': 'hack'}),
         case('legacy debt pay', 'post', LEGACY + 'finance/debts/{debt}/pay/', {'amount': '100'}),
         # chaqiruvlar va bronlar
@@ -235,6 +247,17 @@ def idor_cases(a, b):
         case('reservation detail', 'get', ADMIN + 'reservations/{reservation}/'),
         case('reservation patch', 'patch', ADMIN + 'reservations/{reservation}/', {'status': 'cancelled'}),
         case('legacy reservation status', 'patch', LEGACY + 'reservations/{reservation}/status/', {'status': 'cancelled'}),
+        # video sayr (tours): begona sayr har yo'lda 404, hech narsa o'zgarmaydi va oqmaydi
+        case('tour detail', 'get', ADMIN + 'tours/{tour}/'),
+        case('tour patch', 'patch', ADMIN + 'tours/{tour}/', {'title': 'HACK'}),
+        case('tour archive', 'delete', ADMIN + 'tours/{tour}/'),
+        case('tour video', 'post', ADMIN + 'tours/{tour}/video/'),
+        case('tour stops', 'put', ADMIN + 'tours/{tour}/stops/', {'stops': []}),
+        case('tour hotspots', 'put', ADMIN + 'tours/{tour}/hotspots/', {'hotspots': []}),
+        case('tour publish', 'post', ADMIN + 'tours/{tour}/publish/'),
+        case('tour unpublish', 'post', ADMIN + 'tours/{tour}/unpublish/'),
+        case('tour ai-suggest', 'post', ADMIN + 'tours/{tour}/ai-suggest/'),
+        case('tour ai-suggestions clear', 'delete', ADMIN + 'tours/{tour}/ai-suggestions/'),
     ]
 
 
@@ -243,7 +266,7 @@ class ObjectLevelMatrixTests(TwoTenantCase):
     def _ids(self, t):
         return {
             'product1': t.product1.pk, 'table1': t.table1.pk, 'hall': t.hall.pk, 'order': t.order.pk, 'item': t.item.pk,
-            'waiter': t.waiter.pk, 'tx': t.tx.pk, 'debt': t.debt.pk, 'call': t.call.pk, 'reservation': t.reservation.pk,
+            'waiter': t.waiter.pk, 'tx': t.tx.pk, 'debt': t.debt.pk, 'call': t.call.pk, 'reservation': t.reservation.pk, 'tour': t.tour.pk,
         }
 
     def _send(self, client, method, url, payload, host, ids=None):
@@ -313,7 +336,7 @@ class ObjectLevelMatrixTests(TwoTenantCase):
             return cls.__name__ if cls else cb.__name__
 
         covered = set()
-        dummy = {k: 1 for k in ('product1', 'table1', 'hall', 'order', 'item', 'waiter', 'tx', 'debt', 'call', 'reservation')}
+        dummy = {k: 1 for k in ('product1', 'table1', 'hall', 'order', 'item', 'waiter', 'tx', 'debt', 'call', 'reservation', 'tour')}
         for _name, _method, tmpl, _payload in idor_cases(self.A, self.B):
             covered.add(view_name(resolve(tmpl.format(**dummy), urlconf='backend.urls_restaurant').func))
         wanted = {}
@@ -427,7 +450,8 @@ class ListLeakageTests(TwoTenantCase):
     LISTS = (
         ADMIN + 'menu/products/', ADMIN + 'menu/products/?q=SECRET', ADMIN + 'menu/categories/', ADMIN + 'tables/', ADMIN + 'tables/halls/',
         ADMIN + 'orders/', ADMIN + 'orders/?status=pending', ADMIN + 'staff/', ADMIN + 'finance/summary/', ADMIN + 'finance/transactions/',
-        ADMIN + 'finance/debts/', ADMIN + 'finance/categories/', ADMIN + 'finance/export.csv', ADMIN + 'settings/',
+        ADMIN + 'finance/debts/', ADMIN + 'finance/categories/', ADMIN + 'finance/export.csv', ADMIN + 'settings/', ADMIN + 'tours/',
+        '/api/restaurant/guest/tour/',
         ADMIN + 'reservations/', ADMIN + 'dashboard/summary/', ADMIN + 'session/',
         LEGACY + 'orders/', LEGACY + 'orders/?status=all', LEGACY + 'tables/', LEGACY + 'calls/', LEGACY + 'reservations/',
         LEGACY + 'finance/', LEGACY + 'products/stoplist/', LEGACY + 'menu/', LEGACY + 'admin/menu/products/',
@@ -449,7 +473,7 @@ class ListLeakageTests(TwoTenantCase):
     def test_owner_lists_do_contain_own_markers(self):
         client = login(self.A.owner)
         for url in (ADMIN + 'menu/products/', ADMIN + 'menu/categories/', ADMIN + 'tables/halls/', ADMIN + 'orders/',
-                    ADMIN + 'finance/transactions/', ADMIN + 'finance/debts/', ADMIN + 'reservations/', LEGACY + 'calls/'):
+                    ADMIN + 'finance/transactions/', ADMIN + 'finance/debts/', ADMIN + 'reservations/', ADMIN + 'tours/', LEGACY + 'calls/'):
             resp = client.get(url, **host_of(self.A))
             self.assertEqual(resp.status_code, 200, url)
             self.assertIn(self.A.marker, self.body(resp), url)
@@ -504,6 +528,26 @@ class GuestMatrixTests(TwoTenantCase):
                     resp = c.get(url, **host_of(host_t))
                     self.assertIn(host_t.marker, self.body(resp), url)
                     self.assertNotIn(other.marker, self.body(resp), url)
+
+    def test_guest_tour_shows_only_the_host_tenant(self):
+        """Video sayr (mehmon API): har host faqat o'z e'lon qilingan sayrini ko'rsatadi; kesh aralashmaydi; e'lon qilinmagani ko'rinmaydi."""
+        from django.core.cache import cache
+        url = '/api/restaurant/guest/tour/'
+        cache.clear()
+        for t in (self.A, self.B):
+            self.assertEqual(Client().get(url, **host_of(t)).json(), {'enabled': False}, 'tayyor, lekin e\'lon qilinmagan')
+        Tour.objects.filter(pk=self.A.tour.pk).update(status=Tour.PUBLISHED)
+        cache.clear()
+        for _ in range(2):
+            resp = Client().get(url, **host_of(self.A))
+            self.assertEqual(resp.json()['title'], f'{self.A.tag}-SECRETTOUR')
+            self.assertNoLeak(resp, self.B, 'guest tour A')
+            resp = Client().get(url, **host_of(self.B))
+            self.assertEqual(resp.json(), {'enabled': False})
+            self.assertNoLeak(resp, self.A, 'guest tour B')
+        Tour.objects.filter(pk=self.B.tour.pk).update(status=Tour.PUBLISHED)
+        cache.clear()
+        self.assertEqual(Client().get(url, **host_of(self.B)).json()['title'], f'{self.B.tag}-SECRETTOUR')
 
     def test_foreign_table_qr_is_not_found_and_own_qr_works(self):
         c = Client()

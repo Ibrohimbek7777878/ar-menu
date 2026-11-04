@@ -122,7 +122,8 @@ class GuestApiSessionTests(GuestApiBase):
 
     def test_anonymous_guest_session(self):
         data = self.get('session/').json()
-        self.assertEqual(data['session'], {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in data['session'].items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
         self.assertEqual(data['shop'], {'name': 'API Restorani'})
         self.assertIsNone(data['table'])
         self.assertEqual(data['cartCount'], 0)

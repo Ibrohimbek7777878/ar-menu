@@ -100,7 +100,8 @@ class GuestSeasonEndToEndTests(TestCase):
 
     # ── standart: o'chiq, javob avvalgidek ──
     def test_default_is_off_and_the_session_is_unchanged(self):
-        self.assertEqual(self.guest_session(), {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
+        # Brend (nom, logotip, palitra...) sessiyada DOIM bor (shops/brand.py); bu test fasl/animatsiya/... kalitlari yo'qligini tekshiradi
+        self.assertEqual({k: v for k, v in self.guest_session().items() if k != 'brand'}, {'role': 'guest', 'roles': [], 'demo': False, 'design': 'new'})
         self.assertEqual(self.owner_client.get(self.API).json()['guest_season'], 'off')
 
     # ── admin sozlamasi ──

@@ -18,6 +18,7 @@ from orders.models import Order, OrderItem
 from products.models import Product
 from shops.models import Shop
 from tables_restaurant.models import Hall, NFCCard, ServiceCall, Table, TableReservation
+from tours.models import Tour
 
 PLATFORM = 'platform.test'
 PASSWORD = 'Parol-Tenant-123!'
@@ -99,6 +100,7 @@ def snapshot(t):
         ('reservation', TableReservation, t.reservation.pk, ('status', 'customer_name', 'is_deleted')),
         ('call', ServiceCall, t.call.pk, ('status',)),
         ('category', Category, t.category.pk, ('name', 'is_active')),
+        *((('tour', Tour, t.tour.pk, ('title', 'status', 'is_archived', 'ai_status', 'source_size')),) if hasattr(t, 'tour') else ()),
     ):
         row = allm(model).filter(pk=pk).values(*fields).first()
         out[key] = tuple(sorted((k, str(v)) for k, v in row.items())) if row else None

@@ -4,6 +4,8 @@ Do'kon egasi va menejerlar uchun umumiy restoran ma'lumotlari va biznes profilin
 AuditLog, RBAC ('settings_admin'), validatsiya va xavfsizlik to'liq ta'minlangan.
 """
 from decimal import Decimal
+
+from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -22,6 +24,7 @@ from orders.interfaces.api.permissions import (
     capability,
 )
 from shops.booking_config import normalize_booking, validate_booking_strict
+from shops.brand import apply_brand_patch, brand_of_shop, mirror_legacy_colors, validate_brand_patch
 from shops.guest_dish_sheet import DISH_SHEET_CHOICES, normalize_dish_sheet
 from shops.guest_languages import is_valid_languages, normalize_languages
 from shops.guest_motion import MOTION_CHOICES, normalize_motion
@@ -29,6 +32,7 @@ from shops.guest_palette import PALETTE_CHOICES, normalize_palette
 from shops.guest_theme import THEME_CHOICES, normalize_theme
 from shops.guest_season import SEASON_CHOICES, normalize_season
 from shops.menu_import_ai import MENU_IMPORT_AI_CHOICES, normalize_menu_import_ai
+from tours.ai_setting import TOUR_AI_CHOICES, normalize_tour_ai
 from web.restaurant_auth import staff_shop
 
 
@@ -73,7 +77,10 @@ class SettingsAdminView(RestoAdminAPIView):
             'guest_languages': normalize_languages(bp.get('guest_languages')),
             'guest_palette': normalize_palette(bp.get('guest_palette')),
             'menu_import_ai': normalize_menu_import_ai(bp.get('menu_import_ai')),
+            'tour_ai': normalize_tour_ai(bp.get('tour_ai')),      # video sayr AI takliflari: standart off (fail-closed)
             'booking': normalize_booking(bp.get('booking')),
+            # Brend (nom, logotip, palitra, shrift, matnlar, aloqa, bo'limlar, atamalar): to'liq tavsif — shops/brand.py
+            'brand': brand_of_shop(shop),
             'panel_scope': getattr(shop, 'panel_scope', 'restaurant'),
         })
 
@@ -81,8 +88,17 @@ class SettingsAdminView(RestoAdminAPIView):
         shop = staff_shop(request)
         if not shop:
             return Response({'error': 'Restoran topilmadi'}, status=status.HTTP_404_NOT_FOUND)
+        # Yo'qolgan yangilanish yo'q: `business_profile` bitta JSON, uni bir vaqtda bir necha bo'lim (sozlamalar, brend, bron) yozadi.
+        # Qator qulflanadi (PostgreSQL; SQLite'da no-op) va nusxa eng so'nggi holatdan yangilanadi.
+        with transaction.atomic():
+            type(shop).objects.select_for_update().filter(pk=shop.pk).first()
+            shop.refresh_from_db()
+            return self._patch_locked(request, shop)
 
+    def _patch_locked(self, request, shop):
         data = request.data
+        old_palette = normalize_palette((shop.business_profile or {}).get('guest_palette'))
+        brand_notices = {}
         old_values = {
             'name': shop.name,
             'address': shop.address,
@@ -178,6 +194,13 @@ class SettingsAdminView(RestoAdminAPIView):
             bp['menu_import_ai'] = import_ai
             bp_changed = True
 
+        if 'tour_ai' in data:
+            tour_ai = parse_text(data['tour_ai'], 'tour_ai', max_length=10).strip().lower()
+            if tour_ai not in TOUR_AI_CHOICES:
+                raise InputError("Video sayrda AI yordamchi: on yoki off bo'lishi kerak", 'tour_ai')
+            bp['tour_ai'] = tour_ai
+            bp_changed = True
+
         if 'guest_theme' in data:
             theme = parse_text(data['guest_theme'], 'guest_theme', max_length=10).strip().lower()
             if theme not in THEME_CHOICES:
@@ -188,9 +211,24 @@ class SettingsAdminView(RestoAdminAPIView):
         if 'guest_palette' in data:
             palette = parse_text(data['guest_palette'], 'guest_palette', max_length=10).strip().lower()
             if palette not in PALETTE_CHOICES:
-                raise InputError("Ranglar: classic (yashil-krem) yoki orange (apelsin) bo'lishi kerak", 'guest_palette')
+                raise InputError("Ranglar: classic (yashil-krem), orange (apelsin) yoki custom (o'z rangi) bo'lishi kerak", 'guest_palette')
             bp['guest_palette'] = palette
             bp_changed = True
+
+        if 'brand' in data:
+            # Brend: berilgan kalitlar BIRLASHTIRILADI (to'liq almashtirish emas); qat'iy tekshiruv (400 + field "brand.hero.title");
+            # tekshiruv tugamaguncha hech narsa o'zgarmaydi. Ranglar kontrast uchun to'qlashtirilishi mumkin (javobda `adjusted`).
+            patch = validate_brand_patch(data['brand'], current_name=shop.name, profile=bp, business_type=shop.business_type)
+            bp = apply_brand_patch(patch, bp, shop.pk, old_palette=old_palette)
+            bp_changed = True
+            for column, value in patch.shop_fields.items():
+                setattr(shop, column, value)
+                if column not in updated_fields:
+                    updated_fields.append(column)
+            for column in mirror_legacy_colors(shop, bp):
+                if column not in updated_fields:
+                    updated_fields.append(column)
+            brand_notices = patch.notices
 
         if 'booking' in data:
             # Bron sozlamasi: TO'LIQ almashtirish, qat'iy tekshiruv (xato — 400 + field: "booking.slots[1].times[0]")
@@ -218,7 +256,11 @@ class SettingsAdminView(RestoAdminAPIView):
                 target_type='shop',
                 target_id=shop.id,
                 old_value=old_values,
-                new_value={'updated_fields': updated_fields}
+                new_value={'updated_fields': updated_fields,
+                           **({'brand_keys': sorted(data['brand'])} if isinstance(data.get('brand'), dict) else {})}
             )
 
-        return self.get(request)
+        response = self.get(request)
+        if brand_notices and isinstance(response.data.get('brand'), dict):
+            response.data['brand'].update(brand_notices)      # adjusted / adjusted_from: rang to'qlashtirilgan bo'lsa admin ogohlantiriladi
+        return response

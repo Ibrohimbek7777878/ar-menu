@@ -394,7 +394,7 @@
                             <div class="mt-2 pt-1 flex items-center justify-between gap-1">
                                 <!-- Tezkor bosqich o'zgartirish tanlagichi -->
                                 <select 
-                                    onchange="quickMoveCard('{{ t.id }}', this.value)" 
+                                    onchange="quickMoveCard('{{ t.id }}', this.value, this)" 
                                     class="text-[10px] py-0.5 px-1 bg-gray-50 border border-gray-200 rounded text-gray-600 outline-none max-w-[105px]"
                                     title="Bosqichga ko'chirish"
                                 >
@@ -614,19 +614,21 @@
                                     </button>
 
                                     <!-- Tezkor to'liq yopish -->
-                                    <form method="post" style="display:inline" onsubmit="return confirm('Qarz to\'liq yopilsinmi? Kassaga qoldiq summa kiritiladi.')">
+                                    <form method="post" style="display:inline" onsubmit="return askFinanceReason(this, 'Qarz to\'liq yopilsinmi? Kassaga qoldiq summa kiritiladi.')">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="settle_debt">
                                         <input type="hidden" name="debt_id" value="{{ d.id }}">
+                                        <input type="hidden" name="reason" value="">
                                         <button type="submit" class="px-2 py-1 bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 font-bold text-[10px] rounded-lg transition" title="To'liq yopish">
                                             ✅ Yopish
                                         </button>
                                     </form>
                                     {% endif %}
-                                    <form method="post" style="display:inline" onsubmit="return confirm('Qarz yozuvi daftardan o\'chirilsinmi?')">
+                                    <form method="post" style="display:inline" onsubmit="return askFinanceReason(this, 'Qarz yozuvi daftardan o\'chirilsinmi? (Yozuv yashiriladi, tarixda saqlanadi.)')">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="delete_debt">
                                         <input type="hidden" name="debt_id" value="{{ d.id }}">
+                                        <input type="hidden" name="reason" value="">
                                         <button type="submit" class="p-1 text-gray-300 hover:text-rose-600 transition" title="Daftardan o'chirish">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
@@ -697,10 +699,11 @@
                                 {{ t.amount|uznum }} so'm
                             </td>
                             <td class="py-3 text-center">
-                                <form method="post" style="display:inline" onsubmit="return confirm('Ushbu operatsiyani qayta tiklab, kassaga qo\'shmoqchimisiz?')">
+                                <form method="post" style="display:inline" onsubmit="return askFinanceReason(this, 'Ushbu operatsiyani qayta tiklab, kassaga qo\'shmoqchimisiz?')">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="restore_transaction">
                                     <input type="hidden" name="tx_id" value="{{ t.id }}">
+                                    <input type="hidden" name="reason" value="">
                                     <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg shadow-sm transition inline-flex items-center gap-1" title="Operatsiyani qayta tiklash">
                                         <span>♻️</span> Qaytarish (Tiklash)
                                     </button>
@@ -1347,6 +1350,12 @@
                 <textarea id="edit_notes" name="notes" rows="2" class="w-full text-xs px-3 py-2 border rounded-xl outline-none"></textarea>
             </div>
 
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1" for="edit_reason">Sabab *</label>
+                <input type="text" id="edit_reason" name="reason" required minlength="5" maxlength="300" placeholder="Sabab (kamida 5 belgi)" class="w-full text-xs px-3 py-2 border rounded-xl focus:border-purple-600 outline-none font-medium">
+                <p class="text-[10px] text-gray-400 mt-1">Nima uchun o'zgartirilayotgani yoziladi; o'zgarish (eski → yangi) shu sabab bilan tarixda saqlanadi.</p>
+            </div>
+
             <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-sm">
                 O'zgarishlarni Saqlash
             </button>
@@ -1975,16 +1984,49 @@ function kanbanDrop(e, targetStage) {
     moveCardAjax(txId, targetStage);
 }
 
-function quickMoveCard(txId, targetStage) {
-    if (!targetStage) return;
-    moveCardAjax(txId, targetStage);
+// Moliyada mavjud yozuvni o'zgartirish MAJBURIY SABAB bilan (egasi qarori). Sabab 5-300 belgi; foydalanuvchi bekor qilsa so'rov yuborilmaydi.
+function promptFinanceReason(question) {
+    const text = window.prompt((question ? question + '\n\n' : '') + 'Sabab (kamida 5 belgi)');
+    if (text === null) return null;
+    const clean = text.trim();
+    if (clean.length < 5) {
+        alert('Sababni yozing (kamida 5 belgi)');
+        return null;
+    }
+    return clean.slice(0, 300);
 }
 
-function moveCardAjax(txId, targetStage) {
+// Tez bosiladigan (inline) formalar uchun: `reason` yashirin maydoni to'lmagan bo'lsa sabab so'raladi
+function askFinanceReason(form, question) {
+    const field = form.querySelector('input[name="reason"]');
+    if (!field) return true;
+    const current = (field.value || '').trim();
+    if (current.length >= 5) return true;
+    const reason = promptFinanceReason(question);
+    if (reason === null) return false;
+    field.value = reason;
+    return true;
+}
+
+function quickMoveCard(txId, targetStage, selectEl) {
+    const resetSelect = () => { if (selectEl) selectEl.selectedIndex = 0; };
+    if (!targetStage) { resetSelect(); return; }
+    const card = document.getElementById('kanban-tx-' + txId);
+    if (card && card.dataset.stage === targetStage) { resetSelect(); return; }
+    if (!moveCardAjax(txId, targetStage, selectEl)) resetSelect();
+}
+
+function moveCardAjax(txId, targetStage, selectEl) {
+    const card = document.getElementById('kanban-tx-' + txId);
+    if (card && card.dataset.stage === targetStage) return false;
+    const reason = promptFinanceReason("Kartochkani boshqa ustunga ko'chirish");
+    if (reason === null) return false;
+
     const formData = new FormData();
     formData.append('action', 'move_transaction');
     formData.append('tx_id', txId);
     formData.append('target_stage', targetStage);
+    formData.append('reason', reason);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
     fetch('{% url "seller_finance_web" %}', {
@@ -2000,6 +2042,7 @@ function moveCardAjax(txId, targetStage) {
         if (data.success) {
             window.location.reload();
         } else {
+            if (selectEl) selectEl.selectedIndex = 0;
             alert('Xatolik: ' + (data.error || 'Ko\'chirib bo\'lmadi'));
         }
     })
@@ -2013,9 +2056,15 @@ function moveCardAjax(txId, targetStage) {
             <input type="hidden" name="target_stage" value="${targetStage}">
             <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         `;
+        const reasonField = document.createElement('input');
+        reasonField.type = 'hidden';
+        reasonField.name = 'reason';
+        reasonField.value = reason;
+        f.appendChild(reasonField);
         document.body.appendChild(f);
         f.submit();
     });
+    return true;
 }
 
 // Quick Add modal per stage (NOMI, SUMMASI, NIMA UCHUN QO'SHILGAN IZOHI)
@@ -2060,6 +2109,7 @@ function openEditTxModal(id, title, amount, catId, txType, stage, payMethod, not
     document.getElementById('edit_payment_method').value = payMethod;
     document.getElementById('edit_notes').value = notes;
     document.getElementById('edit_tx_date').value = dateVal;
+    document.getElementById('edit_reason').value = '';
 
     selectCardColor(colorVal || 'default', 'edit');
 

@@ -139,7 +139,7 @@ def _ai_status(shop):
     return True, ''
 
 
-def _record_usage(provider, model, task_label, ok, error, started, tokens_in, tokens_out):
+def _record_usage(provider, model, task_label, ok, error, started, tokens_in, tokens_out, source='menu_import'):
     """`ai.AIUsage` ga yozadi (xarajat/xatolar kuzatuvi). Prompt/rasm mazmuni yozilmaydi. Yozilmasa asosiy oqim to'xtamaydi."""
     try:
         from django.db import transaction
@@ -149,13 +149,13 @@ def _record_usage(provider, model, task_label, ok, error, started, tokens_in, to
             AIUsage.objects.create(
                 provider=provider, model=str(model)[:60], task='vision', ok=ok, tokens_in=tokens_in, tokens_out=tokens_out,
                 latency_ms=int((time.monotonic() - started) * 1000), error=error[:300],
-                prompt_preview=f'menu_import:{task_label}',
+                prompt_preview=f'{source}:{task_label}',
             )
     except Exception:  # noqa: BLE001 — log yozilmasa ham o'qish ishlayveradi (DB yo'q testlar, migratsiya yo'q va h.k.)
         logger.debug('menu_import: AIUsage yozilmadi', exc_info=True)
 
 
-def _chat(messages, *, task_label, deadline=None):
+def _chat(messages, *, task_label, deadline=None, usage_source='menu_import'):
     """OpenAI-mos `chat/completions`. Model javobi MATNI (str) qaytadi yoki `_AIError`."""
     config = _ai_config()
     if config is None:
@@ -201,7 +201,7 @@ def _chat(messages, *, task_label, deadline=None):
             raise _AIError(error)
         return content
     finally:
-        _record_usage('groq' if url == GROQ_URL else 'openai', model, task_label, not error, error, started, tokens_in, tokens_out)
+        _record_usage('groq' if url == GROQ_URL else 'openai', model, task_label, not error, error, started, tokens_in, tokens_out, usage_source)
 
 
 _THINK_RE = re.compile(r'<think>.*?</think>', re.DOTALL | re.IGNORECASE)
@@ -214,8 +214,10 @@ def _acceptable_json(obj):
     return isinstance(obj, list) and bool(obj) and all(isinstance(item, dict) for item in obj)
 
 
-def extract_json(content):
-    """Model javobidan JSON (dict/list) ni ehtiyotkorlik bilan ajratadi: `<think>` bloklari, ```json to'siqlari, atrofdagi matn. Topilmasa None."""
+def extract_json(content, accept=None):
+    """Model javobidan JSON (dict/list) ni ehtiyotkorlik bilan ajratadi: `<think>` bloklari, ```json to'siqlari, atrofdagi matn. Topilmasa None.
+    `accept` - boshqa modul (tours.ai) o'z sxemasi uchun "yaroqli javob" sharti: funksiya(obj) -> bool (standart: menyu qatorlari)."""
+    accept = accept or _acceptable_json
     if not isinstance(content, str):
         return None
     text = _THINK_RE.sub('', content[:300_000])
@@ -234,7 +236,7 @@ def extract_json(content):
             obj = json.loads(candidate)
         except ValueError:
             obj = None
-        if _acceptable_json(obj):
+        if accept(obj):
             return obj
         for index, match in enumerate(re.finditer(r'[{\[]', candidate)):
             if index >= 40:
@@ -243,7 +245,7 @@ def extract_json(content):
                 obj, _end = decoder.raw_decode(candidate, match.start())
             except ValueError:
                 continue
-            if _acceptable_json(obj):
+            if accept(obj):
                 return obj
     return None
 
@@ -517,3 +519,11 @@ def structure_text_with_ai(text, *, shop=None):
     if len(text) > MAX_AI_TEXT_CHARS:
         result.notes.append("Matn juda uzun: AI faqat boshidagi qismini tartibladi")
     return result
+
+
+# ─── Boshqa modullar uchun ochiq nomlar ────────────────────────────────────────────
+# `tours.ai` (video sayr AI takliflari) shu AI mijozini qayta ishlatadi: provayder/kalit/model tanlovi, xato turlari,
+# `AIUsage` jurnali va JSON ajratish bir joyda qoladi (alohida nusxa yozilmaydi).
+ai_chat = _chat
+AIError = _AIError
+ai_config = _ai_config
