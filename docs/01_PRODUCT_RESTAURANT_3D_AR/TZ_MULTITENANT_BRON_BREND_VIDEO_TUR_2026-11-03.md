@@ -53,3 +53,33 @@ Mavjud yozuvni tahrirlash (summa, kategoriya, izoh, sana) — faqat `finance` ru
 1. Tenant A foydalanuvchisi/mehmoni tenant B ma'lumotini hech qanday endpoint orqali ko'ra/yoza olmaydi (matritsa testi); noma'lum/to'xtatilgan subdomen to'g'ri sahifa; localhost/demo/e2e o'zgarmaydi.
 2. Mavjud testlar yashil (backend PostgreSQL'da, e2e 19/19), migratsiyalar orqaga qaytariladi.
 3. Bron: band stolga ikkinchi bron 409; davomiylik kesishuvi; o'tgan vaqt yopiq; sig'imdan ortiq mehmon rad; idempotent; xodimga xabar; sozlamalar (vaqt oraliqlari, tadbir turlari) admin orqali o'zgaradi va mehmon ekranida darrov ko'rinadi.
+
+---
+## Qo'shimcha: Bosqich 3–4 shartnomasi (video sayr va AI takliflari) — 2026-11-03
+
+**O'lchangan imkoniyat (haqiqiy video, 44 s, 720×1280, 6,6 MB, ffmpeg libx264 `-threads 2`):** `scrub` varianti (720 px, har 6-kadr kalit, crf 26) = 4,5 MB, kodlash 4,7 s; `play` (720 px, GOP 48, crf 28) = 1,5 MB; `low` (480 px) = 0,7 MB; jami ≈ 6,7 MB, xotira ≤ 140 MB. 3 daqiqalik video ≈ 27 MB. Demak "video + oldinga-orqaga yurish" usuli amaliy.
+
+**Modellar (yangi Django ilova `tours`, hammasi `shop` bo'yicha, tenant-xavfsiz):**
+- `Tour`: shop, hall (ixtiyoriy), title, status (`draft|processing|ready|published|failed`), source (fayl), duration_s, width, height, variants JSON (`scrub|play|low|poster` URL), error, ai_suggestions JSON, timestamps. Fayllar: `media/tours/shop_<id>/<tour_uuid>/…`.
+- `TourStop`: tour, order, title, t (soniya). `TourHotspot`: tour, table (FK Table, null), label, t_start, t_end, x, y (0..1).
+**Yuklash/qayta ishlash:** admin `POST …/admin/v1/tours/<id>/video/` (multipart; ffprobe bilan tekshiruv — kengaytmaga ishonilmaydi; ≤ 300 MB, ≤ 300 s, ≤ 4K; tenant kvota 1 GB); DB-navbat ishchisi (`run_tour_worker`, `run_workers` ga ulanadi) ffmpeg bilan `scrub/play/low/poster` yasaydi (`subprocess` ro'yxat, timeout, `nice`, `-threads 2`), holat `processing→ready|failed`.
+**Mehmon API:** `GET /api/restaurant/guest/tour/` → `{enabled, title, duration, width, height, video:{scrub,play,low,poster}, stops:[{id,title,t}], hotspots:[{id,table_id,table_number,capacity,label,t_start,t_end,x,y}]}` (faqat `published`; `modules.tour=false` yoki tur yo'q → `enabled:false`).
+**Admin API (`reservations`/`menu_admin` emas — yangi ruxsat `tour_admin`? yo'q: `settings_admin`):** `GET/POST …/admin/v1/tours/`, `GET/PATCH/DELETE …/tours/<id>/`, `PUT …/tours/<id>/stops/`, `PUT …/tours/<id>/hotspots/`, `POST …/tours/<id>/publish/` / `unpublish/`, `POST …/tours/<id>/video/`.
+**Mehmon ko'rinishi (`/tour/`):** video + sudralash/strelka/klaviatura bilan oldinga-orqaga; nuqtalar (`stops`) orasida sakrash; vaqt oralig'idagi belgilar (stol) ustida bosiladi → stol kartochkasi → "Bron qilish" (`/book/?table=ID`); sekin internet/ma'lumot tejash — `low`/poster; matnli stollar ro'yxati (zaxira).
+**AI (Bosqich 4):** `POST …/tours/<id>/ai-suggest/` (sozlama `tour_ai` on/off, `menu_import_ai` kabi; fail-closed): kadrlar (≤ 40) → vision model → `ai_suggestions` `{stops:[{t,title,confidence}], hotspots:[{t,x,y,label,confidence}]}`; muharrirda takliflar punktir belgi bilan, egasi qabul qiladi/rad etadi. AI stol RAQAMINI ishonchli bilmaydi — bog'lash qo'lda.
+
+---
+## Holat va joylashtirish eslatmalari (2026-11-04)
+
+**Bajarildi:** Bosqich 0–5 kodi (multi-tenant, bron, brend + platforma admini, video sayr + AI takliflari, moliya tahriri). Demo serverda haqiqiy video bilan brauzer orqali tekshirildi: yuklash → ffmpeg ishchisi → muharrir (nuqta, belgi, stol) → e'lon → mehmon `/tour/` → belgi → `/book/?table=…&from=tour`; platforma admini yangi mijoz yaratdi (to'yxona shabloni, o'z hero matni); moliya yozuvi sabab bilan tahrirlandi, tarix oynasida asl qiymat ko'rinadi.
+
+**Joylashtirishda (VPS) SHART:**
+1. `ffmpeg` o'rnatilgan bo'lsin (Dockerfile'ga qo'shilgan) va `run_workers` ishlayotgan bo'lsin (`run_tour_worker`).
+2. **Video yuklash chegarasi:** umumiy `UploadValidationMiddleware` video uchun `UPLOAD_MAX_VIDEO_MB` (standart 50) ni qo'llaydi. 1–3 daqiqalik 1080p video odatda 50 MB'dan katta, shuning uchun sayr uchun `UPLOAD_MAX_VIDEO_MB=300` (muhit o'zgaruvchisi) qo'yilishi kerak — bu barcha video yuklashlarga ta'sir qiladi, shuning uchun middleware kodiga tegilmadi va qaror egasiga qoldirildi.
+3. `/media/` ni nginx/Caddy berishi kerak va HTTP `Range` so'rovini qo'llashi shart (siljitish uchun); Django `serve` Range'ni kafolatlamaydi.
+4. Subdomenlar uchun wildcard DNS va TLS (egasining domeni kerak).
+5. AI takliflari: `tour_ai` sozlamasi (standart o'chiq) va `AI_PROVIDER/AI_API_KEY/AI_VISION_MODEL`.
+
+**Ma'lumotlar maxfiyligi:** sayr videolaridan tovush olib tashlanadi (zalda mehmonlar suhbati yozilib qolishi mumkin).
+
+**Ochiq/halol:** haqiqiy telefonda (iOS Safari, Telegram WebView) sinalmagan; 1000 bir vaqtdagi mehmon yuklama sinovi o'tkazilmagan; ru/en tarjimalarni ona tili egasi ko'rmagan; arxivlangan sayr fayllarini tozalash buyrug'i yo'q; media va Telegram bot hali tenantlar orasida umumiy; bron uchun OTP yo'q.

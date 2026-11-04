@@ -1,14 +1,6 @@
 {
-  "_BookingEntry-DkTHWXUm.js": {
-    "file": "assets/BookingEntry-DkTHWXUm.js",
-    "name": "BookingEntry",
-    "imports": [
-      "index.html",
-      "_useBooking-xpsC9khp.js"
-    ]
-  },
-  "_HeroPlate3D-vg5WNI4F.js": {
-    "file": "assets/HeroPlate3D-vg5WNI4F.js",
+  "_HeroPlate3D-DYg7zEnV.js": {
+    "file": "assets/HeroPlate3D-DYg7zEnV.js",
     "name": "HeroPlate3D",
     "imports": [
       "index.html"
@@ -21,25 +13,48 @@
     "file": "assets/Smart3DMatcher-Cg3blFo0.js",
     "name": "Smart3DMatcher"
   },
+  "_TourEntry-CY6yWwXJ.js": {
+    "file": "assets/TourEntry-CY6yWwXJ.js",
+    "name": "TourEntry",
+    "imports": [
+      "index.html",
+      "_useTour-Cs4L6EB9.js",
+      "_TourIcon-CXbCEAom.js"
+    ]
+  },
+  "_TourIcon-CXbCEAom.js": {
+    "file": "assets/TourIcon-CXbCEAom.js",
+    "name": "TourIcon",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_labels-DMlxfLVs.js": {
+    "file": "assets/labels-DMlxfLVs.js",
+    "name": "labels",
+    "imports": [
+      "index.html"
+    ]
+  },
   "_mockDishes-Ct1bRflm.js": {
     "file": "assets/mockDishes-Ct1bRflm.js",
     "name": "mockDishes"
   },
-  "_motion-BKmWTjds.js": {
-    "file": "assets/motion-BKmWTjds.js",
+  "_motion-1pLx2c-9.js": {
+    "file": "assets/motion-1pLx2c-9.js",
     "name": "motion",
     "imports": [
       "index.html",
-      "_HeroPlate3D-vg5WNI4F.js"
+      "_HeroPlate3D-DYg7zEnV.js"
     ]
   },
   "_three.module-VGYe9TAt.js": {
     "file": "assets/three.module-VGYe9TAt.js",
     "name": "three.module"
   },
-  "_useBooking-xpsC9khp.js": {
-    "file": "assets/useBooking-xpsC9khp.js",
-    "name": "useBooking",
+  "_useTour-Cs4L6EB9.js": {
+    "file": "assets/useTour-Cs4L6EB9.js",
+    "name": "useTour",
     "imports": [
       "index.html"
     ]
@@ -49,7 +64,7 @@
     "name": "uzbekSearch"
   },
   "index.html": {
-    "file": "assets/index-CZKjDpYL.js",
+    "file": "assets/index-DI0Xd6QA.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -66,10 +81,12 @@
       "src/pages/TableHubPage/TableHubPage.tsx",
       "src/pages/ReservationPage/ReservationPage.tsx",
       "src/pages/BookingPage/BookingPage.tsx",
+      "src/pages/TourPage/TourPage.tsx",
       "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
       "src/pages/HostessDeskPage/HostessDeskPage.tsx",
       "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
       "src/showcase/ComponentShowcase.tsx",
+      "src/components/ui/ModuleUnavailable/ModuleUnavailable.tsx",
       "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
       "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx"
     ],
@@ -112,7 +129,7 @@
     "src": "node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2"
   },
   "node_modules/@google/model-viewer/lib/model-viewer.js": {
-    "file": "assets/model-viewer-vT9v1z3h.js",
+    "file": "assets/model-viewer-DIexaP0o.js",
     "name": "model-viewer",
     "src": "node_modules/@google/model-viewer/lib/model-viewer.js",
     "isDynamicEntry": true,
@@ -121,8 +138,17 @@
       "_three.module-VGYe9TAt.js"
     ]
   },
+  "src/components/ui/ModuleUnavailable/ModuleUnavailable.tsx": {
+    "file": "assets/ModuleUnavailable-NqYotPyO.js",
+    "name": "ModuleUnavailable",
+    "src": "src/components/ui/ModuleUnavailable/ModuleUnavailable.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
   "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx": {
-    "file": "assets/PhotogrammetryStudioModal-ByFsMV6s.js",
+    "file": "assets/PhotogrammetryStudioModal-Dsza8bJf.js",
     "name": "PhotogrammetryStudioModal",
     "src": "src/components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal.tsx",
     "isDynamicEntry": true,
@@ -132,7 +158,7 @@
     ]
   },
   "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx": {
-    "file": "assets/QRGeneratorModal-BDq4IoQR.js",
+    "file": "assets/QRGeneratorModal-BMVDly7l.js",
     "name": "QRGeneratorModal",
     "src": "src/components/ui/QRGeneratorModal/QRGeneratorModal.tsx",
     "isDynamicEntry": true,
@@ -141,19 +167,19 @@
     ]
   },
   "src/i18n/en/index.ts": {
-    "file": "assets/en-BH4XjvTa.js",
+    "file": "assets/en-tjLQxHJu.js",
     "name": "en",
     "src": "src/i18n/en/index.ts",
     "isDynamicEntry": true
   },
   "src/i18n/ru/index.ts": {
-    "file": "assets/ru-B0FoPF7l.js",
+    "file": "assets/ru-xte0Yy17.js",
     "name": "ru",
     "src": "src/i18n/ru/index.ts",
     "isDynamicEntry": true
   },
   "src/motion/three/celebrationScene.ts": {
-    "file": "assets/celebrationScene-CfrEGe0W.js",
+    "file": "assets/celebrationScene-Dh51yOok.js",
     "name": "celebrationScene",
     "src": "src/motion/three/celebrationScene.ts",
     "isDynamicEntry": true,
@@ -163,7 +189,7 @@
     ]
   },
   "src/motion/three/heroPlateScene.ts": {
-    "file": "assets/heroPlateScene-Dhw9KiMI.js",
+    "file": "assets/heroPlateScene-CxT1EWZg.js",
     "name": "heroPlateScene",
     "src": "src/motion/three/heroPlateScene.ts",
     "isDynamicEntry": true,
@@ -173,7 +199,7 @@
     ]
   },
   "src/pages/ARMenuPage/ARMenuPage.tsx": {
-    "file": "assets/ARMenuPage-CGYQEjW6.js",
+    "file": "assets/ARMenuPage-CE7b_LEn.js",
     "name": "ARMenuPage",
     "src": "src/pages/ARMenuPage/ARMenuPage.tsx",
     "isDynamicEntry": true,
@@ -185,7 +211,7 @@
     ]
   },
   "src/pages/AdminDashboardPage/AdminDashboardPage.tsx": {
-    "file": "assets/AdminDashboardPage-D2bvA-Jo.js",
+    "file": "assets/AdminDashboardPage-BGJAhfT4.js",
     "name": "AdminDashboardPage",
     "src": "src/pages/AdminDashboardPage/AdminDashboardPage.tsx",
     "isDynamicEntry": true,
@@ -197,17 +223,18 @@
     ]
   },
   "src/pages/BookingPage/BookingPage.tsx": {
-    "file": "assets/BookingPage-CSuzR4Iz.js",
+    "file": "assets/BookingPage-C7D3qXAo.js",
     "name": "BookingPage",
     "src": "src/pages/BookingPage/BookingPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_useBooking-xpsC9khp.js"
+      "_useTour-Cs4L6EB9.js",
+      "_labels-DMlxfLVs.js"
     ]
   },
   "src/pages/CartPage/CartPage.tsx": {
-    "file": "assets/CartPage-B5D_Vup7.js",
+    "file": "assets/CartPage-btcEtOcy.js",
     "name": "CartPage",
     "src": "src/pages/CartPage/CartPage.tsx",
     "isDynamicEntry": true,
@@ -216,20 +243,20 @@
     ]
   },
   "src/pages/CheckoutPage/CheckoutPage.tsx": {
-    "file": "assets/CheckoutPage-CZPo9kfO.js",
+    "file": "assets/CheckoutPage-ueZRSrqb.js",
     "name": "CheckoutPage",
     "src": "src/pages/CheckoutPage/CheckoutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-BKmWTjds.js"
+      "_motion-1pLx2c-9.js"
     ],
     "dynamicImports": [
       "src/motion/three/celebrationScene.ts"
     ]
   },
   "src/pages/HostessDeskPage/HostessDeskPage.tsx": {
-    "file": "assets/HostessDeskPage-Bdw9tC78.js",
+    "file": "assets/HostessDeskPage-rRvwgarJ.js",
     "name": "HostessDeskPage",
     "src": "src/pages/HostessDeskPage/HostessDeskPage.tsx",
     "isDynamicEntry": true,
@@ -238,7 +265,7 @@
     ]
   },
   "src/pages/MenuPage/MenuPage.tsx": {
-    "file": "assets/MenuPage-B9L5y_52.js",
+    "file": "assets/MenuPage-B8N3JsXO.js",
     "name": "MenuPage",
     "src": "src/pages/MenuPage/MenuPage.tsx",
     "isDynamicEntry": true,
@@ -247,21 +274,21 @@
       "_Smart3DMatcher-Cg3blFo0.js",
       "_mockDishes-Ct1bRflm.js",
       "_uzbekSearch-BqSgXjOo.js",
-      "_BookingEntry-DkTHWXUm.js"
+      "_TourEntry-CY6yWwXJ.js"
     ]
   },
   "src/pages/OrdersPage/OrdersPage.tsx": {
-    "file": "assets/OrdersPage-tfyQlwXA.js",
+    "file": "assets/OrdersPage-C8O814te.js",
     "name": "OrdersPage",
     "src": "src/pages/OrdersPage/OrdersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_motion-BKmWTjds.js"
+      "_motion-1pLx2c-9.js"
     ]
   },
   "src/pages/ReservationPage/ReservationPage.tsx": {
-    "file": "assets/ReservationPage-DzUCSzIq.js",
+    "file": "assets/ReservationPage-aUFIyMYo.js",
     "name": "ReservationPage",
     "src": "src/pages/ReservationPage/ReservationPage.tsx",
     "isDynamicEntry": true,
@@ -270,17 +297,30 @@
     ]
   },
   "src/pages/TableHubPage/TableHubPage.tsx": {
-    "file": "assets/TableHubPage-jvQkf-Rq.js",
+    "file": "assets/TableHubPage-CxoaJaWz.js",
     "name": "TableHubPage",
     "src": "src/pages/TableHubPage/TableHubPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_BookingEntry-DkTHWXUm.js"
+      "_TourEntry-CY6yWwXJ.js"
+    ]
+  },
+  "src/pages/TourPage/TourPage.tsx": {
+    "file": "assets/TourPage-zj6z9cje.js",
+    "name": "TourPage",
+    "src": "src/pages/TourPage/TourPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "src/components/ui/ModuleUnavailable/ModuleUnavailable.tsx",
+      "_useTour-Cs4L6EB9.js",
+      "_TourIcon-CXbCEAom.js",
+      "_labels-DMlxfLVs.js"
     ]
   },
   "src/pages/WaiterPanelPage/WaiterPanelPage.tsx": {
-    "file": "assets/WaiterPanelPage-CKSZfWEw.js",
+    "file": "assets/WaiterPanelPage-C8lIXXzS.js",
     "name": "WaiterPanelPage",
     "src": "src/pages/WaiterPanelPage/WaiterPanelPage.tsx",
     "isDynamicEntry": true,
@@ -289,19 +329,19 @@
     ]
   },
   "src/pages/WelcomePage/WelcomePage.tsx": {
-    "file": "assets/WelcomePage-C5BynMxj.js",
+    "file": "assets/WelcomePage-FBKWbU-v.js",
     "name": "WelcomePage",
     "src": "src/pages/WelcomePage/WelcomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_useBooking-xpsC9khp.js",
-      "_BookingEntry-DkTHWXUm.js",
-      "_HeroPlate3D-vg5WNI4F.js"
+      "_useTour-Cs4L6EB9.js",
+      "_TourIcon-CXbCEAom.js",
+      "_HeroPlate3D-DYg7zEnV.js"
     ]
   },
   "src/showcase/ComponentShowcase.tsx": {
-    "file": "assets/ComponentShowcase-B4BP3FOu.js",
+    "file": "assets/ComponentShowcase-D8nHaGwL.js",
     "name": "ComponentShowcase",
     "src": "src/showcase/ComponentShowcase.tsx",
     "isDynamicEntry": true,
@@ -311,7 +351,7 @@
     ]
   },
   "style.css": {
-    "file": "assets/style-BjikLKy-.css",
+    "file": "assets/style-BdWS9Z7y.css",
     "src": "style.css"
   }
 }
