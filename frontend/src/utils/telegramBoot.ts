@@ -8,7 +8,7 @@
  * - BackButton boshqaruvi
  */
 
-import { BOOT_BACKGROUND_ORANGE, currentPalette, PALETTE_CHROME } from './guestPalette.ts';
+import { BOOT_BACKGROUND_ORANGE, chromeColors, currentPalette, PALETTE_CHROME } from './guestPalette.ts';
 
 const HEX32 = /^[0-9a-f]{32}$/;
 const UUID_DASHED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -89,11 +89,12 @@ export function initTelegramWebApp(): void {
 
     // Boshlang'ich (kunduzgi) rang — palitraga mos; kun/tun yoqilgan bo'lsa guestTheme keyin o'z rangini qo'yadi
     const palette = currentPalette();
+    const boot = chromeColors(palette, 'light');
     if (typeof tg.setHeaderColor === 'function') {
-      tg.setHeaderColor(PALETTE_CHROME[palette].light.header);
+      tg.setHeaderColor(boot.header);
     }
     if (typeof tg.setBackgroundColor === 'function') {
-      tg.setBackgroundColor(palette === 'orange' ? BOOT_BACKGROUND_ORANGE : PALETTE_CHROME.classic.light.background);
+      tg.setBackgroundColor(palette === 'orange' ? BOOT_BACKGROUND_ORANGE : palette === 'custom' ? boot.background : PALETTE_CHROME.classic.light.background);
     }
 
     // start_param orqali stol QR tokenini aniqlash (t_<token>)

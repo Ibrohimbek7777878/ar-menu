@@ -92,7 +92,7 @@ test('apelsin palitra kun qiymatlari avvalgi ("yangi dizayn") qiymatlar bilan bi
 // ─── Mehmon saytiga moslik ───
 test('apelsin tun = mehmon sayti darkTheme.css qiymatlari AYNAN', () => {
   const guest = parseBlocks(read('frontend/src/styles/darkTheme.css'));
-  const g: Vars = { ...(guest.get("html[data-theme='dark']") ?? {}), ...(guest.get("html[data-theme='dark']:not([data-palette='classic'])") ?? {}) };
+  const g: Vars = { ...(guest.get("html[data-theme='dark']") ?? {}), ...(guest.get("html[data-theme='dark']:not([data-palette='classic'], [data-palette='custom'])") ?? {}) };
   assert.ok(g['--bg-primary'], 'mehmon darkTheme.css da tun tokenlari topilmadi');
   // admin token -> mehmon tokeni
   const map: Record<string, string> = {
@@ -269,6 +269,9 @@ const NO_HARDCODED_SCOPE = [
   'admins/resto/src/pages/Staff',
   'admins/resto/src/pages/Settings',
   'admins/resto/src/pages/Bookings',
+  'admins/resto/src/pages/Brand',
+  'admins/resto/src/pages/Platform',
+  'admins/resto/src/pages/Tour',
 ];
 const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|(?<![\w-])(?:white|black)(?![\w-])/;
 

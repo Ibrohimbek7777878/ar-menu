@@ -1,0 +1,78 @@
+/* "Bu bo'lim hozircha mavjud emas" ekrani: faqat tokenlar, kun/tun avtomatik, telefon-birinchi. */
+.mu-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding-bottom: calc(76px + var(--safe-bottom));
+}
+
+.mu-main {
+  display: grid;
+  place-items: center;
+  padding: 48px 16px;
+}
+
+.mu-card {
+  width: min(100%, 440px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 32px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.mu-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand-primary-light);
+  color: var(--dk-brand-text, var(--brand-primary));
+}
+
+.mu-title {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.mu-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.mu-btn {
+  margin-top: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.mu-btn:hover { background: var(--brand-primary-hover); }
+.mu-btn:active { transform: scale(0.98); }
+
+@media (min-width: 768px) {
+  .mu-root { padding-bottom: 0; }
+}

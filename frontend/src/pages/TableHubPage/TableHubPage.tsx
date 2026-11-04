@@ -4,6 +4,9 @@ import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { useNavigation } from '../../context/NavigationContext';
 import { t, tr } from '../../i18n';
 import { BookingEntry } from '../BookingPage/BookingEntry';
+import { TourEntry } from '../TourPage/TourEntry';
+import { moduleEnabled } from '../../utils/brand';
+import { termT, tm } from '../../utils/brandText';
 import './TableHubPage.css';
 
 export interface HallData {
@@ -67,6 +70,12 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
   // Tab switch: 'my-table' or 'reservation'
   const [activeTab, setActiveTab] = useState<'my-table' | 'reserve'>('my-table');
 
+  // Brend bo'limlari (o'chirilsa yashiriladi, kod o'chirilmaydi): bron, ofitsiant chaqirish, menyu va buyurtmalar havolalari
+  const showBooking = moduleEnabled('booking');
+  const showWaiterCall = moduleEnabled('waiter_call');
+  const showMenuLink = moduleEnabled('menu');
+  const showOrdersLink = moduleEnabled('orders');
+
   // Reservation form state
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -127,7 +136,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
 
   const handleSelectTable = (tbl: TableItemData) => {
     if (tbl.status === 'occupied') {
-      showToast(t('Stol #{num} hozir band', { num: tbl.number }));
+      showToast(tm(t('Stol #{num} hozir band', { num: tbl.number })));
       return;
     }
     const form = document.createElement('form');
@@ -237,7 +246,7 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
         <section className="table-hub-hero">
           {table ? (
             <div className="table-current-badge">
-              <span className="badge-kicker">{t('Stol')}</span>
+              <span className="badge-kicker">{termT('table')}</span>
               <strong className="badge-num tabular-nums">{table.number}</strong>
             </div>
           ) : (
@@ -249,12 +258,12 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
           )}
 
           <h1 className="table-hub-title serif">
-            {table ? t('Stol #{num}', { num: table.number }) : t('Stollar va bron qilish')}
+            {table ? tm(t('Stol #{num}', { num: table.number })) : tm(showBooking ? t('Stollar va bron qilish') : t('Stollar xaritasi'))}
           </h1>
           <p className="table-hub-desc">
             {table
-              ? t('{hall} · Stolingiz faol ulangan', { hall: table.hall ? t(table.hall) : t('Asosiy Zal') })
-              : t("O'tirish uchun bo'sh stolni tanlang yoki oldindan bron qiling")}
+              ? tm(t('{hall} · Stolingiz faol ulangan', { hall: table.hall ? t(table.hall) : t('Asosiy Zal') }))
+              : tm(showBooking ? t("O'tirish uchun bo'sh stolni tanlang yoki oldindan bron qiling") : t("O'tirish uchun bo'sh stolni tanlang"))}
           </p>
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
@@ -269,6 +278,8 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             )}
             {/* Stol bron qilish (yangi oqim: zal rejasi, sana/vaqt oraliqlari): faqat restoran bronni yoqqan bo'lsa ko'rinadi; pastdagi eski bron formasi o'zgarmagan */}
             <BookingEntry variant="pill" />
+            {/* Video sayr: faqat bo'lim yoqiq va server sayrni bergan bo'lsa chiziladi */}
+            <TourEntry variant="pill" />
             {isStaff && (
             <button
               type="button"
@@ -290,15 +301,17 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             className={`hub-tab ${activeTab === 'my-table' ? 'active' : ''}`}
             onClick={() => setActiveTab('my-table')}
           >
-            {table ? t('Stol servislari') : t('Stollar xaritasi')}
+            {tm(table ? t('Stol servislari') : t('Stollar xaritasi'))}
           </button>
-          <button
-            type="button"
-            className={`hub-tab ${activeTab === 'reserve' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reserve')}
-          >
-            {t('Stolni bron qilish')}
-          </button>
+          {showBooking && (
+            <button
+              type="button"
+              className={`hub-tab ${activeTab === 'reserve' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reserve')}
+            >
+              {tm(t('Stolni bron qilish'))}
+            </button>
+          )}
         </div>
 
         {/* ─── TAB 1: Stol Servislari & Tanlash ─── */}
@@ -307,78 +320,84 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             {table ? (
               <>
                 {/* 4 ta tezkor ofitsiant chaqirish xizmatlari */}
-                <div className="service-cards-grid">
-                  <div
-                    className="service-card card-call"
-                    onClick={() => handleServiceCall(tr('Ofitsiant'))}
-                  >
-                    <div className="service-icon" aria-hidden="true">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                      </svg>
+                {showWaiterCall && (
+                  <div className="service-cards-grid">
+                    <div
+                      className="service-card card-call"
+                      onClick={() => handleServiceCall(tr('Ofitsiant'))}
+                    >
+                      <div className="service-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                        </svg>
+                      </div>
+                      <h3 className="service-title">{t('Ofitsiantni chaqirish')}</h3>
+                      <p className="service-desc">{t('Stolingizga xizmatchi yaqinlashadi')}</p>
                     </div>
-                    <h3 className="service-title">{t('Ofitsiantni chaqirish')}</h3>
-                    <p className="service-desc">{t('Stolingizga xizmatchi yaqinlashadi')}</p>
-                  </div>
 
-                  <div
-                    className="service-card card-bill"
-                    onClick={() => handleServiceCall(tr('Hisob-kitob (chek)'))}
-                  >
-                    <div className="service-icon" aria-hidden="true">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
+                    <div
+                      className="service-card card-bill"
+                      onClick={() => handleServiceCall(tr('Hisob-kitob (chek)'))}
+                    >
+                      <div className="service-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                      </div>
+                      <h3 className="service-title">{t("Hisobni so'rash")}</h3>
+                      <p className="service-desc">{t('Terminal yoki naqd pul cheki')}</p>
                     </div>
-                    <h3 className="service-title">{t("Hisobni so'rash")}</h3>
-                    <p className="service-desc">{t('Terminal yoki naqd pul cheki')}</p>
-                  </div>
 
-                  <div
-                    className="service-card"
-                    onClick={() => handleServiceCall(tr('Choy yangilash'))}
-                  >
-                    <div className="service-icon" aria-hidden="true">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-                        <line x1="6" y1="2" x2="6" y2="4" />
-                        <line x1="10" y1="2" x2="10" y2="4" />
-                      </svg>
+                    <div
+                      className="service-card"
+                      onClick={() => handleServiceCall(tr('Choy yangilash'))}
+                    >
+                      <div className="service-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                          <line x1="6" y1="2" x2="6" y2="4" />
+                          <line x1="10" y1="2" x2="10" y2="4" />
+                        </svg>
+                      </div>
+                      <h3 className="service-title">{t('Choy yangilash')}</h3>
+                      <p className="service-desc">{t("Ko'k yoki qora damlangan choy")}</p>
                     </div>
-                    <h3 className="service-title">{t('Choy yangilash')}</h3>
-                    <p className="service-desc">{t("Ko'k yoki qora damlangan choy")}</p>
-                  </div>
 
-                  <div
-                    className="service-card"
-                    onClick={() => handleServiceCall(tr('Issiq non'))}
-                  >
-                    <div className="service-icon" aria-hidden="true">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M12 7v10M7 12h10" />
-                      </svg>
+                    <div
+                      className="service-card"
+                      onClick={() => handleServiceCall(tr('Issiq non'))}
+                    >
+                      <div className="service-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M12 7v10M7 12h10" />
+                        </svg>
+                      </div>
+                      <h3 className="service-title">{t('Non keltirish')}</h3>
+                      <p className="service-desc">{t('Issiq tandir non yoki patir')}</p>
                     </div>
-                    <h3 className="service-title">{t('Non keltirish')}</h3>
-                    <p className="service-desc">{t('Issiq tandir non yoki patir')}</p>
                   </div>
-                </div>
+                )}
 
                 <div className="hub-quick-navs">
-                  <a href="/menu/" className="btn-hub-menu-link">
-                    <span>{t("Menyuni ko'rish")}</span>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </a>
-                  <a href="/orders/" className="btn-hub-orders-link">
-                    <span>{t('Buyurtmalar holati')}</span>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </a>
+                  {showMenuLink && (
+                    <a href="/menu/" className="btn-hub-menu-link">
+                      <span>{t("Menyuni ko'rish")}</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  )}
+                  {showOrdersLink && (
+                    <a href="/orders/" className="btn-hub-orders-link">
+                      <span>{t('Buyurtmalar holati')}</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  )}
                 </div>
               </>
             ) : null}
@@ -386,8 +405,8 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
             {/* Stollar Ro'yxati / Xaritasi */}
             <div className="tables-directory-section">
               <div className="directory-header">
-                <h3 className="directory-title serif">{t('Restorandagi stollar')}</h3>
-                <span className="directory-count tabular-nums">{t('{n} ta stol', { n: tables.length })}</span>
+                <h3 className="directory-title serif">{tm(t('Restorandagi stollar'))}</h3>
+                <span className="directory-count tabular-nums">{tm(t('{n} ta stol', { n: tables.length }))}</span>
               </div>
 
               {/* Hall Chips */}
@@ -441,11 +460,11 @@ export const TableHubPage: React.FC<TableHubPageProps> = ({ embedded = false }) 
         )}
 
         {/* ─── TAB 2: Stolni Bron Qilish Formasi ─── */}
-        {activeTab === 'reserve' && (
+        {activeTab === 'reserve' && showBooking && (
           <form className="reservation-form-card" onSubmit={handleReservationSubmit}>
             <div className="form-header">
               <span className="form-badge">{t('Oldindan band qilish')}</span>
-              <h2 className="form-title serif">{t('Stolni bron qilish')}</h2>
+              <h2 className="form-title serif">{tm(t('Stolni bron qilish'))}</h2>
               <p className="form-desc">
                 {t("Tantana, oila davrasi yoki do'stlar bilan uchrashuv uchun qulay stolni oldindan band qiling.")}
               </p>

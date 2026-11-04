@@ -5,6 +5,11 @@
      - classic (standart): yashil tusli to'q — tokenlari styles/palette.css 2-bo'limida;
      - orange (muqobil, o'chirilmagan): iliq to'q jigarrang, xuddi shu olovrang apelsin — tokenlari SHU faylning 1-bo'limida
        (`:not([data-palette='classic'])`: atribut yo'q bo'lsa ham apelsin, ya'ni :root dagi avvalgi qiymatlar bilan mos).
+     - custom (brend rangi, /ra/ -> Brend): BREND tokenlarini (--brand-*, --dk-brand-text ...) tun uchun SERVER beradi
+       (`<style id="brand-vars">`, `html[data-palette='custom'][data-theme='dark']`); neytral tokenlar (fon, matn, chegara) KLASSIK tun qiymatlari
+       (yashil-qora; server brend matni kontrastini aynan shu sirtlar ustida hisoblaydi).
+       Apelsin tun bloklari unga TEGMAYDI (`:not([...classic], [...custom])`, ustuvorlik avvalgidek (0,2,1)); neytral qiymatlar past ustuvorlikli
+       alohida blokda (1-bo'lim oxirida) — server qiymatlari style teglari tartibiga bog'liq bo'lmay ustun.
    Quyidagi qoidalar qatlami (2-12) ikkala palitra uchun UMUMIY: faqat tokenlardan foydalanadi (`--bg-*`, `--text-*`, `--dk-*`,
    `--dk-*-rgb`); palitraga xos qiymatlar faqat token bloklarida.
    1) Tokenlar — index.css dagi o'zgaruvchilarning tun qiymatlari.
@@ -23,7 +28,7 @@ html[data-theme='dark'] {
 }
 
 /* Apelsin palitra (muqobil): iliq to'q jigarrang */
-html[data-theme='dark']:not([data-palette='classic']) {
+html[data-theme='dark']:not([data-palette='classic'], [data-palette='custom']) {
   --bg-primary: #141110;
   --bg-surface: #1F1B18;
   --bg-surface-subtle: #2A2420;
@@ -63,13 +68,44 @@ html[data-theme='dark'] {
 /* Apelsin palitraga xos: brend/aksent matn, hover sirt va yarim shaffof qatlamlar uchun rang uchliklari.
    `--dk-surface-rgb` = --bg-surface, `--dk-bg-rgb` = --bg-primary, `--dk-ink-rgb` = --text-primary (qatlamlarda `rgb(var(--dk-surface-rgb) / .9)`).
    Klassik palitrada shu tokenlarning yashil tusli qiymatlari styles/palette.css da. */
-html[data-theme='dark']:not([data-palette='classic']) {
+html[data-theme='dark']:not([data-palette='classic'], [data-palette='custom']) {
   --dk-accent-text: #FB7185;                              /* --brand-accent (anor-qizil) matn sifatida */
   --dk-hover: #332C27;                                    /* och hover sirtlar (#E5ECE7, #F8F5EE ...) o'rniga */
   --dk-brand-text: var(--brand-primary);
   --dk-surface-rgb: 31 27 24;
   --dk-bg-rgb: 20 17 16;
   --dk-ink-rgb: 245 239 232;
+}
+
+/* Brend rangi (custom), tun. Server (`<style id="brand-vars">`, shops/brand_color.py) faqat BREND tokenlarini beradi: kun — `html[data-palette='custom']`,
+   tun — `html[data-palette='custom'][data-theme='dark']` (--brand-*, --brand-accent-*, --dk-brand-text, --dk-accent-text). NEYTRAL tokenlar (fon, matn,
+   chegara, --dk-* uchliklar) frontendniki: KLASSIK tun qiymatlari (palette.css 2-bo'lim bilan bir xil; tests/brand.test.ts tengligini tekshiradi) —
+   server brend matni kontrastini (>= 6.5:1 zaxira bilan) aynan shu sirtlar (#0F1511, #17201A, #1F2A22, #26342B) ustida hisoblaydi.
+   Ustuvorlik (0,1,0) ataylab past: index.css `:root` dan keyin turgani uchun uni bosadi, serverning kun (0,1,1) va tun (0,2,1) bloklari esa
+   style teglari qaysi tartibda turishidan QAT'I NAZAR ustun. Bu blokka brend tokenlari yozilmaydi (faqat server beradi), tashqari --dk-brand-text /
+   --dk-accent-text zaxirasi (server bermasa; odatda beradi va (0,2,1) bilan bosadi). */
+:root:where([data-theme='dark'][data-palette='custom']) {
+  --bg-primary: #0F1511;
+  --bg-surface: #17201A;
+  --bg-surface-subtle: #1F2A22;
+  --bg-surface-dark: #0A0F0C;
+
+  --border-subtle: #2A3A2F;
+  --border-strong: #3A4D3F;
+
+  --text-primary: #F1EEE6;
+  --text-secondary: #CFCABD;
+  --text-muted: #98A094;
+
+  --status-success-light: #11261A;
+
+  --dk-hover: #26342B;
+  --dk-surface-rgb: 23 32 26;
+  --dk-bg-rgb: 15 21 17;
+  --dk-ink-rgb: 241 238 230;
+  /* server bermasa zaxira (odatda beradi) */
+  --dk-accent-text: #E8A877;
+  --dk-brand-text: var(--brand-primary);
 }
 
 /* Eslatma (ustuvorlik): bu fayldagi `html[data-theme='dark'] .sinf` = (0,2,1) — oddiy `.sinf` (0,1,0), `[data-design='new'] .sinf` (0,2,0)
@@ -92,6 +128,8 @@ html[data-theme='dark'] .bottom-nav { box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4)
   /* faol havola: oq tabletka -> sirt (konteyner sahifa foni #141110 dan yorug'roq; brend matn 4.8:1, ichki sirtda esa 4.30 edi) */
   html[data-theme='dark'] .desktop-nav-item.active { background: var(--bg-surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
 }
+/* Brend logotipi (shaffof PNG/WebP): to'q sarlavhada to'q logo ko'rinmay qolmasin — och plita (--text-inverse tunda ham #FFFFFF) */
+html[data-theme='dark'] .brand-logo-img { background: var(--text-inverse); padding: 2px; }
 html[data-theme='dark'] .react-table-badge.status-available { border-color: var(--dk-ok-border); background: var(--dk-ok-bg); }
 html[data-theme='dark'] .react-table-badge.status-occupied { background: var(--dk-warn-bg); }
 html[data-theme='dark'] .react-table-badge,
@@ -420,7 +458,7 @@ html[data-theme='dark'] .fx-scene .paper { fill: var(--bg-surface-subtle); }
    12) Fasl ranglari (`<html data-season>`; admin sozlamasi `guest_season`) + tun rejimi
    (!) Quyidagi "brend rangidagi matn" ro'yxati ikki holatda ishlaydi: fasl yoqilganda VA klassik (yashil) palitrada — ikkalasida
    `--brand-primary` tugma foni (oq matn bilan >= 4.5:1), lekin to'q sirtda MATN sifatida yetarli emas; matn uchun `--dk-brand-text`.
-   `:is([data-season], [data-palette='classic'])` ustuvorligi avvalgi `[data-season]` bilan bir xil (0,1,0): apelsin ko'rinishi o'zgarmaydi.
+   `:is([data-season], [data-palette='classic'], [data-palette='custom'])` ustuvorligi avvalgi `[data-season]` bilan bir xil (0,1,0): apelsin ko'rinishi o'zgarmaydi.
    seasons.css faqat BRENDNING OCH pog'onalarini almashtiradi (`--brand-primary-light` #FFF7ED, `...-subtle`, `-tint-2/3`, `-deep`);
    tun tokenlari blokida (yuqorida) bu 5 token apelsin uchun to'q tusga o'zgartirilgan — qolgan fasllar uchun o'z rangiga mos to'q tuslari.
    `--brand-primary` (tugma fon, oq matn bilan >= 4.5:1) fasl qiymatida QOLADI. Lekin brend rangidagi MATN (narx, havola, faol tab)
@@ -444,91 +482,91 @@ html[data-theme='dark'][data-season='kuz'] {
 html[data-theme='dark'][data-season] { --dk-brand-text: var(--brand-warm); }
 
 /* brend rangidagi matn va belgilar (to'q sirt / brend tusli fon ustida) */
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .desktop-nav-item:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .desktop-nav-item.active,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .header-table-badge,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-header-call-waiter,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-header-staff:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .header-cart-btn:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .bottom-tab:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .bottom-tab.active,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .table-badge-pin,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .row-val-total,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .price-val,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .tag-popular,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .stepper-btn,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .modal-dish-price,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-modal-ar,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .modal-close-round:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .call-waiter-badge,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .nfc-sensor-ring,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .nfc-tab-btn.active,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .welcome-hero-badge,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .opt-circle-icon,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-card-action-outline:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-toggle-3d-filter:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-load-more-dishes,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-back-to-menu,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-back-to-cart,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .cart-item-total-price,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .service-opt-icon,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .payment-opt-icon,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .table-badge-num,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .bill-amount,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-service-pill:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-call-waiter,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .filter-tab.active,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .order-total-sum,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-view-details,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .modal-item-subtotal,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .modal-total-num,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .badge-num,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .table-generic-icon,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .hub-tab.active,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .service-icon,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-hub-orders-link,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-occupy-table,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-guest-step,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .mode-btn.active,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .circle-num,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .extra-link,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .extra-btn,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-found-confirm,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-modal-close,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .stepper-action-btn,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .badge-status-preparing,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-eyebrow,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-title em,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-btn-ghost:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-tag-dot,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-link,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-price,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-opt-icon,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-opt-action,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .dish-card-placeholder::before { color: var(--dk-brand-text); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .desktop-nav-item:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .desktop-nav-item.active,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .header-table-badge,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-header-call-waiter,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-header-staff:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .header-cart-btn:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .bottom-tab:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .bottom-tab.active,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .table-badge-pin,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .row-val-total,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .price-val,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .tag-popular,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .stepper-btn,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .modal-dish-price,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-modal-ar,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .modal-close-round:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .call-waiter-badge,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .nfc-sensor-ring,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .nfc-tab-btn.active,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .welcome-hero-badge,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .opt-circle-icon,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-card-action-outline:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-toggle-3d-filter:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-load-more-dishes,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-back-to-menu,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-back-to-cart,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .cart-item-total-price,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .service-opt-icon,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .payment-opt-icon,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .table-badge-num,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .bill-amount,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-service-pill:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-call-waiter,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .filter-tab.active,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .order-total-sum,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-view-details,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .modal-item-subtotal,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .modal-total-num,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .badge-num,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .table-generic-icon,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .hub-tab.active,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .service-icon,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-hub-orders-link,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-occupy-table,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-guest-step,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .mode-btn.active,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .circle-num,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .extra-link,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .extra-btn,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-found-confirm,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-modal-close,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .stepper-action-btn,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .badge-status-preparing,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-eyebrow,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-title em,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-btn-ghost:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-tag-dot,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-link,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-price,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-opt-icon,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-opt-action,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .dish-card-placeholder::before { color: var(--dk-brand-text); }
 /* brend fon ustida oq matn (hover) qayta tiklanadi — yuqoridagi umumiy qoida ularni bosib ketmasin */
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-call-waiter:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-occupy-table:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-found-confirm:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-modal-close:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .stepper-btn:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .stepper-action-btn:hover:not(:disabled),
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-modal-ar:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-load-more-dishes:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-opt-action:hover,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .service-type-option.active .service-opt-icon { color: #FFFFFF; }
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-header-call-waiter:hover { color: #FFFFFF; }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-call-waiter:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-occupy-table:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-found-confirm:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-modal-close:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .stepper-btn:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .stepper-action-btn:hover:not(:disabled),
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-modal-ar:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-load-more-dishes:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-opt-action:hover,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .service-type-option.active .service-opt-icon { color: #FFFFFF; }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-header-call-waiter:hover { color: #FFFFFF; }
 /* 360° tugmalar: oq fonli, fasl rangi matnli tugmalar o'z holicha qoladi (fon oq) */
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-btn-white,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-banner-3d-cta,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .btn-ar-action-primary { color: var(--brand-primary-hover); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-btn-white,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-banner-3d-cta,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .btn-ar-action-primary { color: var(--brand-primary-hover); }
 /* fokus halqasi (3:1 kerak): qishda #9F1D35 to'q fonda 2.2:1 */
-html[data-theme='dark']:is([data-season], [data-palette='classic']) :focus-visible { outline-color: var(--dk-brand-text); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) :focus-visible { outline-color: var(--dk-brand-text); }
 /* rasmsiz taom bosh harfi: fasl rangi to'q tusli fonda 1.8-2.4:1 edi -> faslning och toni, 70% shaffoflik (color-mix bo'lmagan brauzerda to'liq rang) */
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .ds-placeholder,
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .ds-mini-letter { color: var(--dk-brand-text); color: color-mix(in srgb, var(--dk-brand-text) 70%, transparent); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .ds-placeholder,
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .ds-mini-letter { color: var(--dk-brand-text); color: color-mix(in srgb, var(--dk-brand-text) 70%, transparent); }
 /* buyurtma holati sahnalari (SVG): chiziq va to'ldirish */
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .fx-scene .line { stroke: var(--dk-brand-text); }
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .fx-scene .solid { fill: var(--dk-brand-text); }
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .fx-scene .paper { stroke: var(--dk-brand-text); }
-html[data-theme='dark']:is([data-season], [data-palette='classic']) .wn-ring { border-color: rgb(var(--brand-primary-rgb) / 0.7); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .fx-scene .line { stroke: var(--dk-brand-text); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .fx-scene .solid { fill: var(--dk-brand-text); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .fx-scene .paper { stroke: var(--dk-brand-text); }
+html[data-theme='dark']:is([data-season], [data-palette='classic'], [data-palette='custom']) .wn-ring { border-color: rgb(var(--brand-primary-rgb) / 0.7); }

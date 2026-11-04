@@ -11,6 +11,7 @@ import { getGuestDesign } from '../../utils/guestDesign';
 import { bounceIcon, celebrateOrder, fxEnabled, setButtonState } from '../../motion';
 import { fmtMoney, fmtNum, getLang, t, tr } from '../../i18n';
 import { dishName } from '../../utils/dishText';
+import { tm } from '../../utils/brandText';
 import './CheckoutPage.css';
 
 interface InitialCheckoutData {
@@ -230,8 +231,8 @@ export const CheckoutPage: React.FC = () => {
                   </svg>
                 </div>
                 <div>
-                  <div className="service-opt-title">{t('Stolda (Zalda)')}</div>
-                  <div className="service-opt-desc">{t('Restoran ichida xizmat')}</div>
+                  <div className="service-opt-title">{tm(t('Stolda (Zalda)'))}</div>
+                  <div className="service-opt-desc">{tm(t('Restoran ichida xizmat'))}</div>
                 </div>
               </div>
 
@@ -304,7 +305,7 @@ export const CheckoutPage: React.FC = () => {
             <div className="form-grid-two">
               {serviceType === 'table' && (
                 <div className="form-group-field">
-                  <label className="field-label">{t('Stol raqami:')}</label>
+                  <label className="field-label">{tm(t('Stol raqami:'))}</label>
                   <input
                     type="text"
                     className="field-input-text"

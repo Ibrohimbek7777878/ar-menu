@@ -1,5 +1,6 @@
 import React from 'react';
 import { t } from '../../../i18n';
+import { tm } from '../../../utils/brandText';
 import './TableBadge.css';
 
 export interface TableBadgeProps {
@@ -23,7 +24,7 @@ export const TableBadge: React.FC<TableBadgeProps> = ({
         </svg>
       </span>
       <div className="table-badge-text">
-        <span className="table-badge-title tabular-nums">{t('Stol #{num}', { num: tableNumber })}</span>
+        <span className="table-badge-title tabular-nums">{tm(t('Stol #{num}', { num: tableNumber }))}</span>
         {hallName && <span className="table-badge-hall">{hallName}</span>}
       </div>
     </div>

@@ -45,6 +45,16 @@
   box-shadow: 0 2px 6px rgb(var(--brand-primary-rgb) / 0.25);
 }
 
+/* Brend logotipi (admin: Brend -> Logo): 34 px kvadrat, shaffof PNG/WebP ham kesilmaydi (contain). Retina: fayl kattaroq bo'lsa ham
+   ko'rinish o'lchami CSS bilan qat'iy, shuning uchun keskin chiqadi. Tun rejimida och plita: darkTheme.css */
+.brand-logo-img {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .brand-name {
   font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
   font-size: 19px;

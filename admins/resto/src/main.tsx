@@ -25,7 +25,9 @@ import './shell.css';
 import './i18n/register';
 import { restoUz, roleLabel } from './i18n/uz';
 import { adminRoutes } from './routes';
+import { isPlatformMode } from './pages/Platform/mode';
 import {
+  Building2,
   CalendarDays,
   LayoutDashboard,
   ShoppingBag,
@@ -33,6 +35,8 @@ import {
   QrCode,
   Users,
   DollarSign,
+  Palette,
+  Video,
   Settings,
   LogOut,
   Store,
@@ -94,12 +98,15 @@ const AppLayout: React.FC = () => {
     };
   }, [open, closeDrawer]);
 
+  // Platforma rejimi (platforma hosti + platforma administratori): yon menyuda FAQAT "Mijozlar"
+  const platformMode = isPlatformMode(session);
+
   // Brauzer sarlavhasi tanlangan tilda (til almashganda daraxt qayta ulanadi, shuning uchun bu yerda yangilanadi)
   useEffect(() => {
-    document.title = `${restoUz.appName} — ${restoUz.dashboard}`;
-  }, []);
+    document.title = `${restoUz.appName} — ${platformMode ? restoUz.clients : restoUz.dashboard}`;
+  }, [platformMode]);
 
-  const navItems = [
+  const restaurantNav = [
     { to: '', label: restoUz.dashboard, icon: LayoutDashboard, cap: 'kds' },
     { to: 'orders', label: restoUz.orders, icon: ShoppingBag, cap: 'kds' },
     { to: 'menu', label: restoUz.menu, icon: UtensilsCrossed, cap: 'menu_admin' },
@@ -107,8 +114,11 @@ const AppLayout: React.FC = () => {
     { to: 'bookings', label: restoUz.bookings, icon: CalendarDays, cap: 'reservations' },
     { to: 'staff', label: restoUz.staff, icon: Users, cap: 'staff_admin' },
     { to: 'finance', label: restoUz.finance, icon: DollarSign, cap: 'finance' },
+    { to: 'brand', label: restoUz.brand, icon: Palette, cap: 'settings_admin' },
+    { to: 'tour', label: restoUz.tour, icon: Video, cap: 'settings_admin' },
     { to: 'settings', label: restoUz.settings, icon: Settings, cap: 'settings_admin' },
   ];
+  const navItems = platformMode ? [{ to: 'clients', label: restoUz.clients, icon: Building2, cap: '' }] : restaurantNav;
 
   const shopName = session?.tenant?.name || restoUz.appName;
 
@@ -161,7 +171,7 @@ const AppLayout: React.FC = () => {
         {/* Navigatsiya menyusi */}
         <nav className="ra-nav" aria-label={t('Asosiy menyu')}>
           {navItems
-            .filter((item) => hasCapability(item.cap))
+            .filter((item) => !item.cap || hasCapability(item.cap))
             .map((item) => (
               <NavLink key={item.to} to={item.to} end={item.to === ''} className="ra-nav-link">
                 <item.icon size={18} aria-hidden="true" />
@@ -170,13 +180,15 @@ const AppLayout: React.FC = () => {
             ))}
         </nav>
 
-        {/* Strangler Fig: Klassik boshqaruvga o'tish */}
-        <div className="ra-classic-wrap">
-          <a href="/seller/tables/" className="ra-classic-link">
-            <ArrowLeftRight size={14} aria-hidden="true" />
-            <span>{t("Klassik panelga o'tish")}</span>
-          </a>
-        </div>
+        {/* Strangler Fig: Klassik boshqaruvga o'tish (platforma rejimida yo'q: bu restoran paneli) */}
+        {!platformMode && (
+          <div className="ra-classic-wrap">
+            <a href="/seller/tables/" className="ra-classic-link">
+              <ArrowLeftRight size={14} aria-hidden="true" />
+              <span>{t("Klassik panelga o'tish")}</span>
+            </a>
+          </div>
+        )}
 
         {/* Xodim profili, til/kun-tun va chiqish */}
         <div className="ra-user">

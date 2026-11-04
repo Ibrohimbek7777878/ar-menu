@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookingApiError, bookingClient, isAbortError } from './client';
 import type { Availability, BookingConfig } from './types';
+import { moduleEnabled } from '../../utils/brand';
 
 export type ConfigState =
   | { status: 'loading' }
@@ -39,6 +40,8 @@ export function useBookingConfig(): { state: ConfigState; reload: () => void } {
 export function useBookingEnabled(): boolean {
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
+    // Brend: bo'lim `booking` o'chirilgan bo'lsa sozlama so'ralmaydi va kirish tugmalari umuman chizilmaydi
+    if (!moduleEnabled('booking')) return undefined;
     let alive = true;
     bookingClient
       .loadConfig()

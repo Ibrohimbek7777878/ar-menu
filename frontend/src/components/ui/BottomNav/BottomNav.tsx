@@ -1,14 +1,35 @@
 import React from 'react';
 import { useNavigation } from '../../../context/NavigationContext';
 import { t } from '../../../i18n';
+import { moduleEnabled } from '../../../utils/brand';
+import { tm } from '../../../utils/brandText';
+import { BOOKING_PATH } from '../../../pages/BookingPage/BookingEntry';
+import { useBookingEnabled } from '../../../pages/BookingPage/useBooking';
 import './BottomNav.css';
 
+type ClassicTab = 'home' | 'menu' | 'ar' | 'cart' | 'orders';
+
 export interface BottomNavProps {
-  activeTab?: 'home' | 'menu' | 'ar' | 'cart' | 'orders';
+  activeTab?: ClassicTab | 'book';
   cartCount?: number;
-  onTabChange?: (tab: 'home' | 'menu' | 'ar' | 'cart' | 'orders') => void;
+  onTabChange?: (tab: ClassicTab) => void;
   className?: string;
 }
+
+/** "Bron" yorlig'i: faqat menyu o'chirilgan (bron/aloqa rejimi) bo'lsa chiziladi; bron sozlamasini bu yerdagina so'raydi (menyu yoqiq bo'lsa qo'shimcha so'rov yo'q). */
+const BookTab: React.FC<{ active: boolean; onOpen: () => void }> = ({ active, onOpen }) => {
+  const bookingOn = useBookingEnabled();
+  if (!bookingOn) return null;
+  return (
+    <button type="button" className={`bottom-tab ${active ? 'active' : ''}`} onClick={onOpen} aria-label={tm(t('Stol bron qilish'))}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+        <path d="M16 2v4M8 2v4M3 10h18"></path>
+      </svg>
+      <span className="bottom-tab-label">{t('Bron qilish')}</span>
+    </button>
+  );
+};
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab: propActiveTab,
@@ -20,8 +41,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   const cartCount = propCartCount !== undefined ? propCartCount : ctxCartCount;
 
+  // Brend bo'limlari: o'chirilgan bo'lim yorlig'i YASHIRILADI (kod o'chirilmaydi). Menyu o'chiq bo'lsa savat, 360° va buyurtmalar ham yo'q;
+  // shunda pastki panelda "Asosiy" va (bron yoqiq bo'lsa) "Bron" qoladi. Menyu yoqiq bo'lsa panel avvalgidek.
+  const showMenu = moduleEnabled('menu');
+  const showAr = moduleEnabled('ar360');
+  const showOrders = moduleEnabled('orders');
+
   // Determine active tab from URL if not explicitly provided
   const activeTab = propActiveTab || (() => {
+    if (currentPath.startsWith('/book')) return 'book';
     if (currentPath === '/' || currentPath.includes('/welcome')) return 'home';
     if (currentPath.includes('/menu')) return 'menu';
     if (currentPath.includes('/ar')) return 'ar';
@@ -30,7 +58,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     return 'menu';
   })();
 
-  const handleTab = (tab: 'home' | 'menu' | 'ar' | 'cart' | 'orders') => {
+  const handleTab = (tab: ClassicTab) => {
     if (onTabChange) {
       onTabChange(tab);
       return;
@@ -72,74 +100,85 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </button>
 
         {/* Menyu */}
-        <button
-          type="button"
-          className={`bottom-tab ${activeTab === 'menu' ? 'active' : ''}`}
-          onClick={() => handleTab('menu')}
-          aria-label={t('Menyu')}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-            <line x1="6" y1="1" x2="6" y2="4"></line>
-            <line x1="10" y1="1" x2="10" y2="4"></line>
-            <line x1="14" y1="1" x2="14" y2="4"></line>
-          </svg>
-          <span className="bottom-tab-label">{t('Menyu')}</span>
-        </button>
+        {showMenu && (
+          <button
+            type="button"
+            className={`bottom-tab ${activeTab === 'menu' ? 'active' : ''}`}
+            onClick={() => handleTab('menu')}
+            aria-label={t('Menyu')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+              <line x1="6" y1="1" x2="6" y2="4"></line>
+              <line x1="10" y1="1" x2="10" y2="4"></line>
+              <line x1="14" y1="1" x2="14" y2="4"></line>
+            </svg>
+            <span className="bottom-tab-label">{t('Menyu')}</span>
+          </button>
+        )}
 
         {/* 360° Taomlar (No technical AR jargon) */}
-        <button
-          type="button"
-          className={`bottom-tab ${activeTab === 'ar' ? 'active' : ''}`}
-          onClick={() => handleTab('ar')}
-          aria-label={t('360 daraja taomlar')}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-          </svg>
-          <span className="bottom-tab-label">{t("360° Ko'rish")}</span>
-        </button>
+        {showAr && (
+          <button
+            type="button"
+            className={`bottom-tab ${activeTab === 'ar' ? 'active' : ''}`}
+            onClick={() => handleTab('ar')}
+            aria-label={t('360 daraja taomlar')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <span className="bottom-tab-label">{t("360° Ko'rish")}</span>
+          </button>
+        )}
 
         {/* Savat */}
-        <button
-          data-cart-target=""
-          type="button"
-          className={`bottom-tab ${activeTab === 'cart' ? 'active' : ''}`}
-          onClick={() => handleTab('cart')}
-          aria-label={t('Savat')}
-        >
-          <div className="tab-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-            {cartCount > 0 && (
-              <span className="tab-badge tabular-nums">{cartCount}</span>
-            )}
-          </div>
-          <span className="bottom-tab-label">{t('Savat')}</span>
-        </button>
+        {showMenu && (
+          <button
+            data-cart-target=""
+            type="button"
+            className={`bottom-tab ${activeTab === 'cart' ? 'active' : ''}`}
+            onClick={() => handleTab('cart')}
+            aria-label={t('Savat')}
+          >
+            <div className="tab-icon-wrap">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              {cartCount > 0 && (
+                <span className="tab-badge tabular-nums">{cartCount}</span>
+              )}
+            </div>
+            <span className="bottom-tab-label">{t('Savat')}</span>
+          </button>
+        )}
 
         {/* Buyurtmalar */}
-        <button
-          type="button"
-          className={`bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
-          onClick={() => handleTab('orders')}
-          aria-label={t('Buyurtmalar')}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          <span className="bottom-tab-label">{t('Hisob')}</span>
-        </button>
+        {showOrders && (
+          <button
+            type="button"
+            className={`bottom-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => handleTab('orders')}
+            aria-label={t('Buyurtmalar')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span className="bottom-tab-label">{t('Hisob')}</span>
+          </button>
+        )}
+
+        {/* Bron: faqat menyu o'chirilgan bo'lsa (aks holda bron Asosiy sahifadagi tugma orqali) */}
+        {!showMenu && <BookTab active={activeTab === 'book'} onOpen={() => navigate(BOOKING_PATH)} />}
       </div>
     </nav>
   );

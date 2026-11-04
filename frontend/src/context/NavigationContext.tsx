@@ -547,7 +547,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (fromServer) return fromServer;
     const urlParams = new URLSearchParams(window.location.search);
     const tableFromUrl = urlParams.get('table');
-    if (tableFromUrl && !UUID_RE.test(tableFromUrl)) return tableFromUrl;
+    // `/book/?table=<id>` (sayrdan bron) — bu stol RAQAMI emas, bron uchun stol id'si: mehmonning joriy stoli sifatida eslab qolinmaydi
+    const onBookingPage = /^\/book(\/|$)/.test(window.location.pathname);
+    if (tableFromUrl && !UUID_RE.test(tableFromUrl) && !onBookingPage) return tableFromUrl;
     try {
       return localStorage.getItem('guliston_table_num') || '';
     } catch {

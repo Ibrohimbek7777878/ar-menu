@@ -3,6 +3,8 @@ import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { RouteGuard } from './core/guards/RouteGuard';
 import { getTabFromPath } from './pages/AdminDashboardPage/tabs';
 import { roleService } from './core/auth/RoleService';
+import type { BrandModuleKey } from './core/auth/types';
+import { moduleEnabled } from './utils/brand';
 import { CallWaiterModal, NFCGatewayModal, SettingsSheet } from './components/ui';
 import { LangBoundary } from './i18n/LangBoundary';
 import './App.css';
@@ -24,13 +26,20 @@ const OrdersPage = page(() => import('./pages/OrdersPage/OrdersPage'), 'OrdersPa
 const TableHubPage = page(() => import('./pages/TableHubPage/TableHubPage'), 'TableHubPage');
 const ReservationPage = page(() => import('./pages/ReservationPage/ReservationPage'), 'ReservationPage');
 const BookingPage = page(() => import('./pages/BookingPage/BookingPage'), 'BookingPage');
+const TourPage = page(() => import('./pages/TourPage/TourPage'), 'TourPage');
 const WaiterPanelPage = page(() => import('./pages/WaiterPanelPage/WaiterPanelPage'), 'WaiterPanelPage');
 const HostessDeskPage = page(() => import('./pages/HostessDeskPage/HostessDeskPage'), 'HostessDeskPage');
 const AdminDashboardPage = page(() => import('./pages/AdminDashboardPage/AdminDashboardPage'), 'AdminDashboardPage');
 const ComponentShowcase = page(() => import('./showcase/ComponentShowcase'), 'ComponentShowcase');
+// Brend: egasi o'chirgan bo'limga to'g'ridan-to'g'ri kirilsa yumshoq "Bu bo'lim hozircha mavjud emas" ekrani (marshrut o'chirilmagan)
+const ModuleUnavailable = page(() => import('./components/ui/ModuleUnavailable/ModuleUnavailable'), 'ModuleUnavailable');
 const QRGeneratorModal = page(() => import('./components/ui/QRGeneratorModal/QRGeneratorModal'), 'QRGeneratorModal');
 const PhotogrammetryStudioModal = page(
   () => import('./components/ui/PhotogrammetryStudioModal/PhotogrammetryStudioModal'), 'PhotogrammetryStudioModal');
+
+/** Bo'lim yoqilgan bo'lsa sahifa, o'chirilgan bo'lsa yumshoq ekran. Brend yo'q bo'lsa hamma bo'lim yoqiq (avvalgi xatti-harakat). */
+const gated = (key: BrandModuleKey, node: React.ReactElement): React.ReactElement =>
+  moduleEnabled(key) ? node : <ModuleUnavailable />;
 
 const AppContent: React.FC = () => {
   const { currentPath } = useNavigation();
@@ -41,7 +50,7 @@ const AppContent: React.FC = () => {
     if (guard.redirectTo?.includes('/waiter')) return <WaiterPanelPage />;
     if (guard.redirectTo?.includes('/kitchen') || guard.redirectTo?.includes('/kds')) return <AdminDashboardPage initialTab="kds" />;
     if (guard.redirectTo?.includes('/hostess')) return <HostessDeskPage />;
-    return <MenuPage />;
+    return gated('menu', <MenuPage />);
   }
 
   // Showcase laboratoriyasi — dizayn tizimi sahifasi, production'da mehmonga ochiq emas (faqat DEMO/dev)
@@ -73,7 +82,12 @@ const AppContent: React.FC = () => {
 
   // Stol bron qilish (/book/): zal rejasi -> bron oynasi -> bron kodi. Mavjud /reservation/ oqimi o'zgarmagan (pastda).
   if (/^\/book(\/|$)/.test(currentPath.split('?')[0].split('#')[0])) {
-    return <BookingPage />;
+    return gated('booking', <BookingPage />);
+  }
+
+  // Video sayr (/tour/): zalga "kirib", oldinga-orqaga yurib, stolni tanlash -> /book/?table=ID. Bo'lim o'chirilgan bo'lsa yumshoq ekran.
+  if (/^\/tour(\/|$)/.test(currentPath.split('?')[0].split('#')[0])) {
+    return gated('tour', <TourPage />);
   }
 
   // Bron qidirish & Kelishni tasdiqlash (/reservation/arrival yoki /reservation/find).
@@ -94,7 +108,7 @@ const AppContent: React.FC = () => {
 
   // 3D / AR Interaktiv Menyu (/ar/)
   if (currentPath.includes('/ar')) {
-    return <ARMenuPage />;
+    return gated('ar360', <ARMenuPage />);
   }
 
   // Ofitsiant va Xizmat Paneli (/waiter yoki /ofitsiant)
@@ -109,17 +123,17 @@ const AppContent: React.FC = () => {
 
   // Buyurtmalar & Hisob (/orders/ yoki /order/)
   if (currentPath.includes('/orders') || currentPath.includes('/order')) {
-    return <OrdersPage />;
+    return gated('orders', <OrdersPage />);
   }
 
   // Buyurtmani rasmiylashtirish (Checkout)
   if (currentPath.includes('/checkout')) {
-    return <CheckoutPage />;
+    return gated('menu', <CheckoutPage />);
   }
 
   // Savat sahifasi
   if (currentPath.includes('/cart')) {
-    return <CartPage />;
+    return gated('menu', <CartPage />);
   }
 
   // Bosh sahifa (Welcome / Root)
@@ -128,7 +142,7 @@ const AppContent: React.FC = () => {
   }
 
   // Standart: Asosiy Menyu sahifasi (/menu/)
-  return <MenuPage />;
+  return gated('menu', <MenuPage />);
 };
 
 const GlobalModals: React.FC = () => {

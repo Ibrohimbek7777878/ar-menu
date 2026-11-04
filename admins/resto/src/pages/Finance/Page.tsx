@@ -6,6 +6,7 @@ import {
   t,
   fmtNum,
   getLang,
+  useToast,
 } from '@admins/shared';
 import {
   TrendingUp,
@@ -22,10 +23,17 @@ import {
   FileSpreadsheet,
   ArrowUpRight,
   ArrowDownLeft,
+  Pencil,
+  History as HistoryIcon,
 } from 'lucide-react';
 import { useFinance, type PeriodPreset } from './useFinance';
-import { getExportCsvUrl, type FinanceTransaction, type DebtItem } from './api';
+import { getExportCsvUrl, type FinanceTransaction, type DebtItem, type TransactionEditBody, type DebtEditBody } from './api';
 import { restoUz } from '../../i18n/uz';
+import { EditTransactionModal, type EditResult } from './EditTransactionModal';
+import { EditDebtModal } from './EditDebtModal';
+import { HistoryModal } from './HistoryModal';
+import { badgeStyle, tapButton } from './editStyles';
+import type { HistoryKind } from './editModel';
 
 function formatSum(n: number | undefined | null): string {
   const digits = fmtNum(Math.round(n ?? 0));
@@ -85,15 +93,22 @@ export function FinancePage() {
     refresh,
     createTransaction,
     cancelTransaction,
+    updateTransaction,
+    updateDebt,
     createDebt,
     payDebt,
   } = useFinance();
+  const { showToast } = useToast();
 
   // Modallar holati
   const [showTxModal, setShowTxModal] = useState(false);
   const [showDebtModal, setShowDebtModal] = useState(false);
   const [cancellingTx, setCancellingTx] = useState<FinanceTransaction | null>(null);
   const [payingDebt, setPayingDebt] = useState<DebtItem | null>(null);
+  // Qo'lda tahrirlash va o'zgarish tarixi (majburiy sabab bilan)
+  const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
+  const [editingDebt, setEditingDebt] = useState<DebtItem | null>(null);
+  const [historyOf, setHistoryOf] = useState<{ kind: HistoryKind; id: number; subject: string } | null>(null);
 
   // Form maydonlari: Tranzaksiya
   const [newTxType, setNewTxType] = useState<'income' | 'expense'>('income');
@@ -235,6 +250,18 @@ export function FinancePage() {
     } else {
       setPayError(res.error || t("To'lov amalga oshmadi"));
     }
+  };
+
+  const saveTxEdit = async (id: number, body: TransactionEditBody): Promise<EditResult> => {
+    const res = await updateTransaction(id, body);
+    if (res.success) showToast(t("O'zgarish saqlandi va tarixga yozildi"), 'success');
+    return res;
+  };
+
+  const saveDebtEdit = async (id: number, body: DebtEditBody): Promise<EditResult> => {
+    const res = await updateDebt(id, body);
+    if (res.success) showToast(t("O'zgarish saqlandi va tarixga yozildi"), 'success');
+    return res;
   };
 
   return (
@@ -630,6 +657,10 @@ export function FinancePage() {
             </div>
           </div>
 
+          <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+            {t("Tahrirlash faqat qo'lda kiritilgan kirim va chiqimga mumkin. Chek tushumini Buyurtmalar bo'limida, qarz to'lovini Qarzlar bo'limida o'zgartiring; storno qilingan yozuv tahrirlanmaydi. Har o'zgarish sabab bilan tarixga yoziladi.")}
+          </p>
+
           {/* Tranzaksiyalar Jadvali */}
           <Card style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
@@ -670,6 +701,12 @@ export function FinancePage() {
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{tx.title}</div>
+                          {tx.revisions_count > 0 && (
+                            <span style={{ ...badgeStyle, marginTop: '4px', textDecoration: 'none' }}>
+                              <Pencil size={11} aria-hidden="true" />
+                              {t('Tahrirlangan ({n})', { n: tx.revisions_count })}
+                            </span>
+                          )}
                           {tx.source_type !== 'manual' && (
                             <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
                               {tx.source_type === 'receipt' ? t('Chek tushumi') : t("Qarz to'lovi")}
@@ -708,20 +745,44 @@ export function FinancePage() {
                           )}
                         </td>
                         <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          {!tx.is_cancelled && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCancellingTx(tx);
-                                setCancelReason('');
-                                setCancelError(null);
-                              }}
-                              style={{ color: 'var(--accent-rose)' }}
-                            >
-                              {t('Storno qilish')}
-                            </Button>
-                          )}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            {tx.can_edit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<Pencil size={14} aria-hidden="true" />}
+                                onClick={() => setEditingTx(tx)}
+                                style={{ ...tapButton, color: 'var(--text-main)', textDecoration: 'none' }}
+                              >
+                                {t('Tahrirlash')}
+                              </Button>
+                            )}
+                            {tx.revisions_count > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<HistoryIcon size={14} aria-hidden="true" />}
+                                onClick={() => setHistoryOf({ kind: 'transaction', id: tx.id, subject: tx.title })}
+                                style={{ ...tapButton, color: 'var(--text-main)', textDecoration: 'none' }}
+                              >
+                                {t('Tarix')}
+                              </Button>
+                            )}
+                            {!tx.is_cancelled && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setCancellingTx(tx);
+                                  setCancelReason('');
+                                  setCancelError(null);
+                                }}
+                                style={{ color: 'var(--accent-rose)' }}
+                              >
+                                {t('Storno qilish')}
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -825,6 +886,10 @@ export function FinancePage() {
             </div>
           </div>
 
+          <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+            {t("Qarzni tahrirlash mumkin: umumiy summa to'langan summadan kam bo'lmaydi. Har o'zgarish sabab bilan tarixga yoziladi.")}
+          </p>
+
           {/* Qarzlar Jadvali */}
           <Card style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
@@ -855,6 +920,12 @@ export function FinancePage() {
                       <tr key={d.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <td style={{ padding: '12px 16px' }}>
                           <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.person_name}</div>
+                          {d.revisions_count > 0 && (
+                            <span style={{ ...badgeStyle, marginTop: '4px' }}>
+                              <Pencil size={11} aria-hidden="true" />
+                              {t('Tahrirlangan ({n})', { n: d.revisions_count })}
+                            </span>
+                          )}
                           {d.phone && <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>{d.phone}</div>}
                           {d.notes && <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontStyle: 'italic', marginTop: '2px' }}>{d.notes}</div>}
                         </td>
@@ -898,21 +969,43 @@ export function FinancePage() {
                           )}
                         </td>
                         <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          {!d.is_settled && (
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                             <Button
-                              variant="primary"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => {
-                                setPayingDebt(d);
-                                setPayAmount(String(d.remaining_amount));
-                                setPayMethod('cash');
-                                setPayNote('');
-                                setPayError(null);
-                              }}
+                              icon={<Pencil size={14} aria-hidden="true" />}
+                              onClick={() => setEditingDebt(d)}
+                              style={{ ...tapButton, color: 'var(--text-main)' }}
                             >
-                              {t("To'lov qabul qilish")}
+                              {t('Tahrirlash')}
                             </Button>
-                          )}
+                            {d.revisions_count > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<HistoryIcon size={14} aria-hidden="true" />}
+                                onClick={() => setHistoryOf({ kind: 'debt', id: d.id, subject: d.person_name })}
+                                style={{ ...tapButton, color: 'var(--text-main)' }}
+                              >
+                                {t('Tarix')}
+                              </Button>
+                            )}
+                            {!d.is_settled && (
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => {
+                                  setPayingDebt(d);
+                                  setPayAmount(String(d.remaining_amount));
+                                  setPayMethod('cash');
+                                  setPayNote('');
+                                  setPayError(null);
+                                }}
+                              >
+                                {t("To'lov qabul qilish")}
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1290,6 +1383,22 @@ export function FinancePage() {
           </div>
         </form>
       </Modal>
+
+      {/* Qo'lda tahrirlash va o'zgarish tarixi */}
+      {editingTx && (
+        <EditTransactionModal
+          key={editingTx.id}
+          tx={editingTx}
+          categories={categories}
+          submitting={submitting}
+          onClose={() => setEditingTx(null)}
+          onSubmit={saveTxEdit}
+        />
+      )}
+      {editingDebt && (
+        <EditDebtModal key={editingDebt.id} debt={editingDebt} submitting={submitting} onClose={() => setEditingDebt(null)} onSubmit={saveDebtEdit} />
+      )}
+      {historyOf && <HistoryModal key={`${historyOf.kind}-${historyOf.id}`} kind={historyOf.kind} id={historyOf.id} subject={historyOf.subject} onClose={() => setHistoryOf(null)} />}
     </div>
   );
 }

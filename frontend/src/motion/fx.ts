@@ -72,6 +72,14 @@ export const dangerPulse = (el: Element | null) =>
     { duration: 700, easing: 'ease-out' },
   )
 
+/** Yumshoq puls halqasi (video sayrdagi stol belgisi: "bosing" ishorasi). `full` darajada cheksiz, `light` da bir marta, `off`/reduced-motion da yo'q. */
+export const pulseLoop = (el: Element | null) =>
+  play(el, [{ transform: 'scale(1)', opacity: 0.55 }, { transform: 'scale(1.9)', opacity: 0 }], {
+    duration: 1700,
+    iterations: motionLevel() === 'full' ? Infinity : 1,
+    easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)',
+  })
+
 /** Bosilgan joydan kengayuvchi to'lqin halqalar (ofitsiant chaqiruvi yuborildi). */
 export function rippleRings(anchor: Element | null, count = 3): void {
   try {

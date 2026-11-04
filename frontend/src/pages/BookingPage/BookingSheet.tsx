@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { numberLocale, t } from '../../i18n';
+import { tm } from '../../utils/brandText';
 import { useLang } from '../../i18n/useLang';
 import { setButtonState, shake, rippleRings } from '../../motion/fx';
 import { fxEnabled } from '../../motion/env';
@@ -185,7 +186,7 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({ state, dispatch, con
 
           <section className="bk-field" ref={timeRef} tabIndex={-1} aria-labelledby={fieldId('time')} aria-describedby={err('time') ? fieldId('time-err') : undefined}>
             <div className="bk-label" id={fieldId('time')}>{t('Vaqt')}</div>
-            {dayClosed && <p className="bk-note">{t('Bu kuni restoran yopiq. Boshqa kunni tanlang.')}</p>}
+            {dayClosed && <p className="bk-note">{tm(t('Bu kuni restoran yopiq. Boshqa kunni tanlang.'))}</p>}
             {avail.error && !avail.data && (
               <div className="bk-note bk-note--warn" role="alert">
                 <span>{avail.error === 'rate_limited' ? t("Juda ko'p so'rov. Birozdan so'ng qayta urinib ko'ring") : t("Vaqtlarni yuklab bo'lmadi")}</span>
@@ -233,7 +234,7 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({ state, dispatch, con
           </section>
 
           <section className="bk-field" ref={guestsRef}>
-            <div className="bk-label" id={fieldId('guests')}>{t('Mehmonlar')}</div>
+            <div className="bk-label" id={fieldId('guests')}>{tm(t('Mehmonlar'))}</div>
             <GuestStepper value={state.guests} max={table.capacity} onChange={(n) => dispatch({ type: 'setGuests', guests: n, maxGuests: table.capacity })} labelId={fieldId('guests')} />
             {errorLine('guests')}
           </section>

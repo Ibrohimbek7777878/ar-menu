@@ -4,6 +4,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import { RestaurantAPI } from '../../services/RestaurantAPI';
 import { roleService } from '../../core/auth/RoleService';
 import { t, tr } from '../../i18n';
+import { termT, tm } from '../../utils/brandText';
 import './ReservationPage.css';
 
 export interface ReservationInfo {
@@ -171,10 +172,10 @@ export const ReservationPage: React.FC = () => {
               <span className="res-badge">{t('Tashrif qaydnomasi')}</span>
               <h1 className="arrival-title serif">
                 {foundReservation.customer_name},<br />
-                {t('Stolingiz tayyor!')}
+                {tm(t('Stolingiz tayyor!'))}
               </h1>
               <p className="arrival-desc">
-                {t("Tashrifingiz tizimda qayd etildi. Quyidagi tugma orqali stol menyusiga o'tib, taomlarni buyurtma qiling.")}
+                {tm(t("Tashrifingiz tizimda qayd etildi. Quyidagi tugma orqali stol menyusiga o'tib, taomlarni buyurtma qiling."))}
               </p>
             </div>
 
@@ -182,7 +183,7 @@ export const ReservationPage: React.FC = () => {
             <div className="arrival-detail-card">
               <div className="arrival-card-top">
                 <div className="arrival-table-circle">
-                  <span className="circle-kicker">{t('Stol')}</span>
+                  <span className="circle-kicker">{termT('table')}</span>
                   <strong className="circle-num tabular-nums">
                     {foundReservation.table_number}
                   </strong>
@@ -221,7 +222,7 @@ export const ReservationPage: React.FC = () => {
                 className="btn-confirm-and-menu"
                 onClick={handleConfirmArrival}
               >
-                <span>{t('Stol menyusini ochish')}</span>
+                <span>{tm(t('Stol menyusini ochish'))}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -316,7 +317,7 @@ export const ReservationPage: React.FC = () => {
                 <div className="found-meta-row">
                   <span className="tabular-nums">{t('Vaqt:')} {foundReservation.reservation_time}</span>
                   <span className="tabular-nums">{t('{n} kishi', { n: foundReservation.guests_count })}</span>
-                  <span className="tabular-nums">{t('Stol #{num}', { num: foundReservation.table_number })}</span>
+                  <span className="tabular-nums">{tm(t('Stol #{num}', { num: foundReservation.table_number }))}</span>
                 </div>
 
                 <button

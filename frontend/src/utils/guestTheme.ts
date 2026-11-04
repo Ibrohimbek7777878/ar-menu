@@ -5,7 +5,7 @@
 //   auto  — telefon (Telegram'da — Telegram) mavzusiga ergashadi
 // Mehmonning o'z tanlovi (Kun / Tun / Avto) brauzerda eslab qolinadi va sozlamadan ustun turadi.
 // `<html data-theme="light|dark">` qiymati styles/darkTheme.css da ishlatiladi. Egasi qarori: dizayn tartibiga (`guest_design`) bog'liq emas.
-import { currentPalette, PALETTE_CHROME } from './guestPalette.ts'
+import { chromeColors, currentPalette } from './guestPalette.ts'
 
 export type ThemeSetting = 'off' | 'day' | 'night' | 'auto'
 export type ThemePref = 'day' | 'night' | 'auto'
@@ -59,8 +59,8 @@ function paint(): void {
     resolved = resolveTheme(pref, systemIsDark())
     root.dataset.theme = resolved
   }
-  // Telegram sarlavhasi / orqa foni va brauzer `theme-color`: palitraga (klassik yashil-krem yoki apelsin) mos
-  const chrome = PALETTE_CHROME[currentPalette()][resolved]
+  // Telegram sarlavhasi / orqa foni va brauzer `theme-color`: palitraga (klassik yashil-krem, apelsin yoki brend rangi) mos
+  const chrome = chromeColors(currentPalette(), resolved)
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chrome.header)
   if (setting !== 'off') {
     const tg = window.Telegram?.WebApp

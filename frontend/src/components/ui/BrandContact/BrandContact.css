@@ -1,0 +1,84 @@
+/* Brend aloqa bloki: faqat tokenlar (qattiq rang yo'q), kun/tun avtomatik, telefon-birinchi (bitta ustun, 44 px tap maydoni). */
+.bc-section {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+}
+/* Yangi bosh sahifada (wn-wrap bilan bir xil kenglik); klassik sahifada o'z qobig'ining ichida to'liq kenglik */
+.wn-root .bc-section { width: min(100% - 32px, 1440px); }
+
+.bc-title {
+  font-size: clamp(22px, 2.6vw, 32px);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.bc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+
+.bc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.bc-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--brand-primary-light);
+  /* Brend rangidagi ikonka/havola: tunda `--dk-brand-text` (to'q sirtda o'qiladigan ton), kunda brend rangi */
+  color: var(--dk-brand-text, var(--brand-primary));
+}
+
+.bc-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  gap: 2px;
+}
+
+.bc-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.bc-text,
+.bc-link {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.bc-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+  color: var(--dk-brand-text, var(--brand-primary));
+}
+
+.bc-link:hover { text-decoration: underline; }

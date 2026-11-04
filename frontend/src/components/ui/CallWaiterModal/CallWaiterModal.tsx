@@ -3,6 +3,8 @@ import { useNavigation, type LiveServiceCall } from '../../../context/Navigation
 import { fxEnabled } from '../../../motion/env';
 import { pop, ringBell, rippleRings, setButtonState } from '../../../motion/fx';
 import { t, tr } from '../../../i18n';
+import { moduleEnabled } from '../../../utils/brand';
+import { tm } from '../../../utils/brandText';
 import './CallWaiterModal.css';
 
 interface CallOption {
@@ -63,15 +65,16 @@ export const CallWaiterModal: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  if (!isCallWaiterOpen) return null;
+  // Brend: bo'lim `waiter_call` o'chirilgan bo'lsa oyna ochilmaydi (chaqirish tugmalari ham yashirilgan; kod o'chirilmagan)
+  if (!isCallWaiterOpen || !moduleEnabled('waiter_call')) return null;
 
   // "Stol #5 bo'yicha ..." — stol raqami qalin chiqishi uchun jumla belgi bo'yicha ikkiga bo'linadi (so'z tartibi tilga qarab o'zgaradi)
-  const sentParts = t("Stol {num} bo'yicha xodimingiz zudlik bilan yo'lga chiqdi.", { num: '\u0001' }).split('\u0001');
+  const sentParts = tm(t("Stol {num} bo'yicha xodimingiz zudlik bilan yo'lga chiqdi.", { num: '\u0001' })).split('\u0001');
 
   const handleSendCall = async () => {
     if (isSending) return;
     if (!tableNumber) {
-      setErrorMsg(t('Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.'));
+      setErrorMsg(tm(t('Stol aniqlanmadi. Stol ustidagi QR kodni skanerlang.')));
       return;
     }
     const opt = CALL_OPTIONS.find((o) => o.type === selectedType) || CALL_OPTIONS[3];
@@ -133,10 +136,10 @@ export const CallWaiterModal: React.FC = () => {
         ) : (
           <>
             <div className="call-waiter-header">
-              <span className="call-waiter-badge">{t('Stol #{num}', { num: tableNumber })}</span>
+              <span className="call-waiter-badge">{tm(t('Stol #{num}', { num: tableNumber }))}</span>
               <h3 className="call-waiter-title">{t('Ofitsiantga xabar berish')}</h3>
               <p className="call-waiter-desc">
-                {t('Qanday xizmat kerakligini tanlang, ofitsiantimiz bir necha daqiqada stolingizga yetib keladi.')}
+                {tm(t('Qanday xizmat kerakligini tanlang, ofitsiantimiz bir necha daqiqada stolingizga yetib keladi.'))}
               </p>
             </div>
 

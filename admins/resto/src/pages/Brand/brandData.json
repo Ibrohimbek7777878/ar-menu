@@ -1,0 +1,17 @@
+{
+  "_izoh": "Mehmon saytining tayyor palitralari va tayyor ranglar. Bu MA'LUMOT (kod emas): qiymatlar mehmon sayti palitralari (frontend/src/styles/palette.css, index.css) bilan bir xil. Foydalanuvchi tanlagan rang maket ichida inline o'zgaruvchi sifatida beriladi.",
+  "palettes": {
+    "classic": { "primary": "#2F4836", "accent": "#B85D19" },
+    "orange": { "primary": "#EA580C", "accent": "#E11D48" }
+  },
+  "swatches": [
+    { "id": "forest", "hex": "#2F4836" },
+    { "id": "burgundy", "hex": "#8B1E3F" },
+    { "id": "navy", "hex": "#1E3A5F" },
+    { "id": "teal", "hex": "#0F766E" },
+    { "id": "plum", "hex": "#6B2D5C" },
+    { "id": "orange", "hex": "#C2410C" },
+    { "id": "brown", "hex": "#78350F" },
+    { "id": "red", "hex": "#B91C1C" }
+  ]
+}

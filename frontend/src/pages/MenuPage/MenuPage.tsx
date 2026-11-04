@@ -19,6 +19,8 @@ import { enrichDishWith3D } from '../../services/Smart3DMatcher';
 import { getLang, t } from '../../i18n';
 import { dishName } from '../../utils/dishText';
 import { BookingEntry } from '../BookingPage/BookingEntry';
+import { TourEntry } from '../TourPage/TourEntry';
+import { moduleEnabled } from '../../utils/brand';
 import './MenuPage.css';
 
 interface InitialData {
@@ -89,6 +91,8 @@ export const MenuPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [only3D, setOnly3D] = useState(false);
+  // Brend: bo'lim `ar360` o'chirilgan bo'lsa 360° belgilari, "Faqat 360°" filtri va 3D oynasi yashiriladi (taomlar o'zgarmaydi, kod o'chirilmagan)
+  const ar360On = moduleEnabled('ar360');
 
   // Pagination state: start with 6 dishes
   const [visibleCount, setVisibleCount] = useState(6);
@@ -172,13 +176,14 @@ export const MenuPage: React.FC = () => {
 
   // Smart Uzbek Semantic Filtered products list
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    const list = ar360On ? products : products.map((p) => (p.has_3d ? { ...p, has_3d: false } : p));
+    return list.filter((p) => {
       // Category filter
       if (activeCategory !== 'all' && p.category_id !== activeCategory) {
         return false;
       }
       // 3D only toggle
-      if (only3D && !p.has_3d) {
+      if (ar360On && only3D && !p.has_3d) {
         return false;
       }
       // Smart Uzbek Search query (handles o', g', sh, ch and all apostrophes)
@@ -188,7 +193,7 @@ export const MenuPage: React.FC = () => {
       }
       return true;
     });
-  }, [products, activeCategory, only3D, searchQuery]);
+  }, [products, activeCategory, only3D, searchQuery, ar360On]);
 
   // Paginated visible items
   const visibleProducts = useMemo(() => {
@@ -244,23 +249,27 @@ export const MenuPage: React.FC = () => {
             status="available"
           />
 
-          <button
-            type="button"
-            className={`btn-toggle-3d-filter ${only3D ? 'active' : ''}`}
-            onClick={handleToggle3D}
-            aria-pressed={only3D}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
-              <path d="m3.29 7 8.71 5.37L20.71 7" />
-              <path d="M12 12.37V22" />
-            </svg>
-            <span>{t('Faqat 360° taomlar')}</span>
-          </button>
+          {ar360On && (
+            <button
+              type="button"
+              className={`btn-toggle-3d-filter ${only3D ? 'active' : ''}`}
+              onClick={handleToggle3D}
+              aria-pressed={only3D}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.9 6.25a2 2 0 0 0-1 1.74v7.92a2 2 0 0 0 .98 1.72l6.08 4.07a2 2 0 0 0 2.17.05l9.95-3.96a2 2 0 0 0 1.02-1.74V8.14a2 2 0 0 0-.98-1.74Z" />
+                <path d="m3.29 7 8.71 5.37L20.71 7" />
+                <path d="M12 12.37V22" />
+              </svg>
+              <span>{t('Faqat 360° taomlar')}</span>
+            </button>
+          )}
         </div>
 
         {/* Stol bron qilish: faqat restoran onlayn bronni yoqqan bo'lsa chiziladi */}
         <BookingEntry variant="strip" />
+        {/* Video sayr: faqat bo'lim yoqiq va server sayrni bergan bo'lsa chiziladi */}
+        <TourEntry variant="strip" />
 
         {/* ─── 2. Search Bar ─── */}
         <div className="menu-search-wrapper">

@@ -5,6 +5,8 @@ import { BottomNav, HeaderNav } from '../../components/ui';
 import { Icon } from '../../components/ui/Icon/Icon';
 import { useNavigation } from '../../context/NavigationContext';
 import { t } from '../../i18n';
+import { moduleEnabled } from '../../utils/brand';
+import { tm } from '../../utils/brandText';
 import { useLang } from '../../i18n/useLang';
 import { rippleRings } from '../../motion/fx';
 import { hallFreeCount, hasUsablePlan, slotsOfTable, tableStates } from './availability';
@@ -17,10 +19,13 @@ import { FloorPlan } from './FloorPlan';
 import { buildPayload, initialFlow, reduceFlow } from './flow';
 import { hallName, tableTitle } from './labels';
 import { MyBookings } from './MyBookings';
+import { parsePreselect, resolvePreselect } from './preselect';
 import { addStored, readStored, saveStored, toStored } from './stored';
 import { TableCards } from './TableCards';
 import type { BookingConfig, BookingTable, StoredBooking } from './types';
 import { useAvailability, useBookingConfig } from './useBooking';
+import { TOUR_PATH } from '../TourPage/paths';
+import { useTourEnabled } from '../TourPage/useTour';
 
 const MAX_GUESTS_LIMIT = 30;
 
@@ -44,11 +49,17 @@ export const BookingFlow: React.FC<{ config: BookingConfig }> = ({ config }) => 
   const [state, dispatch] = useReducer(reduceFlow, undefined, () =>
     initialFlow({ date: openDay ?? today, guests: Math.min(2, maxGuests), eventType: defaultEvent }),
   );
-  const [hallId, setHallId] = useState<number | null>(halls[0]?.id ?? null);
+  // Sayrdan kelgan bo'lsa (`/book/?table=<id>[&from=tour]`) stol oldindan tanlanadi; parametr yo'q/noto'g'ri bo'lsa hamma narsa avvalgidek
+  const preselect = useMemo(() => parsePreselect(window.location.search), []);
+  const [hallId, setHallId] = useState<number | null>(
+    () => halls.find((h) => preselect.tableId !== null && h.tables.some((tb) => tb.id === preselect.tableId))?.id ?? halls[0]?.id ?? null,
+  );
   const [viewPref, setViewPref] = useState<'plan' | 'list'>('plan');
   const [mine, setMine] = useState<StoredBooking[]>(() => readStored(today));
   const [closedDates, setClosedDates] = useState<ReadonlySet<string>>(() => new Set());
   const openerRef = useRef<Element | null>(null);
+  const preselectDone = useRef(false);
+  const tourOn = useTourEnabled();
 
   const avail = useAvailability(state.date, state.availGuests, openDay !== null && state.step !== 'done');
   const dayClosed = avail.data?.closed === true;
@@ -60,6 +71,19 @@ export const BookingFlow: React.FC<{ config: BookingConfig }> = ({ config }) => 
 
   const states = useMemo(() => tableStates(halls, avail.data?.tables, dayClosed), [halls, avail.data, dayClosed]);
   const hall = halls.find((h) => h.id === hallId) ?? halls[0] ?? null;
+  // Oldindan tanlangan stol: bo'sh bo'lsa bron oynasi bir marta o'zi ochiladi; band/mos emas/topilmasa — yumshoq xabar (quyida)
+  const preOutcome = useMemo(
+    () => (preselect.tableId === null ? null : resolvePreselect(preselect.tableId, halls, states)),
+    [preselect.tableId, halls, states],
+  );
+  useEffect(() => {
+    if (preselectDone.current || preselect.tableId === null || !preOutcome || preOutcome.kind === 'pending') return;
+    preselectDone.current = true;
+    if (preOutcome.kind !== 'open') return;
+    const tb = halls.flatMap((h) => h.tables).find((x) => x.id === preselect.tableId);
+    if (tb) dispatch({ type: 'selectTable', id: tb.id, capacity: tb.capacity });
+  }, [preOutcome, halls, preselect.tableId]);
+
   const planOk = hall ? hasUsablePlan(hall) : false;
   const view = planOk && viewPref === 'plan' ? 'plan' : 'list';
 
@@ -145,6 +169,7 @@ export const BookingFlow: React.FC<{ config: BookingConfig }> = ({ config }) => 
       <BookingSuccess
         result={state.result}
         onMenu={() => navigate('/menu/')}
+        onTour={preselect.fromTour && tourOn ? () => navigate(TOUR_PATH) : undefined}
         onAgain={() => {
           dispatch({ type: 'reset', eventType: defaultEvent });
           refresh(); // yangi bron stolni band qildi: holatlar qaytadan so'raladi
@@ -160,12 +185,29 @@ export const BookingFlow: React.FC<{ config: BookingConfig }> = ({ config }) => 
   return (
     <>
       <section className="bk-hero bk-enter">
-        <span className="bk-eyebrow">{t('Stol bron qilish')}</span>
-        <h1 className="bk-title">{t('Stolni tanlang')}</h1>
-        <p className="bk-lead">{t("Sana va mehmonlar sonini belgilang — bo'sh stollar ko'rinadi. Stolni bossangiz bron oynasi ochiladi.")}</p>
+        <span className="bk-eyebrow">{tm(t('Stol bron qilish'))}</span>
+        <h1 className="bk-title">{tm(t('Stolni tanlang'))}</h1>
+        <p className="bk-lead">{tm(t("Sana va mehmonlar sonini belgilang — bo'sh stollar ko'rinadi. Stolni bossangiz bron oynasi ochiladi."))}</p>
+        {/* Video sayr: faqat sayr yoqiq va server uni bergan bo'lsa chiziladi */}
+        {tourOn && (
+          <button type="button" className="bk-link" onClick={() => navigate(TOUR_PATH)}>
+            {preselect.fromTour ? t('Sayrga qaytish') : t("Zalni ko'rib tanlash")}
+          </button>
+        )}
       </section>
 
       <MyBookings items={mine} />
+
+      {/* Sayrdan tanlangan stol bron oynasi o'zi ochilmagan bo'lsa sababi (kun/soni o'zgarsa yoki boshqa stol tanlansa o'zi yo'qoladi) */}
+      {preOutcome && state.tableId === null && state.step === 'pick' && (preOutcome.kind === 'missing' || preOutcome.kind === 'unavailable') && (
+        <p className="bk-note bk-note--warn" role="status">
+          {preOutcome.kind === 'missing'
+            ? tm(t("Tanlangan stol bron uchun topilmadi. Ro'yxatdan boshqa stolni tanlang."))
+            : preOutcome.state === 'too_small'
+              ? tm(t("Bu stolga bunchalik mehmon sig'maydi"))
+              : tm(t("Tanlangan stol shu kunga band. Boshqa kunni yoki stolni tanlang."))}
+        </p>
+      )}
 
       {openDay === null ? (
         <div className="bk-card-block bk-empty" role="status">
@@ -175,23 +217,23 @@ export const BookingFlow: React.FC<{ config: BookingConfig }> = ({ config }) => 
       ) : halls.length === 0 ? (
         <div className="bk-card-block bk-empty" role="status">
           <Icon name="table" size={28} />
-          <p>{t("Hozircha bron qilinadigan stollar yo'q")}</p>
-          <button type="button" className="bk-btn" onClick={() => navigate('/menu/')}>{t("Menyuga o'tish")}</button>
+          <p>{tm(t("Hozircha bron qilinadigan stollar yo'q"))}</p>
+          {moduleEnabled('menu') && <button type="button" className="bk-btn" onClick={() => navigate('/menu/')}>{t("Menyuga o'tish")}</button>}
         </div>
       ) : (
         <>
-          <section className="bk-card-block bk-enter" aria-label={t('Sana va mehmonlar soni')}>
+          <section className="bk-card-block bk-enter" aria-label={tm(t('Sana va mehmonlar soni'))}>
             <div className="bk-field">
               <div className="bk-label">{t('Sana')}</div>
               <DateStrip days={days} value={state.date} onChange={(ymd) => dispatch({ type: 'setDate', date: ymd })} extraClosed={closedDates} />
             </div>
             <div className="bk-field">
-              <div className="bk-label" id="bk-guests-label">{t('Mehmonlar')}</div>
+              <div className="bk-label" id="bk-guests-label">{tm(t('Mehmonlar'))}</div>
               <GuestStepper value={state.guests} max={maxGuests} onChange={(n) => dispatch({ type: 'setGuests', guests: n, maxGuests })} labelId="bk-guests-label" />
             </div>
           </section>
 
-          <section className="bk-card-block bk-enter" aria-label={t('Stol tanlash')}>
+          <section className="bk-card-block bk-enter" aria-label={tm(t('Stol tanlash'))}>
             <div className="bk-toolbar">
               {halls.length > 1 && (
                 <div className="bk-halls" role="group" aria-label={t('Zal')}>
@@ -222,16 +264,16 @@ export const BookingFlow: React.FC<{ config: BookingConfig }> = ({ config }) => 
             <div className="bk-status-row" role="status" aria-live="polite">
               {avail.error && !avail.data ? (
                 <span className="bk-note bk-note--warn">
-                  {avail.error === 'rate_limited' ? t("Juda ko'p so'rov. Birozdan so'ng qayta urinib ko'ring") : t("Stollar holatini yuklab bo'lmadi")}
+                  {avail.error === 'rate_limited' ? t("Juda ko'p so'rov. Birozdan so'ng qayta urinib ko'ring") : tm(t("Stollar holatini yuklab bo'lmadi"))}
                   <button type="button" className="bk-link" onClick={avail.refresh}>{t('Qayta urinish')}</button>
                 </span>
               ) : dayClosed ? (
-                <span className="bk-note">{t('Bu kuni restoran yopiq. Boshqa kunni tanlang.')}</span>
+                <span className="bk-note">{tm(t('Bu kuni restoran yopiq. Boshqa kunni tanlang.'))}</span>
               ) : loadingStates ? (
                 <span className="bk-note">{t('Yuklanmoqda...')}</span>
               ) : (
                 <span className="bk-note tabular-nums">
-                  {freeTotal > 0 ? t("Bu kuni {n} ta stol bo'sh", { n: freeTotal }) : t("Bu kuni {n} kishiga bo'sh stol yo'q", { n: state.guests })}
+                  {tm(freeTotal > 0 ? t("Bu kuni {n} ta stol bo'sh", { n: freeTotal }) : t("Bu kuni {n} kishiga bo'sh stol yo'q", { n: state.guests }))}
                 </span>
               )}
             </div>
@@ -308,7 +350,7 @@ export const BookingPage: React.FC = () => {
         <p>{t("Bron sahifasini yuklab bo'lmadi. Aloqani tekshirib, qayta urinib ko'ring.")}</p>
         <div className="bk-actions">
           <button type="button" className="bk-btn bk-btn--primary" onClick={reload}>{t('Qayta urinish')}</button>
-          <button type="button" className="bk-btn" onClick={() => navigate('/menu/')}>{t("Menyuga o'tish")}</button>
+          {moduleEnabled('menu') && <button type="button" className="bk-btn" onClick={() => navigate('/menu/')}>{t("Menyuga o'tish")}</button>}
         </div>
       </div>
     );
@@ -318,10 +360,12 @@ export const BookingPage: React.FC = () => {
         <Icon name="calendar" size={28} />
         <h1 className="bk-title bk-title--small">{t('Bron hozircha yopiq')}</h1>
         <p>{t("Hozir onlayn bron qabul qilinmayapti. Menyuni ko'rib, stol ustidagi QR kod orqali buyurtma bera olasiz.")}</p>
-        <button type="button" className="bk-btn bk-btn--primary" onClick={() => navigate('/menu/')}>
-          <span>{t("Menyuga o'tish")}</span>
-          <Icon name="arrow" size={18} strokeWidth={2.5} />
-        </button>
+        {moduleEnabled('menu') && (
+          <button type="button" className="bk-btn bk-btn--primary" onClick={() => navigate('/menu/')}>
+            <span>{t("Menyuga o'tish")}</span>
+            <Icon name="arrow" size={18} strokeWidth={2.5} />
+          </button>
+        )}
       </div>
     );
   } else {
@@ -333,7 +377,7 @@ export const BookingPage: React.FC = () => {
       <HeaderNav brandName={shopName} cartCount={cartCount} onCartClick={() => navigate('/cart')} />
       <main className="bk-main">{body}</main>
       <BottomNav
-        activeTab="home"
+        activeTab={moduleEnabled('menu') ? 'home' : 'book'}
         cartCount={cartCount}
         onTabChange={(tab) => {
           if (tab === 'home') navigate('/');

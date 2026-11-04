@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { t } from '@admins/shared';
+import { isRecordGone, readEditFailure, type EditFailure } from './editModel';
 import {
   fetchFinanceSummary,
   fetchTransactions,
@@ -9,6 +10,10 @@ import {
   cancelTransaction,
   createDebt,
   payDebt,
+  updateTransaction,
+  updateDebt,
+  type TransactionEditBody,
+  type DebtEditBody,
   type FinanceSummary,
   type FinanceTransaction,
   type DebtItem,
@@ -154,6 +159,25 @@ export function useFinance() {
     }
   };
 
+  // Qo'lda tahrirlash (majburiy sabab bilan). Yozuv boshqa joyda o'zgargan/qulflangan bo'lsa ro'yxat yangilanadi.
+  const runEdit = async <T,>(call: () => Promise<T>): Promise<{ success: boolean; error?: string; failure?: EditFailure }> => {
+    try {
+      setSubmitting(true);
+      await call();
+      await loadData();
+      return { success: true };
+    } catch (err: any) {
+      const failure = readEditFailure(err);
+      if (isRecordGone(failure)) await loadData();
+      return { success: false, failure, error: failure.message ? t(failure.message) : t('Xatolik yuz berdi') };
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateTransaction = (id: number, body: TransactionEditBody) => runEdit(() => updateTransaction(id, body));
+  const handleUpdateDebt = (id: number, body: DebtEditBody) => runEdit(() => updateDebt(id, body));
+
   // Yangi qarz / nasiya
   const handleCreateDebt = async (data: {
     person_name: string;
@@ -222,6 +246,8 @@ export function useFinance() {
     refresh: loadData,
     createTransaction: handleCreateTransaction,
     cancelTransaction: handleCancelTransaction,
+    updateTransaction: handleUpdateTransaction,
+    updateDebt: handleUpdateDebt,
     createDebt: handleCreateDebt,
     payDebt: handlePayDebt,
   };

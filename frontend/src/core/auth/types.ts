@@ -19,6 +19,44 @@ export interface UserSession {
   roles?: UserRole[];
 }
 
+/** Bo'limlar (modullar) kalitlari: restoran egasi /ra/ -> Brend orqali yoqadi/o'chiradi (o'chirilmaydi — yashiriladi). */
+export type BrandModuleKey = 'menu' | 'ar360' | 'booking' | 'tour' | 'orders' | 'waiter_call';
+/** Atamalar kalitlari (biznes turi shabloni): stol/zal, mehmon/mijoz, restoran/kafe/to'yxona. */
+export type BrandTermKey = 'table' | 'guest' | 'venue';
+
+/**
+ * Restoran brendi (server: `ServerSession.brand`, /ra/ -> Brend). Hamma maydon ixtiyoriy: yo'q yoki noto'g'ri qiymat
+ * mehmon ilovasida standartga tushadi (`utils/brand.ts` tekshiradi). Kalit yo'q bo'lsa — hozirgi ko'rinish aynan saqlanadi.
+ */
+export interface Brand {
+  name?: string;
+  tagline?: string;
+  logo_url?: string | null;
+  favicon_url?: string | null;
+  /** Server `<html data-palette>` ni o'zi yozadi; `custom` da `<style id="brand-vars">` FAQAT brend tokenlarini beradi (neytrallar frontendniki) */
+  palette?: 'classic' | 'orange' | 'custom';
+  primary_color?: string;
+  /** Sarlavha shrifti: serif — Playfair, sans — Plus Jakarta Sans, rounded — Outfit (`<html data-font>`) */
+  font?: 'serif' | 'sans' | 'rounded';
+  hero?: { title?: string; subtitle?: string; cta_text?: string };
+  /**
+   * Bosh sahifa matnining ru/en tarjimasi. Server FAQAT biznes turi shablonining standart matni ishlatilgan maydon uchun beradi
+   * (egasi o'zi yozgan matn tarjima qilinmaydi; restoran shablonida umuman yo'q). Maydon bo'lmasa — o'zbekcha `hero` matni.
+   */
+  hero_i18n?: Partial<Record<'ru' | 'en', { title?: string; subtitle?: string }>>;
+  contact?: {
+    phone?: string;
+    phone2?: string;
+    address?: string;
+    instagram?: string;
+    telegram?: string;
+    website?: string;
+    hours_text?: string;
+  };
+  modules?: Partial<Record<BrandModuleKey, boolean>>;
+  terms?: Partial<Record<BrandTermKey, string>>;
+}
+
 /** Django sahifaga yozadigan HAQIQIY sessiya (web/restaurant_auth.py: spa_session). */
 export interface ServerSession {
   role: UserRole;
@@ -39,6 +77,8 @@ export interface ServerSession {
   theme?: 'off' | 'night' | 'auto';
   /** Yoqilgan tillar (restoran sozlamasi `guest_languages`, masalan "uz,ru"); barcha tillar yoqiq bo'lsa kalit yo'q */
   languages?: string;
+  /** Restoran brendi (nom, logo, palitra, shrift, matnlar, aloqa, bo'limlar, atamalar); kalit yo'q bo'lsa — standart ko'rinish */
+  brand?: Brand;
   /** Admin paneldan sozlanadigan ish qiymatlari (xodim sessiyasida) */
   config?: { kds_warn_minutes?: number; kds_late_minutes?: number };
 }

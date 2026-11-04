@@ -7,6 +7,12 @@ import { HeroPlate3D } from '../../motion/HeroPlate3D';
 import { fmtNum, getLang, t } from '../../i18n';
 import { dishDescription, dishName } from '../../utils/dishText';
 import { BookingEntry } from '../BookingPage/BookingEntry';
+import { TOUR_PATH } from '../TourPage/paths';
+import { TourIcon } from '../TourPage/TourIcon';
+import { useTourEnabled } from '../TourPage/useTour';
+import { BrandContact } from '../../components/ui/BrandContact/BrandContact';
+import { brandName, moduleEnabled, useBrand } from '../../utils/brand';
+import { heroT, tm } from '../../utils/brandText';
 
 interface FeaturedDish {
   id: number;
@@ -60,10 +66,17 @@ export const WelcomePageNew: React.FC = () => {
   const { navigate, setTableNumber, addToCart, cartCount: navCartCount, setIsQrModalOpen, setIsNfcModalOpen, userRole } = useNavigation();
   const initialData: InitialWelcomeData = (window as any).__GULISTON_WELCOME_DATA__ || {};
 
-  const shopName = initialData.shop?.name || 'Guliston';
+  // Brend (nom, tagline, hero matnlari, aloqa, bo'limlar): yo'q bo'lsa hamma narsa avvalgidek. Bo'lim o'chirilsa blok YASHIRILADI.
+  const brand = useBrand();
+  const shopName = brandName(initialData.shop?.name || 'Guliston');
+  const showMenu = moduleEnabled('menu');
+  const showAr = moduleEnabled('ar360');
+  const showBooking = moduleEnabled('booking');
+  const showTableTools = showMenu || moduleEnabled('waiter_call');
+  const tourOn = useTourEnabled();
   const table = initialData.table;
   const cartCount = navCartCount || initialData.cartCount || 0;
-  const featured = (initialData.featured || []).filter((d) => d.image);
+  const featured = showMenu ? (initialData.featured || []).filter((d) => d.image) : [];
   const hero = featured[0];
   const minis = featured.slice(1, 4);
   const bannerDish = featured[1] || hero;
@@ -91,11 +104,11 @@ export const WelcomePageNew: React.FC = () => {
   const handleTableSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputTableNum.trim()) {
-      showToast(t('Iltimos, stol raqamini kiriting'));
+      showToast(tm(t('Iltimos, stol raqamini kiriting')));
       return;
     }
     setTableNumber(inputTableNum.trim());
-    navigate('/menu');
+    navigate(showMenu ? '/menu' : '/table');
   };
 
   // Katta taom sichqoncha harakatiga yengil javob beradi (faqat sichqonchali qurilmada)
@@ -132,30 +145,42 @@ export const WelcomePageNew: React.FC = () => {
         <section className="wn-hero">
           <div className={`wn-wrap wn-hero-grid ${hero ? '' : 'wn-hero-solo'}`}>
             <div>
-              <span className="wn-eyebrow wn-rise" style={{ ['--i' as string]: 0 }}>{t('Xush kelibsiz')}</span>
+              {/* Tepa yorliq: tagline (brend) yoki "Xush kelibsiz" */}
+              <span className="wn-eyebrow wn-rise" style={{ ['--i' as string]: 0 }}>{brand.tagline || t('Xush kelibsiz')}</span>
               <h1 className="wn-title wn-rise" style={{ ['--i' as string]: 1 }}>
-                {t("Haqiqiy o'zbek")} <em>{t("ta'mi")}</em>,<br />{t('stolingizda')}
+                {heroT('title') || (
+                  <>{t("Haqiqiy o'zbek")} <em>{t("ta'mi")}</em>,<br />{tm(t('stolingizda'))}</>
+                )}
               </h1>
               <p className="wn-lead wn-rise" style={{ ['--i' as string]: 2 }}>
-                {t("Milliy taomlarimizni 360° ko'rinishda aylantirib ko'ring, tanlang va buyurtmangiz to'g'ridan-to'g'ri oshxonaga tushadi. Kutish ham, qog'oz menyu ham yo'q.")}
+                {heroT('subtitle') || t("Milliy taomlarimizni 360° ko'rinishda aylantirib ko'ring, tanlang va buyurtmangiz to'g'ridan-to'g'ri oshxonaga tushadi. Kutish ham, qog'oz menyu ham yo'q.")}
               </p>
               <div className="wn-cta wn-rise" style={{ ['--i' as string]: 3 }}>
-                <button type="button" className="wn-btn wn-btn-primary" onClick={() => navigate('/menu')}>
-                  <span>{t("Menyuni ko'rish")}</span>
-                  <Icon name="arrow" size={18} strokeWidth={2.5} />
-                </button>
-                <button type="button" className="wn-btn wn-btn-ghost" onClick={() => navigate('/ar')}>
-                  <Icon name="rotate" size={18} />
-                  <span>{t('360° taomlar')}</span>
-                </button>
+                {showMenu ? (
+                  <button type="button" className="wn-btn wn-btn-primary" onClick={() => navigate('/menu')}>
+                    <span>{brand.hero.ctaText || t("Menyuni ko'rish")}</span>
+                    <Icon name="arrow" size={18} strokeWidth={2.5} />
+                  </button>
+                ) : (
+                  /* Menyu o'chirilgan: asosiy tugma — bron (yoqiq bo'lsa) */
+                  <BookingEntry className="wn-btn wn-btn-primary" label={brand.hero.ctaText || undefined} />
+                )}
+                {showAr && (
+                  <button type="button" className="wn-btn wn-btn-ghost" onClick={() => navigate('/ar')}>
+                    <Icon name="rotate" size={18} />
+                    <span>{t('360° taomlar')}</span>
+                  </button>
+                )}
                 {/* Stol bron qilish: faqat restoran onlayn bronni yoqqan bo'lsa chiziladi (o'chiq bo'lsa hech narsa ko'rinmaydi) */}
-                <BookingEntry className="wn-btn wn-btn-ghost" />
+                {showMenu && <BookingEntry className="wn-btn wn-btn-ghost" />}
               </div>
-              <ul className="wn-trust wn-rise" style={{ ['--i' as string]: 4 }}>
-                <li><Icon name="check" size={15} strokeWidth={3} />{t('Halol')}</li>
-                <li><Icon name="check" size={15} strokeWidth={3} />{t('Yangi mahsulotlar')}</li>
-                <li><Icon name="check" size={15} strokeWidth={3} />{t('Buyurtma 1 daqiqada')}</li>
-              </ul>
+              {showMenu && (
+                <ul className="wn-trust wn-rise" style={{ ['--i' as string]: 4 }}>
+                  <li><Icon name="check" size={15} strokeWidth={3} />{t('Halol')}</li>
+                  <li><Icon name="check" size={15} strokeWidth={3} />{t('Yangi mahsulotlar')}</li>
+                  <li><Icon name="check" size={15} strokeWidth={3} />{t('Buyurtma 1 daqiqada')}</li>
+                </ul>
+              )}
             </div>
 
             {hero && (
@@ -230,90 +255,116 @@ export const WelcomePageNew: React.FC = () => {
         )}
 
         {/* ─── 360° banner ─── */}
-        <section className="wn-block">
-          <div className="wn-wrap">
-            <div className="wn-banner wn-reveal">
-              <div>
-                <h2>{t("Taomni buyurtmadan oldin ko'ring")}</h2>
-                <p>{t("Har bir taomni telefon yoki kompyuterda barmoq bilan aylantirib, hajmi va tarkibini ko'zingiz bilan baholang.")}</p>
-                <button type="button" className="wn-btn wn-btn-white" onClick={() => navigate('/ar')}>
-                  <span>{t("360° taomlarni ko'rish")}</span>
-                  <Icon name="arrow" size={16} strokeWidth={2.5} />
-                </button>
-              </div>
-              {bannerDish && (
-                <div className="wn-banner-dish" aria-hidden="true"><img src={bannerDish.image} alt="" loading="lazy" /></div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Stolga ulanish ─── */}
-        <section className="wn-block">
-          <div className="wn-wrap">
-            <div className="wn-head wn-reveal">
-              <div>
-                <h2>{t('Stolga ulanish')}</h2>
-                <p>{t("O'zingizga qulay usulni tanlang")}</p>
-              </div>
-            </div>
-            <div className="wn-connect">
-              <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 0 }}>
-                <span className="wn-opt-icon"><Icon name="qr" size={24} /></span>
+        {showAr && (
+          <section className="wn-block">
+            <div className="wn-wrap">
+              <div className="wn-banner wn-reveal">
                 <div>
-                  <h3>{t('QR kodni skanerlash')}</h3>
-                  <p>{t('Stol ustidagi QR kodga telefon kamerangizni qarating.')}</p>
-                  {isStaff && (
-                    <button type="button" className="wn-opt-action" onClick={() => setIsQrModalOpen(true)}>{t('QR kod generatori & chop etish')}</button>
-                  )}
-                </div>
-              </div>
-
-              {allowTableNumber && (
-                <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 1 }}>
-                  <span className="wn-opt-icon"><Icon name="table" size={24} /></span>
-                  <div>
-                    <h3>{t('Stol raqamini kiritish')}</h3>
-                    <p>{t('Stolingiz ustidagi raqamni yozib menyuga kiring.')}</p>
-                    <form onSubmit={handleTableSubmit} className="wn-table-form">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder={t('Stol raqami (masalan: 7)')}
-                        value={inputTableNum}
-                        onChange={(e) => setInputTableNum(e.target.value)}
-                        aria-label={t('Stol raqami')}
-                      />
-                      <button type="submit">{t('Ulanish')}</button>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {demo && (
-                <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 2 }}>
-                  <span className="wn-opt-icon"><Icon name="nfc" size={24} /></span>
-                  <div>
-                    <h3>{t('NFC orqali ulanish')}</h3>
-                    <p>{t('Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.')}</p>
-                    <button type="button" className="wn-opt-action" onClick={() => setIsNfcModalOpen(true)}>{t('NFC / Stolni tanlash')}</button>
-                  </div>
-                </div>
-              )}
-
-              <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 3 }}>
-                <span className="wn-opt-icon"><Icon name="calendar" size={24} /></span>
-                <div>
-                  <h3>{t('Bron qilingan stolni qidirish')}</h3>
-                  <p>{t("Oldindan joy band qilgan bo'lsangiz, raqamingiz orqali toping.")}</p>
-                  <button type="button" className="wn-opt-action" onClick={() => navigate('/reservation/find')}>
-                    <Icon name="search" size={15} />{t('Bronni tekshirish')}
+                  <h2>{t("Taomni buyurtmadan oldin ko'ring")}</h2>
+                  <p>{t("Har bir taomni telefon yoki kompyuterda barmoq bilan aylantirib, hajmi va tarkibini ko'zingiz bilan baholang.")}</p>
+                  <button type="button" className="wn-btn wn-btn-white" onClick={() => navigate('/ar')}>
+                    <span>{t("360° taomlarni ko'rish")}</span>
+                    <Icon name="arrow" size={16} strokeWidth={2.5} />
                   </button>
                 </div>
+                {bannerDish && (
+                  <div className="wn-banner-dish" aria-hidden="true"><img src={bannerDish.image} alt="" loading="lazy" /></div>
+                )}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
+
+        {/* ─── Stolga ulanish ─── */}
+        {(showTableTools || showBooking || tourOn) && (
+          <section className="wn-block">
+            <div className="wn-wrap">
+              {/* Sayr kartasi serverdan keyin keladi: bo'lim faqat shu sabab bilan paydo bo'lsa, `wn-reveal` kuzatuvchisi uni ko'rmaydi, shuning uchun u holda reveal yo'q */}
+              <div className={`wn-head ${showTableTools || showBooking ? 'wn-reveal' : ''}`}>
+                <div>
+                  <h2>{tm(t('Stolga ulanish'))}</h2>
+                  <p>{t("O'zingizga qulay usulni tanlang")}</p>
+                </div>
+              </div>
+              <div className="wn-connect">
+                {showTableTools && (
+                  <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 0 }}>
+                    <span className="wn-opt-icon"><Icon name="qr" size={24} /></span>
+                    <div>
+                      <h3>{t('QR kodni skanerlash')}</h3>
+                      <p>{tm(t('Stol ustidagi QR kodga telefon kamerangizni qarating.'))}</p>
+                      {isStaff && (
+                        <button type="button" className="wn-opt-action" onClick={() => setIsQrModalOpen(true)}>{t('QR kod generatori & chop etish')}</button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {showTableTools && allowTableNumber && (
+                  <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 1 }}>
+                    <span className="wn-opt-icon"><Icon name="table" size={24} /></span>
+                    <div>
+                      <h3>{tm(t('Stol raqamini kiritish'))}</h3>
+                      <p>{tm(t('Stolingiz ustidagi raqamni yozib menyuga kiring.'))}</p>
+                      <form onSubmit={handleTableSubmit} className="wn-table-form">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={tm(t('Stol raqami (masalan: 7)'))}
+                          value={inputTableNum}
+                          onChange={(e) => setInputTableNum(e.target.value)}
+                          aria-label={tm(t('Stol raqami'))}
+                        />
+                        <button type="submit">{t('Ulanish')}</button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {showTableTools && demo && (
+                  <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 2 }}>
+                    <span className="wn-opt-icon"><Icon name="nfc" size={24} /></span>
+                    <div>
+                      <h3>{t('NFC orqali ulanish')}</h3>
+                      <p>{tm(t('Telefoningizni stol burchagidagi NFC belgisiga yaqinlashtiring.'))}</p>
+                      <button type="button" className="wn-opt-action" onClick={() => setIsNfcModalOpen(true)}>{tm(t('NFC / Stolni tanlash'))}</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Zalni ko'rish (video sayr): faqat bo'lim yoqiq va server sayrni bergan bo'lsa. Keyin keladi -> `wn-reveal` yo'q (har doim ko'rinadi) */}
+                {tourOn && (
+                  <div className="wn-opt">
+                    <span className="wn-opt-icon"><TourIcon name="eye" size={24} /></span>
+                    <div>
+                      <h3>{t("Zalni ko'rish")}</h3>
+                      <p>{tm(t("Zalga kiring, sayr qiling va o'zingizga yoqqan stolni tanlang"))}</p>
+                      <button type="button" className="wn-opt-action" onClick={() => navigate(TOUR_PATH)}>
+                        <TourIcon name="eye" size={15} />{t("Zalni ko'rish")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {showBooking && (
+                  <div className="wn-opt wn-reveal" style={{ ['--i' as string]: 3 }}>
+                    <span className="wn-opt-icon"><Icon name="calendar" size={24} /></span>
+                    <div>
+                      <h3>{tm(t('Bron qilingan stolni qidirish'))}</h3>
+                      <p>{t("Oldindan joy band qilgan bo'lsangiz, raqamingiz orqali toping.")}</p>
+                      <button type="button" className="wn-opt-action" onClick={() => navigate('/reservation/find')}>
+                        <Icon name="search" size={15} />{t('Bronni tekshirish')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ─── Aloqa (brend): faqat to'ldirilgan maydonlar; hech narsa yo'q bo'lsa chizilmaydi ─── */}
+        <BrandContact className="wn-reveal" />
       </main>
 
       <BottomNav

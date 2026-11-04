@@ -7,6 +7,12 @@
      classic — STANDART: yashil + krem + serif sarlavha (eski login / base_tma.html dizayn tili). Atribut yo'q bo'lsa ham
                ilova (main.tsx) 'classic' qo'yadi.
 
+   custom  — BRENDNING o'z rangi (/ra/ -> Brend): bu fayldagi `classic` qoidalari unga TEGMAYDI (hammasi `html[data-palette='classic']`
+             ostida; `custom` ularni olmaydi). Server `<style id="brand-vars">` bilan FAQAT brend tokenlarini beradi (kun va tun); neytral va holat
+             tokenlarini (fon, matn, chegara, status, soya) frontend o'zi beradi — klassik krem (kun) va klassik yashil-qora (tun) qiymatlari
+             (server brend ranglarini aynan shu fonlar ustida kontrastga tekshiradi) — 10-bo'lim.
+   Sarlavha shrifti palitradan MUSTAQIL: `<html data-font="serif|sans|rounded">` (9-bo'lim). Atribut yo'q bo'lsa avvalgidek: klassik — serif, apelsin — Outfit.
+
    Fayl tartibi: seasons.css dan KEYIN, darkTheme.css dan OLDIN (cssOrder.ts).
    Fasl (`data-season`): fasl yoqilganda BREND tokenlarini fasl beradi (`:not([data-season])` bilan klassik brend o'chadi), neytral
    (krem fon, matn, chegara) esa klassik bo'lib qoladi: fasl rangi klassik asosida ishlaydi.
@@ -177,3 +183,88 @@ html[data-palette='classic'] .pill-free { background: var(--bg-surface-subtle); 
 
 /* ── 8. Tun: brend kartadagi shaffof oq belgi tugma-yashil ustida 4.49:1 edi (11px matn) -> qoraytirilgan pilyulya (7.6:1) ── */
 html[data-theme='dark'][data-palette='classic'] .ar-hero-badge { background: rgb(0 0 0 / 0.18); }
+
+/* ── 9. Sarlavha shrifti: `<html data-font="serif|sans|rounded">` (brend: /ra/ -> Brend -> Shrift), palitradan MUSTAQIL ──
+   Selektor ro'yxati 3-bo'limdagi klassik qoidaniki bilan bir xil, shuning uchun ustuvorlik teng (0,2,2) va FAYLDA KEYIN turgani g'olib:
+   `data-font` bor bo'lsa klassik palitradagi serif ham almashadi. `data-font` YO'Q bo'lsa 9-bo'lim umuman ishlamaydi:
+   klassik — Playfair (3-bo'lim), apelsin — Outfit (index.css), ya'ni orqaga mos. Shriftlar fonts.css da (unicode-range: faqat kerakli subset yuklanadi).
+     serif   — Playfair Display (klassikdagidek). Server `data-font` ni DOIM yozadi (standart `serif`, tanlov bo'lmasa ham), shuning uchun
+               apelsin palitrada `serif` ATAYLAB qo'llanmaydi (`:not([data-palette='orange'])`): aks holda mavjud apelsin restoranlar sarlavhasi
+               (Outfit) bir zumda Playfair'ga o'tib ketardi. Apelsinda `sans` / `rounded` ishlaydi.
+     sans    — Plus Jakarta Sans (matn shrifti bilan bir xil, "sokin")
+     rounded — Outfit (apelsin palitradagi sarlavha shrifti) */
+html[data-font='serif']:not([data-palette='orange']) :is(h1, h2, h3, h4, h5, h6, .brand-font, .brand-name, .brand-crest, .dish-card-title, .empty-title,
+  .modal-dish-name, .welcome-hero-title, .ar-empty-title, .summary-card-title, .checkout-page-title, .table-hub-title,
+  .orders-page-title, .empty-orders-title, .cart-title-main, .ds-title, .ds-rail-title, .ds-placeholder, .ds-mini-letter,
+  .wn-root h1, .wn-root h2, .wn-root h3) {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-variant-numeric: lining-nums;
+  letter-spacing: 0;
+}
+html[data-font='sans'] :is(h1, h2, h3, h4, h5, h6, .brand-font, .brand-name, .brand-crest, .dish-card-title, .empty-title,
+  .modal-dish-name, .welcome-hero-title, .ar-empty-title, .summary-card-title, .checkout-page-title, .table-hub-title,
+  .orders-page-title, .empty-orders-title, .cart-title-main, .ds-title, .ds-rail-title, .ds-placeholder, .ds-mini-letter,
+  .wn-root h1, .wn-root h2, .wn-root h3) {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-variant-numeric: normal;
+  letter-spacing: -0.01em;
+}
+html[data-font='rounded'] :is(h1, h2, h3, h4, h5, h6, .brand-font, .brand-name, .brand-crest, .dish-card-title, .empty-title,
+  .modal-dish-name, .welcome-hero-title, .ar-empty-title, .summary-card-title, .checkout-page-title, .table-hub-title,
+  .orders-page-title, .empty-orders-title, .cart-title-main, .ds-title, .ds-rail-title, .ds-placeholder, .ds-mini-letter,
+  .wn-root h1, .wn-root h2, .wn-root h3) {
+  font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-variant-numeric: normal;
+  letter-spacing: -0.02em;
+}
+/* Rasmsiz taom bosh harfi (::before) — klassikda Playfair qo'yilgan edi (6-bo'lim yonida); shriftga ergashadi */
+html[data-font='serif']:not([data-palette='orange']) .dish-card-placeholder::before { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-weight: 700; }
+html[data-font='sans'] .dish-card-placeholder::before { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+html[data-font='rounded'] .dish-card-placeholder::before { font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif; }
+/* Playfair 800 juda og'ir — yangi bosh sahifa sarlavhalari 700 (4-bo'limdagi klassik qoidaning serif uchun nusxasi) */
+html[data-font='serif']:not([data-palette='orange']) .wn-title,
+html[data-font='serif']:not([data-palette='orange']) .wn-head h2,
+html[data-font='serif']:not([data-palette='orange']) .wn-banner h2 { font-weight: 700; }
+
+/* ── 10. Brend rangi (`custom`): brend tokenlari serverdan, neytrallar bu yerda ──
+   SERVER (`<style id="brand-vars">`, backend/shops/brand_color.py; `<head>` oxirida) FAQAT brend tokenlarini yozadi:
+     kun  `html[data-palette='custom']` (0,1,1):                      --brand-primary(-hover/-light/-subtle/-rgb), --brand-tint-2/3, --brand-warm, --brand-deep,
+                                                                      --brand-accent(-light/-subtle) va eski base_tma.html o'zgaruvchilari (--primary-green ... --accent-gold)
+     tun  `html[data-palette='custom'][data-theme='dark']` (0,2,1):   shularning tun qiymatlari + --dk-brand-text, --dk-accent-text
+   NEYTRAL va holat tokenlarini (--bg-*, --border-*, --text-*, --status-*, --shadow-*) server BERMAYDI: ularni frontend beradi (shu blok; tun — darkTheme.css 1-bo'lim).
+   Qiymatlar KLASSIK palitraniki (krem fon, oq karta; tunda yashil-qora): server brend rangining kontrastini (matn >= 4.5:1) aynan shu fonlar
+   ustida hisoblaydi (brand_color.py: CREAM, DARK_BG, DARK_SURFACE ...), shuning uchun boshqa neytral (masalan, apelsinning iliq-jigarrangi)
+   ustida kafolat buziladi. Klassik qiymatlar bilan tengligi tests/brand.test.ts da tekshiriladi.
+   USTUVORLIK: bu blok `:root:where(...)` = (0,1,0) — serverning kun (0,1,1) va tun (0,2,1) bloklaridan HAR DOIM past, style teglari qaysi tartibda
+   turishidan qat'i nazar (Vite dev rejimida CSS <head> oxirida qo'shiladi). Shu sababli bu blokka brend tokenlari (--brand-*, --dk-*-text) YOZILMAYDI —
+   ularni faqat server beradi; `custom` uchun brend tokenini (0,1,1) dan yuqori ustuvorlikli selektor bilan yozish TAQIQLANGAN (test tekshiradi). */
+:root:where([data-palette='custom']) {
+  --bg-primary: #F7F3EA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #FAF7F0;
+  --bg-surface-dark: #1F2D23;
+
+  --border-subtle: #E8E0CF;
+  --border-strong: #D9CFB8;
+
+  --text-primary: #2C2A26;
+  --text-secondary: #4F4A42;
+  --text-muted: #6B6559;
+  --text-inverse: #FFFFFF;
+
+  --status-success: #2A7541;
+  --status-success-light: #E8F3EA;
+  --status-danger: #B42318;
+
+  /* Soyalar iliq `rgba(44,42,38,…)`: apelsinning jigarrang-qizil (124 45 18) soyasi yashil/ko'k brend ostida begona ko'rinardi */
+  --shadow-tint-rgb: 44 42 38;
+  --shadow-sm: 0 1px 3px rgba(44, 42, 38, 0.05);
+  --shadow-card: 0 4px 20px -2px rgba(44, 42, 38, 0.05), 0 1px 3px rgba(44, 42, 38, 0.04);
+  --shadow-hover: 0 10px 30px -4px rgba(44, 42, 38, 0.1), 0 4px 10px -2px rgba(44, 42, 38, 0.05);
+  --shadow-modal: 0 25px 50px -12px rgba(44, 42, 38, 0.28);
+}
+/* Yangi bosh sahifa (`wn-`) mahalliy o'zgaruvchilari tokenlarga ulanadi (qattiq #57534E / #E7E5E4 o'rniga) */
+html[data-palette='custom'] .wn-root {
+  --wn-muted: var(--text-secondary);
+  --wn-line: var(--border-subtle);
+}

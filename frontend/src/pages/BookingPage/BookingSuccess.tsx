@@ -1,6 +1,8 @@
 // Muvaffaqiyat ekrani: bron kodi (nusxa olish), sana/vaqt/stol/mehmonlar, holatni tekshirish, menyuga o'tish.
 import React, { useEffect, useRef, useState } from 'react';
 import { numberLocale, t } from '../../i18n';
+import { moduleEnabled } from '../../utils/brand';
+import { termT, tm } from '../../utils/brandText';
 import { Icon } from '../../components/ui/Icon/Icon';
 import { pop, rippleRings } from '../../motion/fx';
 import { copyText } from './clipboard';
@@ -13,9 +15,11 @@ interface BookingSuccessProps {
   result: BookingResult;
   onMenu: () => void;
   onAgain: () => void;
+  /** Video sayrdan kelgan bo'lsa: sayrga qaytish tugmasi */
+  onTour?: () => void;
 }
 
-export const BookingSuccess: React.FC<BookingSuccessProps> = ({ result, onMenu, onAgain }) => {
+export const BookingSuccess: React.FC<BookingSuccessProps> = ({ result, onMenu, onAgain, onTour }) => {
   const badgeRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
@@ -58,7 +62,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ result, onMenu, 
       <p className="bk-lead">
         {confirmed
           ? t("Sizni kutamiz! Kodni saqlab qo'ying — kelganingizda ko'rsating.")
-          : t("Restoran bronni tasdiqlaydi. Kodni saqlab qo'ying — holatni shu kod bilan tekshirasiz.")}
+          : tm(t("Restoran bronni tasdiqlaydi. Kodni saqlab qo'ying — holatni shu kod bilan tekshirasiz."))}
       </p>
 
       <div className="bk-code-card">
@@ -88,11 +92,11 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ result, onMenu, 
           <dd className="tabular-nums">{end ? `${result.time} – ${end}` : result.time}</dd>
         </div>
         <div>
-          <dt>{t('Stol')}</dt>
+          <dt>{termT('table')}</dt>
           <dd>{result.tableNumber ? tableTitle(result.tableNumber) : '—'}{result.hall ? ` · ${hallName(result.hall)}` : ''}</dd>
         </div>
         <div>
-          <dt>{t('Mehmonlar soni')}</dt>
+          <dt>{tm(t('Mehmonlar soni'))}</dt>
           <dd>{t('{n} kishi', { n: result.guests })}</dd>
         </div>
         <div>
@@ -104,10 +108,13 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ result, onMenu, 
       <StatusCheck code={result.public_code} />
 
       <div className="bk-actions">
-        <button type="button" className="bk-btn bk-btn--primary" onClick={onMenu}>
-          <span>{t("Menyuga o'tish")}</span>
-          <Icon name="arrow" size={18} strokeWidth={2.5} />
-        </button>
+        {moduleEnabled('menu') && (
+          <button type="button" className="bk-btn bk-btn--primary" onClick={onMenu}>
+            <span>{t("Menyuga o'tish")}</span>
+            <Icon name="arrow" size={18} strokeWidth={2.5} />
+          </button>
+        )}
+        {onTour && <button type="button" className="bk-btn" onClick={onTour}>{t('Sayrga qaytish')}</button>}
         <button type="button" className="bk-btn" onClick={onAgain}>{t('Yana bron qilish')}</button>
       </div>
     </section>

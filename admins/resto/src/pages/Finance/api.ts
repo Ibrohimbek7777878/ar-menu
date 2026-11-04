@@ -29,6 +29,15 @@ export interface FinanceTransaction {
   is_cancelled: boolean;
   cancel_reason: string;
   cancelled_at: string | null;
+  /** Izoh (tahrirlash oynasida joriy qiymat sifatida) */
+  notes: string;
+  /** Qo'lda tahrirlanganmi va necha marta (tarix: eng kamida bitta qator) */
+  edited: boolean;
+  revisions_count: number;
+  /** Faqat qo'lda kiritilgan va storno qilinmagan yozuv tahrirlanadi */
+  can_edit: boolean;
+  /** Tahrirlab bo'lmasa sababi: storno qilingan yoki manbasi buyurtma / qarz to'lovi */
+  edit_lock: 'cancelled' | 'source_locked' | null;
 }
 
 export interface FinanceTransactionsResponse {
@@ -56,6 +65,8 @@ export interface DebtItem {
   due_date: string | null;
   notes: string;
   created_at: string;
+  edited: boolean;
+  revisions_count: number;
 }
 
 export interface DebtsResponse {
@@ -160,6 +171,71 @@ export async function payDebt(
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+// ─── Qo'lda tahrirlash va o'zgarish tarixi (TZ Bosqich 5) ─────────────────────────────────────────────
+
+/** Tarixdagi bitta maydon o'zgarishi. Summa Decimal satr ("150000.00"), sana ISO satr; kategoriya nomi (id alohida). */
+export interface RevisionChange {
+  old: string | null;
+  new: string | null;
+}
+
+export interface FinanceRevision {
+  id: number;
+  revision_no: number;
+  changed_at: string;
+  changed_by: { id: number | null; name: string; role: string };
+  reason: string;
+  changes: Record<string, RevisionChange>;
+}
+
+export interface HistoryResponse {
+  target: { type: 'transaction' | 'debt'; id: number };
+  count: number;
+  /** Eng yangisi birinchi */
+  results: FinanceRevision[];
+  /** Birinchi tahrirdan oldingi qiymatlar ("Asl qiymat") */
+  original: Record<string, string | null>;
+}
+
+export interface TransactionEditBody {
+  amount?: string;
+  category_id?: number | null;
+  title?: string;
+  notes?: string;
+  tx_date?: string;
+  payment_method?: string;
+  reason: string;
+  /** Oyna ochilgandagi tahrirlar soni: boshqa joyda o'zgargan bo'lsa server 409 `stale` qaytaradi */
+  expected_revision?: number;
+}
+
+export interface DebtEditBody {
+  person_name?: string;
+  phone?: string;
+  debt_type?: 'customer' | 'supplier';
+  amount?: string;
+  due_date?: string | null;
+  notes?: string;
+  reason: string;
+  expected_revision?: number;
+}
+
+export async function updateTransaction(id: number, body: TransactionEditBody): Promise<FinanceTransaction & { revision: FinanceRevision }> {
+  return apiClient(`/api/restaurant/admin/v1/finance/transactions/${id}/`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+
+export async function fetchTransactionHistory(id: number): Promise<HistoryResponse> {
+  return apiClient<HistoryResponse>(`/api/restaurant/admin/v1/finance/transactions/${id}/history/`);
+}
+
+export async function updateDebt(id: number, body: DebtEditBody): Promise<DebtItem & { revision: FinanceRevision }> {
+  return apiClient(`/api/restaurant/admin/v1/finance/debts/${id}/`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+
+export async function fetchDebtHistory(id: number): Promise<HistoryResponse> {
+  return apiClient<HistoryResponse>(`/api/restaurant/admin/v1/finance/debts/${id}/history/`);
 }
 
 export async function fetchCategories(): Promise<CategoryItem[]> {
